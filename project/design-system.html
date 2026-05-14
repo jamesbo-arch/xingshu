@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>醒书日记 · 设计系统</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&family=LXGW+WenKai+TC&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="src/styles.css"/>
+  <style>
+    body { background: var(--paper); padding: 64px 0; }
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 48px; }
+
+    .hero { padding-bottom: 56px; border-bottom: 0.5px solid rgba(126,102,64,0.2);
+            margin-bottom: 56px; }
+    .eyebrow { font-family: var(--font-title); font-size: 12px; letter-spacing: 8px;
+               color: var(--vermilion); text-transform: uppercase; margin-bottom: 14px; }
+    .hero h1 { font-family: var(--font-serif); font-size: 64px; font-weight: 700;
+               letter-spacing: 6px; line-height: 1.1; margin: 0 0 18px;
+               color: var(--ink); }
+    .hero h1 span { color: var(--ink-3); font-weight: 400; }
+    .hero p  { font-size: 16px; color: var(--ink-3); line-height: 1.8;
+               max-width: 640px; margin: 0; }
+
+    .section { padding: 56px 0; border-bottom: 0.5px solid rgba(126,102,64,0.16); }
+    .section-title { display: flex; align-items: baseline; gap: 18px; margin-bottom: 32px; }
+    .section-title .num {
+      font-family: var(--font-serif); font-size: 14px; color: var(--vermilion);
+      letter-spacing: 4px; padding-top: 4px;
+    }
+    .section-title h2 {
+      font-family: var(--font-serif); font-size: 28px; font-weight: 600;
+      letter-spacing: 4px; margin: 0; color: var(--ink);
+    }
+    .section-title p {
+      flex: 1; font-size: 13px; color: var(--ink-3); margin: 0;
+      padding-bottom: 4px; border-bottom: 0.5px dashed var(--ink-5);
+    }
+
+    .grid { display: grid; gap: 16px; }
+    .g-2 { grid-template-columns: repeat(2, 1fr); }
+    .g-3 { grid-template-columns: repeat(3, 1fr); }
+    .g-4 { grid-template-columns: repeat(4, 1fr); }
+    .g-6 { grid-template-columns: repeat(6, 1fr); }
+
+    /* Color swatches */
+    .swatch {
+      border-radius: 10px; overflow: hidden;
+      border: 0.5px solid rgba(126,102,64,0.14);
+      background: var(--paper-card);
+    }
+    .swatch .chip { height: 100px; }
+    .swatch .info { padding: 12px 14px; }
+    .swatch .name { font-family: var(--font-serif); font-size: 14px;
+                    color: var(--ink); letter-spacing: 1.5px; font-weight: 600; }
+    .swatch .hex  { font-family: 'SF Mono', Menlo, monospace; font-size: 11px;
+                    color: var(--ink-3); margin-top: 4px; letter-spacing: 0.5px; }
+    .swatch .use  { font-size: 11px; color: var(--ink-4); margin-top: 4px; }
+
+    .type-row {
+      padding: 22px 24px; border-bottom: 0.5px solid rgba(126,102,64,0.14);
+      display: grid; grid-template-columns: 140px 1fr 160px; gap: 20px; align-items: baseline;
+    }
+    .type-row:last-child { border-bottom: none; }
+    .type-row .key { font-size: 12px; color: var(--ink-3); letter-spacing: 2px;
+                     font-family: var(--font-title); }
+    .type-row .meta { font-family: 'SF Mono', Menlo, monospace;
+                      font-size: 11px; color: var(--ink-4); text-align: right; }
+
+    .card {
+      background: var(--paper-card); border-radius: 12px;
+      border: 0.5px solid rgba(126,102,64,0.14);
+      padding: 24px;
+    }
+    .label-sm {
+      font-family: var(--font-title); font-size: 11px; letter-spacing: 3px;
+      color: var(--ink-3); text-transform: uppercase; margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- HERO -->
+    <header class="hero">
+      <div class="eyebrow">DESIGN SYSTEM · v0.1</div>
+      <h1>醒書日記<br/><span>視覺與互動規範</span></h1>
+      <p>面向"日记记录·分享·会员互动"产品的设计基底。以纸质感淡蓝为主色，文人衬线为骨架，朱砂印章为点缀，呼应"格物致知、修身为本"的国学语境。</p>
+    </header>
+
+    <!-- 1. 色板 -->
+    <section class="section">
+      <div class="section-title">
+        <span class="num">壹</span>
+        <h2>色板</h2>
+        <p>纸 / 墨 / 蓝 / 朱砂 / 金 — 五系一气贯通</p>
+      </div>
+
+      <div class="label-sm">纸 · Paper</div>
+      <div class="grid g-4" style="margin-bottom: 28px;">
+        <div class="swatch">
+          <div class="chip" style="background: #FBF7EE"></div>
+          <div class="info"><div class="name">紙白</div><div class="hex">#FBF7EE</div>
+            <div class="use">页面底色</div></div>
+        </div>
+        <div class="swatch">
+          <div class="chip" style="background: #FFFCF5"></div>
+          <div class="info"><div class="name">卡片紙</div><div class="hex">#FFFCF5</div>
+            <div class="use">日记卡片底</div></div>
+        </div>
+        <div class="swatch">
+          <div class="chip" style="background: #F5EFE2"></div>
+          <div class="info"><div class="name">米茶</div><div class="hex">#F5EFE2</div>
+            <div class="use">浅区块底</div></div>
+        </div>
+        <div class="swatch">
+          <div class="chip" style="background: #EFE7D4"></div>
+          <div class="info"><div class="name">麻紙</div><div class="hex">#EFE7D4</div>
+            <div class="use">私密日记底</div></div>
+        </div>
+      </div>
+
+      <div class="label-sm">墨 · Ink</div>
+      <div class="grid g-6" style="margin-bottom: 28px;">
+        <div class="swatch">
+          <div class="chip" style="background: #2A2723"></div>
+          <div class="info"><div class="name">玄墨</div><div class="hex">#2A2723</div></div>
+        </div>
+        <div class="swatch">
+          <div class="chip" style="background: #4A453E"></div>
+          <div class="info"><div class="name">深墨</div><div class="hex">#4A453E</div></div>
+        </div>
+        <div class="swatch">
+          <div class="chip" style="background: #7A746A"></div>
+          <div class="info"><div class="name">中墨</div><div class="hex">#7A746A</div></div>
+        </div>
+        <div class="swatch">
+          <div class="chip" style="background: #A8A39B"></div>
+          <div class="info"><div class="name">淡墨</div><div class="hex">#A8A39B</div></div>
+        </div>
+        <div class="swatch">
+          <div class="chip" style="background: #D6D0C2"></div>
+          <div class="info"><div class="name">隐墨</div><div class="hex">#D6D0C2</div></div>
+        </div>
+        <div class="swatch">
+          <div class="chip" style="background: #FFFCF5; border: 0.5px solid #ddd;"></div>
+          <div class="info"><div class="name">空白</div><div class="hex">#FFFCF5</div></div>
+        </div>
+      </div>
+
+      <div class="label-sm">主色与点缀 · Primary & Accents</div>
+      <div class="grid g-3">
+        <div class="swatch">
+          <div class="chip" style="background: #4577A4"></div>
+          <div class="info"><div class="name">文人淡藍 · Primary</div>
+            <div class="hex">#4577A4</div>
+            <div class="use">主色 / 链接 / 关键互动图标</div></div>
+        </div>
+        <div class="swatch">
+          <div class="chip" style="background: #B6452F; position: relative;">
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+                        width: 50px; height: 50px; border: 2.5px solid #fff; border-radius: 4px;
+                        font-family: 'Noto Serif SC'; color: #fff; font-size: 14px; font-weight: 700;
+                        display: flex; align-items: center; justify-content: center; letter-spacing: 3px;
+                        line-height: 1.1; text-align: center;">醒書</div>
+          </div>
+          <div class="info"><div class="name">朱砂 · Vermilion</div>
+            <div class="hex">#B6452F</div>
+            <div class="use">印章标签 / 重要标记 / 红色提醒</div></div>
+        </div>
+        <div class="swatch">
+          <div class="chip" style="background: linear-gradient(135deg, #FCF1D9, #E5C16D, #B89968);"></div>
+          <div class="info"><div class="name">會員金 · Member Gold</div>
+            <div class="hex">#B89968 · #FCF1D9</div>
+            <div class="use">会员描边 / 专属徽章 / 收藏图标</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. 字体方案 -->
+    <section class="section">
+      <div class="section-title">
+        <span class="num">貳</span>
+        <h2>字體方案</h2>
+        <p>三套预设 · 可在原型 Tweaks 面板中实时切换对比</p>
+      </div>
+
+      <div class="grid g-3">
+        <!-- 方案 A 宋体 -->
+        <div class="card" data-fontset="serif">
+          <div class="label-sm">方案 A · 宋體 + 黑體</div>
+          <div style="font-family: var(--font-serif); font-size: 38px; font-weight: 700;
+                      color: var(--ink); letter-spacing: 4px; line-height: 1.2; margin-bottom: 6px;">
+            修身為本
+          </div>
+          <div style="font-family: var(--font-sans); font-size: 14px;
+                      color: var(--ink-2); line-height: 1.8;">
+            标题用衬线，正文用黑体。最稳妥的"文艺感"，
+            适合长文阅读。Noto Serif SC + Noto Sans SC。
+          </div>
+          <div style="margin-top: 18px; padding-top: 14px;
+                      border-top: 0.5px solid rgba(126,102,64,0.14);
+                      font-family: 'SF Mono', monospace; font-size: 11px; color: var(--ink-4);">
+            Title: Noto Serif SC<br/>
+            Body : Noto Sans SC
+          </div>
+        </div>
+
+        <!-- 方案 B 楷书 -->
+        <div class="card" data-fontset="kai">
+          <div class="label-sm">方案 B · 全文楷體</div>
+          <div style="font-family: var(--font-kai); font-size: 38px; font-weight: 500;
+                      color: var(--ink); letter-spacing: 3px; line-height: 1.2; margin-bottom: 6px;">
+            君子慎獨
+          </div>
+          <div style="font-family: var(--font-kai); font-size: 14px;
+                      color: var(--ink-2); line-height: 1.8;">
+            全文使用霞鹜文楷，最贴近"手写日记"的私人感。
+            更具个性，但牺牲了部分可读性密度。
+          </div>
+          <div style="margin-top: 18px; padding-top: 14px;
+                      border-top: 0.5px solid rgba(126,102,64,0.14);
+                      font-family: 'SF Mono', monospace; font-size: 11px; color: var(--ink-4);">
+            All: LXGW WenKai
+          </div>
+        </div>
+
+        <!-- 方案 C 现代 -->
+        <div class="card" data-fontset="modern">
+          <div class="label-sm">方案 C · 全黑體</div>
+          <div style="font-family: var(--font-sans); font-size: 38px; font-weight: 700;
+                      color: var(--ink); letter-spacing: 0; line-height: 1.2; margin-bottom: 6px;">
+            日新又新
+          </div>
+          <div style="font-family: var(--font-sans); font-size: 14px;
+                      color: var(--ink-2); line-height: 1.8;">
+            全黑体，年轻、清爽。当目标用户更偏年轻时建议；
+            搭配印章标签维持国学调性。
+          </div>
+          <div style="margin-top: 18px; padding-top: 14px;
+                      border-top: 0.5px solid rgba(126,102,64,0.14);
+                      font-family: 'SF Mono', monospace; font-size: 11px; color: var(--ink-4);">
+            All: Noto Sans SC
+          </div>
+        </div>
+      </div>
+
+      <!-- Type scale -->
+      <div class="card" style="margin-top: 24px; padding: 0;">
+        <div class="type-row">
+          <div class="key">頭題</div>
+          <div style="font-family: var(--font-serif); font-size: 32px; font-weight: 700;
+                      letter-spacing: 4px; line-height: 1.2;">醒書日記 · 頭題</div>
+          <div class="meta">32 / 700 / +4</div>
+        </div>
+        <div class="type-row">
+          <div class="key">大标题</div>
+          <div style="font-family: var(--font-serif); font-size: 24px; font-weight: 700;
+                      letter-spacing: 2px; line-height: 1.4;">日记详情页标题</div>
+          <div class="meta">24 / 700 / +2</div>
+        </div>
+        <div class="type-row">
+          <div class="key">小标题</div>
+          <div style="font-family: var(--font-serif); font-size: 17px; font-weight: 700;
+                      letter-spacing: 0.5px;">列表卡片标题</div>
+          <div class="meta">17 / 700 / +0.5</div>
+        </div>
+        <div class="type-row">
+          <div class="key">正文</div>
+          <div style="font-family: var(--font-sans); font-size: 15px;
+                      line-height: 1.8; color: var(--ink-2);">
+            日记内容正文使用 15 / 1.8 行高，最适合中文长文段阅读。</div>
+          <div class="meta">15 / 400 / 1.8</div>
+        </div>
+        <div class="type-row">
+          <div class="key">注釋</div>
+          <div style="font-family: var(--font-sans); font-size: 12px; color: var(--ink-4);">
+            时间、字数、提示文字</div>
+          <div class="meta">12 / 400</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 印章标签 -->
+    <section class="section">
+      <div class="section-title">
+        <span class="num">叁</span>
+        <h2>印章标签</h2>
+        <p>20 个国学主题标签 · 以朱砂红边框 + 衬线字呼应印章质感</p>
+      </div>
+
+      <div class="card" style="padding: 28px;">
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <span class="seal-tag lg">积极主动</span>
+          <span class="seal-tag lg">以终为始</span>
+          <span class="seal-tag lg">要事第一</span>
+          <span class="seal-tag lg">双赢思维</span>
+          <span class="seal-tag lg">移情聆听</span>
+          <span class="seal-tag lg">统合综效</span>
+          <span class="seal-tag lg">知止有定</span>
+          <span class="seal-tag lg">修身为本</span>
+          <span class="seal-tag lg">格物致知</span>
+          <span class="seal-tag lg">君子慎独</span>
+          <span class="seal-tag lg">诚中形外</span>
+          <span class="seal-tag lg">十目所视</span>
+          <span class="seal-tag lg">有斐君子</span>
+          <span class="seal-tag lg">克明峻德</span>
+          <span class="seal-tag lg">日新又新</span>
+          <span class="seal-tag lg">听讼无讼</span>
+          <span class="seal-tag lg">正心修身</span>
+          <span class="seal-tag lg">絜矩之道</span>
+          <span class="seal-tag lg">生财有道</span>
+          <span class="seal-tag lg">以义为利</span>
+        </div>
+
+        <div style="height: 0.5px; background: rgba(126,102,64,0.14); margin: 24px 0;"></div>
+
+        <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+          <span class="seal-tag">默认</span>
+          <span class="seal-tag" style="background: var(--vermilion); color: #fff;">选中</span>
+          <span class="seal-tag muted">禁用 / 灰态</span>
+          <span class="seal-tag lg">大尺寸 · 详情页</span>
+          <span style="font-size: 12px; color: var(--ink-4); margin-left: 8px;">
+            高 22px / 大尺寸 26px · 1.2px 朱砂边 · 字距 +1
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. 权限标识 -->
+    <section class="section">
+      <div class="section-title">
+        <span class="num">肆</span>
+        <h2>权限与会员</h2>
+        <p>公众 / 会员 / 私密 — 三态视觉差异明确</p>
+      </div>
+
+      <div class="grid g-3">
+        <div class="card" style="display: flex; flex-direction: column; gap: 12px;">
+          <span class="perm-badge perm-public" style="align-self: flex-start;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+            公众
+          </span>
+          <div style="font-family: var(--font-serif); font-size: 16px; color: var(--ink);">
+            所有用户可见
+          </div>
+          <div style="font-size: 12px; color: var(--ink-3); line-height: 1.6;">
+            出现在「醒书广场」首页，匿名游客也可浏览，
+            是日记的默认权限。
+          </div>
+        </div>
+
+        <div class="card" style="display: flex; flex-direction: column; gap: 12px;
+                                  border-color: var(--gold);
+                                  background: linear-gradient(180deg, #FFFBED, #FFFCF5 70%);">
+          <span class="perm-badge perm-member" style="align-self: flex-start;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+            会员
+          </span>
+          <div style="font-family: var(--font-serif); font-size: 16px; color: var(--ink);">
+            仅会员可见
+          </div>
+          <div style="font-size: 12px; color: var(--ink-3); line-height: 1.6;">
+            卡片金色描边强化辨识度。普通用户点击时
+            弹出「开通会员」引导，是商业化抓手。
+          </div>
+        </div>
+
+        <div class="card" style="display: flex; flex-direction: column; gap: 12px;
+                                  background: var(--paper-deep); border-style: dashed;
+                                  border-color: var(--ink-5);">
+          <span class="perm-badge perm-private" style="align-self: flex-start;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><rect x="4" y="11" width="16" height="10" rx="1.5"/><path d="M8 11V7a4 4 0 1 1 8 0v4"/></svg>
+            私密
+          </span>
+          <div style="font-family: var(--font-serif); font-size: 16px; color: var(--ink);">
+            仅自己可见
+          </div>
+          <div style="font-size: 12px; color: var(--ink-3); line-height: 1.6;">
+            麻纸底色 + 虚线边，唯一不出现在广场的权限，
+            仅在「我的日记」中露面。
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. 组件 -->
+    <section class="section">
+      <div class="section-title">
+        <span class="num">伍</span>
+        <h2>按钮 · 输入 · 反馈</h2>
+        <p>统一的圆角 / 字号 / 间距</p>
+      </div>
+
+      <div class="grid g-2">
+        <div class="card">
+          <div class="label-sm">按钮</div>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+            <button class="btn btn-primary">发布日记</button>
+            <button class="btn btn-blue">微信支付</button>
+            <button class="btn btn-ghost">取消</button>
+            <button class="btn btn-primary" disabled>禁用</button>
+          </div>
+          <div style="font-size: 11px; color: var(--ink-4); font-family: 'SF Mono', monospace;
+                      padding-top: 12px; border-top: 0.5px solid rgba(126,102,64,0.14);">
+            R 10px · padding 10/18 · 15/500
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label-sm">输入</div>
+          <div style="display: flex; gap: 8px; margin-bottom: 14px; align-items: center;
+                      background: var(--paper-2); border-radius: 999px; padding: 8px 14px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7A746A" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3" stroke-linecap="round"/></svg>
+            <input class="input-field" placeholder="搜索标题或内容" style="font-size: 14px; padding: 0;"/>
+          </div>
+          <input class="input-field" placeholder="日记标题（最多 30 字）"
+                 style="background: var(--paper-2); padding: 10px 14px; border-radius: 8px; font-size: 14px;"/>
+        </div>
+      </div>
+
+      <div class="grid g-3" style="margin-top: 16px;">
+        <div class="card" style="text-align: center; padding: 24px;">
+          <div class="label-sm">主按钮 FAB</div>
+          <div style="position: relative; height: 80px; display: flex; align-items: center; justify-content: center;">
+            <div style="width: 54px; height: 54px; border-radius: 50%; background: var(--ink);
+                        color: var(--paper); display: flex; align-items: center; justify-content: center;
+                        box-shadow: 0 8px 24px rgba(42,39,35,0.32);">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="text-align: center; padding: 24px;">
+          <div class="label-sm">操作反馈 · Toast</div>
+          <div style="height: 80px; display: flex; align-items: center; justify-content: center;">
+            <div style="background: rgba(42,39,35,0.92); color: var(--paper);
+                        padding: 10px 18px; border-radius: 999px; font-size: 14px;">
+              已收藏
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="text-align: center; padding: 24px;">
+          <div class="label-sm">会员徽章</div>
+          <div style="height: 80px; display: flex; align-items: center; justify-content: center;">
+            <span class="member-chip" style="font-size: 13px; padding: 4px 12px;">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg>
+              會員 · 剩餘 286 天
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. 卡片 -->
+    <section class="section">
+      <div class="section-title">
+        <span class="num">陸</span>
+        <h2>日记卡片</h2>
+        <p>列表 / 详情 / 海报 共用同一视觉语言</p>
+      </div>
+
+      <div class="grid g-3">
+        <div>
+          <div class="label-sm">普通日记 · 公众</div>
+          <div class="diary-card" style="cursor: default;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <div class="avatar" style="background: oklch(0.55 0.08 35); width: 36px; height: 36px; font-size: 15px;">砚</div>
+              <div style="flex: 1;">
+                <div style="font-family: var(--font-serif); font-size: 14px; color: var(--ink);">砚秋</div>
+                <div style="font-size: 11px; color: var(--ink-4);">今天 06:42</div>
+              </div>
+              <span class="perm-badge perm-public">公众</span>
+            </div>
+            <div style="font-family: var(--font-serif); font-size: 17px; font-weight: 700; line-height: 1.45; margin-bottom: 6px; letter-spacing: 0.5px;">晨起读《大学》三十分钟</div>
+            <div style="font-size: 13.5px; line-height: 1.7; color: var(--ink-2); margin-bottom: 12px;">
+              今日五点半起床，泡一壶老白茶，翻开《大学》。"知止而后有定，定而后能静……"
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <span class="seal-tag">修身为本</span>
+              <span class="seal-tag">知止有定</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="label-sm">会员日记 · 金色描边</div>
+          <div class="diary-card is-member" style="cursor: default;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <div style="position: relative;">
+                <div class="avatar" style="background: oklch(0.55 0.08 200); width: 36px; height: 36px; font-size: 15px;">陆</div>
+                <div style="position: absolute; right: -2px; bottom: -2px; width: 14px; height: 14px; border-radius: 50%; background: linear-gradient(135deg, #E5C16D, #B89968); border: 1.5px solid var(--paper-card); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 8px; font-family: 'Noto Serif SC'; font-weight: 700;">会</div>
+              </div>
+              <div style="flex: 1;">
+                <div style="font-family: var(--font-serif); font-size: 14px; color: var(--ink);">陆明远</div>
+                <div style="font-size: 11px; color: var(--ink-4);">昨天 22:18</div>
+              </div>
+              <span class="perm-badge perm-member">会员</span>
+            </div>
+            <div style="font-family: var(--font-serif); font-size: 17px; font-weight: 700; line-height: 1.45; margin-bottom: 6px;">与同事一次艰难的谈话</div>
+            <div style="font-size: 13.5px; line-height: 1.7; color: var(--ink-2); margin-bottom: 12px;">
+              今天和团队成员谈绩效问题。本想直接指出问题，但提醒自己——先理解，再被理解。
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <span class="seal-tag">移情聆听</span>
+              <span class="seal-tag">双赢思维</span>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="label-sm">私密日记 · 麻纸虚线</div>
+          <div class="diary-card is-private" style="cursor: default;">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+              <div class="avatar" style="background: oklch(0.55 0.08 60); width: 36px; height: 36px; font-size: 15px;">我</div>
+              <div style="flex: 1;">
+                <div style="font-family: var(--font-serif); font-size: 14px; color: var(--ink);">我</div>
+                <div style="font-size: 11px; color: var(--ink-4);">5月10日</div>
+              </div>
+              <span class="perm-badge perm-private">私密</span>
+            </div>
+            <div style="font-family: var(--font-serif); font-size: 17px; font-weight: 700; line-height: 1.45; margin-bottom: 6px;">私密 · 关于父亲的一段记忆</div>
+            <div style="font-size: 13.5px; line-height: 1.7; color: var(--ink-2); margin-bottom: 12px;">
+              只写给自己看。父亲今天来电话，说院里的桂花树开了。
+            </div>
+            <div style="display: flex; gap: 6px;">
+              <span class="seal-tag">诚中形外</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. 间距与圆角 -->
+    <section class="section" style="border-bottom: none; padding-bottom: 0;">
+      <div class="section-title">
+        <span class="num">柒</span>
+        <h2>间距 · 圆角 · 阴影</h2>
+        <p>8 进制间距系统 · 4 档圆角 · 3 档阴影</p>
+      </div>
+
+      <div class="grid g-2">
+        <div class="card">
+          <div class="label-sm">间距标尺 (px)</div>
+          <div style="display: flex; align-items: flex-end; gap: 10px; height: 80px;">
+            <div style="text-align: center;"><div style="width: 4px; height: 4px; background: var(--ink); margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">4</span></div>
+            <div style="text-align: center;"><div style="width: 8px; height: 8px; background: var(--ink); margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">8</span></div>
+            <div style="text-align: center;"><div style="width: 12px; height: 12px; background: var(--ink); margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">12</span></div>
+            <div style="text-align: center;"><div style="width: 16px; height: 16px; background: var(--ink); margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">16</span></div>
+            <div style="text-align: center;"><div style="width: 24px; height: 24px; background: var(--ink); margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">24</span></div>
+            <div style="text-align: center;"><div style="width: 32px; height: 32px; background: var(--ink); margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">32</span></div>
+            <div style="text-align: center;"><div style="width: 40px; height: 40px; background: var(--ink); margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">40</span></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="label-sm">圆角 (R)</div>
+          <div style="display: flex; gap: 14px; align-items: flex-end;">
+            <div style="text-align: center;"><div style="width: 48px; height: 48px; background: var(--paper-2); border-radius: 4px; margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">R 4</span></div>
+            <div style="text-align: center;"><div style="width: 48px; height: 48px; background: var(--paper-2); border-radius: 8px; margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">R 8</span></div>
+            <div style="text-align: center;"><div style="width: 48px; height: 48px; background: var(--paper-2); border-radius: 14px; margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">R 14 · 卡片</span></div>
+            <div style="text-align: center;"><div style="width: 48px; height: 48px; background: var(--paper-2); border-radius: 20px; margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">R 20 · Sheet</span></div>
+            <div style="text-align: center;"><div style="width: 48px; height: 48px; background: var(--paper-2); border-radius: 50%; margin-bottom: 6px;"></div><span style="font-size: 11px; color: var(--ink-3);">∞ · 头像</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- footer -->
+    <footer style="text-align: center; padding: 56px 0 24px;
+                   font-size: 12px; color: var(--ink-4); letter-spacing: 4px;">
+      <div style="margin-bottom: 16px;">
+        <span class="seal-tag">醒書日記 · DS · v0.1</span>
+      </div>
+      <a href="index.html" style="color: var(--ink-3); text-decoration: underline;">
+        → 进入小程序原型
+      </a>
+    </footer>
+
+  </div>
+</body>
+</html>
