@@ -1,0 +1,195 @@
+.poster-sheet-wrap {
+  padding: 24rpx 32rpx 20rpx;
+}
+
+.sheet-handle {
+  width: 80rpx;
+  height: 8rpx;
+  background: #D6D0C2;
+  border-radius: 4px;
+  margin: 0 auto 24rpx;
+}
+
+/* Poster card */
+.poster-card {
+  position: relative;
+  background: #FFFCF5;
+  background-image: radial-gradient(rgba(126, 102, 64, 0.04) 1px, transparent 1px);
+  background-size: 18px 18px;
+  border: 1px solid rgba(126, 102, 64, 0.2);
+  border-radius: 8px;
+  padding: 36rpx 32rpx;
+  margin-bottom: 24rpx;
+}
+
+/* Corners */
+.corner {
+  position: absolute;
+  width: 20rpx;
+  height: 20rpx;
+}
+
+.corner-tl {
+  top: 12rpx;
+  left: 12rpx;
+  border-top: 1.5px solid rgba(126, 102, 64, 0.4);
+  border-left: 1.5px solid rgba(126, 102, 64, 0.4);
+}
+
+.corner-tr {
+  top: 12rpx;
+  right: 12rpx;
+  border-top: 1.5px solid rgba(126, 102, 64, 0.4);
+  border-right: 1.5px solid rgba(126, 102, 64, 0.4);
+}
+
+.corner-bl {
+  bottom: 12rpx;
+  left: 12rpx;
+  border-bottom: 1.5px solid rgba(126, 102, 64, 0.4);
+  border-left: 1.5px solid rgba(126, 102, 64, 0.4);
+}
+
+.corner-br {
+  bottom: 12rpx;
+  right: 12rpx;
+  border-bottom: 1.5px solid rgba(126, 102, 64, 0.4);
+  border-right: 1.5px solid rgba(126, 102, 64, 0.4);
+}
+
+/* Header */
+.poster-header {
+  text-align: center;
+  margin-bottom: 20rpx;
+}
+
+.poster-brand {
+  font-size: 28rpx;
+  color: #B6452F;
+  letter-spacing: 4px;
+}
+
+/* Title */
+.poster-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #2A2723;
+  line-height: 1.45;
+  margin-bottom: 18rpx;
+  text-align: center;
+}
+
+/* Content */
+.poster-content {
+  font-size: 26rpx;
+  color: #4A453E;
+  line-height: 1.8;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+  margin-bottom: 18rpx;
+}
+
+/* Tags */
+.poster-tags {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-bottom: 20rpx;
+  justify-content: center;
+}
+
+/* Divider */
+.poster-divider {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10rpx;
+  margin-bottom: 20rpx;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(126, 102, 64, 0.15);
+}
+
+.divider-dot {
+  font-size: 16rpx;
+  color: rgba(126, 102, 64, 0.35);
+}
+
+/* Author row */
+.poster-author-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.poster-author-info {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.poster-author-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #2A2723;
+  display: block;
+}
+
+.poster-time {
+  font-size: 22rpx;
+  color: #A8A39B;
+  display: block;
+}
+
+/* QR placeholder */
+.qr-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6rpx;
+}
+
+.qr-grid {
+  width: 52rpx;
+  height: 52rpx;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rpx;
+}
+
+.qr-dot {
+  border-radius: 1px;
+}
+
+.qr-dark {
+  background: #2A2723;
+}
+
+.qr-light {
+  background: #D6D0C2;
+}
+
+.qr-label {
+  font-size: 18rpx;
+  color: #A8A39B;
+}
+
+/* Action buttons */
+.poster-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 16rpx;
+}
+
+.poster-btn {
+  flex: 1;
+  font-size: 28rpx;
+}

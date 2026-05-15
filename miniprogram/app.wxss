@@ -1,0 +1,208 @@
+/* ===== Global Reset ===== */
+page {
+  font-family: 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+  color: #2A2723;
+  background-color: #FBF7EE;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* ===== Paper Background ===== */
+.paper-bg {
+  background-color: #FBF7EE;
+  background-image: radial-gradient(rgba(126, 102, 64, 0.045) 1px, transparent 1px),
+    radial-gradient(rgba(126, 102, 64, 0.03) 1px, transparent 1px);
+  background-size: 22px 22px, 38px 38px;
+  background-position: 0 0, 11px 19px;
+}
+
+/* ===== Seal Tags ===== */
+.seal-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  font-size: 24rpx;
+  color: #B6452F;
+  letter-spacing: 1px;
+  border: 1.2px solid #B6452F;
+  background: rgba(182, 69, 47, 0.04);
+  border-radius: 2px;
+  white-space: nowrap;
+  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+}
+
+.seal-tag.lg {
+  font-size: 26rpx;
+  padding: 3px 10px;
+}
+
+.seal-tag.selected {
+  background: #B6452F;
+  color: #fff;
+}
+
+/* ===== Permission Badges ===== */
+.perm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 22rpx;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+
+.perm-public {
+  color: #5B8F6C;
+  background: rgba(91, 143, 108, 0.1);
+}
+
+.perm-member {
+  color: #9A7E4F;
+  background: #F4ECD9;
+}
+
+.perm-private {
+  color: #7A746A;
+  background: #EFE7D4;
+}
+
+/* ===== Buttons ===== */
+.btn-primary {
+  background: #2A2723;
+  color: #FBF7EE;
+  padding: 20rpx 36rpx;
+  border-radius: 10px;
+  font-size: 30rpx;
+  font-weight: 500;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #4A453E;
+  padding: 20rpx 36rpx;
+  border-radius: 10px;
+  border: 1px solid #D6D0C2;
+  font-size: 30rpx;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-gold {
+  background: linear-gradient(135deg, #F4ECD9, #E8D4A8);
+  color: #9A7E4F;
+  padding: 20rpx 36rpx;
+  border-radius: 10px;
+  border: 1px solid #B89968;
+  font-size: 30rpx;
+  font-weight: 600;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ===== Member Chip ===== */
+.member-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 16rpx;
+  border-radius: 20rpx;
+  background: linear-gradient(135deg, #F4ECD9, #FAE6BB);
+  color: #9A7E4F;
+  font-size: 22rpx;
+  font-weight: 600;
+}
+
+/* ===== Sheet Overlay ===== */
+.sheet-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(42, 39, 35, 0.45);
+  z-index: 100;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #FFFCF5;
+  border-radius: 20px 20px 0 0;
+  padding: 40rpx;
+  z-index: 101;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+/* ===== Avatar ===== */
+.avatar {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #fff;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.avatar.sm {
+  width: 56rpx;
+  height: 56rpx;
+  font-size: 22rpx;
+}
+
+.avatar.lg {
+  width: 96rpx;
+  height: 96rpx;
+  font-size: 36rpx;
+}
+
+/* ===== Typography ===== */
+.serif {
+  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+}
+
+.ink { color: #2A2723; }
+.ink-2 { color: #4A453E; }
+.ink-3 { color: #7A746A; }
+.ink-4 { color: #A8A39B; }
+.ink-5 { color: #D6D0C2; }
+
+/* ===== Divider ===== */
+.divider {
+  height: 1px;
+  background: rgba(126, 102, 64, 0.1);
+  margin: 20rpx 0;
+}
+
+/* ===== Section Label ===== */
+.section-label {
+  font-size: 24rpx;
+  color: #A8A39B;
+  letter-spacing: 1px;
+  margin-bottom: 16rpx;
+}
+
+/* ===== Safe area ===== */
+.safe-bottom {
+  height: env(safe-area-inset-bottom);
+}

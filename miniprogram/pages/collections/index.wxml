@@ -1,0 +1,64 @@
+<view class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px;"></view>
+
+  <!-- Header -->
+  <view class="page-header">
+    <view class="header-top">
+      <text class="page-title serif">我的收藏</text>
+    </view>
+    <view class="search-row">
+      <view class="search-bar">
+        <text class="search-icon">⊙</text>
+        <input
+          class="search-input"
+          placeholder="搜索收藏的日记"
+          placeholder-style="color: #A8A39B; font-size: 28rpx;"
+          value="{{search}}"
+          bindinput="onSearchInput"
+        />
+        <text wx:if="{{search}}" class="search-clear" bindtap="onSearchClear">✕</text>
+      </view>
+      <view class="filter-btn {{filtersActive ? 'filter-active' : ''}}" bindtap="onOpenFilter">
+        <text class="filter-icon">≡</text>
+        <view wx:if="{{filtersActive}}" class="filter-dot"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Diary list -->
+  <scroll-view class="diary-list" scroll-y enhanced show-scrollbar="{{false}}">
+    <view wx:if="{{diaries.length === 0}}" class="empty-state">
+      <text class="empty-icon">◇</text>
+      <text class="empty-text">暂无收藏</text>
+      <text class="empty-hint">在广场中点击书签即可收藏</text>
+    </view>
+    <diary-card
+      wx:for="{{diaries}}"
+      wx:key="id"
+      diary="{{item}}"
+      show-actions="{{false}}"
+      bind:open="onCardOpen"
+      bind:like="onCardLike"
+      bind:fav="onCardFav"
+    ></diary-card>
+    <view class="list-bottom-pad"></view>
+  </scroll-view>
+
+  <!-- Filter sheet -->
+  <filter-sheet
+    visible="{{showFilterSheet}}"
+    filters="{{filters}}"
+    all-tags="{{allTags}}"
+    bind:close="onCloseFilter"
+    bind:apply="onApplyFilter"
+  ></filter-sheet>
+
+  <!-- Member guard -->
+  <member-guard
+    visible="{{showMemberGuard}}"
+    identity="{{userIdentity}}"
+    bind:close="onCloseMemberGuard"
+    bind:authorize="onGuardAuthorize"
+    bind:joinMember="onGuardJoinMember"
+  ></member-guard>
+</view>

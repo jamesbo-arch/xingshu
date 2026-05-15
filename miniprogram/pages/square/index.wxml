@@ -1,0 +1,83 @@
+<view class="page-wrap paper-bg">
+  <!-- Status bar spacer -->
+  <view style="height: {{statusBarHeight}}px;"></view>
+
+  <!-- Custom header -->
+  <view class="page-header">
+    <view class="header-top">
+      <text class="page-title serif">醒書廣場</text>
+      <view class="member-chip" bindtap="onGoMember">
+        <text>★</text>
+        <text>会员</text>
+      </view>
+    </view>
+
+    <!-- Search bar -->
+    <view class="search-row">
+      <view class="search-bar">
+        <text class="search-icon">⊙</text>
+        <input
+          class="search-input"
+          placeholder="搜索日记标题或内容"
+          placeholder-style="color: #A8A39B; font-size: 28rpx;"
+          value="{{search}}"
+          bindinput="onSearchInput"
+        />
+        <text wx:if="{{search}}" class="search-clear" bindtap="onSearchClear">✕</text>
+      </view>
+      <view class="filter-btn {{filtersActive ? 'filter-active' : ''}}" bindtap="onOpenFilter">
+        <text class="filter-icon">≡</text>
+        <view wx:if="{{filtersActive}}" class="filter-dot"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Diary list -->
+  <scroll-view class="diary-list" scroll-y enhanced show-scrollbar="{{false}}">
+    <view wx:if="{{diaries.length === 0}}" class="empty-state">
+      <text class="empty-icon">○</text>
+      <text class="empty-text">暂无日记</text>
+    </view>
+    <diary-card
+      wx:for="{{diaries}}"
+      wx:key="id"
+      diary="{{item}}"
+      show-actions="{{false}}"
+      bind:open="onCardOpen"
+      bind:like="onCardLike"
+      bind:fav="onCardFav"
+      bind:share="onCardShare"
+    ></diary-card>
+    <view class="list-bottom-pad"></view>
+  </scroll-view>
+
+  <!-- FAB -->
+  <view class="fab" bindtap="onFabTap">
+    <text class="fab-icon">✎</text>
+  </view>
+
+  <!-- Filter sheet -->
+  <filter-sheet
+    visible="{{showFilterSheet}}"
+    filters="{{filters}}"
+    all-tags="{{allTags}}"
+    bind:close="onCloseFilter"
+    bind:apply="onApplyFilter"
+  ></filter-sheet>
+
+  <!-- Poster sheet -->
+  <poster-sheet
+    visible="{{showPosterSheet}}"
+    diary="{{posterDiary}}"
+    bind:close="onClosePoster"
+  ></poster-sheet>
+
+  <!-- Member guard -->
+  <member-guard
+    visible="{{showMemberGuard}}"
+    identity="{{userIdentity}}"
+    bind:close="onCloseMemberGuard"
+    bind:authorize="onGuardAuthorize"
+    bind:joinMember="onGuardJoinMember"
+  ></member-guard>
+</view>

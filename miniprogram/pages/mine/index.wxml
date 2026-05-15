@@ -1,0 +1,62 @@
+<view class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px;"></view>
+
+  <!-- Header -->
+  <view class="page-header">
+    <view class="header-top">
+      <text class="page-title serif">我的日記</text>
+    </view>
+    <view class="search-row">
+      <view class="search-bar">
+        <text class="search-icon">⊙</text>
+        <input
+          class="search-input"
+          placeholder="搜索我的日记"
+          placeholder-style="color: #A8A39B; font-size: 28rpx;"
+          value="{{search}}"
+          bindinput="onSearchInput"
+        />
+        <text wx:if="{{search}}" class="search-clear" bindtap="onSearchClear">✕</text>
+      </view>
+      <view class="filter-btn {{filtersActive ? 'filter-active' : ''}}" bindtap="onOpenFilter">
+        <text class="filter-icon">≡</text>
+        <view wx:if="{{filtersActive}}" class="filter-dot"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Diary list -->
+  <scroll-view class="diary-list" scroll-y enhanced show-scrollbar="{{false}}">
+    <view wx:if="{{diaries.length === 0}}" class="empty-state">
+      <text class="empty-icon">✎</text>
+      <text class="empty-text">还没有日记</text>
+      <text class="empty-hint">点击右下角按钮开始写作</text>
+    </view>
+    <diary-card
+      wx:for="{{diaries}}"
+      wx:key="id"
+      diary="{{item}}"
+      show-actions="{{true}}"
+      bind:open="onCardOpen"
+      bind:like="onCardLike"
+      bind:fav="onCardFav"
+      bind:edit="onCardEdit"
+      bind:delete="onCardDelete"
+    ></diary-card>
+    <view class="list-bottom-pad"></view>
+  </scroll-view>
+
+  <!-- FAB -->
+  <view class="fab" bindtap="onFabTap">
+    <text class="fab-icon">✎</text>
+  </view>
+
+  <!-- Filter sheet -->
+  <filter-sheet
+    visible="{{showFilterSheet}}"
+    filters="{{filters}}"
+    all-tags="{{allTags}}"
+    bind:close="onCloseFilter"
+    bind:apply="onApplyFilter"
+  ></filter-sheet>
+</view>

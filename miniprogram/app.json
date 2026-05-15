@@ -1,0 +1,32 @@
+{
+  "pages": [
+    "pages/square/index",
+    "pages/collections/index",
+    "pages/mine/index",
+    "pages/member/index",
+    "pages/detail/index",
+    "pages/compose/index"
+  ],
+  "tabBar": {
+    "custom": true,
+    "color": "#A8A39B",
+    "selectedColor": "#2A2723",
+    "backgroundColor": "#FBF7EE",
+    "borderStyle": "white",
+    "list": [
+      { "pagePath": "pages/square/index", "text": "醒书广场" },
+      { "pagePath": "pages/collections/index", "text": "我的收藏" },
+      { "pagePath": "pages/mine/index", "text": "我的日记" },
+      { "pagePath": "pages/member/index", "text": "会员中心" }
+    ]
+  },
+  "window": {
+    "backgroundTextStyle": "dark",
+    "navigationBarBackgroundColor": "#FBF7EE",
+    "navigationBarTitleText": "醒书日记",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#FBF7EE"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

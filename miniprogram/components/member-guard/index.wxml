@@ -1,0 +1,48 @@
+<view wx:if="{{visible}}">
+  <view class="sheet-mask" bindtap="onClose"></view>
+  <view class="sheet guard-sheet" catchtap="">
+    <view class="sheet-handle"></view>
+
+    <!-- Icon -->
+    <view class="guard-icon-wrap">
+      <view class="guard-icon-ring">
+        <text class="guard-star">★</text>
+      </view>
+    </view>
+
+    <text class="guard-title serif">会员专享内容</text>
+    <text class="guard-desc">此日记作者设为仅会员可见，开通会员后即可阅读全部内容。</text>
+
+    <!-- Guest: authorize first, then join member -->
+    <block wx:if="{{identity === 'guest'}}">
+      <view class="guard-tag-row">
+        <text class="guard-tag">当前身份：游客</text>
+        <text class="guard-tag-sep">·</text>
+        <text class="guard-tag">未授权手机号</text>
+      </view>
+      <view class="guard-primary-btn" bindtap="onAuthorize">
+        <text>微信授权手机号 · 解锁账号</text>
+      </view>
+      <view class="guard-ghost-btn" bindtap="onJoinMember">
+        <text>了解如何成为会员</text>
+      </view>
+    </block>
+
+    <!-- Authed user: just join member -->
+    <block wx:elif="{{identity === 'authed'}}">
+      <view class="guard-tag-row">
+        <text class="guard-tag">当前身份：普通用户</text>
+        <text class="guard-tag-sep">·</text>
+        <text class="guard-tag">暂未开通会员</text>
+      </view>
+      <view class="guard-primary-btn" bindtap="onJoinMember">
+        <text>了解如何成为会员</text>
+      </view>
+      <view class="guard-ghost-btn" bindtap="onClose">
+        <text>暂不开通</text>
+      </view>
+    </block>
+
+    <view class="safe-bottom"></view>
+  </view>
+</view>

@@ -1,0 +1,195 @@
+.diary-card {
+  background: #FFFCF5;
+  border-radius: 14px;
+  border: 0.5px solid rgba(126, 102, 64, 0.14);
+  padding: 28rpx 28rpx 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.card-member {
+  background: linear-gradient(180deg, #FFFBED, #FFFCF5 70%);
+  border: 1px solid #B89968;
+}
+
+.card-private {
+  background: #EFE7D4;
+  border: 1px dashed rgba(126, 102, 64, 0.35);
+}
+
+/* Header */
+.card-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14rpx;
+  margin-bottom: 16rpx;
+}
+
+.avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22rpx;
+  color: #fff;
+  font-weight: 600;
+}
+
+.member-badge {
+  position: absolute;
+  bottom: -2rpx;
+  right: -2rpx;
+  width: 22rpx;
+  height: 22rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #F4ECD9, #C9A14A);
+  border: 1px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.member-badge-text {
+  font-size: 14rpx;
+  color: #9A7E4F;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.card-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rpx;
+}
+
+.author-name {
+  font-size: 26rpx;
+  font-weight: 600;
+  color: #2A2723;
+}
+
+.card-time {
+  font-size: 22rpx;
+  color: #A8A39B;
+}
+
+/* Title */
+.card-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #2A2723;
+  line-height: 1.4;
+  margin-bottom: 12rpx;
+  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+}
+
+/* Content preview */
+.card-content {
+  font-size: 28rpx;
+  color: #4A453E;
+  line-height: 1.7;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  margin-bottom: 16rpx;
+}
+
+/* Tags */
+.card-tags {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+/* Stats row */
+.card-stats {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12rpx;
+  border-top: 1px solid rgba(126, 102, 64, 0.08);
+}
+
+.stats-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 28rpx;
+}
+
+.stats-right {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 6rpx;
+  padding: 4rpx 8rpx;
+}
+
+.stat-icon {
+  font-size: 28rpx;
+  color: #A8A39B;
+}
+
+.stat-icon.liked {
+  color: #C25A4E;
+}
+
+.stat-icon.faved {
+  color: #C9A14A;
+}
+
+.stat-count {
+  font-size: 24rpx;
+  color: #A8A39B;
+}
+
+.stat-count.liked {
+  color: #C25A4E;
+}
+
+.stat-count.faved {
+  color: #C9A14A;
+}
+
+/* Action buttons for mine page */
+.action-btns {
+  display: flex;
+  flex-direction: row;
+  gap: 12rpx;
+}
+
+.action-btn {
+  padding: 6rpx 20rpx;
+  border-radius: 6px;
+  font-size: 24rpx;
+}
+
+.edit-btn {
+  background: rgba(69, 119, 164, 0.1);
+  color: #4577A4;
+  border: 1px solid rgba(69, 119, 164, 0.25);
+}
+
+.delete-btn {
+  background: rgba(182, 69, 47, 0.08);
+  color: #B6452F;
+  border: 1px solid rgba(182, 69, 47, 0.2);
+}

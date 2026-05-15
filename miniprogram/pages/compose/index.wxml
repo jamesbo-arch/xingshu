@@ -1,0 +1,114 @@
+<view class="page-wrap paper-bg">
+  <!-- Status bar spacer -->
+  <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
+  <!-- Custom nav bar -->
+  <view class="compose-nav">
+    <view class="nav-back" bindtap="onBack">
+      <text class="nav-back-icon">←</text>
+    </view>
+    <text class="nav-title serif">{{isEditing ? '编辑日记' : '新建日记'}}</text>
+    <view
+      class="nav-publish {{title && content ? '' : 'disabled'}}"
+      bindtap="onPublish"
+    >
+      <text>{{isEditing ? '保存' : '发布'}}</text>
+    </view>
+  </view>
+
+  <scroll-view class="compose-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- Title input -->
+    <view class="title-wrap">
+      <input
+        class="title-input serif"
+        placeholder="日记标题"
+        placeholder-style="color: #D6D0C2; font-size: 44rpx; font-family: 'Songti SC','STSong','SimSun',serif;"
+        value="{{title}}"
+        bindinput="onTitleInput"
+        maxlength="{{maxTitle}}"
+      />
+      <text class="title-counter">{{title.length}}/{{maxTitle}}</text>
+    </view>
+
+    <view class="compose-divider"></view>
+
+    <!-- Content textarea -->
+    <view class="content-wrap">
+      <textarea
+        class="content-input"
+        placeholder="写下今日所思所感…"
+        placeholder-style="color: #D6D0C2; font-size: 30rpx;"
+        value="{{content}}"
+        bindinput="onContentInput"
+        maxlength="{{maxContent}}"
+        auto-height
+        show-confirm-bar="{{false}}"
+      />
+      <text class="content-counter">{{content.length}}/{{maxContent}}</text>
+    </view>
+
+    <!-- Tags section -->
+    <view class="section-block">
+      <text class="section-label">主题标签</text>
+      <view class="tags-wrap">
+        <text
+          wx:for="{{selectedTags}}"
+          wx:key="*this"
+          class="seal-tag selected removable"
+          data-tag="{{item}}"
+          bindtap="removeTag"
+        >{{item}} ×</text>
+        <view class="add-tag-btn" bindtap="onOpenTagPicker">
+          <text class="add-tag-icon">+</text>
+          <text class="add-tag-text">添加</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Permission selector -->
+    <view class="section-block">
+      <text class="section-label">可见范围</text>
+      <view class="perm-options">
+        <view
+          wx:for="{{permOptions}}"
+          wx:key="key"
+          class="perm-option {{permission === item.key ? 'selected' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="setPermission"
+        >
+          <text class="perm-option-icon">{{item.icon}}</text>
+          <view class="perm-option-info">
+            <text class="perm-option-label">{{item.label}}</text>
+            <text class="perm-option-desc">{{item.desc}}</text>
+          </view>
+          <view wx:if="{{permission === item.key}}" class="perm-check">
+            <text>✓</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="compose-bottom-pad"></view>
+  </scroll-view>
+
+  <!-- Tag picker sheet -->
+  <view wx:if="{{showTagPicker}}">
+    <view class="sheet-mask" bindtap="onCloseTagPicker"></view>
+    <view class="sheet tag-picker-sheet" catchtap="">
+      <view class="sheet-handle"></view>
+      <text class="tag-picker-title serif">选择标签</text>
+      <view class="tag-picker-grid">
+        <text
+          wx:for="{{allTags}}"
+          wx:key="*this"
+          class="seal-tag {{pickerSelectedTags.indexOf(item) >= 0 ? 'selected' : ''}}"
+          data-tag="{{item}}"
+          bindtap="togglePickerTag"
+        >{{item}}</text>
+      </view>
+      <view class="tag-picker-btns">
+        <view class="btn-ghost tag-picker-btn" bindtap="onClearPickerTags">清除</view>
+        <view class="btn-primary tag-picker-btn" bindtap="onConfirmTags">确认 ({{pickerSelectedTags.length}})</view>
+      </view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,141 @@
+<view class="page-wrap paper-bg" wx:if="{{diary}}">
+  <scroll-view class="content-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- Title -->
+    <view class="detail-title-wrap">
+      <text class="detail-title serif">{{diary.title}}</text>
+    </view>
+
+    <!-- Author meta -->
+    <view class="author-row">
+      <view class="avatar-wrap">
+        <view class="avatar sm" style="background-color: {{avatarColor}};">
+          <text>{{avatarInitial}}</text>
+        </view>
+        <view wx:if="{{diary.authorIsMember}}" class="member-badge">
+          <text class="member-badge-text">会</text>
+        </view>
+      </view>
+      <view class="author-meta">
+        <text class="author-name">{{diary.author}}</text>
+        <text class="author-time">{{diary.timestamp}}</text>
+      </view>
+      <view class="perm-badge {{diary.permission === 'public' ? 'perm-public' : ''}} {{diary.permission === 'member' ? 'perm-member' : ''}} {{diary.permission === 'private' ? 'perm-private' : ''}}">
+        <text wx:if="{{diary.permission === 'public'}}">公众</text>
+        <text wx:if="{{diary.permission === 'member'}}">会员</text>
+        <text wx:if="{{diary.permission === 'private'}}">私密</text>
+      </view>
+    </view>
+
+    <!-- Tags -->
+    <view class="detail-tags" wx:if="{{diary.tags && diary.tags.length}}">
+      <text
+        wx:for="{{diary.tags}}"
+        wx:key="*this"
+        class="seal-tag lg"
+      >{{item}}</text>
+    </view>
+
+    <!-- Body content -->
+    <view class="detail-content">
+      <text class="content-text">{{diary.content}}</text>
+    </view>
+
+    <!-- Seal stamp -->
+    <view class="seal-stamp-wrap">
+      <view class="seal-stamp">
+        <text class="seal-stamp-text serif">{{diary.author}}</text>
+      </view>
+    </view>
+
+    <!-- Comments section -->
+    <view class="comments-section">
+      <view class="comments-header">
+        <text class="comments-title">评论</text>
+        <text class="comments-count ink-3">· {{diary.comments}}</text>
+      </view>
+
+      <view wx:if="{{comments.length === 0}}" class="comments-empty">
+        <text class="comments-empty-text">暂无评论，来说点什么吧</text>
+      </view>
+
+      <view wx:for="{{comments}}" wx:key="id" class="comment-item">
+        <view class="comment-avatar">
+          <view
+            class="avatar sm"
+            style="background-color: {{item.avatarHue !== undefined ? 'hsl(' + item.avatarHue + ',30%,45%)' : '#8B7A4A'}};"
+          >
+            <text>{{item.user ? item.user[0] : '?'}}</text>
+          </view>
+        </view>
+        <view class="comment-body">
+          <view class="comment-header-row">
+            <text class="comment-user {{item.isMine ? 'comment-mine' : ''}}">{{item.user}}</text>
+            <text class="comment-time">{{item.time}}</text>
+          </view>
+          <text class="comment-content">{{item.content}}</text>
+
+          <!-- Replies -->
+          <view wx:if="{{item.replies && item.replies.length}}" class="replies-wrap">
+            <view wx:for="{{item.replies}}" wx:key="id" wx:for-item="reply" class="reply-item">
+              <view
+                class="avatar"
+                style="width: 40rpx; height: 40rpx; font-size: 18rpx; background-color: hsl({{reply.avatarHue}},30%,45%);"
+              >
+                <text>{{reply.user ? reply.user[0] : '?'}}</text>
+              </view>
+              <view class="reply-body">
+                <text class="reply-user">{{reply.user}}</text>
+                <text class="reply-content">{{reply.content}}</text>
+                <text class="reply-time">{{reply.time}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="bottom-content-pad"></view>
+  </scroll-view>
+
+  <!-- Bottom action bar -->
+  <view class="bottom-bar">
+    <view class="comment-trigger" bindtap="onShowCommentInput">
+      <text class="comment-trigger-icon">✎</text>
+      <text class="comment-trigger-text">写评论…</text>
+    </view>
+    <view class="bar-actions">
+      <view class="bar-action" bindtap="onLike">
+        <text class="bar-action-icon {{diary.isLiked ? 'liked' : ''}}">{{diary.isLiked ? '♥' : '♡'}}</text>
+        <text class="bar-action-count {{diary.isLiked ? 'liked' : ''}}">{{diary.likes}}</text>
+      </view>
+      <view class="bar-action" bindtap="onFav">
+        <text class="bar-action-icon {{diary.isFavorited ? 'faved' : ''}}">{{diary.isFavorited ? '◆' : '◇'}}</text>
+        <text class="bar-action-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.favorites}}</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Comment input overlay -->
+  <view wx:if="{{showCommentInput}}" class="comment-overlay">
+    <view class="comment-overlay-mask" bindtap="onHideCommentInput"></view>
+    <view class="comment-input-bar">
+      <view class="avatar sm" style="background-color: {{userAvatarColor}}; flex-shrink: 0;">
+        <text>{{userAvatarInitial}}</text>
+      </view>
+      <input
+        class="comment-real-input"
+        placeholder="说点什么…"
+        placeholder-style="color: #A8A39B;"
+        value="{{commentInput}}"
+        bindinput="onCommentInput"
+        focus="{{showCommentInput}}"
+        confirm-type="send"
+        bindconfirm="onSubmitComment"
+      />
+      <view
+        class="comment-submit {{commentInput ? 'active' : ''}}"
+        bindtap="onSubmitComment"
+      >发送</view>
+    </view>
+  </view>
+</view>

@@ -1,0 +1,73 @@
+<view
+  class="diary-card {{diary.permission === 'member' ? 'card-member' : ''}} {{diary.permission === 'private' ? 'card-private' : ''}}"
+  bindtap="onTap"
+>
+  <!-- Header: avatar + author + time + perm badge -->
+  <view class="card-header">
+    <view class="avatar-wrap">
+      <view class="avatar sm" style="background-color: {{avatarColor}};">
+        <text>{{avatarInitial}}</text>
+      </view>
+      <view wx:if="{{diary.authorIsMember}}" class="member-badge">
+        <text class="member-badge-text">会</text>
+      </view>
+    </view>
+    <view class="card-meta">
+      <text class="author-name">{{diary.author}}</text>
+      <text class="card-time">{{diary.time}}</text>
+    </view>
+    <view class="perm-badge {{diary.permission === 'public' ? 'perm-public' : ''}} {{diary.permission === 'member' ? 'perm-member' : ''}} {{diary.permission === 'private' ? 'perm-private' : ''}}">
+      <text wx:if="{{diary.permission === 'public'}}">公众</text>
+      <text wx:if="{{diary.permission === 'member'}}">会员</text>
+      <text wx:if="{{diary.permission === 'private'}}">私密</text>
+    </view>
+  </view>
+
+  <!-- Title -->
+  <view class="card-title serif">{{diary.title}}</view>
+
+  <!-- Content preview -->
+  <view class="card-content">{{diary.content}}</view>
+
+  <!-- Tags -->
+  <view class="card-tags" wx:if="{{diary.tags && diary.tags.length}}">
+    <text
+      wx:for="{{diary.tags}}"
+      wx:key="*this"
+      wx:if="{{index < 3}}"
+      class="seal-tag"
+    >{{item}}</text>
+  </view>
+
+  <!-- Stats row -->
+  <view class="card-stats">
+    <view class="stats-left">
+      <view class="stat-item" bindtap="onLike">
+        <text class="stat-icon {{diary.isLiked ? 'liked' : ''}}">{{diary.isLiked ? '♥' : '♡'}}</text>
+        <text class="stat-count {{diary.isLiked ? 'liked' : ''}}">{{diary.likes}}</text>
+      </view>
+      <view class="stat-item" bindtap="onFav">
+        <text class="stat-icon {{diary.isFavorited ? 'faved' : ''}}">{{diary.isFavorited ? '◆' : '◇'}}</text>
+        <text class="stat-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.favorites}}</text>
+      </view>
+      <view class="stat-item">
+        <text class="stat-icon">◎</text>
+        <text class="stat-count">{{diary.comments}}</text>
+      </view>
+    </view>
+    <view class="stats-right">
+      <view wx:if="{{showActions}}" class="action-btns">
+        <view class="action-btn edit-btn" bindtap="onEdit">
+          <text>编辑</text>
+        </view>
+        <view class="action-btn delete-btn" bindtap="onDelete">
+          <text>删除</text>
+        </view>
+      </view>
+      <view wx:else class="stat-item" bindtap="onShare">
+        <text class="stat-icon">↑</text>
+        <text class="stat-count">{{diary.shares}}</text>
+      </view>
+    </view>
+  </view>
+</view>

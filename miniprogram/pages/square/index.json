@@ -1,0 +1,10 @@
+{
+  "navigationBarTitleText": "",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "diary-card": "/components/diary-card/index",
+    "filter-sheet": "/components/filter-sheet/index",
+    "poster-sheet": "/components/poster-sheet/index",
+    "member-guard": "/components/member-guard/index"
+  }
+}

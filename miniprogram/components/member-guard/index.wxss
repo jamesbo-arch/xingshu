@@ -1,0 +1,88 @@
+.guard-sheet {
+  padding: 32rpx 40rpx 0;
+  text-align: center;
+}
+
+.guard-icon-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 8rpx 0 28rpx;
+}
+
+.guard-icon-ring {
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FCF1D9, #F4E2B4);
+  border: 1px solid #B89968;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.guard-star {
+  font-size: 40rpx;
+  color: #B89968;
+  line-height: 1;
+}
+
+.guard-title {
+  display: block;
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #2A2723;
+  letter-spacing: 3px;
+  margin-bottom: 16rpx;
+}
+
+.guard-desc {
+  display: block;
+  font-size: 26rpx;
+  color: #7A746A;
+  line-height: 1.7;
+  margin-bottom: 28rpx;
+  padding: 0 8rpx;
+}
+
+.guard-tag-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  margin-bottom: 32rpx;
+}
+
+.guard-tag {
+  font-size: 22rpx;
+  color: #A8A39B;
+  letter-spacing: 0.5px;
+}
+
+.guard-tag-sep {
+  font-size: 22rpx;
+  color: #D6D0C2;
+}
+
+.guard-primary-btn {
+  background: linear-gradient(135deg, #FCF1D9, #E8D4A8);
+  border: 1px solid #B89968;
+  border-radius: 12px;
+  padding: 26rpx 0;
+  margin-bottom: 16rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #9A7E4F;
+  letter-spacing: 1px;
+  text-align: center;
+}
+
+.guard-ghost-btn {
+  background: transparent;
+  border: 1px solid #D6D0C2;
+  border-radius: 12px;
+  padding: 24rpx 0;
+  margin-bottom: 24rpx;
+  font-size: 28rpx;
+  color: #A8A39B;
+  text-align: center;
+}

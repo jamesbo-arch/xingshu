@@ -1,0 +1,106 @@
+<view wx:if="{{visible}}">
+  <view class="sheet-mask" bindtap="onMaskTap"></view>
+  <view class="sheet filter-sheet" catchtap="onSheetTap">
+    <!-- Handle bar -->
+    <view class="sheet-handle"></view>
+    <view class="sheet-title">筛选</view>
+
+    <!-- Tags section -->
+    <view class="filter-section">
+      <view class="filter-section-label">主题标签</view>
+      <view class="tags-grid">
+        <text
+          wx:for="{{allTags}}"
+          wx:key="*this"
+          class="seal-tag {{localFilters.tags.indexOf(item) >= 0 ? 'selected' : ''}}"
+          data-tag="{{item}}"
+          bindtap="toggleTag"
+        >{{item}}</text>
+      </view>
+    </view>
+
+    <!-- Author section -->
+    <view class="filter-section">
+      <view class="filter-section-label">作者</view>
+      <input
+        class="author-input"
+        placeholder="搜索作者名"
+        placeholder-style="color: #A8A39B;"
+        value="{{localFilters.author}}"
+        bindinput="onAuthorInput"
+      />
+    </view>
+
+    <!-- Time section -->
+    <view class="filter-section">
+      <view class="filter-section-label">时间范围</view>
+
+      <!-- Time mode tabs -->
+      <view class="time-tabs">
+        <view
+          wx:for="{{timeTabs}}"
+          wx:key="*this"
+          class="time-tab {{localFilters.timeMode === (index === 0 ? 'quick' : index === 1 ? 'range' : 'ym') ? 'active' : ''}}"
+          data-index="{{index}}"
+          bindtap="setTimeMode"
+        >{{item}}</view>
+      </view>
+
+      <!-- Quick mode -->
+      <view wx:if="{{localFilters.timeMode === 'quick'}}" class="quick-grid">
+        <view
+          wx:for="{{quickRanges}}"
+          wx:key="key"
+          class="quick-item {{localFilters.quickRange === item.key ? 'active' : ''}}"
+          data-key="{{item.key}}"
+          bindtap="setQuickRange"
+        >{{item.label}}</view>
+      </view>
+
+      <!-- Range mode -->
+      <view wx:if="{{localFilters.timeMode === 'range'}}" class="range-row">
+        <picker mode="date" value="{{localFilters.dateFrom}}" bindchange="onDateFromChange">
+          <view class="date-picker {{localFilters.dateFrom ? 'has-value' : ''}}">
+            {{localFilters.dateFrom || '开始日期'}}
+          </view>
+        </picker>
+        <text class="range-dash">—</text>
+        <picker mode="date" value="{{localFilters.dateTo}}" bindchange="onDateToChange">
+          <view class="date-picker {{localFilters.dateTo ? 'has-value' : ''}}">
+            {{localFilters.dateTo || '结束日期'}}
+          </view>
+        </picker>
+      </view>
+
+      <!-- Year/Month mode -->
+      <view wx:if="{{localFilters.timeMode === 'ym'}}">
+        <view class="ym-label">年份</view>
+        <view class="ym-row">
+          <view
+            wx:for="{{availableYears}}"
+            wx:key="*this"
+            class="ym-item {{localFilters.years.indexOf(item) >= 0 ? 'active' : ''}}"
+            data-year="{{item}}"
+            bindtap="toggleYear"
+          >{{item}}</view>
+        </view>
+        <view class="ym-label" style="margin-top: 16rpx;">月份</view>
+        <view class="ym-row">
+          <view
+            wx:for="{{availableMonths}}"
+            wx:key="n"
+            class="ym-item {{localFilters.months.indexOf(item.n) >= 0 ? 'active' : ''}}"
+            data-month="{{item.n}}"
+            bindtap="toggleMonth"
+          >{{item.label}}</view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Bottom buttons -->
+    <view class="filter-btns">
+      <view class="btn-ghost filter-btn-reset" bindtap="onReset">重置</view>
+      <view class="btn-primary filter-btn-apply" bindtap="onApply">应用筛选</view>
+    </view>
+  </view>
+</view>

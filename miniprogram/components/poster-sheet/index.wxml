@@ -1,0 +1,70 @@
+<view wx:if="{{visible && diary}}">
+  <view class="sheet-mask" bindtap="onMaskTap"></view>
+  <view class="sheet poster-sheet-wrap" catchtap="onSheetTap">
+    <view class="sheet-handle"></view>
+
+    <!-- Paper card -->
+    <view class="poster-card">
+      <!-- Corner ornaments -->
+      <view class="corner corner-tl"></view>
+      <view class="corner corner-tr"></view>
+      <view class="corner corner-bl"></view>
+      <view class="corner corner-br"></view>
+
+      <!-- Header -->
+      <view class="poster-header">
+        <text class="poster-brand serif">醒書日記</text>
+      </view>
+
+      <!-- Title -->
+      <view class="poster-title serif">{{diary.title}}</view>
+
+      <!-- Content excerpt -->
+      <view class="poster-content">{{contentExcerpt}}</view>
+
+      <!-- Tags -->
+      <view class="poster-tags" wx:if="{{diary.tags && diary.tags.length}}">
+        <text
+          wx:for="{{diary.tags}}"
+          wx:key="*this"
+          class="seal-tag"
+        >{{item}}</text>
+      </view>
+
+      <!-- Divider -->
+      <view class="poster-divider">
+        <view class="divider-line"></view>
+        <text class="divider-dot">◆</text>
+        <view class="divider-line"></view>
+      </view>
+
+      <!-- Author row -->
+      <view class="poster-author-row">
+        <view class="poster-author-info">
+          <view class="avatar sm" style="background-color: {{avatarColor}};">
+            <text>{{avatarInitial}}</text>
+          </view>
+          <view>
+            <text class="poster-author-name">{{diary.author}}</text>
+            <text class="poster-time">{{diary.time}}</text>
+          </view>
+        </view>
+        <!-- QR placeholder -->
+        <view class="qr-placeholder">
+          <view class="qr-grid">
+            <view wx:for="{{[0,1,2,3,4,5,6,7,8]}}" wx:key="*this" class="qr-dot {{item % 3 === 0 || item % 3 === 2 ? 'qr-dark' : 'qr-light'}}"></view>
+          </view>
+          <text class="qr-label">扫码阅读</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Action buttons -->
+    <view class="poster-actions">
+      <view class="btn-ghost poster-btn" bindtap="onSaveImage">保存图片</view>
+      <view class="btn-primary poster-btn" bindtap="onShareWechat">分享到微信</view>
+    </view>
+
+    <view class="safe-bottom"></view>
+  </view>
+</view>
