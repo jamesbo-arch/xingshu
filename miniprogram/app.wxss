@@ -6,9 +6,6 @@ page {
   box-sizing: border-box;
 }
 
-* {
-  box-sizing: border-box;
-}
 
 /* ===== Paper Background ===== */
 .paper-bg {
