@@ -133,10 +133,10 @@
 /* FAB */
 .fab {
   position: fixed;
-  right: 40rpx;
-  bottom: calc(120rpx + env(safe-area-inset-bottom));
-  width: 96rpx;
-  height: 96rpx;
+  right: 32rpx;
+  bottom: calc(110rpx + env(safe-area-inset-bottom));
+  width: 80rpx;
+  height: 80rpx;
   background: #2A2723;
   border-radius: 50%;
   display: flex;
@@ -147,6 +147,6 @@
 }
 
 .fab-icon {
-  font-size: 40rpx;
+  font-size: 34rpx;
   color: #FBF7EE;
 }
