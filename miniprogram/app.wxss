@@ -4,8 +4,18 @@ page {
   color: #2A2723;
   background-color: #FBF7EE;
   box-sizing: border-box;
+  width: 100%;
+  overflow-x: hidden;
 }
 
+view, scroll-view, swiper, input, textarea, image, button, text {
+  box-sizing: border-box;
+}
+
+.page-wrap {
+  width: 100%;
+  overflow-x: hidden;
+}
 
 /* ===== Paper Background ===== */
 .paper-bg {
