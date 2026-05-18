@@ -65,7 +65,7 @@ view, scroll-view, swiper, input, textarea, image, button, text {
 
 .perm-public {
   color: #5B8F6C;
-  background: rgba(91, 143, 108, 0.1);
+  background: #E6F2EA;
 }
 
 .perm-member {

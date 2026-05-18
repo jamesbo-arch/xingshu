@@ -6,10 +6,6 @@
   <view class="page-header">
     <view class="header-top">
       <text class="page-title serif">醒書廣場</text>
-      <view class="member-chip" bindtap="onGoMember">
-        <text>★</text>
-        <text>会员</text>
-      </view>
     </view>
 
     <!-- Search bar -->
