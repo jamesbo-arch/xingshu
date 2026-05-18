@@ -101,6 +101,7 @@
 /* List */
 .diary-list {
   flex: 1;
+  width: 100%;
   padding: 0 24rpx;
   height: calc(100vh - 280rpx);
 }
