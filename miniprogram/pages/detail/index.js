@@ -9,6 +9,7 @@ Page({
     avatarInitial: '?',
     commentInput: '',
     showCommentInput: false,
+    showPosterSheet: false,
     userAvatarColor: '#8B7A4A',
     userAvatarInitial: '?',
   },
@@ -101,6 +102,14 @@ Page({
     this.setData({ commentInput: '', showCommentInput: false })
     this._loadDiary(diary.id)
     wx.showToast({ title: '评论已发布', icon: 'none', duration: 1500 })
+  },
+
+  onShare() {
+    this.setData({ showPosterSheet: true })
+  },
+
+  onPosterClose() {
+    this.setData({ showPosterSheet: false })
   },
 
   onShareApp() {

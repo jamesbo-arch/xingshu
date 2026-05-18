@@ -4,6 +4,7 @@
   "usingComponents": {
     "diary-card": "/components/diary-card/index",
     "filter-sheet": "/components/filter-sheet/index",
-    "member-guard": "/components/member-guard/index"
+    "member-guard": "/components/member-guard/index",
+    "poster-sheet": "/components/poster-sheet/index"
   }
 }

@@ -161,6 +161,27 @@
   padding: 12rpx 20rpx;
 }
 
+.like-wrap {
+  position: relative;
+}
+
+.like-float {
+  position: absolute;
+  top: -4rpx;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24rpx;
+  font-weight: 700;
+  color: #C25A4E;
+  pointer-events: none;
+  animation: like-float-up 0.8s ease-out forwards;
+}
+
+@keyframes like-float-up {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-48rpx); }
+}
+
 .stat-icon {
   font-size: 36rpx;
   color: #A8A39B;

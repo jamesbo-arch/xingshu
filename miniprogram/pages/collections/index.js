@@ -7,6 +7,8 @@ Page({
     search: '',
     showFilterSheet: false,
     showMemberGuard: false,
+    showPosterSheet: false,
+    posterDiary: null,
     userIdentity: 'authed',
     filters: {
       tags: [],
@@ -117,6 +119,18 @@ Page({
   onGuardJoinMember() {
     this.setData({ showMemberGuard: false })
     wx.switchTab({ url: '/pages/member/index' })
+  },
+
+  onCardShare(e) {
+    const { id } = e.detail
+    const diary = app.globalData.diaries.find(d => d.id === id)
+    if (diary) {
+      this.setData({ showPosterSheet: true, posterDiary: diary })
+    }
+  },
+
+  onClosePoster() {
+    this.setData({ showPosterSheet: false, posterDiary: null })
   },
 
   onCardLike(e) {

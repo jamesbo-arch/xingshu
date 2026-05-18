@@ -112,8 +112,14 @@
         <text class="bar-action-icon {{diary.isFavorited ? 'faved' : ''}}">{{diary.isFavorited ? '◆' : '◇'}}</text>
         <text class="bar-action-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.favorites}}</text>
       </view>
+      <view class="bar-action" bindtap="onShare">
+        <text class="bar-action-icon">↑</text>
+      </view>
     </view>
   </view>
+
+  <!-- Poster sheet -->
+  <poster-sheet visible="{{showPosterSheet}}" diary="{{diary}}" bind:close="onPosterClose"></poster-sheet>
 
   <!-- Comment input overlay -->
   <view wx:if="{{showCommentInput}}" class="comment-overlay">

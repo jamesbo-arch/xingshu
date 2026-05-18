@@ -1,6 +1,6 @@
-<view wx:if="{{visible && diary}}">
-  <view class="sheet-mask" bindtap="onMaskTap"></view>
-  <view class="sheet poster-sheet-wrap" catchtap="onSheetTap">
+<view wx:if="{{_mounted && diary}}">
+  <view class="sheet-mask {{_show ? 'mask-show' : ''}}" bindtap="onMaskTap"></view>
+  <view class="sheet poster-sheet-wrap {{_show ? 'sheet-show' : ''}}" catchtap="onSheetTap">
     <view class="sheet-handle"></view>
 
     <!-- Paper card -->
@@ -68,3 +68,6 @@
     <view class="safe-bottom"></view>
   </view>
 </view>
+
+<!-- Off-screen canvas for image export -->
+<canvas type="2d" id="poster-canvas" style="position:fixed;left:-9999px;top:-9999px;width:640px;height:960px;"></canvas>

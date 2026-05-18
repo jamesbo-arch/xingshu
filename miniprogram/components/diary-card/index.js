@@ -30,6 +30,8 @@ Component({
     onLike(e) {
       e.stopPropagation()
       this.triggerEvent('like', { id: this.data.diary.id })
+      this.setData({ showLikeAnim: true })
+      setTimeout(() => this.setData({ showLikeAnim: false }), 800)
     },
 
     onFav(e) {
@@ -86,5 +88,6 @@ Component({
   data: {
     avatarColor: '#8B7A4A',
     avatarInitial: '?',
+    showLikeAnim: false,
   },
 })

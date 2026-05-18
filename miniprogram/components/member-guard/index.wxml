@@ -1,6 +1,6 @@
-<view wx:if="{{visible}}">
-  <view class="sheet-mask" bindtap="onClose"></view>
-  <view class="sheet guard-sheet" catchtap="">
+<view wx:if="{{_mounted}}">
+  <view class="sheet-mask {{_show ? 'mask-show' : ''}}" bindtap="onClose"></view>
+  <view class="sheet guard-sheet {{_show ? 'sheet-show' : ''}}" catchtap="">
     <view class="sheet-handle"></view>
 
     <!-- Icon -->

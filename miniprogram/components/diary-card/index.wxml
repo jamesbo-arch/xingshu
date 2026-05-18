@@ -45,9 +45,10 @@
   <!-- Stats row -->
   <view class="card-stats">
     <view class="stats-left">
-      <view class="stat-item" bindtap="onLike">
+      <view class="stat-item like-wrap" bindtap="onLike">
         <text class="stat-icon {{diary.isLiked ? 'liked' : ''}}">{{diary.isLiked ? '♥' : '♡'}}</text>
         <text class="stat-count {{diary.isLiked ? 'liked' : ''}}">{{diary.likes}}</text>
+        <text wx:if="{{showLikeAnim}}" class="like-float">+1</text>
       </view>
       <view class="stat-item" bindtap="onFav">
         <text class="stat-icon {{diary.isFavorited ? 'faved' : ''}}">{{diary.isFavorited ? '◆' : '◇'}}</text>

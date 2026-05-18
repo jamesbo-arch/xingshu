@@ -15,6 +15,8 @@ Component({
   },
 
   data: {
+    _mounted: false,
+    _show: false,
     localFilters: {
       tags: [],
       author: '',
@@ -46,6 +48,15 @@ Component({
   },
 
   observers: {
+    'visible': function(val) {
+      if (val) {
+        this.setData({ _mounted: true })
+        setTimeout(() => this.setData({ _show: true }), 20)
+      } else {
+        this.setData({ _show: false })
+        setTimeout(() => this.setData({ _mounted: false }), 320)
+      }
+    },
     'filters': function(val) {
       if (val) {
         this.setData({

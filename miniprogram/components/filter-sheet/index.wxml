@@ -1,6 +1,6 @@
-<view wx:if="{{visible}}">
-  <view class="sheet-mask" bindtap="onMaskTap"></view>
-  <view class="sheet filter-sheet" catchtap="onSheetTap">
+<view wx:if="{{_mounted}}">
+  <view class="sheet-mask {{_show ? 'mask-show' : ''}}" bindtap="onMaskTap"></view>
+  <view class="sheet filter-sheet {{_show ? 'sheet-show' : ''}}" catchtap="onSheetTap">
     <!-- Handle bar -->
     <view class="sheet-handle"></view>
     <view class="sheet-header">

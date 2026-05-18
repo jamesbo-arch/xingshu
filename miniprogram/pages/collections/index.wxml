@@ -40,6 +40,7 @@
       bind:open="onCardOpen"
       bind:like="onCardLike"
       bind:fav="onCardFav"
+      bind:share="onCardShare"
     ></diary-card>
     <view class="list-bottom-pad"></view>
   </scroll-view>
@@ -52,6 +53,13 @@
     bind:close="onCloseFilter"
     bind:apply="onApplyFilter"
   ></filter-sheet>
+
+  <!-- Poster sheet -->
+  <poster-sheet
+    visible="{{showPosterSheet}}"
+    diary="{{posterDiary}}"
+    bind:close="onClosePoster"
+  ></poster-sheet>
 
   <!-- Member guard -->
   <member-guard
