@@ -25,7 +25,7 @@ Component({
       years: [],
       months: [],
     },
-    timeTabs: ['快速', '区间', '年月'],
+    timeTabs: ['快速', '起止日期', '年 / 月'],
     quickRanges: [
       { key: 'all', label: '全部时间' },
       { key: 'today', label: '今天' },

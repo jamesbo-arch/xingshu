@@ -3,11 +3,14 @@
   <view class="sheet filter-sheet" catchtap="onSheetTap">
     <!-- Handle bar -->
     <view class="sheet-handle"></view>
-    <view class="sheet-title">筛选</view>
+    <view class="sheet-header">
+      <view class="sheet-title">筛选</view>
+      <view class="sheet-close" bindtap="onMaskTap">×</view>
+    </view>
 
     <!-- Tags section -->
     <view class="filter-section">
-      <view class="filter-section-label">主题标签</view>
+      <view class="filter-section-label">标签（可多选）</view>
       <view class="tags-grid">
         <text
           wx:for="{{allTags}}"
@@ -24,7 +27,7 @@
       <view class="filter-section-label">作者</view>
       <input
         class="author-input"
-        placeholder="搜索作者名"
+        placeholder="输入作者昵称"
         placeholder-style="color: #A8A39B;"
         value="{{localFilters.author}}"
         bindinput="onAuthorInput"

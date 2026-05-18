@@ -17,9 +17,9 @@
       <text class="card-time">{{diary.time}}</text>
     </view>
     <view class="perm-badge {{diary.permission === 'public' ? 'perm-public' : ''}} {{diary.permission === 'member' ? 'perm-member' : ''}} {{diary.permission === 'private' ? 'perm-private' : ''}}">
-      <text wx:if="{{diary.permission === 'public'}}">公众</text>
-      <text wx:if="{{diary.permission === 'member'}}">会员</text>
-      <text wx:if="{{diary.permission === 'private'}}">私密</text>
+      <text wx:if="{{diary.permission === 'public'}}">⊕ 公众</text>
+      <text wx:if="{{diary.permission === 'member'}}">★ 会员</text>
+      <text wx:if="{{diary.permission === 'private'}}">⊗ 私密</text>
     </view>
   </view>
 
