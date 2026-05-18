@@ -1,12 +1,12 @@
 <view
-  class="diary-card {{diary.permission === 'member' ? 'card-member' : ''}} {{diary.permission === 'private' ? 'card-private' : ''}}"
+  class="diary-card {{diary.authorIsMember ? 'card-member' : ''}} {{diary.permission === 'private' ? 'card-private' : ''}}"
   bindtap="onTap"
 >
   <!-- Header: avatar + author + time + perm badge -->
   <view class="card-header">
     <view class="avatar-wrap">
-      <view class="avatar sm" style="background-color: {{avatarColor}};">
-        <text>{{avatarInitial}}</text>
+      <view class="card-avatar" style="background-color: {{avatarColor}};">
+        <text class="card-avatar-text">{{avatarInitial}}</text>
       </view>
       <view wx:if="{{diary.authorIsMember}}" class="member-badge">
         <text class="member-badge-text">会</text>
@@ -18,7 +18,7 @@
     </view>
     <view class="perm-badge {{diary.permission === 'public' ? 'perm-public' : ''}} {{diary.permission === 'member' ? 'perm-member' : ''}} {{diary.permission === 'private' ? 'perm-private' : ''}}">
       <text wx:if="{{diary.permission === 'public'}}">公众</text>
-      <text wx:if="{{diary.permission === 'member'}}">会员</text>
+      <text wx:if="{{diary.permission === 'member'}}">★ 会员</text>
       <text wx:if="{{diary.permission === 'private'}}">私密</text>
     </view>
   </view>
@@ -38,6 +38,9 @@
       class="seal-tag"
     >{{item}}</text>
   </view>
+
+  <!-- Divider -->
+  <view class="card-divider"></view>
 
   <!-- Stats row -->
   <view class="card-stats">
