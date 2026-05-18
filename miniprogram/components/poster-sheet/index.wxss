@@ -1,3 +1,25 @@
+.sheet-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(42, 39, 35, 0.45);
+  z-index: 100;
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #FFFCF5;
+  border-radius: 20px 20px 0 0;
+  z-index: 101;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
 .poster-sheet-wrap {
   padding: 24rpx 32rpx 20rpx;
 }
