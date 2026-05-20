@@ -85,6 +85,8 @@
 
 **`.claude/` 目录（含 agents、plans、skills、settings）必须纳入 Git 追踪并在每次变更后推送。** 这些文件是项目开发环境的重要组成部分，与源代码等同对待。
 
+**每完成一个 Phase 后**：推送当前分支 → 创建下一 Phase 分支（如 `phase4` → `phase5`）→ 切换到新分支继续开发。
+
 ## Subagent 协作体系
 
 本项目配置了 7 个专业 subagent 用于团队协作式开发，定义文件位于 `.claude/agents/`：
