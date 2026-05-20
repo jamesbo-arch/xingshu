@@ -19,7 +19,9 @@
       "Bash(rmdir \"d:/workspace/xingshu/.claude/plans\")",
       "Bash(rm -rf \"C:/Users/James/.agents/skills/miniprogram-development\" \"C:/Users/James/.agents/skills/auth-wechat-miniprogram\" \"C:/Users/James/.agents/skills/cloudbase-document-database-in-wechat-miniprogram\")",
       "Bash(ls \"C:/Users/James/.agents/skills/\" 2>&1)",
-      "Read(//c/Users/James/.agents/skills/**)"
+      "Read(//c/Users/James/.agents/skills/**)",
+      "Bash(rm -rf \"d:/workspace/xingshu/.claude/skills\")",
+      "Bash(cp -r \"d:/workspace/xingshu/.agents/skills\" \"d:/workspace/xingshu/.claude/skills\")"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",

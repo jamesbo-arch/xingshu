@@ -99,3 +99,20 @@
 - `project.config.json` 中 `cloudfunctionRoot` 字段已添加
 - `app.js` 中 `wx.cloud.init` 调用已注入 onLaunch
 - `cloudfunctions/` 目录已创建，含 `.gitkeep` 确保 git 追踪
+
+---
+
+### 2026-05-20 14:00 — Phase 1.1.1 完成 + 1.2/1.3 设计就绪
+
+**类型**：配置 / 数据库
+**计划关联**：Phase 1.1.1 / 1.2 / 1.3
+**修改文件**：
+- `miniprogram/app.js` — envId 替换为 `awakebook-env-1g0oford0bea44cc`
+- `.claude/plans/fullstack-plan.md` — 标记 1.1.1 完成
+
+**变更说明**：
+用户提供了 TCB 环境 ID，已更新 app.js 中的 `wx.cloud.init` 配置。Phase 1.2（文档 DB 6 集合、MySQL 3 表）和 1.3（Redis 10 组缓存 key）的完整 schema 已在 fullstack-plan.md 中设计完毕。下一步需在 TCB 控制台创建集合，或通过 Phase 2 的第一个云函数自动创建。
+
+**验证**：
+- `wx.cloud.init` env 参数已设置为真实环境 ID
+- 数据库 schema 设计文档完整，待 TCB 控制台或云函数执行创建

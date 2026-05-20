@@ -12,7 +12,7 @@ App({
   onLaunch() {
     if (wx.cloud) {
       wx.cloud.init({
-        env: 'xingshu-XXXXXX', // TODO: 替换为腾讯 CloudBase 控制台中的环境 ID
+        env: 'awakebook-env-1g0oford0bea44cc',
         traceUser: true,
       })
     }
