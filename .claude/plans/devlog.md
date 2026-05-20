@@ -311,3 +311,38 @@
 - API 调用链路：页面 → api/*.js → request.js → wx.cloud.callFunction → 云函数 → MySQL
 - mapper 函数覆盖 diary/user/comment/reply 所有字段映射
 - 分页参数 page/pageSize 在列表页统一支持
+
+---
+
+### 2026-05-20 17:45 — Phase 4 管理后台完成
+
+**类型**：前端 / 管理后台
+**计划关联**：Phase 4.1 ~ 4.5
+**修改文件**：
+- `admin/` — Vue 3 + Vite 项目（全新）
+- `admin/src/main.js` — 应用入口 + Vue Router
+- `admin/src/App.vue` — 侧边栏布局
+- `admin/src/router/index.js` — 6 条路由
+- `admin/src/api/index.js` — Mock API 层
+- `admin/src/data/mock.js` — 9 用户 + 5 日记 + 5 评论种子数据
+- `admin/src/views/Dashboard.vue` — KPI 看板 + 活动流
+- `admin/src/views/Users.vue` — 用户列表 + 筛选
+- `admin/src/views/UserDetail.vue` — 用户详情 + 日记列表
+- `admin/src/views/Diaries.vue` — 日记列表 + 筛选 + 删除
+- `admin/src/views/DiaryDetail.vue` — 日记详情 + 评论管理
+- `admin/src/views/Interactions.vue` — 互动数据管理
+
+**变更说明**：
+构建了完整的管理后台 Web 应用（Vue 3 + Vite + Vue Router）：
+- 侧边栏布局（深蓝主色 #3578F6，按 PRD 规范）
+- 数据概览：5 个 KPI 卡片 + 活动流时间线
+- 用户管理：列表 + 身份筛选 + 关键词搜索 + 详情页
+- 日记管理：列表 + 权限/关键词筛选 + 删除 + 详情页（含评论管理）
+- 互动数据：评论列表 + 搜索 + 删除
+- 所有 API 封装为可替换的 mock 层，后续替换为真实云函数 HTTP API
+- 构建产物 ~100KB（gzip ~36KB）
+
+**验证**：
+- `npm run build` 构建成功，无错误
+- 6 个页面均编译出独立 JS/CSS chunk
+- 路由导航完整（Dashboard/Users/UserDetail/Diaries/DiaryDetail/Interactions）

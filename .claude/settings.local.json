@@ -32,7 +32,10 @@
       "Bash(git reset *)",
       "Bash(git checkout *)",
       "Bash(git merge *)",
-      "Bash(git stash *)"
+      "Bash(git stash *)",
+      "Bash(npm create *)",
+      "Bash(rm -f src/components/HelloWorld.vue src/style.css)",
+      "Bash(npm run *)"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",
