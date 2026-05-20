@@ -32,33 +32,33 @@
 ┌──────────────────────────────────────────────────────┐
 │              腾讯 CloudBase (TCB) 云开发               │
 │                                                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │
-│  │ 云函数    │  │ 云数据库  │  │ 云存储           │   │
-│  │ (Node.js)│  │ (文档 DB) │  │ (图片/文件)      │   │
-│  │          │  │          │  │                  │   │
-│  │ • auth   │  │ • users  │  │ • avatars/       │   │
-│  │ • diary  │  │ • diary  │  │ • diary-images/  │   │
-│  │ • social │  │ •comment │  │ • poster-qrcodes │   │
-│  │ • member │  │ • orders │  │                  │   │
-│  │ • admin  │  │ • tags   │  │                  │   │
-│  └──────────┘  └──────────┘  └──────────────────┘   │
-│                                                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │
-│  │ 云调用    │  │ HTTP API │  │ 定时触发器        │   │
-│  │ 微信支付  │  │ (外部)   │  │ (定期任务)       │   │
-│  └──────────┘  └──────────┘  └──────────────────┘   │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────┐ │
+│  │ 云函数        │  │ MySQL (外部) │  │ 云存储      │ │
+│  │ (Node.js)    │  │ 33.tcp.     │  │ (图片/文件) │ │
+│  │ + mysql2     │  │ cpolar.top  │  │             │ │
+│  │              │  │              │  │ • avatars/  │ │
+│  │ • auth       │  │ • users      │  │ • images/   │ │
+│  │ • diary CRUD │  │ • diaries    │  │ • posters/  │ │
+│  │ • social     │  │ • comments   │  │             │ │
+│  │ • member     │  │ •interactions│  └────────────┘ │
+│  │ • admin      │  │ • tags       │                 │
+│  │ • payment    │  │ • diary_tags │                 │
+│  └──────────────┘  │ • orders     │                 │
+│                     │ • payment_   │                 │
+│  ┌──────────────┐   │   logs       │                 │
+│  │ 定时触发器    │  │ • admin_logs │                 │
+│  │ (定期任务)   │  └──────────────┘                 │
+│  └──────────────┘                                    │
 └──────────────────────────────────────────────────────┘
                  │
                  ▼
 ┌──────────────────────────────────────────────────────┐
-│              辅助服务（可选/后期）                      │
+│              辅助服务（后期）                          │
 │                                                      │
-│  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │
-│  │ 关系数据库│  │ Redis    │  │ 对象存储 (COS)   │   │
-│  │ MySQL/   │  │ 缓存     │  │ 大规模文件       │   │
-│  │ PostgreSQL│ │ 热数据   │  │                  │   │
-│  │ 管理员后台│  │ 排行榜   │  │                  │   │
-│  └──────────┘  └──────────┘  └──────────────────┘   │
+│  ┌──────────────┐  ┌──────────────┐                  │
+│  │ Redis 缓存   │  │ COS 对象存储  │                  │
+│  │ 热数据/限流  │  │ 大规模文件    │                  │
+│  └──────────────┘  └──────────────┘                  │
 └──────────────────────────────────────────────────────┘
 ```
 
@@ -67,9 +67,8 @@
 | 组件 | 选型 | 理由 |
 |------|------|------|
 | 云平台 | 腾讯 CloudBase (TCB) | 微信原生集成、免运维、小程序内直接调用 |
-| 文档数据库 | TCB 文档数据库 | 小程序的天然后端，日记/评论为文档型数据 |
-| 关系数据库 | MySQL (TCB 托管或自建) | 订单、会员、管理员等强一致性场景 |
-| 缓存 | TCB Redis (或自建) | 热数据加速、排行榜、限流 |
+| 关系数据库 | MySQL (自建，cpolar 隧道) | 全部业务数据，9 张表，ACID 事务 |
+| 缓存 | Redis (后期) | 热数据加速、排行榜、限流 |
 | 云函数 | Node.js 18+ | TCB 原生支持，JS 与前端同语言 |
 | 云存储 | TCB 云存储 + COS | 图片、海报、用户头像 |
 | 微信支付 | 云调用 | 无需额外部署，云函数内直接调用支付 API |
@@ -87,143 +86,29 @@
 
 ### 1.2 数据库设计
 
-#### 1.2.1 文档数据库集合设计（TCB 文档 DB）
+- [x] **1.2** MySQL 9 张表已创建：users, tags, diaries, diary_tags, comments, interactions, orders, payment_logs, admin_logs
+- [x] **1.2** 种子数据：20 个标签已写入
+- [x] **1.2** 连接配置：`33.tcp.cpolar.top:11028/xingshu_dev`
 
-**`users` 集合：**
-```javascript
-{
-  _id: string,            // 自动生成
-  _openid: string,        // 微信 OpenID (自动)
-  unionid: string,        // 微信 UnionID
-  nickname: string,       // 用户昵称
-  realName: string,       // 真实姓名
-  phone: string,          // 手机号（脱敏存储）
-  avatarUrl: string,      // 微信头像 URL
-  avatarHue: number,      // 头像色相 0-360
-  identity: 'guest'|'authed'|'member',
-  memberFrom: string,     // 会员起始日 YYYY-MM-DD
-  memberUntil: string,    // 会员到期日 YYYY-MM-DD
-  stats: {
-    diaries: number,
-    likes: number,
-    favorites: number,
-    comments: number,
-    shares: number
-  },
-  createdAt: Date,
-  updatedAt: Date
-}
-```
+#### 1.2.1 MySQL 表设计
 
-**`diaries` 集合：**
-```javascript
-{
-  _id: string,
-  _openid: string,        // 作者 OpenID
-  title: string,          // 标题 (max 30)
-  content: string,        // 正文 (max 3000)
-  tags: string[],         // 标签列表
-  permission: 'public'|'member'|'private',
-  images: string[],       // 云存储 fileID 列表
-  likes: number,          // 点赞数（冗余计数）
-  favorites: number,      // 收藏数
-  comments: number,       // 评论数
-  shares: number,         // 分享数
-  isDeleted: boolean,     // 软删除
-  createdAt: Date,
-  updatedAt: Date
-}
-// 索引: _openid, permission, tags, createdAt
-```
+完整 DDL 已通过 `mysql2` 执行，9 张表结构如下：
 
-**`comments` 集合：**
-```javascript
-{
-  _id: string,
-  _openid: string,        // 评论者 OpenID
-  diaryId: string,        // 关联日记 _id
-  parentId: string|null,  // 父评论 _id (嵌套回复)
-  content: string,        // 评论内容
-  isDeleted: boolean,
-  createdAt: Date,
-  updatedAt: Date
-}
-// 索引: diaryId, parentId, createdAt
-```
+| 表名 | 说明 | 关键字段 | 索引 |
+|------|------|---------|------|
+| `users` | 用户 | openid, nickname, identity, avatar_hue, member_until | openid(unique), identity |
+| `tags` | 标签库 | name, usage_count | name(unique) |
+| `diaries` | 日记 | user_id, title, content, permission | user_id, permission, created_at |
+| `diary_tags` | 日记-标签关联 | diary_id, tag_id | (diary_id,tag_id) PK |
+| `comments` | 评论 | user_id, diary_id, parent_id, content | diary_id, parent_id, user_id |
+| `interactions` | 点赞/收藏 | user_id, target_type, target_id, action | (user,target,action) unique |
+| `orders` | 会员订单 | user_id, amount, status, transaction_id | user_id, status |
+| `payment_logs` | 支付回调日志 | order_id, event_type, raw_data(JSON) | order_id |
+| `admin_logs` | 管理员操作日志 | admin_openid, action, detail(JSON) | admin_openid, created_at |
 
-**`interactions` 集合（点赞/收藏行为）：**
-```javascript
-{
-  _id: string,
-  _openid: string,        // 用户 OpenID
-  targetType: 'diary'|'comment',
-  targetId: string,       // 日记或评论 _id
-  action: 'like'|'favorite',
-  createdAt: Date
-}
-// 联合唯一索引: _openid + targetType + targetId + action
-```
+外键关系：`users → diaries → comments`，`users → interactions`，`users → orders`，`diaries ← diary_tags → tags`
 
-**`tags` 集合：**
-```javascript
-{
-  _id: string,
-  name: string,           // 标签名
-  usageCount: number,     // 使用次数（便于排序）
-  isActive: boolean,
-  createdAt: Date
-}
-```
-
-#### 1.2.2 关系数据库设计（MySQL — 强一致性场景）
-
-```sql
--- 会员订单表
-CREATE TABLE orders (
-  id VARCHAR(24) PRIMARY KEY,
-  openid VARCHAR(64) NOT NULL,
-  amount DECIMAL(10,2) NOT NULL,
-  method ENUM('wechat_pay','offline') NOT NULL,
-  status ENUM('pending','paid','refunded','cancelled') NOT NULL DEFAULT 'pending',
-  transaction_id VARCHAR(64),
-  member_days INT NOT NULL DEFAULT 365,
-  payment_time DATETIME,
-  created_by VARCHAR(64),
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_openid (openid),
-  INDEX idx_status (status),
-  INDEX idx_created_at (created_at)
-);
-
--- 微信支付回调日志
-CREATE TABLE payment_logs (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  order_id VARCHAR(24) NOT NULL,
-  event_type VARCHAR(32) NOT NULL,
-  raw_data JSON,
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_order_id (order_id)
-);
-
--- 管理员操作日志
-CREATE TABLE admin_logs (
-  id BIGINT AUTO_INCREMENT PRIMARY KEY,
-  admin_openid VARCHAR(64) NOT NULL,
-  action VARCHAR(64) NOT NULL,
-  target_type VARCHAR(32),
-  target_id VARCHAR(64),
-  detail JSON,
-  ip VARCHAR(45),
-  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_admin (admin_openid),
-  INDEX idx_created_at (created_at)
-);
-```
-
-- [x] **1.2** 数据库 Schema 设计完成 — 已通过 TCB CLI 创建 6 个集合
-- [x] **1.2** 索引创建 — 4 组复合/唯一索引已就位
-- [x] **1.2** 种子数据 — 20 个标签已写入 `tags` 集合
+**MySQL 连接**：`33.tcp.cpolar.top:11028/xingshu_dev`（用户 `james`）
 
 ### 1.3 缓存结构设计（Redis）
 

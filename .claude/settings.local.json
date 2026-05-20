@@ -27,7 +27,8 @@
       "Bash(npm install *)",
       "Bash(tcb login *)",
       "Bash(tcb env *)",
-      "Bash(tcb db *)"
+      "Bash(tcb db *)",
+      "Bash(node -e ' *)"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",

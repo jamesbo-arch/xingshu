@@ -143,3 +143,31 @@
 - 所有集合创建成功（insert 返回 ok）
 - 所有索引创建成功（createIndexes 返回 ok）
 - 20 个标签文档已写入 tags 集合
+
+---
+
+### 2026-05-20 14:50 — 架构切换至纯 MySQL
+
+**类型**：数据库 / 架构
+**计划关联**：Phase 1.2 — 数据库设计（架构变更）
+**修改文件**：
+- `.claude/plans/fullstack-plan.md` — 架构图重绘，文档 DB → 纯 MySQL
+- `miniprogram/cloudfunctions/common/db.js` — 新建共享连接池模块
+
+**变更说明**：
+用户提供 cpolar MySQL 数据库（`33.tcp.cpolar.top:11028/xingshu_dev`）。经分析，项目数据为强关系型（users→diaries→comments，interactions，orders），更适合 MySQL。
+
+完成操作：
+1. 通过 mysql2 连接并执行完整 DDL，创建 9 张表：`users`、`tags`、`diaries`、`diary_tags`、`comments`、`interactions`、`orders`、`payment_logs`、`admin_logs`
+2. 所有表含外键约束、索引、InnoDB 引擎、utf8mb4 字符集
+3. `diary_tags` 为 diaries↔tags 多对多关联表
+4. `comments.parent_id` 自引用外键支持嵌套回复
+5. `interactions` 含唯一复合索引防重复点赞/收藏
+6. 20 个默认标签写入 `tags` 表
+7. 创建 `cloudfunctions/common/db.js` 连接池模块供云函数共用
+8. 计划文件架构图更新：纯 MySQL + 云函数(mysql2) + 云存储
+
+**验证**：
+- 9 张表 `SHOW TABLES` 确认存在
+- 外键约束已定义（users→diaries→comments 级联删除）
+- 连接池配置就绪，云函数可通过 `require('../common/db.js')` 使用
