@@ -172,3 +172,27 @@
 - 外键约束已定义（users→diaries→comments 级联删除）
 - 连接池配置就绪，云函数可通过 `require('../common/db.js')` 使用
 - 已清理 TCB 文档 DB 中不再使用的 6 个集合（users, diaries, comments, interactions, tags, orders）
+
+---
+
+### 2026-05-20 15:00 — MySQL 统一增加 created_by / updated_by 审计字段
+
+**类型**：数据库
+**计划关联**：Phase 1.2 — 数据库规范完善
+**修改文件**：
+- MySQL 9 张表 — 全部新增审计字段
+
+**变更说明**：
+为所有业务表统一增加 `created_by` 和 `updated_by` 字段，形成审计规范：
+- `users` — created_by/updated_by (OpenID), 记录注册和管理员修改人
+- `tags` — created_by/updated_by (OpenID), 记录标签创建/修改人
+- `diaries` — created_by/updated_by (user_id), 日记归属 + 修改记录
+- `diary_tags` — created_by (user_id), 记录标签关联时间
+- `comments` — created_by/updated_by (user_id)
+- `interactions` — created_by (user_id), 记录操作人
+- `orders` — updated_by (OpenID), 订单修改追溯
+- `payment_logs` — created_by (OpenID), 支付操作人
+- `admin_logs` — updated_by (OpenID), 管理员操作修改追溯
+
+**验证**：
+- `INFORMATION_SCHEMA.COLUMNS` 查询确认 14 个 created_by/updated_by 字段已就位
