@@ -195,4 +195,4 @@
 - `admin_logs` — updated_by (OpenID), 管理员操作修改追溯
 
 **验证**：
-- `INFORMATION_SCHEMA.COLUMNS` 查询确认 14 个 created_by/updated_by 字段已就位
+- `INFORMATION_SCHEMA.COLUMNS` 确认全部 9 张表均具有 created_at / updated_at / created_by / updated_by 四个审计字段
