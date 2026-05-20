@@ -171,3 +171,4 @@
 - 9 张表 `SHOW TABLES` 确认存在
 - 外键约束已定义（users→diaries→comments 级联删除）
 - 连接池配置就绪，云函数可通过 `require('../common/db.js')` 使用
+- 已清理 TCB 文档 DB 中不再使用的 6 个集合（users, diaries, comments, interactions, tags, orders）
