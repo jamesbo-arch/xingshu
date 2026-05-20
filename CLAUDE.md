@@ -107,6 +107,27 @@
 - `auth-wechat-miniprogram` — 微信登录鉴权
 - `cloudbase-document-database-in-wechat-miniprogram` — CloudBase 文档数据库
 
+## 开发日志维护（强制）
+
+每次完成实质性开发工作（写代码、改配置、修 bug、部署、安装依赖等）后，**必须在 `.claude/plans/devlog.md` 末尾追加日志记录**。格式如下：
+
+```markdown
+### YYYY-MM-DD HH:MM — [简短标题]
+
+**类型**：[前端 | 后端 | 数据库 | 云函数 | 测试 | 部署 | 配置 | 文档]
+**计划关联**：Phase X.Y — [关联的计划步骤]
+**修改文件**：
+- `path/file.ext` — 变更摘要
+
+**变更说明**：
+[详细描述做了什么]
+
+**验证**：
+[如何确认变更正确]
+```
+
+每完成计划文件（`.claude/plans/fullstack-plan.md`）中的一个步骤时，在 devlog 中记录并将计划对应项的 `[ ]` 改为 `[x]`。
+
 ## 架构
 
 ### 页面（共 6 个，4 个 tab 页 + 2 个非 tab 页）

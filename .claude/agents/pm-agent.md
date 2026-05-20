@@ -79,7 +79,7 @@
 
 - `CLAUDE.md` — 项目架构文档 + 编码规范
 - `plan.md` — 当前开发进度
-- `.claude/plans/` — 其他 agent 定义文件（需要了解各 agent 能力时读取）
+- `.claude/agents/` — 其他 agent 定义文件（需要了解各 agent 能力时读取）
 
 ## 注意事项
 

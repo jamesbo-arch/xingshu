@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(Get-ChildItem -Recurse -Directory d:\\\\workspace\\\\xingshu -Depth 2)",
+      "Bash(Select-Object FullName)",
+      "Bash(npx skills *)",
+      "Bash(Get-ChildItem -Path d:\\\\workspace\\\\xingshu -Recurse -Depth 3)",
+      "Bash(Select-Object FullName, Length)",
+      "Bash(Format-Table -AutoSize)",
+      "Bash(New-Item -ItemType Directory -Force -Path \"d:\\\\workspace\\\\xingshu\\\\.claude\\\\plans\")",
+      "Bash(mkdir -p \"d:/workspace/xingshu/.claude/plans\")",
+      "Bash(mkdir -p \"d:/workspace/xingshu/.claude/agents\")",
+      "Bash(mv \"d:/workspace/xingshu/.claude/plans/\"*.md \"d:/workspace/xingshu/.claude/agents/\")",
+      "Bash(rmdir \"d:/workspace/xingshu/.claude/plans\")",
+      "Bash(rm -rf \"C:/Users/James/.agents/skills/miniprogram-development\" \"C:/Users/James/.agents/skills/auth-wechat-miniprogram\" \"C:/Users/James/.agents/skills/cloudbase-document-database-in-wechat-miniprogram\")",
+      "Bash(ls \"C:/Users/James/.agents/skills/\" 2>&1)",
+      "Read(//c/Users/James/.agents/skills/**)"
+    ],
+    "additionalDirectories": [
+      "d:\\workspace\\xingshu\\.claude",
+      "C:\\Users\\James\\.agents\\skills\\miniprogram-development"
+    ]
+  }
+}
