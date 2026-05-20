@@ -129,40 +129,40 @@
 ## Phase 2 — 云函数开发（预计 3-4 天）
 
 ### 2.1 用户与认证
-- [ ] **2.1.1** `login` — `wx.login()` → 获取 OpenID → 创建/更新用户记录 → 返回用户信息
-- [ ] **2.1.2** `getUserInfo` — 获取当前用户详情 + 统计数据
-- [ ] **2.1.3** `updateUserProfile` — 更新昵称、真实姓名、手机号
-- [ ] **2.1.4** `updateAvatar` — 上传头像到云存储 → 更新 avatarUrl
+- [x] **2.1.1** `login` — `wx.login()` → 获取 OpenID → 创建/更新用户记录 → 返回用户信息
+- [x] **2.1.2** `getUserInfo` — 获取当前用户详情 + 统计数据
+- [x] **2.1.3** `updateUserProfile` — 更新昵称、真实姓名、手机号
+- [ ] **2.1.4** `updateAvatar` — 上传头像到云存储 → 更新 avatarUrl（Phase 3 前端一并处理）
 
 ### 2.2 日记 CRUD
-- [ ] **2.2.1** `createDiary` — 创建日记（校验权限、标签、敏感词过滤）
-- [ ] **2.2.2** `updateDiary` — 修改日记（校验归属、仅作者可改）
-- [ ] **2.2.3** `deleteDiary` — 软删除日记（校验归属）
-- [ ] **2.2.4** `getDiaryList` — 分页获取日记列表（支持筛选：标签/作者/时间/权限）
-- [ ] **2.2.5** `getDiaryDetail` — 获取日记详情 + 互动状态
-- [ ] **2.2.6** `searchDiaries` — 全文搜索（TCB 自带全文索引或外部搜索引擎）
-- [ ] **2.2.7** `uploadDiaryImage` — 上传日记配图到云存储
+- [x] **2.2.1** `createDiary` — 创建日记（事务：INSERT diaries + diary_tags + 更新计数）
+- [x] **2.2.2** `updateDiary` — 修改日记（校验归属、事务更新标签关联）
+- [x] **2.2.3** `deleteDiary` — 软删除日记（status='deleted'，校验归属）
+- [x] **2.2.4** `getDiaryList` — 分页获取日记列表（mode: square/collections/mine, 关键词/标签/作者/权限筛选）
+- [x] **2.2.5** `getDiaryDetail` — 获取日记详情 + 互动状态 + 标签
+- [x] **2.2.6** `searchDiaries` — 已合并到 `getDiaryList` 的 keyword 参数
+- [ ] **2.2.7** `uploadDiaryImage` — 上传日记配图到云存储（Phase 3 前端一并处理）
 
 ### 2.3 社交互动
-- [ ] **2.3.1** `toggleLike` — 点赞/取消点赞（原子操作、更新日记计数）
-- [ ] **2.3.2** `toggleFavorite` — 收藏/取消收藏
-- [ ] **2.3.3** `createComment` — 发布评论/回复
-- [ ] **2.3.4** `getComments` — 获取评论列表（支持分页、嵌套回复）
-- [ ] **2.3.5** `deleteComment` — 删除评论（校验归属）
+- [x] **2.3.1** `toggleLike` — 点赞/取消点赞（原子 INSERT/DELETE，更新计数）
+- [x] **2.3.2** `toggleFavorite` — 收藏/取消收藏
+- [x] **2.3.3** `createComment` — 发布评论/回复（支持 parent_id 嵌套）
+- [x] **2.3.4** `getComments` — 获取评论列表（分页 + 嵌套回复 + isMine 标记）
+- [x] **2.3.5** `deleteComment` — 删除评论（软删除，校验归属）
 
 ### 2.4 会员与订单（线下转账）
-- [ ] **2.4.1** `createOrder` — 管理员创建会员订单（线下转账确认后）
-- [ ] **2.4.2** `getOrderList` — 用户订单列表
-- [ ] **2.4.3** `checkMemberStatus` — 检查会员状态（含过期自动降级）
-- [ ] **2.4.4** `activateMember` — 管理员确认收款后激活会员
+- [x] **2.4.1** `createOrder` — 管理员创建会员订单（线下转账确认后）
+- [x] **2.4.2** `getOrderList` — 用户订单列表
+- [x] **2.4.3** `checkMemberStatus` — 检查会员状态（含过期自动降级）
+- [x] **2.4.4** `activateMember` — 管理员确认收款后激活会员
 
 ### 2.5 标签管理
-- [ ] **2.5.1** `getTags` — 获取全部标签（按使用量排序）
-- [ ] **2.5.2** `addTag` — 管理员添加标签
-- [ ] **2.5.3** `updateTag` — 管理员编辑/禁用标签
+- [x] **2.5.1** `getTags` — 获取全部标签（按使用量排序）
+- [x] **2.5.2** `addTag` — 管理员添加标签（含重名校验）
+- [x] **2.5.3** `updateTag` — 管理员编辑/禁用标签
 
 ### 2.6 小程序码生成
-- [ ] **2.6.1** `generateMiniCode` — 生成日记分享小程序码 → 云存储 → 替换海报占位符
+- [x] **2.6.1** `generateMiniCode` — 生成日记分享小程序码 → 云存储
 
 ---
 

@@ -226,3 +226,48 @@
 
 **验证**：
 - `INFORMATION_SCHEMA.COLUMNS` 确认 3 张表的 8 个新字段已就位
+
+---
+
+### 2026-05-20 17:00 — Phase 2 云函数全部完成
+
+**类型**：云函数 / 后端
+**计划关联**：Phase 2.1 ~ 2.6
+**修改文件**：
+- `miniprogram/cloudfunctions/login/index.js` + `package.json`
+- `miniprogram/cloudfunctions/getUserInfo/index.js` + `package.json`
+- `miniprogram/cloudfunctions/updateUserProfile/index.js` + `package.json`
+- `miniprogram/cloudfunctions/createDiary/index.js` + `package.json`
+- `miniprogram/cloudfunctions/updateDiary/index.js` + `package.json`
+- `miniprogram/cloudfunctions/deleteDiary/index.js` + `package.json`
+- `miniprogram/cloudfunctions/getDiaryList/index.js` + `package.json`
+- `miniprogram/cloudfunctions/getDiaryDetail/index.js` + `package.json`
+- `miniprogram/cloudfunctions/toggleLike/index.js` + `package.json`
+- `miniprogram/cloudfunctions/toggleFavorite/index.js` + `package.json`
+- `miniprogram/cloudfunctions/createComment/index.js` + `package.json`
+- `miniprogram/cloudfunctions/getComments/index.js` + `package.json`
+- `miniprogram/cloudfunctions/deleteComment/index.js` + `package.json`
+- `miniprogram/cloudfunctions/createOrder/index.js` + `package.json`
+- `miniprogram/cloudfunctions/getOrderList/index.js` + `package.json`
+- `miniprogram/cloudfunctions/checkMemberStatus/index.js` + `package.json`
+- `miniprogram/cloudfunctions/activateMember/index.js` + `package.json`
+- `miniprogram/cloudfunctions/getTags/index.js` + `package.json`
+- `miniprogram/cloudfunctions/addTag/index.js` + `package.json`
+- `miniprogram/cloudfunctions/updateTag/index.js` + `package.json`
+- `miniprogram/cloudfunctions/generateMiniCode/index.js` + `package.json`
+
+**变更说明**：
+完成全部 20 个云函数开发（21 个函数目录含 1 个 common 工具模块）。架构遵循：
+- 统一 `{ code: 0, data }` / `{ code: -1, msg }` 响应格式
+- 所有用户操作通过 `cloud.getWXContext().OPENID` 获取身份
+- MySQL 事务用于 createDiary/updateDiary（diary + tags 原子操作）
+- interactions 唯一索引天然防重点赞/收藏
+- 评论支持一级 + 二级回复（parent_id 自引用）
+- 会员状态自动降级（member_until 过期 → authed）
+- 日记列表支持 mode 三模式（square/collections/mine）+ 关键词/标签/作者/权限筛选
+
+**验证**：
+- 所有 21 个目录均含 index.js + package.json
+- getDiaryList 支持分页 + 多条件筛选 + JOIN 查询
+- createDiary 含事务回滚保护
+- toggleLike/toggleFavorite 使用唯一索引防重
