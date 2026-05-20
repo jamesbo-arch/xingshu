@@ -81,6 +81,32 @@
 
 没有构建工具、代码检查工具或测试框架。项目为纯微信小程序原生代码——每个页面/组件包含四种文件：`.js`、`.json`、`.wxml`、`.wxss`。
 
+## Subagent 协作体系
+
+本项目配置了 7 个专业 subagent 用于团队协作式开发，定义文件位于 `.claude/plans/`：
+
+| Agent | 文件 | 角色 |
+|-------|------|------|
+| **PM** | `pm-agent.md` | 项目经理——用户唯一接口，负责任务拆解与分派 |
+| **Product** | `product-agent.md` | 资深小程序产品经理——功能设计、UX 规划 |
+| **Architecture** | `architecture-agent.md` | 资深技术架构师——组件设计、数据流、后端集成方案 |
+| **Frontend** | `frontend-agent.md` | 资深前端开发——WXML/WXSS/JS 实现、动画、API 调用 |
+| **Backend** | `backend-agent.md` | 资深后端开发——CloudBase 云函数、数据库、鉴权 |
+| **QA** | `qa-agent.md` | 资深测试——用例设计、边界覆盖、Bug 报告 |
+| **CI/CD** | `cicd-agent.md` | 部署工程师——版本管理、审核提交、发布流程 |
+
+### 协作流程
+
+```
+用户 → PM（拆解任务）→ 分派给专业 agent → PM（审核输出）→ 汇总报告给用户
+```
+
+### 已安装 Skills
+
+- `miniprogram-development` — 微信小程序开发全流程
+- `auth-wechat-miniprogram` — 微信登录鉴权
+- `cloudbase-document-database-in-wechat-miniprogram` — CloudBase 文档数据库
+
 ## 架构
 
 ### 页面（共 6 个，4 个 tab 页 + 2 个非 tab 页）
