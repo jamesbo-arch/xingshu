@@ -1,24 +1,22 @@
 const app = getApp()
-const { applyFilters } = require('../../utils/filter')
+const diaryApi = require('../../api/diary')
+const socialApi = require('../../api/social')
+const mapper = require('../../utils/mapper')
 
 Page({
   data: {
     diaries: [],
     search: '',
+    page: 1,
+    hasMore: true,
     showFilterSheet: false,
     showMemberGuard: false,
     showPosterSheet: false,
     posterDiary: null,
     userIdentity: 'authed',
     filters: {
-      tags: [],
-      author: '',
-      timeMode: 'quick',
-      quickRange: 'all',
-      dateFrom: '',
-      dateTo: '',
-      years: [],
-      months: [],
+      tags: [], author: '', timeMode: 'quick', quickRange: 'all',
+      dateFrom: '', dateTo: '', years: [], months: [],
     },
     filtersActive: false,
     allTags: [],
@@ -34,119 +32,87 @@ Page({
   },
 
   onShow() {
-    this._loadDiaries()
-    this.setData({ userIdentity: app.globalData.user.identity })
+    this._loadDiaries(true)
+    this.setData({ userIdentity: (app.globalData.user || {}).identity || 'authed' })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 1 })
     }
   },
 
-  _loadDiaries() {
-    const all = app.globalData.diaries
-    const filtered = applyFilters(all, 'collections', this.data.search, this.data.filters)
-    const active = this._isFiltersActive(this.data.filters)
-    this.setData({ diaries: filtered, filtersActive: active })
-  },
-
-  _isFiltersActive(f) {
-    return (
-      (f.tags && f.tags.length > 0) ||
-      (f.author && f.author.trim()) ||
-      (f.timeMode === 'quick' && f.quickRange && f.quickRange !== 'all') ||
-      (f.timeMode === 'range' && (f.dateFrom || f.dateTo)) ||
-      (f.timeMode === 'ym' && ((f.years && f.years.length) || (f.months && f.months.length)))
-    )
-  },
-
-  onSearchInput(e) {
-    this.setData({ search: e.detail.value }, () => {
-      this._loadDiaries()
+  async _loadDiaries(reset) {
+    const page = reset ? 1 : this.data.page
+    const data = await diaryApi.getList({
+      mode: 'collections', page,
+      keyword: this.data.search || undefined,
+      tag: this.data.filters.tags[0] || undefined,
+      author: this.data.filters.author || undefined,
     })
+    if (data) {
+      const active = this._isFiltersActive()
+      const mapped = data.list.map(mapper.diary)
+      this.setData({
+        diaries: reset ? mapped : [...this.data.diaries, ...mapped],
+        page: page + 1, hasMore: data.list.length >= data.pageSize, filtersActive: active,
+      })
+    }
   },
 
-  onSearchClear() {
-    this.setData({ search: '' }, () => {
-      this._loadDiaries()
-    })
+  _isFiltersActive() {
+    const f = this.data.filters
+    return (f.tags.length > 0 || f.author || f.quickRange !== 'all' || f.dateFrom || f.dateTo || f.years.length || f.months.length)
   },
 
-  onOpenFilter() {
-    this.setData({ showFilterSheet: true })
-  },
-
-  onCloseFilter() {
-    this.setData({ showFilterSheet: false })
-  },
-
-  onApplyFilter(e) {
-    const filters = e.detail.filters
-    this.setData({ filters, showFilterSheet: false }, () => {
-      this._loadDiaries()
-    })
-  },
+  onSearchInput(e) { this.setData({ search: e.detail.value }) },
+  onSearchClear() { this.setData({ search: '' }, () => this._loadDiaries(true)) },
+  onSearchConfirm() { this._loadDiaries(true) },
+  onOpenFilter() { this.setData({ showFilterSheet: true }) },
+  onCloseFilter() { this.setData({ showFilterSheet: false }) },
+  onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
 
   onCardOpen(e) {
     const { id } = e.detail
-    const diary = app.globalData.diaries.find(d => d.id === id)
-    const identity = app.globalData.user.identity
+    const diary = this.data.diaries.find(d => d.id === id)
+    const identity = (app.globalData.user || {}).identity || 'guest'
     if (diary && diary.permission === 'member' && identity !== 'member') {
       this.setData({ showMemberGuard: true, userIdentity: identity })
       return
     }
     wx.navigateTo({ url: '/pages/detail/index?id=' + id })
   },
-
-  onCloseMemberGuard() {
-    this.setData({ showMemberGuard: false })
-  },
-
+  onCloseMemberGuard() { this.setData({ showMemberGuard: false }) },
   onGuardAuthorize() {
     wx.showModal({
-      title: '微信授权',
-      content: '授权后可获得完整账号功能，包括发布日记与查看会员内容。',
-      confirmText: '授权',
-      cancelText: '取消',
+      title: '微信授权', content: '授权后可获得完整账号功能。',
+      confirmText: '授权', cancelText: '取消',
       success: (res) => {
         if (res.confirm) {
           app.updateUser({ identity: 'authed' })
           this.setData({ showMemberGuard: false, userIdentity: 'authed' })
-          wx.showToast({ title: '授权成功', icon: 'success', duration: 1500 })
         }
       },
     })
   },
+  onGuardJoinMember() { this.setData({ showMemberGuard: false }); wx.switchTab({ url: '/pages/member/index' }) },
 
-  onGuardJoinMember() {
-    this.setData({ showMemberGuard: false })
-    wx.switchTab({ url: '/pages/member/index' })
-  },
-
-  onCardShare(e) {
+  async onCardLike(e) {
     const { id } = e.detail
-    const diary = app.globalData.diaries.find(d => d.id === id)
-    if (diary) {
-      this.setData({ showPosterSheet: true, posterDiary: diary })
+    const result = await socialApi.toggleLike(id, 'diary')
+    if (result) {
+      this.setData({
+        diaries: this.data.diaries.map(d => d.id === id ? { ...d, isLiked: result.liked, likes: d.likes + (result.liked ? 1 : -1) } : d)
+      })
     }
   },
-
-  onClosePoster() {
-    this.setData({ showPosterSheet: false, posterDiary: null })
-  },
-
-  onCardLike(e) {
+  async onCardFav(e) {
     const { id } = e.detail
-    app.toggleLike(id)
-    this._loadDiaries()
+    const result = await socialApi.toggleFav(id)
+    if (result) wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
   },
-
-  onCardFav(e) {
+  onCardShare(e) {
     const { id } = e.detail
-    const nowFav = app.toggleFav(id)
-    wx.showToast({
-      title: nowFav ? '已收藏' : '已取消收藏',
-      icon: 'none',
-      duration: 1500,
-    })
-    this._loadDiaries()
+    const diary = this.data.diaries.find(d => d.id === id)
+    if (diary) this.setData({ showPosterSheet: true, posterDiary: diary })
   },
+  onClosePoster() { this.setData({ showPosterSheet: false, posterDiary: null }) },
+  onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
 })

@@ -1,5 +1,5 @@
 <view
-  class="diary-card {{diary.authorIsMember ? 'card-member' : ''}} {{diary.permission === 'private' ? 'card-private' : ''}}"
+  class="diary-card {{diary.author_identity === 'member' ? 'card-member' : ''}} {{diary.permission === 'private' ? 'card-private' : ''}}"
   bindtap="onTap"
 >
   <!-- Header: avatar + author + time + perm badge -->
@@ -8,13 +8,13 @@
       <view class="card-avatar" style="background-color: {{avatarColor}};">
         <text class="card-avatar-text">{{avatarInitial}}</text>
       </view>
-      <view wx:if="{{diary.authorIsMember}}" class="member-badge">
+      <view wx:if="{{diary.author_identity === 'member'}}" class="member-badge">
         <text class="member-badge-text">会</text>
       </view>
     </view>
     <view class="card-meta">
-      <text class="author-name">{{diary.author}}</text>
-      <text class="card-time">{{diary.time}}</text>
+      <text class="author-name">{{diary.author_name}}</text>
+      <text class="card-time">{{diary.created_at_text}}</text>
     </view>
     <view class="perm-badge {{diary.permission === 'public' ? 'perm-public' : ''}} {{diary.permission === 'member' ? 'perm-member' : ''}} {{diary.permission === 'private' ? 'perm-private' : ''}}">
       <text wx:if="{{diary.permission === 'public'}}">⊕ 公众</text>
@@ -47,16 +47,16 @@
     <view class="stats-left">
       <view class="stat-item like-wrap" bindtap="onLike">
         <text class="stat-icon {{diary.isLiked ? 'liked' : ''}}">{{diary.isLiked ? '♥' : '♡'}}</text>
-        <text class="stat-count {{diary.isLiked ? 'liked' : ''}}">{{diary.likes}}</text>
+        <text class="stat-count {{diary.isLiked ? 'liked' : ''}}">{{diary.like_count}}</text>
         <text wx:if="{{showLikeAnim}}" class="like-float">+1</text>
       </view>
       <view class="stat-item" bindtap="onFav">
         <text class="stat-icon {{diary.isFavorited ? 'faved' : ''}}">{{diary.isFavorited ? '◆' : '◇'}}</text>
-        <text class="stat-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.favorites}}</text>
+        <text class="stat-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.fav_count}}</text>
       </view>
       <view class="stat-item">
         <text class="stat-icon">◎</text>
-        <text class="stat-count">{{diary.comments}}</text>
+        <text class="stat-count">{{diary.comment_count}}</text>
       </view>
     </view>
     <view class="stats-right">
@@ -70,7 +70,7 @@
       </view>
       <view wx:else class="stat-item" bindtap="onShare">
         <text class="stat-icon">↑</text>
-        <text class="stat-count">{{diary.shares}}</text>
+        <text class="stat-count">{{diary.share_count}}</text>
       </view>
     </view>
   </view>

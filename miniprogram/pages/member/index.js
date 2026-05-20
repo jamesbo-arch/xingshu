@@ -1,5 +1,7 @@
 const app = getApp()
 const { hueToColor, getInitial } = require('../../utils/color')
+const userApi = require('../../api/user')
+const mapper = require('../../utils/mapper')
 
 Page({
   data: {
@@ -28,7 +30,7 @@ Page({
 
   onLoad() {
     const info = wx.getSystemInfoSync()
-    this.setData({ statusBarHeight: info.statusBarHeight || 0 })
+    this.setData({ statusBarHeight: info.statusBarHeight || 0, adminContact: app.globalData.adminContact })
   },
 
   onShow() {
@@ -39,13 +41,13 @@ Page({
   },
 
   _loadUser() {
-    const user = app.globalData.user
-    const adminContact = app.globalData.adminContact
+    const raw = app.globalData.user
+    if (!raw) return
+    const user = mapper.user(raw)
     this.setData({
       user,
-      adminContact,
-      avatarColor: hueToColor(user.avatarHue),
-      avatarInitial: getInitial(user.nickname || user.wechatName),
+      avatarColor: hueToColor(user.avatarHue || 60),
+      avatarInitial: getInitial(user.nickname || '?'),
     })
   },
 
@@ -53,8 +55,7 @@ Page({
     wx.showModal({
       title: '微信授权',
       content: '授权后可获得完整功能，包括发布日记与查看会员内容。',
-      confirmText: '授权',
-      cancelText: '取消',
+      confirmText: '授权', cancelText: '取消',
       success: (res) => {
         if (res.confirm) {
           app.updateUser({ identity: 'authed' })
@@ -65,45 +66,34 @@ Page({
     })
   },
 
-  onShowPurchaseSheet() {
-    this.setData({ showPurchaseSheet: true })
-  },
-
-  onClosePurchaseSheet() {
-    this.setData({ showPurchaseSheet: false })
-  },
+  onShowPurchaseSheet() { this.setData({ showPurchaseSheet: true }) },
+  onClosePurchaseSheet() { this.setData({ showPurchaseSheet: false }) },
 
   onShowProfileSheet() {
-    const user = this.data.user
+    const user = this.data.user || {}
     this.setData({
       showProfileSheet: true,
       editNickname: user.nickname || '',
-      editRealName: user.realName || '',
+      editRealName: user.real_name || user.realName || '',
     })
   },
+  onCloseProfileSheet() { this.setData({ showProfileSheet: false }) },
+  onNicknameInput(e) { this.setData({ editNickname: e.detail.value }) },
+  onRealNameInput(e) { this.setData({ editRealName: e.detail.value }) },
 
-  onCloseProfileSheet() {
-    this.setData({ showProfileSheet: false })
-  },
-
-  onNicknameInput(e) {
-    this.setData({ editNickname: e.detail.value })
-  },
-
-  onRealNameInput(e) {
-    this.setData({ editRealName: e.detail.value })
-  },
-
-  onSaveProfile() {
+  async onSaveProfile() {
     const nickname = this.data.editNickname.trim()
     if (!nickname) {
       wx.showToast({ title: '昵称不能为空', icon: 'none', duration: 1500 })
       return
     }
-    app.updateUser({ nickname, realName: this.data.editRealName.trim() })
-    this._loadUser()
-    this.setData({ showProfileSheet: false })
-    wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 })
+    const result = await userApi.updateProfile({ nickname, realName: this.data.editRealName.trim() })
+    if (result) {
+      app.globalData.user = result
+      this._loadUser()
+      this.setData({ showProfileSheet: false })
+      wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 })
+    }
   },
 
   onCopyWechat() {
@@ -111,9 +101,7 @@ Page({
     if (wechat) {
       wx.setClipboardData({
         data: wechat,
-        success: () => {
-          wx.showToast({ title: '微信号已复制', icon: 'none', duration: 1500 })
-        },
+        success: () => wx.showToast({ title: '微信号已复制', icon: 'none', duration: 1500 }),
       })
     }
   },

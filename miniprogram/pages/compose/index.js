@@ -1,4 +1,5 @@
 const app = getApp()
+const diaryApi = require('../../api/diary')
 
 Page({
   data: {
@@ -23,112 +24,58 @@ Page({
 
   onLoad(options) {
     const info = wx.getSystemInfoSync()
-    this.setData({
-      statusBarHeight: info.statusBarHeight || 0,
-      allTags: app.globalData.tags,
-    })
+    this.setData({ statusBarHeight: info.statusBarHeight || 0, allTags: app.globalData.tags })
 
     if (options.diaryId) {
       const id = parseInt(options.diaryId, 10) || options.diaryId
-      const diary = app.globalData.diaries.find(d => d.id == id)
-      if (diary) {
-        this.setData({
-          diaryId: diary.id,
-          isEditing: true,
-          title: diary.title,
-          content: diary.content,
-          selectedTags: [...(diary.tags || [])],
-          permission: diary.permission || 'public',
-        })
-        wx.setNavigationBarTitle({ title: '编辑日记' })
-      }
+      diaryApi.getDetail(id).then(diary => {
+        if (diary) {
+          this.setData({
+            diaryId: diary.id, isEditing: true,
+            title: diary.title || '', content: diary.content || '',
+            selectedTags: diary.tags || [], permission: diary.permission || 'public',
+          })
+        }
+      })
     }
   },
 
-  onTitleInput(e) {
-    this.setData({ title: e.detail.value })
-  },
-
-  onContentInput(e) {
-    this.setData({ content: e.detail.value })
-  },
-
-  setPermission(e) {
-    const key = e.currentTarget.dataset.key
-    this.setData({ permission: key })
-  },
-
+  onTitleInput(e) { this.setData({ title: e.detail.value }) },
+  onContentInput(e) { this.setData({ content: e.detail.value }) },
+  setPermission(e) { this.setData({ permission: e.currentTarget.dataset.key }) },
   removeTag(e) {
-    const tag = e.currentTarget.dataset.tag
-    const tags = this.data.selectedTags.filter(t => t !== tag)
-    this.setData({ selectedTags: tags })
+    this.setData({ selectedTags: this.data.selectedTags.filter(t => t !== e.currentTarget.dataset.tag) })
   },
-
-  onOpenTagPicker() {
-    this.setData({
-      showTagPicker: true,
-      pickerSelectedTags: [...this.data.selectedTags],
-    })
-  },
-
-  onCloseTagPicker() {
-    this.setData({ showTagPicker: false })
-  },
-
+  onOpenTagPicker() { this.setData({ showTagPicker: true, pickerSelectedTags: [...this.data.selectedTags] }) },
+  onCloseTagPicker() { this.setData({ showTagPicker: false }) },
   togglePickerTag(e) {
     const tag = e.currentTarget.dataset.tag
     const tags = [...this.data.pickerSelectedTags]
     const idx = tags.indexOf(tag)
-    if (idx >= 0) {
-      tags.splice(idx, 1)
-    } else {
-      tags.push(tag)
-    }
+    idx >= 0 ? tags.splice(idx, 1) : tags.push(tag)
     this.setData({ pickerSelectedTags: tags })
   },
-
-  onClearPickerTags() {
-    this.setData({ pickerSelectedTags: [] })
-  },
-
-  onConfirmTags() {
-    this.setData({
-      selectedTags: [...this.data.pickerSelectedTags],
-      showTagPicker: false,
-    })
-  },
+  onClearPickerTags() { this.setData({ pickerSelectedTags: [] }) },
+  onConfirmTags() { this.setData({ selectedTags: [...this.data.pickerSelectedTags], showTagPicker: false }) },
 
   canPublish() {
-    const { title, content } = this.data
-    return title.trim().length > 0 && content.trim().length > 0
+    return this.data.title.trim().length > 0 && this.data.content.trim().length > 0
   },
+  onBack() { wx.navigateBack() },
 
-  onBack() {
-    wx.navigateBack()
-  },
-
-  onPublish() {
+  async onPublish() {
     const { title, content, selectedTags, permission, isEditing, diaryId } = this.data
     if (!this.canPublish()) {
       wx.showToast({ title: '标题和内容不能为空', icon: 'none', duration: 1500 })
       return
     }
-
-    const patch = {
-      title: title.trim(),
-      content: content.trim(),
-      tags: selectedTags,
-      permission,
-    }
-
-    if (isEditing && diaryId !== null) {
-      app.updateDiary(diaryId, patch)
-      wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 })
+    const data = { title: title.trim(), content: content.trim(), tags: selectedTags, permission }
+    if (isEditing && diaryId) {
+      const result = await diaryApi.update(diaryId, data)
+      if (result) { wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 }); wx.navigateBack() }
     } else {
-      app.addDiary(patch)
-      wx.showToast({ title: '发布成功', icon: 'success', duration: 1500 })
+      const result = await diaryApi.create(data)
+      if (result) { wx.showToast({ title: '发布成功', icon: 'success', duration: 1500 }); wx.navigateBack() }
     }
-
-    wx.navigateBack()
   },
 })

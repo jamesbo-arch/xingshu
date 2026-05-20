@@ -64,25 +64,30 @@ Component({
 
   lifetimes: {
     attached() {
-      const d = this.data.diary
-      if (d && d.avatarHue !== undefined) {
-        this.setData({
-          avatarColor: hueToColor(d.avatarHue),
-          avatarInitial: getInitial(d.author),
-        })
-      }
+      this._updateAvatar(this.data.diary)
     },
   },
 
   observers: {
     'diary': function(d) {
-      if (d && d.avatarHue !== undefined) {
-        this.setData({
-          avatarColor: hueToColor(d.avatarHue),
-          avatarInitial: getInitial(d.author),
-        })
-      }
+      this._updateAvatar(d)
     },
+  },
+
+  _updateAvatar(d) {
+    if (!d) return
+    const hue = d.author_avatar_hue || d.avatarHue
+    const name = d.author_name || d.author
+    const patch = {}
+    if (hue !== undefined) {
+      patch.avatarColor = hueToColor(hue)
+      patch.avatarInitial = getInitial(name || '?')
+    }
+    if (d.created_at && !d.created_at_text) {
+      const t = d.created_at.replace('T', ' ').substring(5, 16)
+      patch.created_at_text = t
+    }
+    if (Object.keys(patch).length) this.setData(patch)
   },
 
   data: {

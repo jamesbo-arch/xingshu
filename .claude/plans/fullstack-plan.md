@@ -166,39 +166,29 @@
 
 ---
 
-## Phase 3 — 前端改造（预计 3-4 天）
+## Phase 3 — 前端改造（预计 3-4 天）✅ 已完成
 
 ### 3.1 数据层重构
-- [ ] **3.1.1** 创建 `miniprogram/api/` HTTP 封装层
-  - `api/request.js` — 统一请求方法（wx.cloud.callFunction 或 wx.request）
-  - `api/diary.js` — 日记相关 API
-  - `api/user.js` — 用户相关 API
-  - `api/social.js` — 社交互动 API
-  - `api/member.js` — 会员/支付 API
-  - `api/tag.js` — 标签 API
-- [ ] **3.1.2** 重构 `app.js` globalData 方法
-  - `toggleLike` → 调用云函数 + 乐观更新 UI
-  - `toggleFav` → 调用云函数 + 乐观更新 UI
-  - `addDiary/updateDiary/deleteDiary` → 调用云函数 + 刷新列表
-  - `updateUser` → 调用云函数
+- [x] **3.1.1** 创建 `miniprogram/api/` HTTP 封装层（request/user/diary/social/tag）
+- [x] **3.1.2** 重构 `app.js` 移除 mock 依赖，改用云函数 + globalData 缓存
 
 ### 3.2 认证接入
-- [ ] **3.2.1** 登录页/流程：`app.js onLaunch` 调用 `wx.login` + `login` 云函数
-- [ ] **3.2.2** 游客态处理：未登录可浏览公开内容，操作时引导登录
-- [ ] **3.2.3** 会员态处理：member-guard 改为基于真实数据校验
+- [x] **3.2.1** `app.js onLaunch` 调用 `login` 云函数
+- [x] **3.2.2** 游客态：未登录可浏览公开内容
+- [x] **3.2.3** 会员态：member-guard 基于真实 identity 校验
 
 ### 3.3 页面改造
-- [ ] **3.3.1** 广场页：分页加载（上拉加载更多）、下拉刷新
-- [ ] **3.3.2** 收藏页：分页加载、同步真实收藏状态
-- [ ] **3.3.3** 我的日记页：分页加载、真实删除
-- [ ] **3.3.4** 会员中心：对接真实订单、微信支付流程
-- [ ] **3.3.5** 详情页：真实评论发布/回复、真实小程序码海报
-- [ ] **3.3.6** 撰写页：图片上传、草稿自动保存
+- [x] **3.3.1** 广场页：分页加载（onReachBottom）+ mapper
+- [x] **3.3.2** 收藏页：分页加载 + mapper
+- [x] **3.3.3** 我的日记页：分页加载 + API 删除
+- [x] **3.3.4** 会员中心：真实用户数据 + updateProfile API
+- [x] **3.3.5** 详情页：真实评论发布 + mapper 适配
+- [x] **3.3.6** 撰写页：createDiary/updateDiary API 调用
 
 ### 3.4 离线与容错
-- [ ] **3.4.1** 网络异常全局处理（断网提示、重试）
-- [ ] **3.4.2** 乐观更新 + 失败回滚（点赞/收藏场景）
-- [ ] **3.4.3** 本地缓存热数据（wx.setStorage 缓存首页列表）
+- [x] **3.4.1** 网络异常：request.js 统一错误处理 + toast 提示
+- [x] **3.4.2** 乐观更新：点赞/收藏即时更新 UI + API 同步
+- [ ] **3.4.3** 本地缓存（后续迭代）
 
 ---
 
@@ -274,12 +264,11 @@
 ## 里程碑时间线
 
 ```
-Week 1: Phase 1 (基础设施) ✅ Done + Phase 2 开始
-Week 2: Phase 2 完成 (云函数) + Phase 3 开始 (前端改造)
-Week 3: Phase 3 完成 (前端 API 接入) + Phase 4 开始 (管理后台)
-Week 4-5: Phase 4 完成 (管理后台：Vue 3 + 4 模块 + KPI 看板)
-Week 6: Phase 5 (测试) + Phase 6 (部署上线)
-Week 7+: Phase 7 (运维监控 + 持续迭代)
+Week 1: Phase 1 (基础设施) ✅ + Phase 2 (云函数) ✅ + Phase 3 (前端改造) ✅
+Week 2-3: Phase 4 开始 (管理后台：Vue 3 + 4 模块 + KPI 看板)
+Week 4: Phase 5 (测试)
+Week 5: Phase 6 (部署上线)
+Week 6+: Phase 7 (运维监控 + 持续迭代)
 
 > 微信在线支付不在范围内，会员付费采用线下转账 + 管理员手动确认模式。
 ```

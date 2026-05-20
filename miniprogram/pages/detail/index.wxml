@@ -1,11 +1,9 @@
 <view class="page-wrap paper-bg" wx:if="{{diary}}">
   <scroll-view class="content-scroll" scroll-y enhanced show-scrollbar="{{false}}">
-    <!-- Title -->
     <view class="detail-title-wrap">
       <text class="detail-title serif">{{diary.title}}</text>
     </view>
 
-    <!-- Author meta -->
     <view class="author-row">
       <view class="avatar-wrap">
         <view class="avatar sm" style="background-color: {{avatarColor}};">
@@ -26,28 +24,20 @@
       </view>
     </view>
 
-    <!-- Tags -->
     <view class="detail-tags" wx:if="{{diary.tags && diary.tags.length}}">
-      <text
-        wx:for="{{diary.tags}}"
-        wx:key="*this"
-        class="seal-tag lg"
-      >{{item}}</text>
+      <text wx:for="{{diary.tags}}" wx:key="*this" class="seal-tag lg">{{item}}</text>
     </view>
 
-    <!-- Body content -->
     <view class="detail-content">
       <text class="content-text">{{diary.content}}</text>
     </view>
 
-    <!-- Seal stamp -->
     <view class="seal-stamp-wrap">
       <view class="seal-stamp">
         <text class="seal-stamp-text serif">{{diary.author}}</text>
       </view>
     </view>
 
-    <!-- Comments section -->
     <view class="comments-section">
       <view class="comments-header">
         <text class="comments-title">评论</text>
@@ -60,10 +50,7 @@
 
       <view wx:for="{{comments}}" wx:key="id" class="comment-item">
         <view class="comment-avatar">
-          <view
-            class="avatar sm"
-            style="background-color: {{item.avatarHue !== undefined ? 'hsl(' + item.avatarHue + ',30%,45%)' : '#8B7A4A'}};"
-          >
+          <view class="avatar sm" style="background-color: {{item.avatarHue !== undefined ? 'hsl(' + item.avatarHue + ',30%,45%)' : '#8B7A4A'}};">
             <text>{{item.user ? item.user[0] : '?'}}</text>
           </view>
         </view>
@@ -73,14 +60,9 @@
             <text class="comment-time">{{item.time}}</text>
           </view>
           <text class="comment-content">{{item.content}}</text>
-
-          <!-- Replies -->
           <view wx:if="{{item.replies && item.replies.length}}" class="replies-wrap">
             <view wx:for="{{item.replies}}" wx:key="id" wx:for-item="reply" class="reply-item">
-              <view
-                class="avatar"
-                style="width: 40rpx; height: 40rpx; font-size: 18rpx; background-color: hsl({{reply.avatarHue}},30%,45%);"
-              >
+              <view class="avatar" style="width:40rpx;height:40rpx;font-size:18rpx;background-color:hsl({{reply.avatarHue}},30%,45%);">
                 <text>{{reply.user ? reply.user[0] : '?'}}</text>
               </view>
               <view class="reply-body">
@@ -97,7 +79,6 @@
     <view class="bottom-content-pad"></view>
   </scroll-view>
 
-  <!-- Bottom action bar -->
   <view class="bottom-bar">
     <view class="comment-trigger" bindtap="onShowCommentInput">
       <text class="comment-trigger-icon">✎</text>
@@ -118,30 +99,18 @@
     </view>
   </view>
 
-  <!-- Poster sheet -->
   <poster-sheet visible="{{showPosterSheet}}" diary="{{diary}}" bind:close="onPosterClose"></poster-sheet>
 
-  <!-- Comment input overlay -->
   <view wx:if="{{showCommentInput}}" class="comment-overlay">
     <view class="comment-overlay-mask" bindtap="onHideCommentInput"></view>
     <view class="comment-input-bar">
       <view class="avatar sm" style="background-color: {{userAvatarColor}}; flex-shrink: 0;">
         <text>{{userAvatarInitial}}</text>
       </view>
-      <input
-        class="comment-real-input"
-        placeholder="说点什么…"
-        placeholder-style="color: #A8A39B;"
-        value="{{commentInput}}"
-        bindinput="onCommentInput"
-        focus="{{showCommentInput}}"
-        confirm-type="send"
-        bindconfirm="onSubmitComment"
-      />
-      <view
-        class="comment-submit {{commentInput ? 'active' : ''}}"
-        bindtap="onSubmitComment"
-      >发送</view>
+      <input class="comment-real-input" placeholder="说点什么…" placeholder-style="color:#A8A39B;"
+        value="{{commentInput}}" bindinput="onCommentInput" focus="{{showCommentInput}}"
+        confirm-type="send" bindconfirm="onSubmitComment"/>
+      <view class="comment-submit {{commentInput ? 'active' : ''}}" bindtap="onSubmitComment">发送</view>
     </view>
   </view>
 </view>

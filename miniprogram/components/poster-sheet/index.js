@@ -36,8 +36,8 @@ Component({
         const lines = (d.content || '').split('\n').filter(l => l.trim())
         const excerpt = lines.slice(0, 5).join('\n')
         this.setData({
-          avatarColor: hueToColor(d.avatarHue || 60),
-          avatarInitial: getInitial(d.author),
+          avatarColor: hueToColor(d.author_avatar_hue || d.avatarHue || 60),
+          avatarInitial: getInitial(d.author_name || d.author || '?'),
           contentExcerpt: excerpt,
         })
       }
@@ -203,10 +203,10 @@ Component({
         ctx.fillStyle = '#2A2723'
         ctx.font = 'bold 26px sans-serif'
         ctx.textAlign = 'left'
-        ctx.fillText(d.author || '', 128, ty)
+        ctx.fillText(d.author_name || d.author || '', 128, ty)
         ctx.fillStyle = '#A8A39B'
         ctx.font = '21px sans-serif'
-        ctx.fillText(d.time || '', 128, ty + 30)
+        ctx.fillText(d.created_at || d.time || '', 128, ty + 30)
 
         // QR placeholder
         const qx = W - 110, qy = ty - 16

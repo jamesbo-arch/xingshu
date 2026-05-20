@@ -1,20 +1,17 @@
 const app = getApp()
-const { applyFilters } = require('../../utils/filter')
+const diaryApi = require('../../api/diary')
+const mapper = require('../../utils/mapper')
 
 Page({
   data: {
     diaries: [],
     search: '',
+    page: 1,
+    hasMore: true,
     showFilterSheet: false,
     filters: {
-      tags: [],
-      author: '',
-      timeMode: 'quick',
-      quickRange: 'all',
-      dateFrom: '',
-      dateTo: '',
-      years: [],
-      months: [],
+      tags: [], author: '', timeMode: 'quick', quickRange: 'all',
+      dateFrom: '', dateTo: '', years: [], months: [],
     },
     filtersActive: false,
     allTags: [],
@@ -30,102 +27,49 @@ Page({
   },
 
   onShow() {
-    this._loadDiaries()
+    this._loadDiaries(true)
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 2 })
     }
   },
 
-  _loadDiaries() {
-    const all = app.globalData.diaries
-    const filtered = applyFilters(all, 'mine', this.data.search, this.data.filters)
-    const active = this._isFiltersActive(this.data.filters)
-    this.setData({ diaries: filtered, filtersActive: active })
+  async _loadDiaries(reset) {
+    const page = reset ? 1 : this.data.page
+    const data = await diaryApi.getList({ mode: 'mine', page, keyword: this.data.search || undefined })
+    if (data) {
+      const active = this._isFiltersActive()
+      const mapped = data.list.map(mapper.diary)
+      this.setData({
+        diaries: reset ? mapped : [...this.data.diaries, ...mapped],
+        page: page + 1, hasMore: data.list.length >= data.pageSize, filtersActive: active,
+      })
+    }
   },
 
-  _isFiltersActive(f) {
-    return (
-      (f.tags && f.tags.length > 0) ||
-      (f.author && f.author.trim()) ||
-      (f.timeMode === 'quick' && f.quickRange && f.quickRange !== 'all') ||
-      (f.timeMode === 'range' && (f.dateFrom || f.dateTo)) ||
-      (f.timeMode === 'ym' && ((f.years && f.years.length) || (f.months && f.months.length)))
-    )
+  _isFiltersActive() {
+    const f = this.data.filters
+    return (f.tags.length > 0 || f.author || f.quickRange !== 'all' || f.dateFrom || f.dateTo || f.years.length || f.months.length)
   },
 
-  onSearchInput(e) {
-    this.setData({ search: e.detail.value }, () => {
-      this._loadDiaries()
-    })
-  },
+  onSearchInput(e) { this.setData({ search: e.detail.value }) },
+  onSearchClear() { this.setData({ search: '' }, () => this._loadDiaries(true)) },
+  onSearchConfirm() { this._loadDiaries(true) },
+  onOpenFilter() { this.setData({ showFilterSheet: true }) },
+  onCloseFilter() { this.setData({ showFilterSheet: false }) },
+  onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
 
-  onSearchClear() {
-    this.setData({ search: '' }, () => {
-      this._loadDiaries()
-    })
-  },
-
-  onOpenFilter() {
-    this.setData({ showFilterSheet: true })
-  },
-
-  onCloseFilter() {
-    this.setData({ showFilterSheet: false })
-  },
-
-  onApplyFilter(e) {
-    const filters = e.detail.filters
-    this.setData({ filters, showFilterSheet: false }, () => {
-      this._loadDiaries()
-    })
-  },
-
-  onCardOpen(e) {
+  onCardOpen(e) { wx.navigateTo({ url: '/pages/detail/index?id=' + e.detail.id }) },
+  onCardEdit(e) { wx.navigateTo({ url: '/pages/compose/index?diaryId=' + e.detail.id }) },
+  async onCardDelete(e) {
     const { id } = e.detail
-    wx.navigateTo({ url: '/pages/detail/index?id=' + id })
+    const res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除后不可恢复', success: r }))
+    if (res.confirm) {
+      await diaryApi.remove(id)
+      this.setData({ diaries: this.data.diaries.filter(d => d.id !== id) })
+      wx.showToast({ title: '删除成功', icon: 'none', duration: 1500 })
+    }
   },
 
-  onCardLike(e) {
-    const { id } = e.detail
-    app.toggleLike(id)
-    this._loadDiaries()
-  },
-
-  onCardFav(e) {
-    const { id } = e.detail
-    const nowFav = app.toggleFav(id)
-    wx.showToast({
-      title: nowFav ? '已收藏' : '已取消收藏',
-      icon: 'none',
-      duration: 1500,
-    })
-    this._loadDiaries()
-  },
-
-  onCardEdit(e) {
-    const { id } = e.detail
-    wx.navigateTo({ url: '/pages/compose/index?diaryId=' + id })
-  },
-
-  onCardDelete(e) {
-    const { id } = e.detail
-    wx.showModal({
-      title: '删除日记',
-      content: '确定要删除这篇日记吗？此操作不可撤销。',
-      confirmText: '删除',
-      confirmColor: '#B6452F',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          app.deleteDiary(id)
-          this._loadDiaries()
-          wx.showToast({ title: '已删除', icon: 'none', duration: 1500 })
-        }
-      },
-    })
-  },
-
-  onFabTap() {
-    wx.navigateTo({ url: '/pages/compose/index' })
-  },
+  onFabTap() { wx.navigateTo({ url: '/pages/compose/index' }) },
+  onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
 })

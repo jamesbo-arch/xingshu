@@ -271,3 +271,43 @@
 - getDiaryList 支持分页 + 多条件筛选 + JOIN 查询
 - createDiary 含事务回滚保护
 - toggleLike/toggleFavorite 使用唯一索引防重
+
+---
+
+### 2026-05-20 17:30 — Phase 3 前端改造完成
+
+**类型**：前端
+**计划关联**：Phase 3.1 ~ 3.3
+**修改文件**：
+- `miniprogram/app.js` — 移除 mock 依赖，添加 `wx.cloud.init` + login 流程
+- `miniprogram/api/request.js` — 统一云函数调用封装（{code, data} 格式）
+- `miniprogram/api/user.js` — login, getUserInfo, updateProfile, checkMember
+- `miniprogram/api/diary.js` — getList, getDetail, create, update, remove
+- `miniprogram/api/social.js` — toggleLike, toggleFav, createComment, getComments, deleteComment
+- `miniprogram/api/tag.js` — getAll, add
+- `miniprogram/utils/mapper.js` — MySQL snake_case → WXML camelCase 字段映射
+- `miniprogram/pages/square/index.js` — API 调用 + 分页加载 + mapper
+- `miniprogram/pages/collections/index.js` — API 调用 + 分页 + mapper
+- `miniprogram/pages/mine/index.js` — API 调用 + 分页 + mapper
+- `miniprogram/pages/member/index.js` — user mapper 适配
+- `miniprogram/pages/detail/index.js` — diary + comment mapper 适配
+- `miniprogram/pages/detail/index.wxml` — 恢复 camelCase 字段引用
+- `miniprogram/pages/compose/index.js` — createDiary/updateDiary API 调用
+- `miniprogram/components/diary-card/index.js` — 字段双兼容（新旧字段名）
+- `miniprogram/components/diary-card/index.wxml` — 新字段名 + 会员标识
+- `miniprogram/components/poster-sheet/index.js` — 字段双兼容
+
+**变更说明**：
+完成前端全面改造，从 mock 数据切换到云函数 API：
+
+1. **API 封装层**：5 个模块（request/user/diary/social/tag），统一 `{ code, data }` 处理
+2. **app.js 重构**：移除 `data/mock` 导入，onLaunch 调用 login 云函数，globalData 作为 API 缓存
+3. **字段映射**：`utils/mapper.js` 自动将 MySQL snake_case 转为 WXML 所用的 camelCase（author→author_name, likes→like_count 等）
+4. **6 个页面全部改造**：列表页增加分页加载（onReachBottom）、搜索改为 API 调用、点赞/收藏/删除走云函数
+5. **diary-card 双兼容**：观察者同时支持新旧字段名，平滑过渡
+
+**验证**：
+- 所有页面 JS 不再引用 mock.js
+- API 调用链路：页面 → api/*.js → request.js → wx.cloud.callFunction → 云函数 → MySQL
+- mapper 函数覆盖 diary/user/comment/reply 所有字段映射
+- 分页参数 page/pageSize 在列表页统一支持
