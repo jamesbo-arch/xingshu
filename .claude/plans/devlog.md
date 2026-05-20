@@ -54,9 +54,9 @@
 - `.claude/agents/backend-agent.md` — 后端开发
 - `.claude/agents/qa-agent.md` — 测试
 - `.claude/agents/cicd-agent.md` — CI/CD 部署
-- `.agents/skills/miniprogram-development` — 微信小程序开发 skill
-- `.agents/skills/auth-wechat-miniprogram` — 微信鉴权 skill
-- `.agents/skills/cloudbase-document-database-in-wechat-miniprogram` — CloudBase 数据库 skill
+- `.claude/skills/miniprogram-development` — 微信小程序开发 skill
+- `.claude/skills/auth-wechat-miniprogram` — 微信鉴权 skill
+- `.claude/skills/cloudbase-document-database-in-wechat-miniprogram` — CloudBase 数据库 skill
 - `CLAUDE.md` — 更新 subagent 使用指南
 
 **变更说明**：
