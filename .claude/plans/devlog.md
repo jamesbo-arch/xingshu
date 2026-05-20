@@ -80,3 +80,22 @@
 
 **验证**：
 规则已写入 CLAUDE.md，本记录即第一条按格式记录的开发日志。无需额外验证。
+
+---
+
+### 2026-05-20 13:50 — Phase 1.1 基础设施初始化
+
+**类型**：配置 / 后端
+**计划关联**：Phase 1.1.2 / 1.1.3 / 1.1.4 — TCB 环境初始化
+**修改文件**：
+- `miniprogram/cloudfunctions/.gitkeep` — 新建云函数目录
+- `miniprogram/project.config.json` — 添加 `cloudfunctionRoot: "cloudfunctions/"`
+- `miniprogram/app.js` — `onLaunch` 中初始化 `wx.cloud.init({ env: 'xingshu-XXXXXX', traceUser: true })`
+
+**变更说明**：
+创建了云函数根目录并配置微信开发者工具识别云函数路径。在 app.js 入口注入 CloudBase 初始化代码（envId 使用占位符 `xingshu-XXXXXX`，待用户创建 TCB 环境后替换真实 envId）。1.1.1（TCB 环境开通）需用户在腾讯云控制台手动完成。
+
+**验证**：
+- `project.config.json` 中 `cloudfunctionRoot` 字段已添加
+- `app.js` 中 `wx.cloud.init` 调用已注入 onLaunch
+- `cloudfunctions/` 目录已创建，含 `.gitkeep` 确保 git 追踪

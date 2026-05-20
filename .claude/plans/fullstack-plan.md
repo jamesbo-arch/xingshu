@@ -80,13 +80,13 @@
 ## Phase 1 — 基础设施搭建（预计 2-3 天）
 
 ### 1.1 TCB 环境初始化
-- [ ] **1.1.1** 开通腾讯 CloudBase 环境
+- [ ] **1.1.1** 开通腾讯 CloudBase 环境（⚠️ 需手动操作）
   - 选择按量计费或套餐
   - 获取环境 ID（envId）
   - 配置安全域名
-- [ ] **1.1.2** 初始化云开发目录 `miniprogram/cloudfunctions/`
-- [ ] **1.1.3** 更新 `project.config.json` 添加 `cloudfunctionRoot`
-- [ ] **1.1.4** 更新 `app.js` 添加 `wx.cloud.init({ env: 'xxx', traceUser: true })`
+- [x] **1.1.2** 初始化云开发目录 `miniprogram/cloudfunctions/`
+- [x] **1.1.3** 更新 `project.config.json` 添加 `cloudfunctionRoot`
+- [x] **1.1.4** 更新 `app.js` 添加 `wx.cloud.init({ env: 'xingshu-XXXXXX', traceUser: true })`
 
 ### 1.2 数据库设计
 
