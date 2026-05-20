@@ -196,3 +196,33 @@
 
 **验证**：
 - `INFORMATION_SCHEMA.COLUMNS` 确认全部 9 张表均具有 created_at / updated_at / created_by / updated_by 四个审计字段
+
+---
+
+### 2026-05-20 16:30 — PRD 评审 + Schema 补充 + Plan 调整
+
+**类型**：数据库 / 文档
+**计划关联**：Phase 1.2 补充 + 全计划调整
+**修改文件**：
+- MySQL — users 表新增 `registered_at`, `last_active`
+- MySQL — diaries 表新增 `status` (active/deleted)
+- MySQL — orders 表新增 `plan`, `valid_from`, `valid_until`, `note`
+- `.claude/plans/fullstack-plan.md` — 管理后台扩编、微信支付移除、timeline 调整
+
+**变更说明**：
+1. 用户提供了 `doc/` 下 PRD 和原型设计文档，全面评审后做出以下调整：
+
+2. **Schema 补充**：
+   - `users.registered_at` / `users.last_active` — 管理后台需要注册时间和活跃度追踪
+   - `diaries.status` ENUM('active','deleted') — 管理后台逻辑删除标记
+   - `orders.plan` / `valid_from` / `valid_until` / `note` — 丰富订单信息
+
+3. **Plan 调整**：
+   - Phase 4（管理后台）从简要描述扩展为完整独立 Web 应用（Vue 3 + Vite），
+     包含：KPI 看板 + 4 大模块 CRUD（用户/日记/评论/订单）+ 筛选/分页/导出
+   - 微信在线支付明确排除，保留线下转账 + 管理员手动确认模式
+   - 配色方案保持原有暖纸色系（`#FBF7EE`），不采用 PRD 中的淡蓝主色
+   - 里程碑时间延长 2 周以适配管理后台规模
+
+**验证**：
+- `INFORMATION_SCHEMA.COLUMNS` 确认 3 张表的 8 个新字段已就位

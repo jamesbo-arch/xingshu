@@ -1,0 +1,386 @@
+/* ===========================
+   醒书日记 · 设计令牌
+   =========================== */
+
+:root {
+  /* — 色板（纸质感淡蓝系，呼应国学文艺） — */
+  /* 纸色系 */
+  --paper:        #FBF7EE;
+  --paper-2:      #F5EFE2;
+  --paper-card:   #FFFCF5;
+  --paper-deep:   #EFE7D4;
+
+  /* 主色 — 文人淡蓝（更深沉、收敛一些） */
+  --blue:         #4577A4;
+  --blue-deep:    #3A6390;
+  --blue-soft:    #E5EDF5;
+
+  /* 朱砂 — 印章红 */
+  --vermilion:    #B6452F;
+  --vermilion-2:  #C2563F;
+
+  /* 金 — 会员标识 */
+  --gold:         #B89968;
+  --gold-deep:    #9A7E4F;
+  --gold-soft:    #F4ECD9;
+
+  /* 墨色 */
+  --ink:          #2A2723;
+  --ink-2:        #4A453E;
+  --ink-3:        #7A746A;
+  --ink-4:        #A8A39B;
+  --ink-5:        #D6D0C2;
+
+  /* 状态色 */
+  --like:         #C25A4E;     /* 心红 */
+  --fav:          #C9A14A;     /* 收藏金 */
+  --success:      #5B8F6C;
+  --warn:         #C09353;
+  --danger:       #B6452F;
+
+  /* — 字体方案（可被 prototype 切换） — */
+  --font-serif:   'Noto Serif SC', 'Source Han Serif SC', 'STSong', 'SimSun', serif;
+  --font-sans:    'Noto Sans SC', 'Source Han Sans SC', 'HarmonyOS Sans SC',
+                  'PingFang SC', '-apple-system', 'BlinkMacSystemFont', 'Helvetica Neue',
+                  'Microsoft YaHei', sans-serif;
+  --font-kai:     'LXGW WenKai', 'LXGW WenKai Screen', 'KaiTi', 'STKaiti', serif;
+
+  --font-title:   var(--font-serif);
+  --font-body:    var(--font-sans);
+  --font-seal:    var(--font-serif);
+
+  /* — 尺寸 — */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+
+  --shadow-1: 0 1px 2px rgba(58, 44, 22, 0.04), 0 2px 8px rgba(58, 44, 22, 0.05);
+  --shadow-2: 0 4px 16px rgba(58, 44, 22, 0.08), 0 1px 3px rgba(58, 44, 22, 0.05);
+  --shadow-3: 0 12px 40px rgba(58, 44, 22, 0.16);
+}
+
+/* — 字体方案变体 — */
+[data-fontset="modern"] {
+  --font-title: var(--font-sans);
+  --font-body:  var(--font-sans);
+}
+[data-fontset="kai"] {
+  --font-title: var(--font-kai);
+  --font-body:  var(--font-kai);
+}
+[data-fontset="serif"] {
+  --font-title: var(--font-serif);
+  --font-body:  var(--font-sans);
+}
+
+* { box-sizing: border-box; }
+
+body, html {
+  margin: 0; padding: 0;
+  font-family: var(--font-body);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button { font-family: inherit; }
+
+/* — Paper texture background — */
+.paper-bg {
+  background-color: var(--paper);
+  background-image:
+    radial-gradient(rgba(126, 102, 64, 0.045) 1px, transparent 1px),
+    radial-gradient(rgba(126, 102, 64, 0.03) 1px, transparent 1px);
+  background-size: 22px 22px, 38px 38px;
+  background-position: 0 0, 11px 19px;
+}
+
+/* — Seal-style tag — */
+.seal-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  font-family: var(--font-seal);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--vermilion);
+  letter-spacing: 1px;
+  border: 1.2px solid var(--vermilion);
+  background: rgba(182, 69, 47, 0.04);
+  border-radius: 2px;
+  white-space: nowrap;
+  line-height: 1.5;
+  position: relative;
+}
+.seal-tag::before, .seal-tag::after {
+  content: '';
+  position: absolute;
+  width: 4px; height: 4px;
+  border: 1.2px solid var(--vermilion);
+  border-radius: 1px;
+  background: var(--paper-card);
+  display: none; /* enable for ornate variant */
+}
+
+.seal-tag.lg {
+  font-size: 13px;
+  padding: 3px 10px;
+}
+
+.seal-tag.muted {
+  color: var(--ink-3);
+  border-color: var(--ink-4);
+  background: transparent;
+}
+
+/* — Permission badge — */
+.perm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px;
+  letter-spacing: 0.5px;
+}
+.perm-badge svg { width: 11px; height: 11px; }
+.perm-public { color: var(--success); background: rgba(91, 143, 108, 0.1); }
+.perm-member { color: var(--gold-deep); background: var(--gold-soft); }
+.perm-private { color: var(--ink-3); background: var(--paper-deep); }
+
+/* — Buttons — */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: var(--r-md);
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+.btn-primary:active { background: var(--ink-2); }
+.btn-primary:disabled { background: var(--ink-5); color: var(--paper); cursor: not-allowed; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--ink-5);
+}
+.btn-ghost:active { background: var(--paper-2); }
+
+.btn-blue {
+  background: var(--blue);
+  color: #fff;
+}
+
+/* — Inputs — */
+.input-field {
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  background: transparent;
+  border: none;
+  outline: none;
+  width: 100%;
+  padding: 8px 0;
+}
+.input-field::placeholder { color: var(--ink-4); }
+
+/* — Diary card (variant 4: 圆形头像 + 大圆角) — */
+.diary-card {
+  background: var(--paper-card);
+  border-radius: var(--r-lg);
+  padding: 16px 16px 12px;
+  border: 0.5px solid rgba(126, 102, 64, 0.14);
+  box-shadow: var(--shadow-1);
+  position: relative;
+}
+.diary-card.is-member {
+  /* 金色描边 + 微妙的 inner 装饰 */
+  border: 1px solid var(--gold);
+  background: linear-gradient(180deg, #FFFBED 0%, var(--paper-card) 70%);
+  box-shadow: 0 1px 3px rgba(184, 153, 104, 0.18), var(--shadow-1);
+}
+.diary-card.is-private {
+  background: var(--paper-deep);
+  border-style: dashed;
+  border-color: var(--ink-5);
+}
+
+.avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-family: var(--font-serif);
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+
+.title-serif {
+  font-family: var(--font-title);
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: 0.5px;
+}
+
+.body-text {
+  font-family: var(--font-body);
+  color: var(--ink-2);
+  line-height: 1.7;
+}
+
+/* — Bottom tab bar — */
+.tab-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  background: rgba(251, 247, 238, 0.92);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border-top: 0.5px solid rgba(126, 102, 64, 0.18);
+  padding: 6px 0 24px;
+  z-index: 20;
+}
+.tab-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 0;
+  cursor: pointer;
+  color: var(--ink-4);
+  transition: color 0.18s;
+}
+.tab-item.active { color: var(--ink); }
+.tab-item .lbl {
+  font-size: 11px;
+  font-family: var(--font-title);
+  letter-spacing: 1px;
+}
+
+/* — Sheet (bottom-up) — */
+.sheet-mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(42, 39, 35, 0.45);
+  z-index: 100;
+  animation: fadein .2s ease;
+}
+.sheet {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  background: var(--paper-card);
+  border-top-left-radius: var(--r-xl);
+  border-top-right-radius: var(--r-xl);
+  padding: 20px 20px calc(20px + env(safe-area-inset-bottom));
+  z-index: 101;
+  animation: slideup .25s cubic-bezier(.2,.7,.2,1);
+  max-height: 80%;
+  overflow-y: auto;
+}
+@keyframes fadein { from { opacity: 0 } to { opacity: 1 } }
+@keyframes slideup { from { transform: translateY(100%) } to { transform: translateY(0) } }
+
+/* — FAB (笔形悬浮按钮) — */
+.fab {
+  position: absolute;
+  right: 18px;
+  bottom: 96px;
+  width: 54px; height: 54px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(42, 39, 35, 0.32);
+  cursor: pointer;
+  z-index: 15;
+  border: none;
+  transition: transform 0.18s;
+}
+.fab:active { transform: scale(0.94); }
+
+/* — Like pop animation — */
+@keyframes like-pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.4); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.like-anim { animation: like-pop 0.4s ease; }
+
+@keyframes float-up {
+  0% { opacity: 0; transform: translateY(0) scale(0.8); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-28px) scale(1.2); }
+}
+.float-heart {
+  position: absolute;
+  pointer-events: none;
+  animation: float-up 0.7s ease-out forwards;
+}
+
+/* — Member glow chip — */
+.member-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--gold-soft), #FAE6BB);
+  color: var(--gold-deep);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* — Scrollbar — */
+.scroll-area::-webkit-scrollbar { width: 0; height: 0; }
+
+/* — Toast — */
+.toast {
+  position: absolute;
+  top: 80px; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(42, 39, 35, 0.92);
+  color: var(--paper);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 14px;
+  z-index: 200;
+  white-space: nowrap;
+  animation: toast-in .25s ease;
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translate(-50%, -8px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}

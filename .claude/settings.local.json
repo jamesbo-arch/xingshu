@@ -28,7 +28,11 @@
       "Bash(tcb login *)",
       "Bash(tcb env *)",
       "Bash(tcb db *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(git reset *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git stash *)"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",
