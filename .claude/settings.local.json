@@ -21,7 +21,13 @@
       "Bash(ls \"C:/Users/James/.agents/skills/\" 2>&1)",
       "Read(//c/Users/James/.agents/skills/**)",
       "Bash(rm -rf \"d:/workspace/xingshu/.claude/skills\")",
-      "Bash(cp -r \"d:/workspace/xingshu/.agents/skills\" \"d:/workspace/xingshu/.claude/skills\")"
+      "Bash(cp -r \"d:/workspace/xingshu/.agents/skills\" \"d:/workspace/xingshu/.claude/skills\")",
+      "Bash(npm list *)",
+      "Bash(npx @cloudbase/cli --version)",
+      "Bash(npm install *)",
+      "Bash(tcb login *)",
+      "Bash(tcb env *)",
+      "Bash(tcb db *)"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",

@@ -116,3 +116,30 @@
 **验证**：
 - `wx.cloud.init` env 参数已设置为真实环境 ID
 - 数据库 schema 设计文档完整，待 TCB 控制台或云函数执行创建
+
+---
+
+### 2026-05-20 14:30 — Phase 1.2 数据库集合与索引创建
+
+**类型**：数据库
+**计划关联**：Phase 1.2 — 文档数据库集合与索引
+**操作工具**：TCB CLI (`tcb db nosql execute`)
+
+**变更说明**：
+通过 TCB CLI 连接 `awakebook-env-1g0oford0bea44cc`，完成了以下操作：
+
+1. **创建 6 个集合**：`users`、`diaries`、`comments`、`interactions`、`tags`、`orders`
+
+2. **创建 4 组索引**：
+   - `diaries._openid` 升序索引
+   - `diaries.permission` + `diaries.createdAt` 降序复合索引
+   - `diaries.tags` 数组索引
+   - `comments.diaryId` + `comments.createdAt` 降序复合索引
+   - `interactions._openid` + `interactions.targetId` + `interactions.action` 唯一复合索引
+
+3. **种子数据**：写入 20 个默认标签到 `tags` 集合（与 mock.js 同步）
+
+**验证**：
+- 所有集合创建成功（insert 返回 ok）
+- 所有索引创建成功（createIndexes 返回 ok）
+- 20 个标签文档已写入 tags 集合
