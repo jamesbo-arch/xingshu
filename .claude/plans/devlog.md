@@ -12,6 +12,7 @@
 ### YYYY-MM-DD HH:MM — [标题]
 
 **类型**：[前端 | 后端 | 数据库 | 云函数 | 测试 | 部署 | 配置 | 文档]
+**模型**：[模型名称]
 **计划关联**：Phase X.Y — [计划步骤描述]
 **修改文件**：
 - `path/file.ext` — 变更摘要
@@ -30,6 +31,7 @@
 ### 2026-05-18 — 项目初始分析
 
 **类型**：文档
+**模型**：Claude Opus 4.7 (claude.ai/code)
 **计划关联**：Phase 0 — 项目现状分析
 **修改文件**：
 - `.claude/plans/fullstack-plan.md` — 新建
@@ -45,6 +47,7 @@
 ### 2026-05-18 — 建立 7 角色 Subagent 协作体系
 
 **类型**：配置
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 0 — 开发工具链准备
 **修改文件**：
 - `.claude/agents/pm-agent.md` — PM 编排器
@@ -70,6 +73,7 @@
 ### 2026-05-18 — 定义开发日志规则
 
 **类型**：文档 / 配置
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 0 — 开发工具链准备
 **修改文件**：
 - `.claude/plans/devlog.md` — 新建
@@ -86,6 +90,7 @@
 ### 2026-05-20 13:50 — Phase 1.1 基础设施初始化
 
 **类型**：配置 / 后端
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 1.1.2 / 1.1.3 / 1.1.4 — TCB 环境初始化
 **修改文件**：
 - `miniprogram/cloudfunctions/.gitkeep` — 新建云函数目录
@@ -105,6 +110,7 @@
 ### 2026-05-20 14:00 — Phase 1.1.1 完成 + 1.2/1.3 设计就绪
 
 **类型**：配置 / 数据库
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 1.1.1 / 1.2 / 1.3
 **修改文件**：
 - `miniprogram/app.js` — envId 替换为 `awakebook-env-1g0oford0bea44cc`
@@ -122,6 +128,7 @@
 ### 2026-05-20 14:30 — Phase 1.2 数据库集合与索引创建
 
 **类型**：数据库
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 1.2 — 文档数据库集合与索引
 **操作工具**：TCB CLI (`tcb db nosql execute`)
 
@@ -149,6 +156,7 @@
 ### 2026-05-20 14:50 — 架构切换至纯 MySQL
 
 **类型**：数据库 / 架构
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 1.2 — 数据库设计（架构变更）
 **修改文件**：
 - `.claude/plans/fullstack-plan.md` — 架构图重绘，文档 DB → 纯 MySQL
@@ -178,6 +186,7 @@
 ### 2026-05-20 15:00 — MySQL 统一增加 created_by / updated_by 审计字段
 
 **类型**：数据库
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 1.2 — 数据库规范完善
 **修改文件**：
 - MySQL 9 张表 — 全部新增审计字段
@@ -202,6 +211,7 @@
 ### 2026-05-20 16:30 — PRD 评审 + Schema 补充 + Plan 调整
 
 **类型**：数据库 / 文档
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 1.2 补充 + 全计划调整
 **修改文件**：
 - MySQL — users 表新增 `registered_at`, `last_active`
@@ -232,6 +242,7 @@
 ### 2026-05-20 17:00 — Phase 2 云函数全部完成
 
 **类型**：云函数 / 后端
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 2.1 ~ 2.6
 **修改文件**：
 - `miniprogram/cloudfunctions/login/index.js` + `package.json`
@@ -277,6 +288,7 @@
 ### 2026-05-20 17:30 — Phase 3 前端改造完成
 
 **类型**：前端
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 3.1 ~ 3.3
 **修改文件**：
 - `miniprogram/app.js` — 移除 mock 依赖，添加 `wx.cloud.init` + login 流程
@@ -317,6 +329,7 @@
 ### 2026-05-20 17:45 — Phase 4 管理后台完成
 
 **类型**：前端 / 管理后台
+**模型**：deepseek-v4-pro
 **计划关联**：Phase 4.1 ~ 4.5
 **修改文件**：
 - `admin/` — Vue 3 + Vite 项目（全新）
