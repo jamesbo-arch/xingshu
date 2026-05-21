@@ -36,7 +36,8 @@
       "Bash(npm create *)",
       "Bash(rm -f src/components/HelloWorld.vue src/style.css)",
       "Bash(npm run *)",
-      "Bash(node test/api-test.js)"
+      "Bash(node test/api-test.js)",
+      "Bash(node test/e2e-flow-test.js)"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",
