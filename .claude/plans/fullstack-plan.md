@@ -129,66 +129,66 @@
 ## Phase 2 — 云函数开发（预计 3-4 天）
 
 ### 2.1 用户与认证
-- [x] **2.1.1** `login` — `wx.login()` → 获取 OpenID → 创建/更新用户记录 → 返回用户信息
-- [x] **2.1.2** `getUserInfo` — 获取当前用户详情 + 统计数据
-- [x] **2.1.3** `updateUserProfile` — 更新昵称、真实姓名、手机号
-- [ ] **2.1.4** `updateAvatar` — 上传头像到云存储 → 更新 avatarUrl（Phase 3 前端一并处理）
+- [x] **2.1.1** `login` — `wx.login()` → 获取 OpenID → 创建/更新用户记录 → 返回用户信息  `[Backend]`
+- [x] **2.1.2** `getUserInfo` — 获取当前用户详情 + 统计数据  `[Backend]`
+- [x] **2.1.3** `updateUserProfile` — 更新昵称、真实姓名、手机号  `[Backend]`
+- [ ] **2.1.4** `updateAvatar` — 上传头像到云存储 → 更新 avatarUrl（Phase 3 前端一并处理）  `[Frontend]`
 
 ### 2.2 日记 CRUD
-- [x] **2.2.1** `createDiary` — 创建日记（事务：INSERT diaries + diary_tags + 更新计数）
-- [x] **2.2.2** `updateDiary` — 修改日记（校验归属、事务更新标签关联）
-- [x] **2.2.3** `deleteDiary` — 软删除日记（status='deleted'，校验归属）
-- [x] **2.2.4** `getDiaryList` — 分页获取日记列表（mode: square/collections/mine, 关键词/标签/作者/权限筛选）
-- [x] **2.2.5** `getDiaryDetail` — 获取日记详情 + 互动状态 + 标签
-- [x] **2.2.6** `searchDiaries` — 已合并到 `getDiaryList` 的 keyword 参数
-- [ ] **2.2.7** `uploadDiaryImage` — 上传日记配图到云存储（Phase 3 前端一并处理）
+- [x] **2.2.1** `createDiary` — 创建日记（事务：INSERT diaries + diary_tags + 更新计数）  `[Backend]`
+- [x] **2.2.2** `updateDiary` — 修改日记（校验归属、事务更新标签关联）  `[Backend]`
+- [x] **2.2.3** `deleteDiary` — 软删除日记（status='deleted'，校验归属）  `[Backend]`
+- [x] **2.2.4** `getDiaryList` — 分页获取日记列表（mode: square/collections/mine, 关键词/标签/作者/权限筛选）  `[Backend]`
+- [x] **2.2.5** `getDiaryDetail` — 获取日记详情 + 互动状态 + 标签  `[Backend]`
+- [x] **2.2.6** `searchDiaries` — 已合并到 `getDiaryList` 的 keyword 参数  `[Backend]`
+- [ ] **2.2.7** `uploadDiaryImage` — 上传日记配图到云存储（Phase 3 前端一并处理）  `[Frontend]`
 
 ### 2.3 社交互动
-- [x] **2.3.1** `toggleLike` — 点赞/取消点赞（原子 INSERT/DELETE，更新计数）
-- [x] **2.3.2** `toggleFavorite` — 收藏/取消收藏
-- [x] **2.3.3** `createComment` — 发布评论/回复（支持 parent_id 嵌套）
-- [x] **2.3.4** `getComments` — 获取评论列表（分页 + 嵌套回复 + isMine 标记）
-- [x] **2.3.5** `deleteComment` — 删除评论（软删除，校验归属）
+- [x] **2.3.1** `toggleLike` — 点赞/取消点赞（原子 INSERT/DELETE，更新计数）  `[Backend]`
+- [x] **2.3.2** `toggleFavorite` — 收藏/取消收藏  `[Backend]`
+- [x] **2.3.3** `createComment` — 发布评论/回复（支持 parent_id 嵌套）  `[Backend]`
+- [x] **2.3.4** `getComments` — 获取评论列表（分页 + 嵌套回复 + isMine 标记）  `[Backend]`
+- [x] **2.3.5** `deleteComment` — 删除评论（软删除，校验归属）  `[Backend]`
 
 ### 2.4 会员与订单（线下转账）
-- [x] **2.4.1** `createOrder` — 管理员创建会员订单（线下转账确认后）
-- [x] **2.4.2** `getOrderList` — 用户订单列表
-- [x] **2.4.3** `checkMemberStatus` — 检查会员状态（含过期自动降级）
-- [x] **2.4.4** `activateMember` — 管理员确认收款后激活会员
+- [x] **2.4.1** `createOrder` — 管理员创建会员订单（线下转账确认后）  `[Backend]`
+- [x] **2.4.2** `getOrderList` — 用户订单列表  `[Backend]`
+- [x] **2.4.3** `checkMemberStatus` — 检查会员状态（含过期自动降级）  `[Backend]`
+- [x] **2.4.4** `activateMember` — 管理员确认收款后激活会员  `[Backend]`
 
 ### 2.5 标签管理
-- [x] **2.5.1** `getTags` — 获取全部标签（按使用量排序）
-- [x] **2.5.2** `addTag` — 管理员添加标签（含重名校验）
-- [x] **2.5.3** `updateTag` — 管理员编辑/禁用标签
+- [x] **2.5.1** `getTags` — 获取全部标签（按使用量排序）  `[Backend]`
+- [x] **2.5.2** `addTag` — 管理员添加标签（含重名校验）  `[Backend]`
+- [x] **2.5.3** `updateTag` — 管理员编辑/禁用标签  `[Backend]`
 
 ### 2.6 小程序码生成
-- [x] **2.6.1** `generateMiniCode` — 生成日记分享小程序码 → 云存储
+- [x] **2.6.1** `generateMiniCode` — 生成日记分享小程序码 → 云存储  `[Backend]`
 
 ---
 
 ## Phase 3 — 前端改造（预计 3-4 天）✅ 已完成
 
 ### 3.1 数据层重构
-- [x] **3.1.1** 创建 `miniprogram/api/` HTTP 封装层（request/user/diary/social/tag）
-- [x] **3.1.2** 重构 `app.js` 移除 mock 依赖，改用云函数 + globalData 缓存
+- [x] **3.1.1** 创建 `miniprogram/api/` HTTP 封装层（request/user/diary/social/tag）  `[Frontend]`
+- [x] **3.1.2** 重构 `app.js` 移除 mock 依赖，改用云函数 + globalData 缓存  `[Frontend]`
 
 ### 3.2 认证接入
-- [x] **3.2.1** `app.js onLaunch` 调用 `login` 云函数
-- [x] **3.2.2** 游客态：未登录可浏览公开内容
-- [x] **3.2.3** 会员态：member-guard 基于真实 identity 校验
+- [x] **3.2.1** `app.js onLaunch` 调用 `login` 云函数  `[Frontend]`
+- [x] **3.2.2** 游客态：未登录可浏览公开内容  `[Frontend]`
+- [x] **3.2.3** 会员态：member-guard 基于真实 identity 校验  `[Frontend]`
 
 ### 3.3 页面改造
-- [x] **3.3.1** 广场页：分页加载（onReachBottom）+ mapper
-- [x] **3.3.2** 收藏页：分页加载 + mapper
-- [x] **3.3.3** 我的日记页：分页加载 + API 删除
-- [x] **3.3.4** 会员中心：真实用户数据 + updateProfile API
-- [x] **3.3.5** 详情页：真实评论发布 + mapper 适配
-- [x] **3.3.6** 撰写页：createDiary/updateDiary API 调用
+- [x] **3.3.1** 广场页：分页加载（onReachBottom）+ mapper  `[Frontend]`
+- [x] **3.3.2** 收藏页：分页加载 + mapper  `[Frontend]`
+- [x] **3.3.3** 我的日记页：分页加载 + API 删除  `[Frontend]`
+- [x] **3.3.4** 会员中心：真实用户数据 + updateProfile API  `[Frontend]`
+- [x] **3.3.5** 详情页：真实评论发布 + mapper 适配  `[Frontend]`
+- [x] **3.3.6** 撰写页：createDiary/updateDiary API 调用  `[Frontend]`
 
 ### 3.4 离线与容错
-- [x] **3.4.1** 网络异常：request.js 统一错误处理 + toast 提示
-- [x] **3.4.2** 乐观更新：点赞/收藏即时更新 UI + API 同步
-- [ ] **3.4.3** 本地缓存（后续迭代）
+- [x] **3.4.1** 网络异常：request.js 统一错误处理 + toast 提示  `[Frontend]`
+- [x] **3.4.2** 乐观更新：点赞/收藏即时更新 UI + API 同步  `[Frontend]`
+- [ ] **3.4.3** 本地缓存（后续迭代）  `[Frontend]`
 
 ---
 
@@ -197,30 +197,30 @@
 > 依据：PRD 第 5.2 节 + 原型 `doc/醒书日记-原型设计/untitled/project/src/admin/`
 
 ### 4.1 首页 — 数据概览
-- [x] **4.1.1** KPI 卡片：总用户数、会员数、日记数、总互动数、收入
-- [x] **4.1.2** 趋势图：用户增长、日记发布、互动数据趋势（日/周/月/年切换）
-- [x] **4.1.3** 最近活动流：新注册、新日记、到期提醒、订单记录
-- [x] **4.1.4** 数据每10分钟自动刷新，Hover 显示具体数值
+- [x] **4.1.1** KPI 卡片：总用户数、会员数、日记数、总互动数、收入  `[Frontend]`
+- [x] **4.1.2** 趋势图：用户增长、日记发布、互动数据趋势（日/周/月/年切换）  `[Frontend]`
+- [x] **4.1.3** 最近活动流：新注册、新日记、到期提醒、订单记录  `[Frontend]`
+- [x] **4.1.4** 数据每10分钟自动刷新，Hover 显示具体数值  `[Frontend]`
 
 ### 4.2 用户管理
-- [x] **4.2.1** 用户列表：表格（ID/手机号/昵称/身份/会员期/注册时间）+ 关键词筛选
-- [x] **4.2.2** 筛选条件：按身份类型筛选
-- [x] **4.2.3** 用户详情页：基础信息 + 发布日记列表
-- [ ] **4.2.4** 导出用户列表（Excel）（后续迭代）
+- [x] **4.2.1** 用户列表：表格（ID/手机号/昵称/身份/会员期/注册时间）+ 关键词筛选  `[Frontend]`
+- [x] **4.2.2** 筛选条件：按身份类型筛选  `[Frontend]`
+- [x] **4.2.3** 用户详情页：基础信息 + 发布日记列表  `[Frontend]`
+- [ ] **4.2.4** 导出用户列表（Excel）（后续迭代）  `[Frontend]`
 
 ### 4.3 日记管理
-- [x] **4.3.1** 日记列表：表格（ID/标题/作者/时间/权限/互动数据）+ 筛选
-- [x] **4.3.2** 筛选条件：关键词（标题/内容）、权限类型
-- [x] **4.3.3** 日记详情页：完整内容 + 评论列表
-- [x] **4.3.4** 单个删除日记 + 删除评论
-- [ ] **4.3.5** 批量操作（后续迭代）
+- [x] **4.3.1** 日记列表：表格（ID/标题/作者/时间/权限/互动数据）+ 筛选  `[Frontend]`
+- [x] **4.3.2** 筛选条件：关键词（标题/内容）、权限类型  `[Frontend]`
+- [x] **4.3.3** 日记详情页：完整内容 + 评论列表  `[Frontend]`
+- [x] **4.3.4** 单个删除日记 + 删除评论  `[Frontend]`
+- [ ] **4.3.5** 批量操作（后续迭代）  `[Frontend]`
 
 ### 4.4 互动数据管理
-- [x] **4.4.1** 评论数据页：按内容/用户筛选，支持删除
-- [x] **4.4.2** 点赞/收藏/转发（tab 扩展预留）
+- [x] **4.4.1** 评论数据页：按内容/用户筛选，支持删除  `[Frontend]`
+- [x] **4.4.2** 点赞/收藏/转发（tab 扩展预留）  `[Frontend]`
 
 ### 4.5 技术方案（已实施）
-- **Vue 3 + Vite** Web 应用（`admin/` 目录）
+- **Vue 3 + Vite** Web 应用（`admin/` 目录）  `[Frontend]`
 - Vue Router 4 单页路由（6 个页面）
 - Mock 数据层（API 接口对齐 MySQL schema）
 - 构建产物 ~100KB（JS + CSS 总量 ~36KB gzip）
@@ -230,31 +230,31 @@
 
 ## Phase 5 — 测试（预计 2-3 天）✅ 已完成
 
-- [x] **5.1** 安全审查：21 个云函数全面扫描，修复 2 CRITICAL + 4 HIGH
-- [x] **5.2** API 集成测试：15 项 MySQL 直接验证，全部通过
-- [x] **5.3** 回归测试清单：3×3 身份权限矩阵 + 6 页面 + 3 组件
-- [ ] **5.4** 真机/性能测试（需微信开发者工具 + 真实设备）
+- [x] **5.1** 安全审查：21 个云函数全面扫描，修复 2 CRITICAL + 4 HIGH  `[QA]`
+- [x] **5.2** API 集成测试：15 项 MySQL 直接验证，全部通过  `[QA]`
+- [x] **5.3** 回归测试清单：3×3 身份权限矩阵 + 6 页面 + 3 组件  `[QA]`
+- [ ] **5.4** 真机/性能测试（需微信开发者工具 + 真实设备）  `[QA]`
 
 ---
 
 ## Phase 6 — 部署与上线（预计 1-2 天）
 
-- [ ] **6.1** TCB 环境切换到生产环境
-- [ ] **6.2** 数据库索引优化 + 慢查询分析
-- [ ] **6.3** 配置微信小程序合法域名
-- [ ] **6.4** 云函数发布（上线版本）
-- [ ] **6.5** 小程序代码上传 → 体验版测试 → 提交审核
-- [ ] **6.6** 审核通过 → 发布上线
-- [ ] **6.7** Git tag 打版 `v1.0.0`
+- [ ] **6.1** TCB 环境切换到生产环境  `[CI/CD]`
+- [ ] **6.2** 数据库索引优化 + 慢查询分析  `[Backend]`
+- [ ] **6.3** 配置微信小程序合法域名  `[CI/CD]`
+- [ ] **6.4** 云函数发布（上线版本）  `[CI/CD]`
+- [ ] **6.5** 小程序代码上传 → 体验版测试 → 提交审核  `[CI/CD]`
+- [ ] **6.6** 审核通过 → 发布上线  `[CI/CD]`
+- [ ] **6.7** Git tag 打版 `v1.0.0`  `[CI/CD]`
 
 ---
 
 ## Phase 7 — 运维与迭代（持续）
 
-- [ ] **7.1** 监控告警：云函数错误率、API 延迟、数据库慢查询
-- [ ] **7.2** 日志系统：云函数日志 + 用户行为埋点
-- [ ] **7.3** 数据备份：数据库定时备份
-- [ ] **7.4** 后续功能迭代：通知推送、圈子/话题、AI 写作辅助
+- [ ] **7.1** 监控告警：云函数错误率、API 延迟、数据库慢查询  `[CI/CD]`
+- [ ] **7.2** 日志系统：云函数日志 + 用户行为埋点  `[Backend]`
+- [ ] **7.3** 数据备份：数据库定时备份  `[Backend]`
+- [ ] **7.4** 后续功能迭代：通知推送、圈子/话题、AI 写作辅助  `[Product]`
 
 ---
 

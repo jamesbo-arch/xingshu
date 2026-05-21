@@ -405,3 +405,24 @@
 - 安全审查报告：0 SQL 注入风险、2 个 CRITICAL 已修复
 - API 测试：15 项 PASS
 - 管理后台构建成功（`admin/dist/` 产出 ~100KB）
+
+---
+
+### 2026-05-20 18:45 — 计划全面标注 Agent 分派
+
+**类型**：文档 / 配置
+**模型**：deepseek-v4-pro
+**Agent**：PM
+**计划关联**：工具链完善
+**修改文件**：
+- `.claude/agents/pm-agent.md` — 新增「任务-Agent 分配规则」章节
+- `.claude/plans/fullstack-plan.md` — 所有 Phase 任务标注 `[Agent: xxx]`
+
+**变更说明**：
+1. PM Agent 定义新增强制性分派规则：每个 Task 有且仅有一个主 Agent
+2. fullstack-plan.md 中 Phase 2~7 所有任务（60+ 项）已标注 Agent
+3. 跨领域任务已拆分（如 6.1 CI/CD ↔ 6.2 Backend）
+
+**验证**：
+- 计划中每个 `[ ]` / `[x]` 行均有 `[Agent: xxx]` 标记
+- PM 拆解新任务时将自动遵循标注格式
