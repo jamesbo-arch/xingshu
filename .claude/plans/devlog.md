@@ -359,3 +359,35 @@
 - `npm run build` 构建成功，无错误
 - 6 个页面均编译出独立 JS/CSS chunk
 - 路由导航完整（Dashboard/Users/UserDetail/Diaries/DiaryDetail/Interactions）
+
+---
+
+### 2026-05-20 18:15 — Phase 5 测试完成
+
+**类型**：测试
+**模型**：deepseek-v4-pro
+**计划关联**：Phase 5.1 ~ 5.5
+**修改文件**：
+- `miniprogram/cloudfunctions/createOrder/index.js` — 修复管理员权限校验（结果已使用）
+- `miniprogram/cloudfunctions/activateMember/index.js` — 增加管理员验证 + 订单状态改为 pending→paid 流程
+- `test/api-test.js` — 新建 API 集成测试脚本（15 项，14 PASS / 1 FAIL 已修复）
+- `test/checklist.md` — 新建功能回归测试清单（3×3 矩阵 + 组件测试 + 边界记录）
+
+**变更说明**：
+
+1. **安全审查**（全面扫描 21 个云函数）：
+   - SQL 注入：全部安全（参数化查询）
+   - 发现 2 个 CRITICAL：`createOrder` 管理员检查未执行、`activateMember` 无权限验证
+   - 发现 4 个 HIGH：`toggleLike/toggleFavorite/createComment/getComments` 缺少目标存在性验证
+   - 以上 CRITICAL 问题已修复
+
+2. **API 集成测试**：连接生产 MySQL，验证 15 项数据结构完整性：
+   - 9 张表存在性、字段、外键、索引、种子数据、软删除机制 — 全部通过
+   - 发现 `diary_tags` 外键查询 bug（`KEY_COLUMN_USAGE` 返回多行，已修复查询条件）
+
+3. **回归测试清单**：覆盖 3×3 身份权限矩阵（9 种组合）、6 页面功能、3 种 Sheet 组件
+
+**验证**：
+- 安全审查报告：0 SQL 注入风险、2 个 CRITICAL 已修复
+- API 测试：15 项 PASS
+- 管理后台构建成功（`admin/dist/` 产出 ~100KB）
