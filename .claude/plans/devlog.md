@@ -13,6 +13,7 @@
 
 **类型**：[前端 | 后端 | 数据库 | 云函数 | 测试 | 部署 | 配置 | 文档]
 **模型**：[模型名称]
+**Agent**：[PM → Architecture / Backend / Frontend / QA / CI/CD]
 **计划关联**：Phase X.Y — [计划步骤描述]
 **修改文件**：
 - `path/file.ext` — 变更摘要
@@ -32,6 +33,7 @@
 
 **类型**：文档
 **模型**：Claude Opus 4.7 (claude.ai/code)
+**Agent**：PM → Architecture
 **计划关联**：Phase 0 — 项目现状分析
 **修改文件**：
 - `.claude/plans/fullstack-plan.md` — 新建
@@ -48,6 +50,7 @@
 
 **类型**：配置
 **模型**：deepseek-v4-pro
+**Agent**：PM
 **计划关联**：Phase 0 — 开发工具链准备
 **修改文件**：
 - `.claude/agents/pm-agent.md` — PM 编排器
@@ -74,6 +77,7 @@
 
 **类型**：文档 / 配置
 **模型**：deepseek-v4-pro
+**Agent**：PM
 **计划关联**：Phase 0 — 开发工具链准备
 **修改文件**：
 - `.claude/plans/devlog.md` — 新建
@@ -91,6 +95,7 @@
 
 **类型**：配置 / 后端
 **模型**：deepseek-v4-pro
+**Agent**：PM → Backend + CI/CD
 **计划关联**：Phase 1.1.2 / 1.1.3 / 1.1.4 — TCB 环境初始化
 **修改文件**：
 - `miniprogram/cloudfunctions/.gitkeep` — 新建云函数目录
@@ -111,6 +116,7 @@
 
 **类型**：配置 / 数据库
 **模型**：deepseek-v4-pro
+**Agent**：PM → Backend
 **计划关联**：Phase 1.1.1 / 1.2 / 1.3
 **修改文件**：
 - `miniprogram/app.js` — envId 替换为 `awakebook-env-1g0oford0bea44cc`
@@ -129,6 +135,7 @@
 
 **类型**：数据库
 **模型**：deepseek-v4-pro
+**Agent**：PM → Backend
 **计划关联**：Phase 1.2 — 文档数据库集合与索引
 **操作工具**：TCB CLI (`tcb db nosql execute`)
 
@@ -157,6 +164,7 @@
 
 **类型**：数据库 / 架构
 **模型**：deepseek-v4-pro
+**Agent**：PM → Architecture + Backend
 **计划关联**：Phase 1.2 — 数据库设计（架构变更）
 **修改文件**：
 - `.claude/plans/fullstack-plan.md` — 架构图重绘，文档 DB → 纯 MySQL
@@ -187,6 +195,7 @@
 
 **类型**：数据库
 **模型**：deepseek-v4-pro
+**Agent**：PM → Backend
 **计划关联**：Phase 1.2 — 数据库规范完善
 **修改文件**：
 - MySQL 9 张表 — 全部新增审计字段
@@ -212,6 +221,7 @@
 
 **类型**：数据库 / 文档
 **模型**：deepseek-v4-pro
+**Agent**：PM → Architecture + Backend
 **计划关联**：Phase 1.2 补充 + 全计划调整
 **修改文件**：
 - MySQL — users 表新增 `registered_at`, `last_active`
@@ -243,6 +253,7 @@
 
 **类型**：云函数 / 后端
 **模型**：deepseek-v4-pro
+**Agent**：PM → Backend
 **计划关联**：Phase 2.1 ~ 2.6
 **修改文件**：
 - `miniprogram/cloudfunctions/login/index.js` + `package.json`
@@ -289,6 +300,7 @@
 
 **类型**：前端
 **模型**：deepseek-v4-pro
+**Agent**：PM → Frontend + Backend
 **计划关联**：Phase 3.1 ~ 3.3
 **修改文件**：
 - `miniprogram/app.js` — 移除 mock 依赖，添加 `wx.cloud.init` + login 流程
@@ -330,6 +342,7 @@
 
 **类型**：前端 / 管理后台
 **模型**：deepseek-v4-pro
+**Agent**：PM → Frontend
 **计划关联**：Phase 4.1 ~ 4.5
 **修改文件**：
 - `admin/` — Vue 3 + Vite 项目（全新）
@@ -366,6 +379,7 @@
 
 **类型**：测试
 **模型**：deepseek-v4-pro
+**Agent**：PM → QA + Backend
 **计划关联**：Phase 5.1 ~ 5.5
 **修改文件**：
 - `miniprogram/cloudfunctions/createOrder/index.js` — 修复管理员权限校验（结果已使用）
