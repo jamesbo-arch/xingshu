@@ -1,5 +1,5 @@
 const cloud = require('wx-server-sdk')
-const db = require('../common/db')
+const db = require('./db')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 exports.main = async (event, context) => {
@@ -9,15 +9,19 @@ exports.main = async (event, context) => {
   let where = 'WHERE d.status = ?'
   const params = ['active']
 
+  let userId = null
+  let userIdentity = 'guest'
+
   if (mode === 'mine') {
     const [users] = await db.query('SELECT id FROM users WHERE openid = ?', [OPENID])
     if (!users.length) return { code: -1, msg: 'user not found' }
+    userId = users[0].id
     where += ' AND d.user_id = ?'
-    params.push(users[0].id)
+    params.push(userId)
   } else {
     const [users] = await db.query('SELECT id, identity FROM users WHERE openid = ?', [OPENID])
-    const userIdentity = users.length ? users[0].identity : 'guest'
-    const userId = users.length ? users[0].id : null
+    userIdentity = users.length ? users[0].identity : 'guest'
+    userId = users.length ? users[0].id : null
 
     if (mode === 'collections') {
       where += ' AND d.id IN (SELECT target_id FROM interactions WHERE user_id = ? AND target_type = ? AND action = ?)'
@@ -60,16 +64,34 @@ exports.main = async (event, context) => {
   const [countRows] = await db.query(`SELECT COUNT(*) AS total FROM diaries d ${where}`, params)
   const total = countRows[0].total
 
+  // isLiked / isFavorited subqueries (only when user is logged in)
+  const likedSql = userId
+    ? `EXISTS(SELECT 1 FROM interactions WHERE user_id=? AND target_type='diary' AND target_id=d.id AND action='like') AS isLiked,
+       EXISTS(SELECT 1 FROM interactions WHERE user_id=? AND target_type='diary' AND target_id=d.id AND action='favorite') AS isFavorited,`
+    : `0 AS isLiked, 0 AS isFavorited,`
+  const likedParams = userId ? [userId, userId] : []
+
   const [diaries] = await db.query(
     `SELECT d.*, u.nickname AS author_name, u.avatar_hue AS author_avatar_hue,
-            u.identity AS author_identity
+            u.identity AS author_identity,
+            ${likedSql}
+            GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ',') AS tags_csv
      FROM diaries d
      JOIN users u ON d.user_id = u.id
+     LEFT JOIN diary_tags dt ON dt.diary_id = d.id
+     LEFT JOIN tags t ON t.id = dt.tag_id
      ${where}
+     GROUP BY d.id
      ORDER BY d.created_at DESC
      LIMIT ? OFFSET ?`,
-    [...params, pageSize, offset]
+    [...likedParams, ...params, pageSize, offset]
   )
 
-  return { code: 0, data: { list: diaries, total, page, pageSize } }
+  const list = diaries.map(d => {
+    const tags = d.tags_csv ? d.tags_csv.split(',') : []
+    delete d.tags_csv
+    return { ...d, tags, isLiked: d.isLiked === 1, isFavorited: d.isFavorited === 1 }
+  })
+
+  return { code: 0, data: { list, total, page, pageSize } }
 }

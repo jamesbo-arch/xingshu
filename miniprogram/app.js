@@ -16,7 +16,7 @@ App({
   onLaunch() {
     if (wx.cloud) {
       wx.cloud.init({
-        env: 'awakebook-env-1g0oford0bea44cc',
+        env: 'cloud1-1gpabyik2db3478f',
         traceUser: true,
       })
     }
@@ -27,7 +27,15 @@ App({
     const user = await userApi.login()
     if (user) {
       this.globalData.user = user
+      if (user.identity === 'guest') {
+        wx.reLaunch({ url: '/pages/auth/index' })
+        return
+      }
     }
+    await this.loadTags()
+  },
+
+  async loadTags() {
     const tags = await tagApi.getAll()
     if (tags) {
       this.globalData.tags = tags

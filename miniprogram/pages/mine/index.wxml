@@ -15,6 +15,8 @@
           placeholder-style="color: #A8A39B; font-size: 28rpx;"
           value="{{search}}"
           bindinput="onSearchInput"
+          bindconfirm="onSearchConfirm"
+          confirm-type="search"
         />
         <text wx:if="{{search}}" class="search-clear" bindtap="onSearchClear">✕</text>
       </view>

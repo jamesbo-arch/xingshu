@@ -46,5 +46,6 @@
     "hidedInDevtools": []
   },
   "isGameTourist": false,
-  "condition": {}
+  "condition": {},
+  "cloudfunctionTemplateRoot": "cloudfunctionTemplate/"
 }

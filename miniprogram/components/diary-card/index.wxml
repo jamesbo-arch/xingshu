@@ -47,12 +47,12 @@
     <view class="stats-left">
       <view class="stat-item like-wrap" bindtap="onLike">
         <text class="stat-icon {{diary.isLiked ? 'liked' : ''}}">{{diary.isLiked ? '♥' : '♡'}}</text>
-        <text class="stat-count {{diary.isLiked ? 'liked' : ''}}">{{diary.like_count}}</text>
+        <text class="stat-count {{diary.isLiked ? 'liked' : ''}}">{{diary.likes}}</text>
         <text wx:if="{{showLikeAnim}}" class="like-float">+1</text>
       </view>
       <view class="stat-item" bindtap="onFav">
         <text class="stat-icon {{diary.isFavorited ? 'faved' : ''}}">{{diary.isFavorited ? '◆' : '◇'}}</text>
-        <text class="stat-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.fav_count}}</text>
+        <text class="stat-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.favorites}}</text>
       </view>
       <view class="stat-item">
         <text class="stat-icon">◎</text>

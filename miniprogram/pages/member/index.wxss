@@ -131,6 +131,93 @@
   color: #9A7E4F;
 }
 
+/* Real photo avatar */
+.avatar-real {
+  border-radius: 50%;
+  width: 100rpx;
+  height: 100rpx;
+}
+
+/* Clickable avatar wrapper with edit badge */
+.avatar-wrap-click {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.avatar-edit-badge {
+  position: absolute;
+  bottom: -2rpx;
+  right: -2rpx;
+  width: 30rpx;
+  height: 30rpx;
+  border-radius: 50%;
+  background: #A8A39B;
+  border: 2rpx solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16rpx;
+  color: #fff;
+}
+
+/* Profile sheet avatar picker */
+.avatar-picker-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 24rpx 0 20rpx;
+  background: transparent;
+  border: none;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+  line-height: normal;
+  border-radius: 0;
+}
+
+.avatar-picker-row::after { border: none; }
+
+.avatar-picker-img {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.avatar-picker-placeholder {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-picker-initial {
+  font-size: 32rpx;
+  color: #fff;
+  font-weight: 600;
+}
+
+.avatar-picker-label {
+  font-size: 28rpx;
+  color: #2A2723;
+  margin-left: 24rpx;
+  flex: 1;
+}
+
+.avatar-picker-arrow {
+  font-size: 36rpx;
+  color: #C8C2B6;
+}
+
+.profile-divider {
+  height: 1rpx;
+  background: #F0EBE0;
+  margin: 0 0 8rpx;
+}
+
 /* Member avatar wrap */
 .member-avatar-wrap {
   position: relative;

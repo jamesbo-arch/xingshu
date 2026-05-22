@@ -1,0 +1,71 @@
+<view class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px;"></view>
+
+  <!-- skip -->
+  <view class="skip-row">
+    <text class="skip-btn" bindtap="onSkip">跳过</text>
+  </view>
+
+  <!-- branding -->
+  <view class="brand-wrap">
+    <view class="brand-seal serif">醒</view>
+    <text class="brand-name serif">醒書日記</text>
+    <text class="brand-sub">记录修身之道，与君共勉</text>
+  </view>
+
+  <!-- phone auth card -->
+  <view class="auth-card">
+    <text class="auth-card-title">手机号验证</text>
+    <text class="auth-card-desc">手机号仅用于身份核验，不会公开您的信息</text>
+
+    <block wx:if="{{!phone}}">
+      <button
+        class="btn-phone"
+        open-type="getPhoneNumber"
+        bindgetphonenumber="onGetPhoneNumber"
+      >
+        <text class="btn-phone-icon">📱</text>
+        <text>微信授权手机号</text>
+      </button>
+
+      <!-- fallback: manual input shown when WeChat getPhoneNumber permission not yet granted -->
+      <view wx:if="{{showManualInput}}" class="manual-input-wrap">
+        <text class="manual-input-label">或手动填写手机号（测试用）</text>
+        <view class="manual-input-row">
+          <input
+            class="manual-input"
+            type="number"
+            placeholder="请输入手机号"
+            placeholder-style="color:#C8C2B6;"
+            maxlength="11"
+            value="{{manualPhone}}"
+            bindinput="onManualPhoneInput"
+          />
+          <view class="manual-confirm-btn" bindtap="onConfirmManualPhone">确认</view>
+        </view>
+      </view>
+    </block>
+
+    <view wx:else class="phone-done-row">
+      <text class="phone-done-icon">✓</text>
+      <text class="phone-done-num">{{phoneMasked}}</text>
+      <text class="phone-reauth" bindtap="onReauth">重新授权</text>
+    </view>
+  </view>
+
+  <!-- agreement -->
+  <view class="agreement-row" bindtap="onToggleAgreement">
+    <view class="agreement-circle {{agreed ? 'checked' : ''}}">
+      <text wx:if="{{agreed}}" class="agreement-tick">✓</text>
+    </view>
+    <text class="agreement-text">已阅读并同意</text>
+    <text class="agreement-link">《服务协议》</text>
+    <text class="agreement-sep"> </text>
+    <text class="agreement-link">《隐私协议》</text>
+  </view>
+
+  <!-- save -->
+  <view class="btn-save {{phone && agreed ? '' : 'disabled'}}" bindtap="onSave">
+    <text>完成验证 · 进入醒书</text>
+  </view>
+</view>

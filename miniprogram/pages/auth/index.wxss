@@ -1,0 +1,237 @@
+.page-wrap {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.skip-row {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16rpx 40rpx 0;
+}
+
+.skip-btn {
+  font-size: 28rpx;
+  color: #A8A39B;
+  padding: 12rpx;
+}
+
+.brand-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 0 80rpx;
+}
+
+.brand-seal {
+  width: 120rpx;
+  height: 120rpx;
+  border: 3rpx solid #B6452F;
+  color: #B6452F;
+  font-size: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24rpx;
+}
+
+.brand-name {
+  font-size: 48rpx;
+  color: #2A2723;
+  letter-spacing: 6rpx;
+  margin-bottom: 12rpx;
+}
+
+.brand-sub {
+  font-size: 24rpx;
+  color: #A8A39B;
+  letter-spacing: 2rpx;
+}
+
+.auth-card {
+  margin: 0 40rpx;
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 48rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.auth-card-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #2A2723;
+  margin-bottom: 16rpx;
+  letter-spacing: 2rpx;
+}
+
+.auth-card-desc {
+  font-size: 24rpx;
+  color: #A8A39B;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 48rpx;
+}
+
+.btn-phone {
+  width: 100%;
+  height: 96rpx;
+  background: #2A2723;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16rpx;
+  font-size: 32rpx;
+  color: #FBF7EE;
+  font-weight: 500;
+  letter-spacing: 2rpx;
+  border: none;
+}
+
+.btn-phone::after {
+  border: none;
+}
+
+.btn-phone-icon {
+  font-size: 36rpx;
+}
+
+.manual-input-wrap {
+  margin-top: 32rpx;
+  width: 100%;
+}
+
+.manual-input-label {
+  font-size: 22rpx;
+  color: #A8A39B;
+  display: block;
+  text-align: center;
+  margin-bottom: 16rpx;
+}
+
+.manual-input-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border: 1rpx solid #E0D9CE;
+  border-radius: 12rpx;
+  overflow: hidden;
+}
+
+.manual-input {
+  flex: 1;
+  height: 80rpx;
+  padding: 0 24rpx;
+  font-size: 30rpx;
+  color: #2A2723;
+}
+
+.manual-confirm-btn {
+  width: 120rpx;
+  height: 80rpx;
+  background: #2A2723;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #FBF7EE;
+  flex-shrink: 0;
+}
+
+.phone-done-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 24rpx 0;
+}
+
+.phone-done-icon {
+  font-size: 36rpx;
+  color: #5B8A5C;
+  font-weight: 700;
+}
+
+.phone-done-num {
+  font-size: 32rpx;
+  color: #2A2723;
+  letter-spacing: 3rpx;
+  font-weight: 500;
+}
+
+.phone-reauth {
+  font-size: 24rpx;
+  color: #A8A39B;
+  padding: 8rpx 16rpx;
+  border: 1rpx solid #E0D9CE;
+  border-radius: 24rpx;
+}
+
+.agreement-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  margin-top: 40rpx;
+  padding: 0 40rpx;
+}
+
+.agreement-circle {
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  border: 2rpx solid #C8C2B6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.agreement-circle.checked {
+  border-color: #5B8A5C;
+  background: #5B8A5C;
+}
+
+.agreement-tick {
+  font-size: 22rpx;
+  color: #fff;
+  line-height: 1;
+}
+
+.agreement-text {
+  font-size: 24rpx;
+  color: #A8A39B;
+}
+
+.agreement-link {
+  font-size: 24rpx;
+  color: #4577A4;
+}
+
+.agreement-sep {
+  font-size: 24rpx;
+  color: #A8A39B;
+}
+
+.btn-save {
+  margin: 40rpx 40rpx 0;
+  height: 96rpx;
+  background: #B6452F;
+  border-radius: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-save text {
+  font-size: 32rpx;
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 3rpx;
+}
+
+.btn-save.disabled {
+  background: #D6BFB8;
+}

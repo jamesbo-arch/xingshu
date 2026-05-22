@@ -188,6 +188,14 @@
 .comment-time {
   font-size: 22rpx;
   color: #A8A39B;
+  flex: 1;
+  margin-left: 12rpx;
+}
+
+.comment-delete-btn {
+  font-size: 22rpx;
+  color: #C0856A;
+  padding: 0 8rpx;
 }
 
 .comment-content {

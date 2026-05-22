@@ -13,4 +13,7 @@ module.exports = {
   checkMember() {
     return call('checkMemberStatus')
   },
+  getPhoneNumber(code) {
+    return call('getPhoneNumber', { code })
+  },
 }

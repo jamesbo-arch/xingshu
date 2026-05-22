@@ -14,6 +14,7 @@ Page({
     showPurchaseSheet: false,
     editNickname: '',
     editRealName: '',
+    editAvatarUrl: '',
     benefits: [
       { icon: '◎', text: '阅读全部会员日记' },
       { icon: '✎', text: '发布会员可见日记' },
@@ -52,18 +53,7 @@ Page({
   },
 
   onAuthorize() {
-    wx.showModal({
-      title: '微信授权',
-      content: '授权后可获得完整功能，包括发布日记与查看会员内容。',
-      confirmText: '授权', cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          app.updateUser({ identity: 'authed' })
-          this._loadUser()
-          wx.showToast({ title: '授权成功', icon: 'success', duration: 1500 })
-        }
-      },
-    })
+    wx.navigateTo({ url: '/pages/auth/index' })
   },
 
   onShowPurchaseSheet() { this.setData({ showPurchaseSheet: true }) },
@@ -74,10 +64,16 @@ Page({
     this.setData({
       showProfileSheet: true,
       editNickname: user.nickname || '',
-      editRealName: user.real_name || user.realName || '',
+      editRealName: user.realName || '',
+      editAvatarUrl: user.avatarUrl || '',
     })
   },
   onCloseProfileSheet() { this.setData({ showProfileSheet: false }) },
+
+  onChooseAvatar(e) {
+    this.setData({ editAvatarUrl: e.detail.avatarUrl })
+  },
+
   onNicknameInput(e) { this.setData({ editNickname: e.detail.value }) },
   onRealNameInput(e) { this.setData({ editRealName: e.detail.value }) },
 
@@ -87,12 +83,34 @@ Page({
       wx.showToast({ title: '昵称不能为空', icon: 'none', duration: 1500 })
       return
     }
-    const result = await userApi.updateProfile({ nickname, realName: this.data.editRealName.trim() })
-    if (result) {
-      app.globalData.user = result
-      this._loadUser()
-      this.setData({ showProfileSheet: false })
-      wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 })
+
+    wx.showLoading({ title: '保存中…', mask: true })
+    try {
+      let avatarUrl = this.data.editAvatarUrl
+      const user = this.data.user || {}
+      // upload new avatar only if it changed and is a temp path
+      if (avatarUrl && avatarUrl !== (user.avatarUrl || '') &&
+          (avatarUrl.startsWith('wxfile://') || avatarUrl.includes('/tmp/'))) {
+        const ext = avatarUrl.split('.').pop().split('?')[0] || 'jpg'
+        const cloudPath = `avatars/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+        const res = await wx.cloud.uploadFile({ cloudPath, filePath: avatarUrl })
+        avatarUrl = res.fileID
+      }
+
+      const patch = { nickname, realName: this.data.editRealName.trim() }
+      if (avatarUrl !== (user.avatarUrl || '')) patch.avatarUrl = avatarUrl
+
+      const result = await userApi.updateProfile(patch)
+      wx.hideLoading()
+      if (result) {
+        app.globalData.user = result
+        this._loadUser()
+        this.setData({ showProfileSheet: false })
+        wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 })
+      }
+    } catch {
+      wx.hideLoading()
+      wx.showToast({ title: '保存失败，请重试', icon: 'none', duration: 2000 })
     }
   },
 
