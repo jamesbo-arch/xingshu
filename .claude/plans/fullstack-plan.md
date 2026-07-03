@@ -290,7 +290,7 @@
     - `generateMiniCode` 云函数扩展：支持日记/活动两种目标 + scene 携带分享人用户 ID（wxacode.getUnlimited）
     - `users` 表加 `referrer_user_id` 列；login 云函数解析启动 scene，新用户首次绑定推荐人（不覆盖、不可自荐）
     - 小程序：app onLaunch/onShow 解析 scene 直达对应详情页；活动详情页加分享入口 + 活动海报弹层（复用 poster-sheet 模式）；日记海报二维码替换为真实带参码
-    - admin 后台：用户列表/详情展示推荐人与"他推荐的用户"
+    - admin 后台：用户列表/详情展示推荐人与"他推荐的用户"；管理员可修改/清空用户推荐人（校验非本人、无循环，写 admin_logs）
 
 ### M2 — 部署与人工验证（需用户在场，建议一次批处理）
 
