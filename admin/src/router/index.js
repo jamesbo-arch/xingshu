@@ -9,6 +9,7 @@ const routes = [
   { path: '/diaries', name: 'Diaries', component: () => import('../views/Diaries.vue') },
   { path: '/diaries/:id', name: 'DiaryDetail', component: () => import('../views/DiaryDetail.vue') },
   { path: '/interactions', name: 'Interactions', component: () => import('../views/Interactions.vue') },
+  { path: '/activities', name: 'Activities', component: () => import('../views/Activities.vue') },
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })

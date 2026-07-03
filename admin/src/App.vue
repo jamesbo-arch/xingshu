@@ -8,6 +8,7 @@
         <router-link to="/users" class="nav-item" active-class="active">用户管理</router-link>
         <router-link to="/diaries" class="nav-item" active-class="active">日记管理</router-link>
         <router-link to="/interactions" class="nav-item" active-class="active">互动数据</router-link>
+        <router-link to="/activities" class="nav-item" active-class="active">活动管理</router-link>
       </nav>
       <div class="sidebar-footer">
         <a class="logout-link" @click="onLogout">退出登录</a>

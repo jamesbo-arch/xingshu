@@ -1,0 +1,327 @@
+.page-wrap {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #FBF7EE;
+  position: relative;
+}
+
+.serif {
+  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+}
+
+.detail-nav {
+  display: flex;
+  align-items: center;
+  padding: 8rpx 16rpx;
+  flex-shrink: 0;
+}
+
+.nav-back {
+  padding: 16rpx;
+}
+
+.nav-back-icon {
+  font-size: 40rpx;
+  color: #2A2723;
+}
+
+.nav-title {
+  flex: 1;
+  text-align: center;
+  font-size: 34rpx;
+  letter-spacing: 4rpx;
+  color: #2A2723;
+}
+
+.nav-right {
+  width: 72rpx;
+}
+
+.detail-scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.detail-body {
+  padding: 0 32rpx;
+}
+
+.act-cover {
+  position: relative;
+  height: 360rpx;
+  background: #EFE7D4;
+  border-radius: 24rpx;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28rpx;
+}
+
+.act-cover-img { width: 100%; height: 100%; }
+
+.act-cover-char {
+  font-size: 144rpx;
+  letter-spacing: 16rpx;
+  color: rgba(126, 102, 64, 0.45);
+}
+
+.act-cover-seal {
+  position: absolute;
+  left: 24rpx;
+  bottom: 20rpx;
+  font-size: 20rpx;
+  letter-spacing: 4rpx;
+  color: #B6452F;
+  border: 2rpx solid #B6452F;
+  border-radius: 4rpx;
+  padding: 4rpx 8rpx;
+  opacity: 0.75;
+}
+
+.act-badge {
+  position: absolute;
+  top: 20rpx;
+  right: 20rpx;
+  font-size: 22rpx;
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  letter-spacing: 2rpx;
+}
+
+.act-badge-open { color: #fff; background: #B6452F; }
+.act-badge-signed { color: #B6452F; background: rgba(255, 252, 245, 0.92); border: 2rpx solid #B6452F; }
+.act-badge-full { color: #66615A; background: rgba(239, 231, 212, 0.94); }
+.act-badge-past { color: #FBF7EE; background: rgba(42, 39, 35, 0.72); }
+
+.detail-title {
+  font-size: 42rpx;
+  line-height: 1.5;
+  color: #2A2723;
+  display: block;
+  margin-bottom: 28rpx;
+}
+
+.act-info-card {
+  background: #FFFCF5;
+  border: 1rpx solid rgba(126, 102, 64, 0.16);
+  border-radius: 24rpx;
+  padding: 28rpx 28rpx 24rpx;
+  margin-bottom: 12rpx;
+}
+
+.act-meta {
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
+  font-size: 26rpx;
+  color: #66615A;
+  margin-bottom: 12rpx;
+  line-height: 1.5;
+}
+
+.act-meta-icon { font-size: 24rpx; flex-shrink: 0; }
+
+.act-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-top: 8rpx;
+}
+
+.act-progress {
+  flex: 1;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: #EFE7D4;
+  overflow: hidden;
+}
+
+.act-progress-fill {
+  height: 100%;
+  border-radius: 999rpx;
+  background: linear-gradient(90deg, #C2563F, #B6452F);
+}
+
+.act-count {
+  font-size: 22rpx;
+  color: #A8A39B;
+  flex-shrink: 0;
+}
+
+.act-deadline {
+  font-size: 22rpx;
+  color: #B6452F;
+  display: block;
+  margin-top: 8rpx;
+}
+
+.act-section-title {
+  font-size: 30rpx;
+  letter-spacing: 6rpx;
+  color: #2A2723;
+  margin: 36rpx 0 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.act-section-title::after {
+  content: '';
+  flex: 1;
+  height: 1rpx;
+  background: rgba(126, 102, 64, 0.18);
+}
+
+.act-content {
+  font-size: 29rpx;
+  line-height: 1.9;
+  color: #44403A;
+  white-space: pre-wrap;
+  display: block;
+}
+
+.act-photo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.act-photo {
+  width: calc(50% - 8rpx);
+  height: 240rpx;
+  border-radius: 16rpx;
+  background: rgba(126, 102, 64, 0.06);
+}
+
+.act-bottom-pad { height: 220rpx; }
+
+/* 底部报名栏 */
+.act-signup-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 18;
+  background: rgba(251, 247, 238, 0.96);
+  backdrop-filter: blur(20px) saturate(160%);
+  border-top: 1rpx solid rgba(126, 102, 64, 0.18);
+  padding: 24rpx 32rpx calc(44rpx + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+
+.act-signup-btn {
+  flex: 1;
+  background: #B6452F;
+  color: #fff;
+  text-align: center;
+  padding: 24rpx;
+  border-radius: 999rpx;
+  font-size: 30rpx;
+  letter-spacing: 6rpx;
+}
+
+.act-signup-btn.disabled {
+  opacity: 0.4;
+}
+
+.act-signed-text {
+  flex: 1;
+  font-size: 27rpx;
+  color: #44403A;
+}
+
+.act-cancel-btn {
+  padding: 18rpx 36rpx;
+  border: 1rpx solid rgba(126, 102, 64, 0.3);
+  border-radius: 999rpx;
+  font-size: 26rpx;
+  color: #66615A;
+}
+
+/* 报名弹层 */
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0);
+  z-index: 100;
+  transition: background 0.3s;
+}
+
+.sheet-mask.mask-show {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #FFFCF5;
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 20rpx 40rpx calc(56rpx + env(safe-area-inset-bottom));
+  z-index: 101;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.sheet.sheet-show {
+  transform: translateY(0);
+}
+
+.sheet-handle {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: rgba(126, 102, 64, 0.2);
+  margin: 0 auto 24rpx;
+}
+
+.signup-title {
+  font-size: 34rpx;
+  letter-spacing: 4rpx;
+  color: #2A2723;
+  display: block;
+  margin-bottom: 6rpx;
+}
+
+.signup-time {
+  font-size: 24rpx;
+  color: #A8A39B;
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+.signup-label {
+  font-size: 25rpx;
+  color: #66615A;
+  display: block;
+  margin: 24rpx 0 12rpx;
+}
+
+.signup-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #F5EFE2;
+  border: 1rpx solid rgba(126, 102, 64, 0.18);
+  border-radius: 20rpx;
+  padding: 20rpx 24rpx;
+  font-size: 28rpx;
+  color: #2A2723;
+}
+
+.signup-submit {
+  margin-top: 40rpx;
+}
+
+.signup-privacy {
+  font-size: 22rpx;
+  color: #A8A39B;
+  text-align: center;
+  display: block;
+  margin-top: 20rpx;
+}

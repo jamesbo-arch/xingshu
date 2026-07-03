@@ -1,0 +1,69 @@
+<view class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
+  <view class="page-header">
+    <text class="page-title serif">醒書活動</text>
+    <text class="page-subtitle">线上线下，与同路人相见</text>
+  </view>
+
+  <scroll-view class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <block wx:if="{{loaded && !upcoming.length && !past.length}}">
+      <view class="act-empty">
+        <text class="act-empty-icon serif">期</text>
+        <text class="act-empty-title">活动筹备中</text>
+        <text class="act-empty-hint">敬请期待</text>
+      </view>
+    </block>
+
+    <block wx:if="{{upcoming.length}}">
+      <view class="act-section-title serif">近期活動</view>
+      <view
+        wx:for="{{upcoming}}"
+        wx:key="id"
+        class="activity-card"
+        data-id="{{item.id}}"
+        bindtap="onOpen"
+      >
+        <view class="act-cover">
+          <image wx:if="{{item.cover_url}}" src="{{item.cover_url}}" class="act-cover-img" mode="aspectFill"/>
+          <text wx:else class="act-cover-char serif">{{item.title[0]}}</text>
+          <text class="act-cover-seal serif">醒書</text>
+          <text class="act-badge act-badge-{{item.badgeType}}">{{item.badge}}</text>
+        </view>
+        <view class="act-card-body">
+          <text class="act-card-title serif">{{item.title}}</text>
+          <view class="act-meta"><text class="act-meta-icon">🗓</text><text>{{item.start_time}}</text></view>
+          <view class="act-meta"><text class="act-meta-icon">📍</text><text>{{item.type === 'online' ? '线上活动' : item.city + ' · ' + item.location}}</text></view>
+          <view class="act-progress-row">
+            <view class="act-progress"><view class="act-progress-fill" style="width: {{item.pct}}%"></view></view>
+            <text class="act-count">{{item.signup_count}}/{{item.capacity}} 人</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <block wx:if="{{past.length}}">
+      <view class="act-section-title serif" style="margin-top: 40rpx;">往期回顧</view>
+      <view
+        wx:for="{{past}}"
+        wx:key="id"
+        class="activity-card"
+        data-id="{{item.id}}"
+        bindtap="onOpen"
+      >
+        <view class="act-cover">
+          <image wx:if="{{item.cover_url}}" src="{{item.cover_url}}" class="act-cover-img" mode="aspectFill"/>
+          <text wx:else class="act-cover-char serif">{{item.title[0]}}</text>
+          <text class="act-cover-seal serif">醒書</text>
+          <text class="act-badge act-badge-past">回顾</text>
+        </view>
+        <view class="act-card-body">
+          <text class="act-card-title serif">{{item.title}}</text>
+          <view class="act-meta"><text class="act-meta-icon">🗓</text><text>{{item.start_time}}</text></view>
+          <text class="act-count-past">{{item.signup_count}} 位醒书人参与</text>
+        </view>
+      </view>
+    </block>
+
+    <view class="act-bottom-pad"></view>
+  </scroll-view>
+</view>

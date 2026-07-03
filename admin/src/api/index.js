@@ -59,3 +59,6 @@ export async function deleteDiary(id) { return call('deleteDiary', { id }) }
 export async function deleteDiaries(ids) { return call('deleteDiaries', { ids }) }
 export async function deleteComment(id) { return call('deleteComment', { id }) }
 export async function getComments(params = {}) { return call('comments', params) }
+export async function getActivities() { return call('activityList') }
+export async function saveActivity(data) { return call('activitySave', data) }
+export async function getActivitySignups(id) { return call('activitySignups', { id }) }

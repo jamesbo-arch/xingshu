@@ -1,0 +1,96 @@
+<view class="page-wrap paper-bg" wx:if="{{activity}}">
+  <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
+  <view class="detail-nav">
+    <view class="nav-back" bindtap="onBack"><text class="nav-back-icon">←</text></view>
+    <text class="nav-title serif">{{isPast ? '活動回顧' : '活動詳情'}}</text>
+    <view class="nav-right"></view>
+  </view>
+
+  <scroll-view class="detail-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="detail-body">
+      <view class="act-cover">
+        <image wx:if="{{activity.cover_url}}" src="{{activity.cover_url}}" class="act-cover-img" mode="aspectFill"/>
+        <text wx:else class="act-cover-char serif">{{activity.title[0]}}</text>
+        <text class="act-cover-seal serif">醒書</text>
+        <text wx:if="{{isPast}}" class="act-badge act-badge-past">回顾</text>
+        <text wx:elif="{{activity.isSignedUp}}" class="act-badge act-badge-signed">已报名</text>
+        <text wx:elif="{{isFull}}" class="act-badge act-badge-full">名额已满</text>
+        <text wx:else class="act-badge act-badge-open">报名中</text>
+      </view>
+
+      <text class="detail-title serif">{{activity.title}}</text>
+
+      <view class="act-info-card">
+        <view class="act-meta"><text class="act-meta-icon">🗓</text><text>{{activity.start_time}}{{activity.end_time ? ' – ' + activity.end_time : ''}}</text></view>
+        <view class="act-meta"><text class="act-meta-icon">📍</text><text>{{activity.type === 'online' ? '线上 · ' + activity.location : activity.city + ' · ' + activity.location}}</text></view>
+        <view class="act-meta"><text class="act-meta-icon">👥</text><text>组织方：{{activity.organizer}}</text></view>
+        <view wx:if="{{!isPast}}" class="act-progress-row">
+          <view class="act-progress"><view class="act-progress-fill" style="width: {{pct}}%"></view></view>
+          <text class="act-count">已报名 {{activity.signup_count}}/{{activity.capacity}}</text>
+        </view>
+        <text wx:if="{{!isPast && activity.signup_deadline}}" class="act-deadline">{{activity.signup_deadline}} 报名截止</text>
+      </view>
+
+      <block wx:if="{{!isPast}}">
+        <view class="act-section-title serif">活動介紹</view>
+        <text class="act-content">{{activity.content}}</text>
+      </block>
+
+      <block wx:if="{{isPast && activity.review_content}}">
+        <view class="act-section-title serif">回顧</view>
+        <text class="act-content">{{activity.review_content}}</text>
+        <view wx:if="{{activity.review_images && activity.review_images.length}}" class="act-photo-grid">
+          <image
+            wx:for="{{activity.review_images}}"
+            wx:key="*this"
+            class="act-photo"
+            src="{{item}}"
+            mode="aspectFill"
+            data-index="{{index}}"
+            bindtap="onPreviewImage"
+          />
+        </view>
+      </block>
+
+      <view wx:if="{{activity.images && activity.images.length}}" class="act-photo-grid">
+        <image
+          wx:for="{{activity.images}}"
+          wx:key="*this"
+          class="act-photo"
+          src="{{item}}"
+          mode="aspectFill"
+          data-index="{{index}}"
+          bindtap="onPreviewImage"
+        />
+      </view>
+
+      <view class="act-bottom-pad"></view>
+    </view>
+  </scroll-view>
+
+  <!-- 底部报名栏（仅未结束活动） -->
+  <view wx:if="{{!isPast}}" class="act-signup-bar">
+    <block wx:if="{{activity.isSignedUp}}">
+      <text class="act-signed-text">✓ 已报名，期待相见</text>
+      <view class="btn-ghost act-cancel-btn" bindtap="onCancelSignup">取消报名</view>
+    </block>
+    <view wx:elif="{{isFull}}" class="act-signup-btn disabled">名额已满</view>
+    <view wx:else class="act-signup-btn" bindtap="onOpenSignup">报名参加</view>
+  </view>
+
+  <!-- 报名表单弹层 -->
+  <view wx:if="{{showSignup}}">
+    <view class="sheet-mask {{_sheetShow ? 'mask-show' : ''}}" bindtap="onCloseSignup"></view>
+    <view class="sheet signup-sheet {{_sheetShow ? 'sheet-show' : ''}}" catchtap="">
+      <view class="sheet-handle"></view>
+      <text class="signup-title serif">报名 · {{activity.title}}</text>
+      <text class="signup-time">{{activity.start_time}}</text>
+      <text class="signup-label">你的称呼 *</text>
+      <input class="signup-input" placeholder="怎么称呼你" value="{{signupName}}" bindinput="onNameInput"/>
+      <text class="signup-label">联系方式（选填）</text>
+      <input class="signup-input" placeholder="微信号或手机号，便于活动变更时通知你" value="{{signupContact}}" bindinput="onContactInput"/>
+      <view class="act-signup-btn signup-submit" bindtap="onSubmitSignup">确认报名</view>
+      <text class="signup-privacy">报名信息仅用于本次活动组织，不会公开</text>
+    </view>
+  </view>
+</view>

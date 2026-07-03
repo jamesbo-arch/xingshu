@@ -276,7 +276,7 @@
 > 依据 PRD v2.1/v2.2（2026-07-03）。入选原则：活动模块为用户明确的首发必备；权限矩阵收紧属行为变更，上线后再改会造成体验混乱，必须随首发；授权页文案为低成本捎带项。其余 v2 功能全部归入 M6 上线后迭代。
 > **验收规格**：`test/m15-test-cases.md`（原型已验收：project/ 活动两屏 + 海报）。每个子任务按"用例→测试先行→实现→全绿→打勾"的循环节奏执行。
 
-- [ ] **M1.5.1** 醒书活动模块 MVP  `[Backend+Frontend]`
+- [x] **M1.5.1** 醒书活动模块 MVP — 2 表 + activity 云函数 + admin 3 action + 小程序两页 + Tab 5 个 + admin 管理页；fn-activity-test 11/11（ACT-A01~A11）
     - MySQL 新表：`activities`（标题/封面/正文/图片 JSON/时间/地点/线上线下/名额/报名截止/状态）+ `activity_signups`（activity_id + user_id 唯一，称呼必填、联系方式选填）
     - 云函数：`activity`（action 路由：list / detail / signup / cancelSignup，参照 admin 函数模式）；admin 云函数扩展活动管理 action（CRUD + 报名名单）
     - 小程序：新增 activities Tab 页（预告/往期两态）+ activity-detail 页（文字+图片、一键报名/取消）；tabBar 扩为 5 个（需图标素材）

@@ -225,6 +225,52 @@ const handlers = {
     return { deleted, failed }
   },
 
+  // ── 活动管理（M1.5.1 MVP）──
+  async activityList() {
+    const [rows] = await db.query(
+      `SELECT id, title, type, city, capacity, signup_count AS signedUp, status,
+              DATE_FORMAT(start_time, '%Y-%m-%d %H:%i') AS startTime,
+              DATE_FORMAT(signup_deadline, '%Y-%m-%d %H:%i') AS deadline
+       FROM activities ORDER BY created_at DESC`)
+    return { list: rows, total: rows.length }
+  },
+
+  async activitySave({ id, title, cover_url = '', content = '', images = [], start_time, end_time = null,
+                       type = 'offline', city = '', location = '', organizer = '醒书运营组',
+                       capacity = 0, signup_deadline = null, status = 'draft',
+                       review_content = null, review_images = null } = {}) {
+    if (!title || !start_time) throw new Error('标题与开始时间必填')
+    const imagesJson = images && images.length ? JSON.stringify(images) : null
+    const reviewImagesJson = review_images && review_images.length ? JSON.stringify(review_images) : null
+    if (id) {
+      await db.query(
+        `UPDATE activities SET title=?, cover_url=?, content=?, images=?, start_time=?, end_time=?,
+         type=?, city=?, location=?, organizer=?, capacity=?, signup_deadline=?, status=?,
+         review_content=?, review_images=?, updated_by='admin-web' WHERE id=?`,
+        [title, cover_url, content, imagesJson, start_time, end_time, type, city, location,
+         organizer, capacity, signup_deadline, status, review_content, reviewImagesJson, id])
+      await auditLog('activityUpdate', 'activity', id, { title, status })
+      return { id }
+    }
+    const [r] = await db.query(
+      `INSERT INTO activities (title, cover_url, content, images, start_time, end_time, type, city,
+        location, organizer, capacity, signup_deadline, status, review_content, review_images, created_by)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'admin-web')`,
+      [title, cover_url, content, imagesJson, start_time, end_time, type, city, location,
+       organizer, capacity, signup_deadline, status, review_content, reviewImagesJson])
+    await auditLog('activityCreate', 'activity', r.insertId, { title, status })
+    return { id: r.insertId }
+  },
+
+  async activitySignups({ id } = {}) {
+    const [rows] = await db.query(
+      `SELECT s.id, s.name, s.contact, u.nickname, u.phone,
+              DATE_FORMAT(s.created_at, '%Y-%m-%d %H:%i') AS signedAt
+       FROM activity_signups s JOIN users u ON s.user_id = u.id
+       WHERE s.activity_id = ? ORDER BY s.created_at ASC`, [id])
+    return { list: rows, total: rows.length }
+  },
+
   async deleteComment({ id } = {}) {
     const [rows] = await db.query('SELECT diary_id FROM comments WHERE id = ? AND is_deleted = 0', [id])
     if (!rows.length) throw new Error('评论不存在或已删除')
