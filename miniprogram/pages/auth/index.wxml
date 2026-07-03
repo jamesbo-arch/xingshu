@@ -6,17 +6,17 @@
     <text class="skip-btn" bindtap="onSkip">跳过</text>
   </view>
 
-  <!-- branding -->
+  <!-- branding（v2.1 文案：从"解锁功能"重构为"加入仪式"） -->
   <view class="brand-wrap">
     <view class="brand-seal serif">醒</view>
-    <text class="brand-name serif">醒書日記</text>
-    <text class="brand-sub">记录修身之道，与君共勉</text>
+    <text class="brand-name serif">成为醒书的一员</text>
+    <text class="brand-sub">{{fromInteraction ? '你刚刚被打动了，对吗？留下你的身份，为喜欢的文字点赞、收藏，也开始记录属于你自己的故事。' : '留下你的身份，加入一群认真生活的人。'}}</text>
   </view>
 
   <!-- phone auth card -->
   <view class="auth-card">
     <text class="auth-card-title">手机号验证</text>
-    <text class="auth-card-desc">手机号仅用于身份核验，不会公开您的信息</text>
+    <text class="auth-card-desc">我们承诺：你的信息仅用于身份识别，绝不外泄</text>
 
     <block wx:if="{{!phone}}">
       <view class="manual-input-row">
@@ -53,6 +53,6 @@
 
   <!-- save -->
   <view class="btn-save {{phone && agreed ? '' : 'disabled'}}" bindtap="onSave">
-    <text>完成验证 · 进入醒书</text>
+    <text>加入醒书</text>
   </view>
 </view>

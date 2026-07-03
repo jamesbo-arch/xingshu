@@ -285,7 +285,7 @@
 - [x] **M1.5.2** 日记权限矩阵收紧 — getDiaryDetail 引导码-3/30% 服务端截断；getDiaryList 卡片放宽+摘要防泄露；guest 互动触发验证引导（auth-guard + redirect 回跳）；详情页渐隐+会员 CTA；fn-permission-test 9/9
     - getDiaryDetail：guest 请求公众日记返回引导码；authed 请求会员日记返回服务端截断的前 30% + truncated 标记
     - 详情页：guest 点击卡片进入验证引导（邀请式文案）；会员日记渐隐遮罩 + "完整内容向会员开放" + 开通入口
-- [ ] **M1.5.3** 授权页文案重构 + 小程序名称"醒书"  `[Frontend]`
+- [x] **M1.5.3** 授权页文案重构（"成为醒书的一员"+情境/通用双文案）+ 窗口标题改"醒书"（微信平台侧改名待用户在 mp 后台操作）
     - auth 页文案改为"成为醒书的一员"邀请式（PRD 5.1.12）；小程序展示名称改"醒书"（微信平台侧改名需用户在 mp 后台操作）
 - [ ] **M1.5.4** 分享海报带参码 + 推荐人绑定（PRD v2.2）  `[Backend+Frontend]`
     - `generateMiniCode` 云函数扩展：支持日记/活动两种目标 + scene 携带分享人用户 ID（wxacode.getUnlimited）

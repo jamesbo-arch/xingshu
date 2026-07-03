@@ -9,13 +9,17 @@ Page({
     statusBarHeight: 0,
     saving: false,
     manualPhone: '',
+    fromInteraction: false,
   },
 
   onLoad(options) {
     const info = wx.getSystemInfoSync()
-    this.setData({ statusBarHeight: info.statusBarHeight || 0 })
-    // v2.1：互动触发进入时携带回跳地址，验证成功后直达原目标
+    // v2.1：互动触发进入时携带回跳地址，验证成功后直达原目标；文案切换为情境版
     this._redirect = options.redirect ? decodeURIComponent(options.redirect) : ''
+    this.setData({
+      statusBarHeight: info.statusBarHeight || 0,
+      fromInteraction: !!this._redirect,
+    })
   },
 
   onManualPhoneInput(e) {
