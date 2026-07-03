@@ -141,7 +141,7 @@
 - [x] **2.2.4** `getDiaryList` — 分页获取日记列表（mode: square/collections/mine, 关键词/标签/作者/权限筛选）  `[Backend]`
 - [x] **2.2.5** `getDiaryDetail` — 获取日记详情 + 互动状态 + 标签  `[Backend]`
 - [x] **2.2.6** `searchDiaries` — 已合并到 `getDiaryList` 的 keyword 参数  `[Backend]`
-- [ ] **2.2.7** `uploadDiaryImage` — 上传日记配图到云存储（Phase 3 前端一并处理）  `[Frontend]`
+- [x] **2.2.7** `uploadDiaryImage` — 上传日记配图到云存储（前端 wx.cloud.uploadFile 直传，diaries.images JSON 列存 fileID）  `[Frontend]`
 
 ### 2.3 社交互动
 - [x] **2.3.1** `toggleLike` — 点赞/取消点赞（原子 INSERT/DELETE，更新计数）  `[Backend]`

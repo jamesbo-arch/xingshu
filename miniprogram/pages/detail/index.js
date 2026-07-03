@@ -50,6 +50,11 @@ Page({
     wx.setNavigationBarTitle({ title: '日记' })
   },
 
+  onPreviewImage(e) {
+    const images = this.data.diary.images || []
+    wx.previewImage({ current: images[e.currentTarget.dataset.index], urls: images })
+  },
+
   async onLike() {
     const diary = this.data.diary
     if (!diary) return

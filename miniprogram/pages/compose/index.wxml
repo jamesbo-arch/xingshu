@@ -46,6 +46,29 @@
       <text class="content-counter">{{content.length}}/{{maxContent}}</text>
     </view>
 
+    <!-- Images section -->
+    <view class="section-block">
+      <text class="section-label">配图 {{images.length ? images.length + '/' + maxImages : ''}}</text>
+      <view class="image-grid">
+        <view wx:for="{{images}}" wx:key="*this" class="image-cell">
+          <image
+            class="image-thumb"
+            src="{{item}}"
+            mode="aspectFill"
+            data-index="{{index}}"
+            bindtap="onPreviewImage"
+          />
+          <view class="image-remove" data-index="{{index}}" catchtap="onRemoveImage">
+            <text>×</text>
+          </view>
+        </view>
+        <view wx:if="{{images.length < maxImages}}" class="image-add" bindtap="onAddImage">
+          <text class="image-add-icon">+</text>
+          <text class="image-add-text">添加</text>
+        </view>
+      </view>
+    </view>
+
     <!-- Tags section -->
     <view class="section-block">
       <text class="section-label">主题标签</text>

@@ -32,6 +32,18 @@
       <text class="content-text">{{diary.content}}</text>
     </view>
 
+    <view wx:if="{{diary.images && diary.images.length}}" class="detail-images">
+      <image
+        wx:for="{{diary.images}}"
+        wx:key="*this"
+        class="detail-image"
+        src="{{item}}"
+        mode="widthFix"
+        data-index="{{index}}"
+        bindtap="onPreviewImage"
+      />
+    </view>
+
     <view class="seal-stamp-wrap">
       <view class="seal-stamp">
         <text class="seal-stamp-text serif">{{diary.author}}</text>

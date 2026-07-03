@@ -387,3 +387,17 @@
   color: #4577A4;
   background: rgba(69, 119, 164, 0.12);
 }
+
+/* Diary images */
+.detail-images {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+  padding: 0 40rpx 20rpx;
+}
+
+.detail-image {
+  width: 100%;
+  border-radius: 8px;
+  background: rgba(126, 102, 64, 0.06);
+}

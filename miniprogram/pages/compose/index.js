@@ -7,6 +7,8 @@ Page({
     isEditing: false,
     title: '',
     content: '',
+    images: [],
+    maxImages: 9,
     selectedTags: [],
     permission: 'public',
     showTagPicker: false,
@@ -33,6 +35,7 @@ Page({
           this.setData({
             diaryId: diary.id, isEditing: true,
             title: diary.title || '', content: diary.content || '',
+            images: diary.images || [],
             selectedTags: diary.tags || [], permission: diary.permission || 'public',
           })
         }
@@ -42,6 +45,44 @@ Page({
 
   onTitleInput(e) { this.setData({ title: e.detail.value }) },
   onContentInput(e) { this.setData({ content: e.detail.value }) },
+
+  onAddImage() {
+    const remaining = this.data.maxImages - this.data.images.length
+    if (remaining <= 0) return
+    wx.chooseMedia({
+      count: remaining,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: res => {
+        const paths = res.tempFiles.map(f => f.tempFilePath)
+        this.setData({ images: [...this.data.images, ...paths] })
+      },
+    })
+  },
+  onRemoveImage(e) {
+    const images = [...this.data.images]
+    images.splice(e.currentTarget.dataset.index, 1)
+    this.setData({ images })
+  },
+  onPreviewImage(e) {
+    wx.previewImage({
+      current: this.data.images[e.currentTarget.dataset.index],
+      urls: this.data.images,
+    })
+  },
+  // 将本地临时图片上传到云存储，已是 fileID 的（编辑模式保留图）原样返回
+  async uploadImages() {
+    const uploaded = []
+    for (const img of this.data.images) {
+      if (img.indexOf('cloud://') === 0) { uploaded.push(img); continue }
+      const extMatch = img.match(/\.(\w+)$/)
+      const ext = extMatch ? extMatch[1] : 'jpg'
+      const cloudPath = `diary-images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const res = await wx.cloud.uploadFile({ cloudPath, filePath: img })
+      uploaded.push(res.fileID)
+    }
+    return uploaded
+  },
   setPermission(e) { this.setData({ permission: e.currentTarget.dataset.key }) },
   removeTag(e) {
     this.setData({ selectedTags: this.data.selectedTags.filter(t => t !== e.currentTarget.dataset.tag) })
@@ -69,7 +110,17 @@ Page({
       wx.showToast({ title: '标题和内容不能为空', icon: 'none', duration: 1500 })
       return
     }
-    const data = { title: title.trim(), content: content.trim(), tags: selectedTags, permission }
+    let images
+    try {
+      if (this.data.images.length) wx.showLoading({ title: '上传图片中…', mask: true })
+      images = await this.uploadImages()
+    } catch (err) {
+      wx.hideLoading()
+      wx.showToast({ title: '图片上传失败，请重试', icon: 'none', duration: 1500 })
+      return
+    }
+    if (this.data.images.length) wx.hideLoading()
+    const data = { title: title.trim(), content: content.trim(), images, tags: selectedTags, permission }
     if (isEditing && diaryId) {
       const result = await diaryApi.update(diaryId, data)
       if (result) { wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 }); wx.navigateBack() }

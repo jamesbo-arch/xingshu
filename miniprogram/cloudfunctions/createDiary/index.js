@@ -4,7 +4,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { title, content, tags, permission } = event
+  const { title, content, tags, permission, images } = event
   if (!title || !content) return { code: -1, msg: '标题和内容不能为空' }
 
   const [users] = await db.query('SELECT id FROM users WHERE openid = ?', [OPENID])
@@ -16,9 +16,9 @@ exports.main = async (event, context) => {
     await conn.beginTransaction()
 
     const [result] = await conn.query(
-      `INSERT INTO diaries (user_id, title, content, permission, created_by)
-       VALUES (?, ?, ?, ?, ?)`,
-      [userId, title, content, permission || 'public', userId]
+      `INSERT INTO diaries (user_id, title, content, images, permission, created_by)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [userId, title, content, images && images.length ? JSON.stringify(images) : null, permission || 'public', userId]
     )
     const diaryId = result.insertId
 

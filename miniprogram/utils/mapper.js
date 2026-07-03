@@ -13,6 +13,7 @@ function diary(item) {
     time: item.created_at || item.time,
     timestamp: item.created_at || item.timestamp,
     created_at_text: formatTime(item.created_at),
+    images: item.images || [],
   }
 }
 

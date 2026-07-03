@@ -4,7 +4,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { diaryId, title, content, tags, permission } = event
+  const { diaryId, title, content, tags, permission, images } = event
   if (!diaryId) return { code: -1, msg: '缺少日记ID' }
 
   const [users] = await db.query('SELECT id FROM users WHERE openid = ?', [OPENID])
@@ -22,6 +22,7 @@ exports.main = async (event, context) => {
     if (title !== undefined) { fields.push('title = ?'); values.push(title) }
     if (content !== undefined) { fields.push('content = ?'); values.push(content) }
     if (permission !== undefined) { fields.push('permission = ?'); values.push(permission) }
+    if (images !== undefined) { fields.push('images = ?'); values.push(images && images.length ? JSON.stringify(images) : null) }
     fields.push('updated_by = ?'); values.push(userId)
     values.push(diaryId)
 

@@ -494,3 +494,38 @@
 - `npm test` → 连通性 OK + 24/24 单测 + 15/15 集成 + 5/5 冒烟，EXIT=0
 - `npm run test:e2e` → 20/20 PASS，测试数据自动清理
 - `git check-ignore` 确认 .env、db.js、project.private.config.json 均被忽略
+
+---
+
+### 2026-07-03 16:10 — 2.2.7 日记配图上传（自主循环第 1 轮）
+
+**类型**：前端 | 云函数 | 数据库 | 测试
+**模型**：claude-fable-5
+**Agent**：自主循环（/loop 动态节奏）
+**计划关联**：Phase 2.2.7 — uploadDiaryImage
+**修改文件**：
+- MySQL `diaries` 表 — 新增 `images JSON NULL` 列（附加性迁移）
+- `miniprogram/cloudfunctions/createDiary/index.js` — INSERT 支持 images（JSON 序列化存 fileID 数组）
+- `miniprogram/cloudfunctions/updateDiary/index.js` — UPDATE 支持 images（空数组清除为 NULL）
+- `miniprogram/utils/mapper.js` — diary() 增加 images 兜底空数组
+- `miniprogram/pages/compose/index.{js,wxml,wxss}` — 九宫格选图（wx.chooseMedia）、预览、删除；发布时 wx.cloud.uploadFile 直传云存储（cloudPath: diary-images/），编辑模式保留已有 fileID 不重复上传
+- `miniprogram/pages/detail/index.{js,wxml,wxss}` — 正文下方渲染配图（widthFix），点击 wx.previewImage
+- `test/fn-roundtrip-test.js` — 新增云函数写入回环测试 5 条（create 带图 → detail 验证 JSON 解析 → update 替换/清除 → delete，结束硬删测试数据）
+- `test/api-test.js` — 新增 images 列存在性断言（15→16 条）
+- `test/unit/mapper.test.js` — 新增 images 兜底断言（24→25 条）
+- `package.json` — npm test 接入回环测试
+
+**变更说明**：
+选择 2.2.7 而非 2.1.4（头像上传）：member/auth 页存在约 900 行来源不明的未提交改动，
+自主提交会混入未经确认的内容；2.2.7 涉及的 compose/detail 页与云函数均无冲突。
+上传采用前端 wx.cloud.uploadFile 直传云存储方案，无需新增云函数，
+云函数侧仅存 fileID 数组（diaries.images JSON 列）。
+
+**遗留**：
+- createDiary / updateDiary / getDiaryDetail / getDiaryList 需重新部署后线上才生效
+- diary-card 列表缩略图未做（计划项仅要求上传链路，可作为后续 polish）
+- 2.1.4 头像上传阻塞中：等用户确认 member/auth 页未提交改动的处置方式
+
+**验证**：
+- `npm test` 全绿：连通性 + 25/25 单测 + 16/16 集成 + 5/5 冒烟 + 5/5 回环，EXIT=0
+- 回环测试确认 JSON 列经 mysql2 自动解析为数组、空数组清除、软删除后不可查

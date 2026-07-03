@@ -37,6 +37,9 @@ async function run() {
   await test('diaries status 字段存在', async () => {
     await db.query("SELECT status FROM diaries LIMIT 0")
   })
+  await test('diaries images 字段存在', async () => {
+    await db.query("SELECT images FROM diaries LIMIT 0")
+  })
   await test('diaries 外键约束', async () => {
     const [r] = await db.query("SELECT REFERENCED_TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA='xingshu_dev' AND TABLE_NAME='diaries' AND COLUMN_NAME='user_id'")
     if (r[0].REFERENCED_TABLE_NAME !== 'users') throw new Error('FK missing')

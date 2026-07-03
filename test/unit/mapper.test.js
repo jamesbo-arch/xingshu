@@ -36,6 +36,11 @@ test('diary：非会员作者 authorIsMember 为 false', () => {
   assert.strictEqual(mapper.diary({}).authorIsMember, false)
 })
 
+test('diary：images 缺失时兜底为空数组，存在时透传', () => {
+  assert.deepStrictEqual(mapper.diary({}).images, [])
+  assert.deepStrictEqual(mapper.diary({ images: ['cloud://a.jpg'] }).images, ['cloud://a.jpg'])
+})
+
 test('diary：null/undefined 原样返回', () => {
   assert.strictEqual(mapper.diary(null), null)
   assert.strictEqual(mapper.diary(undefined), undefined)
