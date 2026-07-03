@@ -325,3 +325,114 @@
   display: block;
   margin-top: 20rpx;
 }
+
+/* v2.2 活动海报弹层 */
+.nav-share-icon {
+  font-size: 36rpx;
+  color: #44403A;
+  padding: 16rpx;
+}
+
+.nav-right {
+  width: 72rpx;
+  text-align: center;
+}
+
+.poster-card {
+  background: linear-gradient(165deg, #FBF7EE 0%, #F5EDD8 100%);
+  border: 1rpx solid rgba(126, 102, 64, 0.2);
+  border-radius: 24rpx;
+  padding: 32rpx 36rpx;
+  margin: 24rpx 0 8rpx;
+}
+
+.poster-brand {
+  font-size: 24rpx;
+  letter-spacing: 10rpx;
+  color: #66615A;
+  text-align: center;
+  display: block;
+  margin-bottom: 20rpx;
+}
+
+.poster-title {
+  font-size: 36rpx;
+  line-height: 1.5;
+  color: #2A2723;
+  text-align: center;
+  display: block;
+  margin-bottom: 16rpx;
+}
+
+.poster-meta {
+  font-size: 25rpx;
+  color: #66615A;
+  text-align: center;
+  display: block;
+  line-height: 1.8;
+}
+
+.poster-divider {
+  height: 1rpx;
+  background: rgba(126, 102, 64, 0.3);
+  margin: 28rpx 0 24rpx;
+}
+
+.poster-footer {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+}
+
+.poster-footer-info {
+  flex: 1;
+}
+
+.poster-signed {
+  font-size: 26rpx;
+  color: #2A2723;
+  display: block;
+  margin-bottom: 6rpx;
+}
+
+.poster-hint {
+  font-size: 20rpx;
+  color: #A8A39B;
+  display: block;
+}
+
+.poster-qr {
+  width: 112rpx;
+  height: 112rpx;
+  background: #fff;
+  border: 1rpx solid #D6D0C2;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+}
+
+.poster-qr-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  color: #A8A39B;
+}
+
+.poster-actions {
+  display: flex;
+  gap: 20rpx;
+  margin-top: 28rpx;
+}
+
+.poster-btn {
+  flex: 1;
+  text-align: center;
+  padding: 22rpx;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+}
+
+.btn-ghost.poster-btn {
+  border: 1rpx solid rgba(126, 102, 64, 0.3);
+  color: #66615A;
+}

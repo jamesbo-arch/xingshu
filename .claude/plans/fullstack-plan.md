@@ -287,7 +287,7 @@
     - 详情页：guest 点击卡片进入验证引导（邀请式文案）；会员日记渐隐遮罩 + "完整内容向会员开放" + 开通入口
 - [x] **M1.5.3** 授权页文案重构（"成为醒书的一员"+情境/通用双文案）+ 窗口标题改"醒书"（微信平台侧改名待用户在 mp 后台操作）
     - auth 页文案改为"成为醒书的一员"邀请式（PRD 5.1.12）；小程序展示名称改"醒书"（微信平台侧改名需用户在 mp 后台操作）
-- [ ] **M1.5.4** 分享海报带参码 + 推荐人绑定（PRD v2.2）  `[Backend+Frontend]`
+- [x] **M1.5.4** 分享海报带参码 + 推荐人绑定 — login scene 解析首绑定；generateMiniCode 双目标+分享人；日记海报接真码；活动海报弹层；admin 推荐人展示/修改/清空（校验+审计）；fn-referral-test 9/9
     - `generateMiniCode` 云函数扩展：支持日记/活动两种目标 + scene 携带分享人用户 ID（wxacode.getUnlimited）
     - `users` 表加 `referrer_user_id` 列；login 云函数解析启动 scene，新用户首次绑定推荐人（不覆盖、不可自荐）
     - 小程序：app onLaunch/onShow 解析 scene 直达对应详情页；活动详情页加分享入口 + 活动海报弹层（复用 poster-sheet 模式）；日记海报二维码替换为真实带参码

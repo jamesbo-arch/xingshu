@@ -49,9 +49,10 @@
             <text class="poster-time">{{diary.time}}</text>
           </view>
         </view>
-        <!-- QR placeholder -->
+        <!-- v2.2 带参小程序码（scene 携带日记 ID + 分享人 ID，加载失败回退占位） -->
         <view class="qr-placeholder">
-          <view class="qr-grid">
+          <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="qr-image" mode="aspectFit"/>
+          <view wx:else class="qr-grid">
             <view wx:for="{{[0,1,2,3,4,5,6,7,8]}}" wx:key="*this" class="qr-dot {{item % 3 === 0 || item % 3 === 2 ? 'qr-dark' : 'qr-light'}}"></view>
           </view>
           <text class="qr-label">扫码阅读</text>

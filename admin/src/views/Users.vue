@@ -13,7 +13,7 @@
     </div>
     <table class="data-table">
       <thead><tr>
-        <th>ID</th><th>昵称</th><th>手机号</th><th>身份</th><th>会员到期</th><th>日记数</th><th>注册时间</th><th>操作</th>
+        <th>ID</th><th>昵称</th><th>手机号</th><th>身份</th><th>会员到期</th><th>日记数</th><th>推荐人</th><th>注册时间</th><th>操作</th>
       </tr></thead>
       <tbody>
         <tr v-for="u in filtered" :key="u.id">
@@ -23,6 +23,7 @@
           <td><span class="badge" :class="'badge-'+u.identity">{{ identityLabel(u.identity) }}</span></td>
           <td>{{ u.memberUntil || '-' }}</td>
           <td>{{ u.diaries }}</td>
+          <td>{{ u.referrerName || '-' }}</td>
           <td>{{ u.registeredAt }}</td>
           <td><router-link :to="'/users/'+u.id" class="link">详情</router-link></td>
         </tr>

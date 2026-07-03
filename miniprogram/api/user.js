@@ -1,8 +1,8 @@
 const { call } = require('./request')
 
 module.exports = {
-  login(nickname) {
-    return call('login', { nickname })
+  login(nickname, scene) {
+    return call('login', { nickname, scene })
   },
   getUserInfo() {
     return call('getUserInfo')

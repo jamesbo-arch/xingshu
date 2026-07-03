@@ -1,5 +1,6 @@
 const { hueToColor, getInitial } = require('../../utils/color')
 const toast = require('../../utils/toast')
+const { call } = require('../../api/request')
 
 Component({
   properties: {
@@ -19,6 +20,7 @@ Component({
     avatarColor: '#8B7A4A',
     avatarInitial: '?',
     contentExcerpt: '',
+    qrFileID: '',
   },
 
   observers: {
@@ -39,12 +41,28 @@ Component({
           avatarColor: hueToColor(d.author_avatar_hue || d.avatarHue || 60),
           avatarInitial: getInitial(d.author_name || d.author || '?'),
           contentExcerpt: excerpt,
+          qrFileID: '',
         })
+        this._qrTempPath = ''
+        this._loadQr(d.id)
       }
     },
   },
 
   methods: {
+    // v2.2 带参小程序码：scene 携带日记 ID + 当前用户（分享人）ID，失败静默回退占位
+    async _loadQr(diaryId) {
+      try {
+        const app = getApp()
+        const sharerId = (app.globalData.user || {}).id
+        const res = await call('generateMiniCode', { diaryId, sharerId }, { showError: false })
+        if (res && res.fileID) {
+          this.setData({ qrFileID: res.fileID })
+          const dl = await wx.cloud.downloadFile({ fileID: res.fileID })
+          this._qrTempPath = dl.tempFilePath
+        }
+      } catch (e) {}
+    },
     onMaskTap() {
       this.triggerEvent('close')
     },
@@ -208,42 +226,57 @@ Component({
         ctx.font = '21px sans-serif'
         ctx.fillText(d.created_at || d.time || '', 128, ty + 30)
 
-        // QR placeholder
+        // QR：优先绘制真实带参小程序码（v2.2），失败回退占位块
         const qx = W - 110, qy = ty - 16
         const cell = 18
-        ctx.fillStyle = '#2A2723'
-        ;[[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]].forEach(([r, c]) => {
-          ctx.fillRect(qx + c * cell, qy + r * cell, cell - 2, cell - 2)
-        })
-        ctx.fillStyle = '#A8A39B'
-        ctx.font = '17px sans-serif'
-        ctx.textAlign = 'center'
-        ctx.fillText('扫码阅读', qx + (cell * 3) / 2, qy + cell * 3 + 20)
+        const qrLabel = () => {
+          ctx.fillStyle = '#A8A39B'
+          ctx.font = '17px sans-serif'
+          ctx.textAlign = 'center'
+          ctx.fillText('扫码阅读', qx + (cell * 3) / 2, qy + cell * 3 + 20)
+        }
+        const drawQrPlaceholder = () => {
+          ctx.fillStyle = '#2A2723'
+          ;[[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]].forEach(([r, c]) => {
+            ctx.fillRect(qx + c * cell, qy + r * cell, cell - 2, cell - 2)
+          })
+          qrLabel()
+        }
+        const exportImage = () => {
+          wx.canvasToTempFilePath({
+            canvas,
+            success: (r) => {
+              wx.saveImageToPhotosAlbum({
+                filePath: r.tempFilePath,
+                success: () => toast.success('已保存到相册'),
+                fail: (err) => {
+                  const denied = err.errMsg && err.errMsg.indexOf('auth deny') >= 0
+                  if (denied) {
+                    wx.showModal({
+                      title: '需要相册权限',
+                      content: '请在设置中允许访问相册',
+                      confirmText: '去设置',
+                      success: (r2) => { if (r2.confirm) wx.openSetting() },
+                    })
+                  } else {
+                    toast.error('保存失败，请重试')
+                  }
+                },
+              })
+            },
+            fail: () => toast.error('图片生成失败'),
+          }, this)
+        }
 
-        // Export
-        wx.canvasToTempFilePath({
-          canvas,
-          success: (r) => {
-            wx.saveImageToPhotosAlbum({
-              filePath: r.tempFilePath,
-              success: () => toast.success('已保存到相册'),
-              fail: (err) => {
-                const denied = err.errMsg && err.errMsg.indexOf('auth deny') >= 0
-                if (denied) {
-                  wx.showModal({
-                    title: '需要相册权限',
-                    content: '请在设置中允许访问相册',
-                    confirmText: '去设置',
-                    success: (r2) => { if (r2.confirm) wx.openSetting() },
-                  })
-                } else {
-                  toast.error('保存失败，请重试')
-                }
-              },
-            })
-          },
-          fail: () => toast.error('图片生成失败'),
-        }, this)
+        if (this._qrTempPath) {
+          const img = canvas.createImage()
+          img.onload = () => { ctx.drawImage(img, qx, qy, cell * 3, cell * 3); qrLabel(); exportImage() }
+          img.onerror = () => { drawQrPlaceholder(); exportImage() }
+          img.src = this._qrTempPath
+          return
+        }
+        drawQrPlaceholder()
+        exportImage()
       })
     },
 

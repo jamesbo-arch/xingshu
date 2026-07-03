@@ -14,24 +14,34 @@ App({
     },
   },
 
-  onLaunch() {
+  onLaunch(options) {
     if (wx.cloud) {
       wx.cloud.init({
         env: 'cloud1-1gpabyik2db3478f',
         traceUser: true,
       })
     }
-    this._initUser()
+    // v2.2 带参小程序码：scene 形如 "d=12&s=8"（日记）/ "a=3&s=8"（活动），s 为分享人 ID
+    const scene = options && options.query && options.query.scene
+      ? decodeURIComponent(options.query.scene) : ''
+    this._initUser(scene)
   },
 
-  async _initUser() {
-    const user = await userApi.login()
+  async _initUser(scene) {
+    const user = await userApi.login(undefined, scene || undefined)
     if (user) {
       this.globalData.user = user
       // v2.1 克制原则：不再强制 guest 跳验证页——游客可自由浏览列表，
       // 验证在互动/查看详情的瞬间触发（utils/auth-guard.js）
     }
     await this.loadTags()
+    // 扫码直达对应详情页
+    if (scene) {
+      const diary = scene.match(/(?:^|&)d=(\d+)/)
+      const act = scene.match(/(?:^|&)a=(\d+)/)
+      if (diary) wx.navigateTo({ url: `/pages/detail/index?id=${diary[1]}` })
+      else if (act) wx.navigateTo({ url: `/pages/activity-detail/index?id=${act[1]}` })
+    }
   },
 
   async loadTags() {

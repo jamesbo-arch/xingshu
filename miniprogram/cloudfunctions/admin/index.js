@@ -41,8 +41,9 @@ const USER_SELECT = `
          u.diary_count AS diaries,
          (SELECT COALESCE(SUM(d.like_count),0) FROM diaries d WHERE d.user_id = u.id AND d.status = 'active') AS likes,
          DATE_FORMAT(u.created_at, '%Y-%m-%d') AS registeredAt,
-         DATE_FORMAT(u.updated_at, '%Y-%m-%d') AS lastActive
-  FROM users u`
+         DATE_FORMAT(u.updated_at, '%Y-%m-%d') AS lastActive,
+         u.referrer_user_id AS referrerId, r.nickname AS referrerName
+  FROM users u LEFT JOIN users r ON u.referrer_user_id = r.id`
 
 const DIARY_SELECT = `
   SELECT d.id, d.title, d.content, d.permission, d.status,
@@ -102,7 +103,29 @@ const handlers = {
     if (!users.length) throw new Error('用户不存在')
     const [diaries] = await db.query(
       `${DIARY_SELECT} WHERE d.user_id = ? AND d.status = 'active' ORDER BY d.created_at DESC`, [id])
-    return { user: users[0], diaries: diaries.map(rowToDiary) }
+    // v2.2 "他推荐的用户"
+    const [referred] = await db.query(
+      `SELECT id, nickname, identity, DATE_FORMAT(created_at, '%Y-%m-%d') AS registeredAt
+       FROM users WHERE referrer_user_id = ? ORDER BY created_at DESC`, [id])
+    return { user: users[0], diaries: diaries.map(rowToDiary), referred }
+  },
+
+  // v2.2 管理员修改推荐人：非本人、不得互为推荐循环，写审计（旧值→新值）
+  async updateReferrer({ userId, referrerId = null } = {}) {
+    if (!userId) throw new Error('缺少用户 ID')
+    const [users] = await db.query('SELECT id, referrer_user_id FROM users WHERE id = ?', [userId])
+    if (!users.length) throw new Error('用户不存在')
+    if (referrerId != null) {
+      if (Number(referrerId) === Number(userId)) throw new Error('推荐人不能是用户本人')
+      const [refs] = await db.query('SELECT id, referrer_user_id FROM users WHERE id = ?', [referrerId])
+      if (!refs.length) throw new Error('推荐人不存在')
+      if (refs[0].referrer_user_id != null && Number(refs[0].referrer_user_id) === Number(userId)) {
+        throw new Error('不能形成互为推荐的循环')
+      }
+    }
+    await db.query('UPDATE users SET referrer_user_id = ? WHERE id = ?', [referrerId, userId])
+    await auditLog('updateReferrer', 'user', userId, { from: users[0].referrer_user_id, to: referrerId })
+    return true
   },
 
   async diaries({ keyword, permission, tag } = {}) {

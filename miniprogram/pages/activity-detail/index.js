@@ -1,5 +1,6 @@
 const activityApi = require('../../api/activity')
 const toast = require('../../utils/toast')
+const { call } = require('../../api/request')
 
 Page({
   data: {
@@ -86,5 +87,41 @@ Page({
   onPreviewImage(e) {
     const images = this.data.activity.images || []
     wx.previewImage({ current: images[e.currentTarget.dataset.index], urls: images })
+  },
+
+  // v2.2 活动海报：带参小程序码（scene 携带活动 ID + 分享人 ID，推荐参数不展示在画面上）
+  async onOpenPoster() {
+    this.setData({ showPoster: true })
+    setTimeout(() => this.setData({ _posterShow: true }), 20)
+    if (!this.data.qrFileID) {
+      const app = getApp()
+      const sharerId = (app.globalData.user || {}).id
+      const res = await call('generateMiniCode', { activityId: this._id, sharerId }, { showError: false })
+      if (res && res.fileID) this.setData({ qrFileID: res.fileID })
+    }
+  },
+  onClosePoster() {
+    this.setData({ _posterShow: false })
+    setTimeout(() => this.setData({ showPoster: false }), 300)
+  },
+  async onSaveQr() {
+    if (!this.data.qrFileID) { toast.info('小程序码生成中，稍候再试'); return }
+    try {
+      const dl = await wx.cloud.downloadFile({ fileID: this.data.qrFileID })
+      await new Promise((resolve, reject) => wx.saveImageToPhotosAlbum({
+        filePath: dl.tempFilePath, success: resolve, fail: reject,
+      }))
+      toast.success('已保存到相册')
+    } catch (err) {
+      if (err.errMsg && err.errMsg.indexOf('auth deny') >= 0) {
+        wx.showModal({
+          title: '需要相册权限', content: '请在设置中允许访问相册',
+          confirmText: '去设置',
+          success: (r) => { if (r.confirm) wx.openSetting() },
+        })
+      } else {
+        toast.error('保存失败，请重试')
+      }
+    }
   },
 })

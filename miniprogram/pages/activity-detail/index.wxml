@@ -3,7 +3,7 @@
   <view class="detail-nav">
     <view class="nav-back" bindtap="onBack"><text class="nav-back-icon">←</text></view>
     <text class="nav-title serif">{{isPast ? '活動回顧' : '活動詳情'}}</text>
-    <view class="nav-right"></view>
+    <view class="nav-right" bindtap="onOpenPoster"><text class="nav-share-icon">↗</text></view>
   </view>
 
   <scroll-view class="detail-scroll" scroll-y enhanced show-scrollbar="{{false}}">
@@ -76,6 +76,34 @@
     </block>
     <view wx:elif="{{isFull}}" class="act-signup-btn disabled">名额已满</view>
     <view wx:else class="act-signup-btn" bindtap="onOpenSignup">报名参加</view>
+  </view>
+
+  <!-- 活动海报弹层（v2.2） -->
+  <view wx:if="{{showPoster}}">
+    <view class="sheet-mask {{_posterShow ? 'mask-show' : ''}}" bindtap="onClosePoster"></view>
+    <view class="sheet poster-sheet {{_posterShow ? 'sheet-show' : ''}}" catchtap="">
+      <view class="sheet-handle"></view>
+      <text class="signup-title serif">活动海报</text>
+      <view class="poster-card">
+        <view class="poster-brand serif">醒 書 活 動</view>
+        <text class="poster-title serif">{{activity.title}}</text>
+        <text class="poster-meta">{{activity.start_time}}</text>
+        <text class="poster-meta">{{activity.type === 'online' ? '线上活动' : activity.city + ' · ' + activity.location}}</text>
+        <view class="poster-divider"></view>
+        <view class="poster-footer">
+          <view class="poster-footer-info">
+            <text class="poster-signed serif">{{isPast ? '往期回顾' : '已有 ' + activity.signup_count + ' 位醒书人报名'}}</text>
+            <text class="poster-hint">长按扫码 · 与同路人相见</text>
+          </view>
+          <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="poster-qr" mode="aspectFit"/>
+          <view wx:else class="poster-qr poster-qr-loading"><text>生成中</text></view>
+        </view>
+      </view>
+      <view class="poster-actions">
+        <view class="btn-ghost poster-btn" bindtap="onSaveQr">保存小程序码</view>
+        <view class="act-signup-btn poster-btn" bindtap="onClosePoster">完成</view>
+      </view>
+    </view>
   </view>
 
   <!-- 报名表单弹层 -->
