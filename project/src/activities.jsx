@@ -131,10 +131,96 @@ function SignupSheet({ a, app, onClose }) {
   );
 }
 
+// ───────────────── 活动海报（带参小程序码 + 推荐人说明）─────────────────
+function ActivityPosterSheet({ a, app, onClose }) {
+  return (
+    <>
+      <div className="sheet-mask" onClick={onClose}/>
+      <div className="sheet" style={{ maxHeight: '92%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 14 }}>
+          <div className="title-serif" style={{ flex: 1, fontSize: 16, letterSpacing: 3 }}>
+            活动海报
+          </div>
+          <button onClick={onClose} style={{ background: 'transparent', border: 'none',
+                                             cursor: 'pointer', color: 'var(--ink-3)' }}>
+            <IconClose size={20}/>
+          </button>
+        </div>
+
+        {/* poster */}
+        <div style={{
+          background: 'linear-gradient(165deg, #FBF7EE 0%, #F5EDD8 100%)',
+          borderRadius: 14, overflow: 'hidden',
+          border: '0.5px solid rgba(126,102,64,0.2)',
+        }}>
+          <ActivityCover a={a} height={120}/>
+          <div style={{ padding: '18px 20px 20px' }}>
+            <div style={{ textAlign: 'center', marginBottom: 12 }}>
+              <div className="title-serif" style={{ fontSize: 12, letterSpacing: 6, color: 'var(--ink-3)' }}>
+                醒書活動
+              </div>
+              <div style={{ width: 24, height: 0.5, background: 'var(--ink-4)', margin: '6px auto 0' }}/>
+            </div>
+            <div className="title-serif" style={{
+              fontSize: 19, lineHeight: 1.5, textAlign: 'center', letterSpacing: 1, marginBottom: 12,
+            }}>{a.title}</div>
+            <div style={{ fontSize: 12.5, color: 'var(--ink-2)', textAlign: 'center', lineHeight: 1.9 }}>
+              {a.datetime}
+              <br/>{a.type === 'online' ? '线上活动' : `${a.city} · ${a.location}`}
+            </div>
+
+            <div style={{ height: 0.5, background: 'rgba(126,102,64,0.3)', margin: '16px 0 14px' }}/>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div className="title-serif" style={{ fontSize: 13, color: 'var(--ink)' }}>
+                  {a.status === 'past' ? '往期回顾' : `已有 ${a.signedUp} 位醒书人报名`}
+                </div>
+                <div style={{ fontSize: 10, color: 'var(--ink-4)', marginTop: 2 }}>
+                  长按扫码 · 与同路人相见
+                </div>
+              </div>
+              {/* 带参小程序码占位 */}
+              <div style={{
+                width: 56, height: 56, background: '#fff',
+                border: '0.5px solid var(--ink-5)', borderRadius: 6, padding: 4,
+                display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 1,
+              }}>
+                {Array.from({ length: 36 }).map((_, i) => (
+                  <div key={i} style={{
+                    background: ((i * 5 + (i % 7) * 2) % 3 === 0) ? 'var(--ink)' : 'transparent',
+                    borderRadius: 0.5,
+                  }}/>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ fontSize: 10, color: 'var(--ink-5)', textAlign: 'center', margin: '10px 0' }}>
+          醒书人 No.{app.user?.memberNo || 8} 与你分享 · 扫码进入将记录 TA 为你的推荐人
+        </div>
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+          <button className="btn btn-ghost" style={{ flex: 1 }}
+                  onClick={() => { app.toast('图片已保存至相册'); onClose(); }}>
+            保存图片
+          </button>
+          <button className="btn btn-primary" style={{ flex: 1 }}
+                  onClick={() => { app.toast('已唤起微信分享'); onClose(); }}>
+            分享至微信
+          </button>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // ───────────────── 活动详情 ─────────────────
 function ActivityDetailScreen({ app }) {
   const a = app.activities.find(x => x.id === app.activityId);
   const [showSignup, setShowSignup] = React.useState(false);
+  const [showPoster, setShowPoster] = React.useState(false);
   if (!a) return null;
   const isPast = a.status === 'past';
   const isFull = a.signedUp >= a.capacity && !a.signedByMe;
@@ -143,7 +229,14 @@ function ActivityDetailScreen({ app }) {
   return (
     <div className="paper-bg" style={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
       <div style={{ paddingTop: 54, flexShrink: 0 }}>
-        <TopBar title={isPast ? '活動回顧' : '活動詳情'} onBack={() => app.go('list')}/>
+        <TopBar title={isPast ? '活動回顧' : '活動詳情'} onBack={() => app.go('list')} right={
+          <button onClick={() => setShowPoster(true)} style={{
+            padding: 8, background: 'transparent', border: 'none', cursor: 'pointer',
+            color: 'var(--ink-2)',
+          }}>
+            <IconShare size={20}/>
+          </button>
+        }/>
       </div>
 
       <div className="scroll-area" style={{ flex: 1, overflowY: 'auto', paddingBottom: isPast ? 40 : 110 }}>
@@ -235,6 +328,7 @@ function ActivityDetailScreen({ app }) {
       )}
 
       {showSignup && <SignupSheet a={a} app={app} onClose={() => setShowSignup(false)}/>}
+      {showPoster && <ActivityPosterSheet a={a} app={app} onClose={() => setShowPoster(false)}/>}
     </div>
   );
 }
