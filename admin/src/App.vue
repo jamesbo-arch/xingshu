@@ -1,5 +1,6 @@
 <template>
-  <div class="app-layout">
+  <router-view v-if="$route.path === '/login'" />
+  <div v-else class="app-layout">
     <aside class="sidebar">
       <div class="sidebar-brand">醒书日记 · 管理后台</div>
       <nav>
@@ -8,13 +9,27 @@
         <router-link to="/diaries" class="nav-item" active-class="active">日记管理</router-link>
         <router-link to="/interactions" class="nav-item" active-class="active">互动数据</router-link>
       </nav>
-      <div class="sidebar-footer">v0.1 · 运营后台</div>
+      <div class="sidebar-footer">
+        <a class="logout-link" @click="onLogout">退出登录</a>
+        <div>v0.2 · 运营后台</div>
+      </div>
     </aside>
     <main class="main-content">
       <router-view />
     </main>
   </div>
 </template>
+
+<script setup>
+import { useRouter } from 'vue-router'
+import { logout } from './api'
+
+const router = useRouter()
+function onLogout() {
+  logout()
+  router.replace('/login')
+}
+</script>
 
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -25,5 +40,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .nav-item { display:block; padding:12px 20px; color:rgba(255,255,255,.8); text-decoration:none; font-size:14px; transition:background .15s; }
 .nav-item:hover, .nav-item.active { background:rgba(255,255,255,.12); color:#fff; }
 .sidebar-footer { margin-top:auto; padding:16px 20px 0; font-size:12px; color:rgba(255,255,255,.5); border-top:1px solid rgba(255,255,255,.15); }
+.logout-link { display:block; margin-bottom:8px; color:rgba(255,255,255,.7); cursor:pointer; }
+.logout-link:hover { color:#fff; }
 .main-content { flex:1; padding:24px 32px; overflow-y:auto; }
 </style>

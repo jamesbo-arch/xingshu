@@ -29,3 +29,9 @@ module.exports = {
   password: env.MYSQL_PASSWORD,
   database: env.MYSQL_DATABASE,
 }
+
+// 不可枚举：避免被展开进 mysql2 连接参数
+Object.defineProperty(module.exports, 'adminPassword', {
+  value: env.ADMIN_PASSWORD || '',
+  enumerable: false,
+})

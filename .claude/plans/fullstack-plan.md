@@ -268,7 +268,7 @@
 
 - [x] **M1.1** 处置 member/auth 页未提交改动 — 用户确认全部提交（5d764b4 UI 升级 / f93e520 配置 / 6d1d13c 文档）
 - [x] **M1.2** (=2.1.4) 头像上传 — 核验发现 Phase 6 已实现（chooseAvatar → wx.cloud.uploadFile avatars/ → updateUserProfile），harness 回环验证通过
-- [ ] **M1.3** 管理后台对接真实云函数 API（替换 `admin/src/api/index.js` 的 mock）`[Claude]` → 解锁 M1.4；**会员线下激活闭环的上线前置**（否则管理员无法在界面上确认收款激活会员）
+- [x] **M1.3** 管理后台对接真实云函数 API — admin 云函数（action 路由 + 密码登录 HMAC token）+ js-sdk 接入 + Login 页；11 条测试全绿。待用户：TCB 开匿名登录 + 部署 admin 云函数
 - [ ] **M1.4** (=4.2.4 + 4.3.5) admin 导出用户 Excel + 批量操作  `[Claude]`
 
 ### M2 — 部署与人工验证（需用户在场，建议一次批处理）

@@ -1,0 +1,123 @@
+// admin 云函数测试 — 鉴权、数据形状、删除闭环（测试数据自动清理）
+const mysql = require('mysql2/promise')
+const DB = require('../config/db')
+const { callFn } = require('./fn-harness')
+
+async function run() {
+  console.log('=== admin 云函数测试 ===\n')
+  let passed = 0, failed = 0, token = null
+
+  async function test(name, fn) {
+    try { await fn(); console.log(`  PASS  ${name}`); passed++ }
+    catch (e) { console.log(`  FAIL  ${name}: ${e.message}`); failed++ }
+  }
+
+  const admin = (action, payload) => callFn('admin', { action, token, payload })
+
+  await test('错误密码登录被拒绝', async () => {
+    const r = await callFn('admin', { action: 'login', payload: { password: 'wrong' } })
+    if (r.code === 0) throw new Error('不应登录成功')
+  })
+
+  await test('正确密码登录签发 token', async () => {
+    const r = await callFn('admin', { action: 'login', payload: { password: DB.adminPassword } })
+    if (r.code !== 0 || !r.data.token) throw new Error(r.msg || '无 token')
+    token = r.data.token
+  })
+
+  await test('无 token 请求返回 -401', async () => {
+    const r = await callFn('admin', { action: 'users' })
+    if (r.code !== -401) throw new Error(`期望 -401，实际 ${r.code}`)
+  })
+
+  await test('伪造 token 被拒绝', async () => {
+    const r = await callFn('admin', { action: 'users', token: (Date.now() + 9999999) + '.deadbeef' })
+    if (r.code !== -401) throw new Error(`期望 -401，实际 ${r.code}`)
+  })
+
+  await test('users 列表形状与库内数量一致', async () => {
+    const r = await admin('users')
+    if (r.code !== 0) throw new Error(r.msg)
+    const conn = await mysql.createConnection(DB)
+    const [[{ c }]] = await conn.query('SELECT COUNT(*) c FROM users')
+    await conn.end()
+    if (r.data.total !== c) throw new Error(`total=${r.data.total}，库内 ${c}`)
+    const u = r.data.list[0]
+    for (const k of ['id', 'nickname', 'identity', 'avatarHue', 'diaries', 'likes', 'registeredAt']) {
+      if (!(k in u)) throw new Error(`缺少字段 ${k}`)
+    }
+  })
+
+  await test('users 按 identity 筛选', async () => {
+    const r = await admin('users', { identity: 'member' })
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.list.some(u => u.identity !== 'member')) throw new Error('筛选失效')
+  })
+
+  await test('diaries 列表含 tags 数组与作者', async () => {
+    const r = await admin('diaries')
+    if (r.code !== 0) throw new Error(r.msg)
+    const d = r.data.list[0]
+    if (!Array.isArray(d.tags) || !d.author || !d.createdAt) throw new Error('形状不符: ' + JSON.stringify(Object.keys(d)))
+  })
+
+  await test('kpi 五项指标齐全', async () => {
+    const r = await admin('kpi')
+    if (r.code !== 0) throw new Error(r.msg)
+    for (const k of ['users', 'members', 'diaries', 'interactions', 'revenue']) {
+      if (typeof r.data[k].value !== 'number') throw new Error(`${k}.value 缺失`)
+    }
+  })
+
+  await test('trend 返回 30 天序列', async () => {
+    const r = await admin('trend')
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.length !== 30) throw new Error(`期望 30 天，实际 ${r.data.length}`)
+  })
+
+  await test('activity 返回动态列表', async () => {
+    const r = await admin('activity')
+    if (r.code !== 0) throw new Error(r.msg)
+    if (!r.data.length || !r.data[0].text || !r.data[0].type) throw new Error('形状不符')
+  })
+
+  // 删除闭环：创建测试日记（含评论、点赞）→ admin 删除 → 校验联动清理
+  let diaryId = null
+  await test('deleteDiary 删除日记并联动清理互动数据', async () => {
+    const created = await callFn('createDiary', {
+      title: 'admin测试日记', content: '待删除', tags: [], permission: 'private',
+    }, 'mock_me')
+    diaryId = created.data.id
+    await callFn('toggleLike', { diaryId }, 'mock_yanqiu')
+    await callFn('createComment', { diaryId, content: '测试评论' }, 'mock_yanqiu')
+
+    const r = await admin('deleteDiary', { id: diaryId })
+    if (r.code !== 0) throw new Error(r.msg)
+
+    const conn = await mysql.createConnection(DB)
+    const [[d]] = await conn.query('SELECT status FROM diaries WHERE id = ?', [diaryId])
+    const [[{ c: inter }]] = await conn.query("SELECT COUNT(*) c FROM interactions WHERE target_type='diary' AND target_id = ?", [diaryId])
+    const [[{ c: cmts }]] = await conn.query('SELECT COUNT(*) c FROM comments WHERE diary_id = ? AND is_deleted = 0', [diaryId])
+    const [[{ c: logs }]] = await conn.query("SELECT COUNT(*) c FROM admin_logs WHERE action='deleteDiary' AND target_id = ?", [String(diaryId)])
+    await conn.end()
+    if (d.status !== 'deleted') throw new Error('日记未删除')
+    if (inter !== 0) throw new Error(`互动残留 ${inter} 条`)
+    if (cmts !== 0) throw new Error(`评论残留 ${cmts} 条`)
+    if (logs !== 1) throw new Error('admin_logs 未记录')
+  })
+
+  // 硬删测试数据
+  if (diaryId) {
+    const conn = await mysql.createConnection(DB)
+    await conn.execute('DELETE FROM comments WHERE diary_id = ?', [diaryId])
+    await conn.execute('DELETE FROM diaries WHERE id = ?', [diaryId])
+    await conn.execute("DELETE FROM admin_logs WHERE action='deleteDiary' AND target_id = ?", [String(diaryId)])
+    await conn.end()
+    console.log('\n  测试数据已清理')
+  }
+
+  console.log(`\n=== ${passed} passed, ${failed} failed ===`)
+  process.exit(failed ? 1 : 0)
+}
+
+run().catch(e => { console.error(e); process.exit(1) })

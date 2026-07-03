@@ -674,3 +674,38 @@ updateUserProfile 存 avatar_url），无需新开发，通过 harness 做了
 - updateUserProfile 头像回环：PASS（mock_me 设置 fake fileID → 读回一致 → 还原）
 - wxml/js 绑定一致性比对：无差异
 - 提交后工作区干净（仅 settings.local.json 随权限授权自然变化）
+
+---
+
+### 2026-07-03 19:10 — M1.3 管理后台对接真实 API
+
+**类型**：后端 | 前端 | 云函数 | 测试 | 配置
+**模型**：claude-fable-5
+**Agent**：主会话直接执行
+**计划关联**：上线路线图 M1.3 — admin 对接真实云函数 API
+**修改文件**：
+- `miniprogram/cloudfunctions/admin/` — 新增管理端统一云函数（第 23 个）：action 路由 10 个动作（login/users/userDetail/diaries/diaryDetail/comments/kpi/activity/trend/deleteDiary/deleteComment）；密码登录签发 12h HMAC token（crypto.timingSafeEqual 校验）；删除操作事务联动清理互动/评论并写 admin_logs 审计；不依赖 wx-server-sdk
+- `.env` / `.env.example` — 新增 ADMIN_PASSWORD
+- `scripts/sync-db-config.js` — 扩展：同步生成 admin 云函数 secret.js（gitignore 排除）
+- `config/db.js` — adminPassword 以不可枚举属性暴露（避免混入 mysql2 连接参数）
+- `admin/src/api/index.js` — mock 全量替换为 @cloudbase/js-sdk 调用（匿名登录 + callFunction），返回形状与原 mock 一致，页面组件零改动；-401 自动登出跳转
+- `admin/src/views/Login.vue` — 新增密码登录页
+- `admin/src/router/index.js` — /login 路由 + 全局前置守卫
+- `admin/src/App.vue` — 登录页脱离侧边栏布局渲染；侧边栏新增退出登录
+- `admin/src/data/mock.js` — 删除（改造后无引用）
+- `test/fn-admin-test.js` — 11 条测试：鉴权 4 条（错误密码/无 token/伪造 token/正常登录）+ 形状 6 条（与库内数量比对）+ 删除联动闭环 1 条
+- `package.json` / `CLAUDE.md` — npm test 接入 admin 测试；文档同步
+
+**变更说明**：
+鉴权方案经用户确认采用密码登录。踩坑一处：diaries.updated_by 为整型（用户 id），
+管理员操作不写该列，审计统一走 admin_logs（全 varchar 列）。
+
+**上线前置（用户操作）**：
+1. TCB 控制台开启匿名登录（js-sdk 调用云函数的前提）
+2. 部署 admin 云函数（需先 npm run sync-db 生成 db.js/secret.js）
+3. 管理后台部署到静态托管后，把域名加入 TCB WEB 安全域名
+
+**验证**：
+- `node test/fn-admin-test.js` → 11/11 PASS（含 deleteDiary 事务联动：日记软删 + 互动清零 + 评论隐藏 + 审计入库）
+- `npm test` 全绿：31 单测 + 17 集成 + 5 冒烟 + 5 回环 + 11 admin = 69 条
+- `admin && npm run build` 构建通过（826KB，js-sdk 体积占主）
