@@ -237,3 +237,86 @@ window.ADMIN_CONTACT = {
   note: '请备注您的微信昵称与手机号，便于核对身份。',
 };
 
+
+// ── 醒书活动 mock（v2.1 活动模块原型）──
+window.SEED_ACTIVITIES = [
+  {
+    id: 101,
+    title: '五月共读会：把《大学》读进日常',
+    coverHue: 60, coverChar: '讀',
+    datetime: '5月24日（周六）14:00 – 16:30',
+    type: 'offline', city: '广州',
+    location: '天河 · 方所书店 活动区',
+    organizer: '醒书运营组',
+    capacity: 30, signedUp: 21, signedByMe: false,
+    deadline: '5月23日 12:00 报名截止',
+    status: 'upcoming',
+    notice: '请提前 10 分钟到场；建议携带纸质笔记本。',
+    content:
+      '一起精读《大学》"修身为本"章，围绕"知止而后有定"展开两小时的深度讨论。\n\n流程：领读人导读（30 分钟）→ 分组讨论（60 分钟）→ 每人一句"今日所悟"（30 分钟）。\n\n没有门槛，只需要你带着最近一周的一个真实困惑而来。',
+  },
+  {
+    id: 102,
+    title: '线上夜谈：写日记的第一百天',
+    coverHue: 240, coverChar: '談',
+    datetime: '5月28日（周三）20:30 – 21:30',
+    type: 'online', city: '',
+    location: '腾讯会议（报名后获取入会链接）',
+    organizer: '醒书运营组',
+    capacity: 100, signedUp: 63, signedByMe: true,
+    deadline: '5月28日 18:00 报名截止',
+    status: 'upcoming',
+    notice: '线上活动，请提前测试麦克风；全程可只听不发言。',
+    content:
+      '三位坚持记录超过一百天的醒书人，分享他们的方法与"写不下去的时刻"。\n\n你会听到：如何用五分钟写完一篇不敷衍的日记；停更两周之后怎么回来；以及记录如何悄悄改变了他们对家人的耐心。',
+  },
+  {
+    id: 103,
+    title: '城市走读：越秀山晨行与静坐',
+    coverHue: 120, coverChar: '行',
+    datetime: '6月1日（周日）07:00 – 09:30',
+    type: 'offline', city: '广州',
+    location: '越秀公园 正门集合',
+    organizer: '醒书 · 同城小组',
+    capacity: 15, signedUp: 15, signedByMe: false,
+    deadline: '5月31日 20:00 报名截止',
+    status: 'upcoming',
+    notice: '穿舒适的鞋；活动免费，早餐自理。',
+    content:
+      '一次不带手机的晨行。七点集合，沿越秀山步道慢行四十分钟，山顶静坐十五分钟，之后围坐分享——只聊一个问题："最近，你为谁做过一件小事？"',
+  },
+  {
+    id: 104,
+    title: '四月回顾：一起读《高效能人士的七个习惯》',
+    coverHue: 30, coverChar: '習',
+    datetime: '4月19日（周六）14:00',
+    type: 'offline', city: '广州',
+    location: '天河 · 方所书店',
+    organizer: '醒书运营组',
+    capacity: 30, signedUp: 28, signedByMe: false,
+    deadline: '',
+    status: 'past',
+    content: '',
+    review: {
+      text: '二十八位醒书人到场。我们用"要事第一"做了各自下周的计划，散场时有人说：这是第一次在书店里聊到不想走。\n\n三个瞬间值得记住：一位妈妈说她把"双赢思维"用在了和女儿的争执里；两位第一次见面的书友约好下周互相监督晨读；最后的合影里，每个人手里都举着自己写下的一句话。',
+      photos: 4,
+    },
+  },
+  {
+    id: 105,
+    title: '三月回顾：线上分享「日记与自我对话」',
+    coverHue: 320, coverChar: '省',
+    datetime: '3月26日（周三）20:30',
+    type: 'online', city: '',
+    location: '腾讯会议',
+    organizer: '醒书运营组',
+    capacity: 100, signedUp: 87, signedByMe: false,
+    deadline: '',
+    status: 'past',
+    content: '',
+    review: {
+      text: '八十七人在线。主讲人分享了"给三年后的自己写信"的练习，当晚就有十一位醒书人发布了自己的第一封信。',
+      photos: 2,
+    },
+  },
+];

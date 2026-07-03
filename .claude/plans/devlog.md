@@ -789,3 +789,29 @@ updateUserProfile 存 avatar_url），无需新开发，通过 harness 做了
 **验证**：
 - PRD 3.1.7 首发红线与路线图 M1.5.1 范围红线一致
 - 依赖图 M1.5 正确插入 M1.4 与 M2.1 之间
+
+---
+
+### 2026-07-03 23:00 — 醒书活动模块原型 2 屏（M1.5.1 前置设计）
+
+**类型**：文档 | 前端（原型）
+**模型**：claude-fable-5
+**Agent**：主会话直接执行（Product/Frontend 视角，计划模式经用户批准）
+**计划关联**：M1.5.1 前置——用户确认混合策略：仅活动模块出原型，其余直接开发
+**修改文件**：
+- `project/src/activities.jsx` — 新增：ActivityListScreen（预告/往期两分组 + 活动卡片）、ActivityDetailScreen（封面/信息卡/图文/底部报名栏三态）、SignupSheet（称呼必填+联系方式选填）、气质化封面占位（暖纸底大号衬线单字+醒書印章角）
+- `project/src/data.js` — SEED_ACTIVITIES：3 条预告（含 1 条名额已满、1 条已报名演示态）+ 2 条往期回顾（图文+照片占位）
+- `project/src/app.jsx` — Tab 扩为 5 个（活动第 2 位，日历勾图标）；activity 路由；signup/cancel 状态流转 + toast
+- `project/src/styles.css` — 尾部追加活动样式（卡片/封面/四态角标/进度条/报名栏/表单/照片网格），全部复用既有 CSS 变量，未引入新色值
+- `project/index.html` — 加载 activities.jsx（screens 与 app 之间一行）
+
+**变更说明**：
+按批准的计划执行：改 git 追踪的根 project/ 落地版，未动 doc/ 交付包与 22MB 快照；
+screens.jsx/components.jsx 零改动（新屏独立成文件）。视觉完全沿用暖纸/印章/衬线体系。
+
+**验证**：
+- esbuild JSX 语法检查通过（activities.jsx / app.jsx）
+- 已在用户浏览器打开 project/index.html 待视觉验收：活动 Tab 两分组、
+  详情三态报名栏（102 已报名可取消 / 103 名额已满置灰 / 101 可报名弹表单）、
+  往期回顾无报名栏 + 照片网格
+- 用户确认视觉后进入 M1.5.1 小程序实现（本原型即视觉规格）

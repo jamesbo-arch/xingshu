@@ -5,6 +5,9 @@ function TabBar({ tab, setTab }) {
     { k: 'square', lbl: '醒书广场', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
     )},
+    { k: 'activities', lbl: '醒书活动', icon: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 15l2 2 4-4"/></svg>
+    )},
     { k: 'collections', lbl: '我的收藏', icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
     )},
@@ -65,6 +68,8 @@ function App({ tweak }) {
   const [confirm, setConfirm] = React.useState(null);
   const [toast, setToastMsg] = React.useState(null);
   const [diaries, setDiaries] = React.useState(window.SEED_DIARIES);
+  const [activities, setActivities] = React.useState(window.SEED_ACTIVITIES);
+  const [activityId, setActivityId] = React.useState(null);
   const [user, setUser] = React.useState({ ...window.CURRENT_USER });
   // sync identity from tweak panel
   React.useEffect(() => {
@@ -91,9 +96,23 @@ function App({ tweak }) {
     updateUser: (patch) => setUser(u => ({ ...u, ...patch })),
     go: (r) => {
       setRoute(r);
-      if (r === 'list') { setDetailId(null); setEditingId(null); }
+      if (r === 'list') { setDetailId(null); setEditingId(null); setActivityId(null); }
     },
     openDetail: (id) => { setDetailId(id); setRoute('detail'); },
+    activities, activityId,
+    openActivity: (id) => { setActivityId(id); setRoute('activity'); },
+    signupActivity: (id, form) => {
+      setActivities(as => as.map(a => a.id === id
+        ? { ...a, signedByMe: true, signedUp: a.signedUp + 1 }
+        : a));
+      showToast('报名成功，期待相见');
+    },
+    cancelSignup: (id) => {
+      setActivities(as => as.map(a => a.id === id
+        ? { ...a, signedByMe: false, signedUp: Math.max(a.signedUp - 1, 0) }
+        : a));
+      showToast('已取消报名');
+    },
     openEdit: (id) => { setEditingId(id); setRoute('compose'); },
     openSheet: (kind, payload) => setSheet({ kind, payload }),
     closeSheet: () => setSheet(null),
@@ -152,6 +171,10 @@ function App({ tweak }) {
     body = <ComposeScreen app={app}/>;
   } else if (route === 'detail') {
     body = <DetailScreen app={app}/>;
+  } else if (route === 'activity') {
+    body = <ActivityDetailScreen app={app}/>;
+  } else if (tab === 'activities') {
+    body = <ActivityListScreen app={app}/>;
   } else if (tab === 'square') {
     body = <ListScreen title="醒書廣場" mode="square" app={app}/>;
   } else if (tab === 'collections') {
