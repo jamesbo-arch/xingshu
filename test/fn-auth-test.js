@@ -1,5 +1,6 @@
 // v2.3 微信登录授权测试 — 对应 test/m15-test-cases.md AUTH-A01 ~ AUTH-A06
-// 覆盖：unionid 落库与补录、authorize 升级、logout 回退、会员身份恢复
+// 及 test/prd-ch3-test-cases.md MEM-A10（会员过期降级）
+// 覆盖：unionid 落库与补录、authorize 升级、logout 回退、会员身份恢复、过期降级
 // 测试用户以 test_auth_ 前缀创建，结束时硬删
 const mysql = require('mysql2/promise')
 const DB = require('../config/db')
@@ -61,6 +62,17 @@ async function run() {
     const r = await callFn('updateUserProfile', { authorize: true }, 'test_auth_u1')
     if (r.code !== 0) throw new Error(r.msg)
     if (r.data.identity !== 'member') throw new Error(`identity=${r.data.identity}，会员未恢复`)
+  })
+
+  await test('MEM-A10 会员过期：checkMemberStatus → 降级 authed 并清空到期日', async () => {
+    await conn.query(
+      "UPDATE users SET identity = 'member', member_until = DATE_SUB(NOW(), INTERVAL 1 DAY) WHERE openid = 'test_auth_u1'")
+    const r = await callFn('checkMemberStatus', {}, 'test_auth_u1')
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.identity !== 'authed') throw new Error(`identity=${r.data.identity}，未降级`)
+    if (r.data.daysLeft !== 0) throw new Error(`daysLeft=${r.data.daysLeft}`)
+    const [[row]] = await conn.query("SELECT identity, member_until FROM users WHERE openid = 'test_auth_u1'")
+    if (row.identity !== 'authed' || row.member_until !== null) throw new Error('库中未降级/未清空到期日')
   })
 
   // 清理

@@ -296,7 +296,8 @@
 ### M2 — 部署与人工验证（需用户在场，建议一次批处理）
 
 - [x] **M2.1** 云函数部署到 dev 环境 — activity 新建 + 7 个改动函数经 wxcloud CLI 全部部署（含 M1.4/M1.5 全部后端改动）
-- [ ] **M2.2** 开发者工具人工回归：配图上传 UI、断网冷启动缓存展示、弱网触底翻页、auth 流程（对照 `test/checklist.md`）`[用户+QA]`
+- [ ] **M2.1b** 评论回复入口：详情页点击评论 →"回复 @昵称"输入 → createComment 带 parentId（后端已支持，PRD 3.1.1 承诺项；用例 CMT-M02）`[Frontend]`
+- [ ] **M2.2** 开发者工具人工回归：按 `test/checklist.md` + `test/m15-test-cases.md` 人工用例 + `test/prd-ch3-test-cases.md` 二/三节（SQ/STAT/MEM/CMT/ADM/CALM/B 组）批量执行 `[用户+QA]`
 - [ ] **M2.3** (=5.4) 真机/性能测试  `[用户+QA]`
 
 ### M3 — 安全加固与生产准备（用户 + Claude 协作）

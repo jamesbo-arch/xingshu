@@ -196,7 +196,7 @@
 统一入口为根目录 `npm test`（Loop Engineering 的验证闭环，任一失败即退出码非 0）：
 
 ```bash
-npm test          # 全量：连通性检查 → 24 条 utils 单测 → 15 条 MySQL 集成测试 → 5 条云函数冒烟测试
+npm test          # 全量：连通性检查 → 单测 + API + 冒烟/回环 + admin/活动/权限/推荐人/授权/评论/标签，共 114 条
 npm run test:unit # 仅 utils 纯函数单测（node:test，不依赖数据库）
 npm run test:e2e  # 20 条端到端流程测试（含写库与清理）
 node test/seed.js       # 向 MySQL 插入种子数据
