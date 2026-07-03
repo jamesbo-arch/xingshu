@@ -106,7 +106,32 @@ async function run() {
     if (logs !== 1) throw new Error('admin_logs 未记录')
   })
 
+  // 批量删除闭环：创建 2 篇 → deleteDiaries（含一个无效 ID）→ 校验成败分账
+  const batchIds = []
+  await test('deleteDiaries 批量删除并汇总成败', async () => {
+    for (let i = 0; i < 2; i++) {
+      const c = await callFn('createDiary', {
+        title: `admin批量测试${i}`, content: '待批量删除', tags: [], permission: 'private',
+      }, 'mock_me')
+      batchIds.push(c.data.id)
+    }
+    const r = await admin('deleteDiaries', { ids: [...batchIds, 99999999] })
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.deleted.length !== 2) throw new Error(`期望删除 2 篇，实际 ${r.data.deleted.length}`)
+    if (r.data.failed.length !== 1) throw new Error(`期望失败 1 篇（无效ID），实际 ${r.data.failed.length}`)
+    const conn = await mysql.createConnection(DB)
+    const [rows] = await conn.query('SELECT status FROM diaries WHERE id IN (?, ?)', batchIds)
+    await conn.end()
+    if (rows.some(x => x.status !== 'deleted')) throw new Error('存在未删除的日记')
+  })
+
   // 硬删测试数据
+  if (batchIds.length) {
+    const conn = await mysql.createConnection(DB)
+    await conn.query('DELETE FROM diaries WHERE id IN (?, ?)', batchIds)
+    await conn.execute("DELETE FROM admin_logs WHERE action='deleteDiaries'")
+    await conn.end()
+  }
   if (diaryId) {
     const conn = await mysql.createConnection(DB)
     await conn.execute('DELETE FROM comments WHERE diary_id = ?', [diaryId])

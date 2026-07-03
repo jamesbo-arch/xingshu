@@ -65,6 +65,26 @@ function rowToDiary(r) {
   return { ...r, tags }
 }
 
+// 软删日记并联动清理互动（updated_by 为用户 id 整型列，管理员操作不写入，审计走 admin_logs）
+async function deleteDiaryById(id) {
+  const [rows] = await db.query("SELECT id, user_id FROM diaries WHERE id = ? AND status = 'active'", [id])
+  if (!rows.length) throw new Error('日记不存在或已删除')
+  const conn = await db.getConnection()
+  try {
+    await conn.beginTransaction()
+    await conn.query("UPDATE diaries SET status = 'deleted' WHERE id = ?", [id])
+    await conn.query('UPDATE comments SET is_deleted = 1 WHERE diary_id = ?', [id])
+    await conn.query("DELETE FROM interactions WHERE target_type = 'diary' AND target_id = ?", [id])
+    await conn.query('UPDATE users SET diary_count = GREATEST(diary_count - 1, 0) WHERE id = ?', [rows[0].user_id])
+    await conn.commit()
+  } catch (err) {
+    await conn.rollback()
+    throw err
+  } finally {
+    conn.release()
+  }
+}
+
 // ---- action 处理器 ----
 
 const handlers = {
@@ -188,25 +208,21 @@ const handlers = {
   },
 
   async deleteDiary({ id } = {}) {
-    const [rows] = await db.query("SELECT id, user_id FROM diaries WHERE id = ? AND status = 'active'", [id])
-    if (!rows.length) throw new Error('日记不存在或已删除')
-    const conn = await db.getConnection()
-    try {
-      await conn.beginTransaction()
-      // updated_by 为用户 id 整型列，管理员操作不写入，审计走 admin_logs
-      await conn.query("UPDATE diaries SET status = 'deleted' WHERE id = ?", [id])
-      await conn.query('UPDATE comments SET is_deleted = 1 WHERE diary_id = ?', [id])
-      await conn.query("DELETE FROM interactions WHERE target_type = 'diary' AND target_id = ?", [id])
-      await conn.query('UPDATE users SET diary_count = GREATEST(diary_count - 1, 0) WHERE id = ?', [rows[0].user_id])
-      await conn.commit()
-    } catch (err) {
-      await conn.rollback()
-      throw err
-    } finally {
-      conn.release()
-    }
-    await auditLog('deleteDiary', 'diary', id, { userId: rows[0].user_id })
+    await deleteDiaryById(id)
+    await auditLog('deleteDiary', 'diary', id, {})
     return true
+  },
+
+  // 批量删除：逐条独立事务，单条失败不影响其余；汇总写一条审计
+  async deleteDiaries({ ids } = {}) {
+    if (!Array.isArray(ids) || !ids.length) throw new Error('缺少日记 ID 列表')
+    const deleted = [], failed = []
+    for (const id of ids) {
+      try { await deleteDiaryById(id); deleted.push(id) }
+      catch (err) { failed.push({ id, msg: err.message }) }
+    }
+    await auditLog('deleteDiaries', 'diary', ids.join(','), { deleted, failed })
+    return { deleted, failed }
   },
 
   async deleteComment({ id } = {}) {

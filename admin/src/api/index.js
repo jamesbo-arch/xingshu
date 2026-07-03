@@ -56,5 +56,6 @@ export async function getUserDetail(id) { return call('userDetail', { id }) }
 export async function getDiaries(params = {}) { return call('diaries', params) }
 export async function getDiaryDetail(id) { return call('diaryDetail', { id }) }
 export async function deleteDiary(id) { return call('deleteDiary', { id }) }
+export async function deleteDiaries(ids) { return call('deleteDiaries', { ids }) }
 export async function deleteComment(id) { return call('deleteComment', { id }) }
 export async function getComments(params = {}) { return call('comments', params) }

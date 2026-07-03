@@ -269,7 +269,7 @@
 - [x] **M1.1** 处置 member/auth 页未提交改动 — 用户确认全部提交（5d764b4 UI 升级 / f93e520 配置 / 6d1d13c 文档）
 - [x] **M1.2** (=2.1.4) 头像上传 — 核验发现 Phase 6 已实现（chooseAvatar → wx.cloud.uploadFile avatars/ → updateUserProfile），harness 回环验证通过
 - [x] **M1.3** 管理后台对接真实云函数 API — admin 云函数（action 路由 + 密码登录 HMAC token）+ js-sdk 接入 + Login 页；11 条测试全绿。待用户：TCB 开匿名登录 + 部署 admin 云函数
-- [ ] **M1.4** (=4.2.4 + 4.3.5) admin 导出用户 Excel + 批量操作  `[Claude]`
+- [x] **M1.4** (=4.2.4 + 4.3.5) admin 导出用户/日记 CSV（Excel 兼容 BOM）+ 日记批量删除（deleteDiaries 成败分账 + 审计）
 
 ### M1.5 — PRD v2.1 首发功能包（Claude 为主；用户已确认活动模块首发、从简）
 
