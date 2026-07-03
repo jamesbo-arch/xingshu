@@ -16,10 +16,10 @@ Page({
     editRealName: '',
     editAvatarUrl: '',
     benefits: [
-      { icon: '◎', text: '阅读全部会员日记' },
-      { icon: '✎', text: '发布会员可见日记' },
-      { icon: '◆', text: '无限量收藏' },
-      { icon: '★', text: '优先获取新功能' },
+      { title: '查看全部会员权限日记', desc: '解锁优质内容，与志同道合者同行' },
+      { title: '会员专属印记', desc: '日记卡片、评论区显示会员标识' },
+      { title: '海报样式特权', desc: '使用专属海报模板' },
+      { title: '优先收录推荐', desc: '高质量日记有机会进入广场首页推荐' },
     ],
     purchaseSteps: [
       { num: '壹', title: '添加微信', desc: '添加运营微信，备注昵称与手机号' },

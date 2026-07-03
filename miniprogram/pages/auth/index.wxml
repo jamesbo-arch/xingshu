@@ -19,30 +19,17 @@
     <text class="auth-card-desc">手机号仅用于身份核验，不会公开您的信息</text>
 
     <block wx:if="{{!phone}}">
-      <button
-        class="btn-phone"
-        open-type="getPhoneNumber"
-        bindgetphonenumber="onGetPhoneNumber"
-      >
-        <text class="btn-phone-icon">📱</text>
-        <text>微信授权手机号</text>
-      </button>
-
-      <!-- fallback: manual input shown when WeChat getPhoneNumber permission not yet granted -->
-      <view wx:if="{{showManualInput}}" class="manual-input-wrap">
-        <text class="manual-input-label">或手动填写手机号（测试用）</text>
-        <view class="manual-input-row">
-          <input
-            class="manual-input"
-            type="number"
-            placeholder="请输入手机号"
-            placeholder-style="color:#C8C2B6;"
-            maxlength="11"
-            value="{{manualPhone}}"
-            bindinput="onManualPhoneInput"
-          />
-          <view class="manual-confirm-btn" bindtap="onConfirmManualPhone">确认</view>
-        </view>
+      <view class="manual-input-row">
+        <input
+          class="manual-input"
+          type="number"
+          placeholder="请输入手机号"
+          placeholder-style="color:#C8C2B6;"
+          maxlength="11"
+          value="{{manualPhone}}"
+          bindinput="onManualPhoneInput"
+        />
+        <view class="manual-confirm-btn" bindtap="onConfirmManualPhone">确认</view>
       </view>
     </block>
 

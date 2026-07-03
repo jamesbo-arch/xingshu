@@ -1,7 +1,6 @@
 <view class="page-wrap paper-bg" wx:if="{{user}}">
   <view style="height: {{statusBarHeight}}px;"></view>
 
-  <!-- Page header -->
   <view class="page-header">
     <text class="page-title serif">会员中心</text>
   </view>
@@ -10,27 +9,48 @@
 
     <!-- ===== GUEST STATE ===== -->
     <block wx:if="{{user.identity === 'guest'}}">
+
       <view class="identity-card guest-card">
         <view class="guest-avatar">
           <text class="guest-question">?</text>
         </view>
         <view class="identity-info">
-          <text class="identity-label-badge guest-badge">未授权</text>
-          <text class="identity-hint">授权后可解锁完整功能</text>
+          <view class="identity-name-row">
+            <text class="identity-name">未授权</text>
+            <text class="identity-label-badge guest-badge">游客</text>
+          </view>
+          <text class="identity-hint">未授权手机号 · 仅可浏览公众日记</text>
+        </view>
+        <view class="id-seal guest-seal">
+          <text class="id-seal-text serif">游客</text>
         </view>
       </view>
 
       <view class="auth-section">
         <view class="btn-primary auth-btn" bindtap="onAuthorize">
-          <text class="btn-icon">⊙</text>
-          <text>微信授权手机号 · 解锁完整功能</text>
+          <text>手机号验证 · 解锁完整功能</text>
         </view>
         <text class="auth-hint">授权仅用于身份核验，不会公开您的信息</text>
       </view>
+
+      <view class="section-header-row">
+        <text class="section-label serif">会员权益</text>
+      </view>
+      <view class="section-card benefits-card">
+        <view wx:for="{{benefits}}" wx:key="title" class="benefit-item dimmed">
+          <text class="benefit-diamond">✦</text>
+          <view class="benefit-body">
+            <text class="benefit-title">{{item.title}}</text>
+            <text class="benefit-desc">{{item.desc}}</text>
+          </view>
+        </view>
+      </view>
+
     </block>
 
     <!-- ===== AUTHED STATE ===== -->
     <block wx:elif="{{user.identity === 'authed'}}">
+
       <view class="identity-card authed-card">
         <view class="avatar-wrap-click" bindtap="onShowProfileSheet">
           <image wx:if="{{user.avatarUrl}}" src="{{user.avatarUrl}}" class="avatar lg avatar-real" mode="aspectFill" />
@@ -46,23 +66,30 @@
           </view>
           <text class="identity-phone">{{user.phone}}</text>
         </view>
-      </view>
-
-      <view class="member-cta-card" bindtap="onShowPurchaseSheet">
-        <view class="cta-left">
-          <text class="cta-icon">★</text>
-          <view>
-            <text class="cta-title">如何成为会员</text>
-            <text class="cta-desc">解锁全部会员权益</text>
-          </view>
+        <view class="id-seal authed-seal">
+          <text class="id-seal-text serif">用户</text>
         </view>
-        <text class="cta-arrow">→</text>
       </view>
 
+      <view class="member-join-card">
+        <view class="member-join-header">
+          <text class="member-join-title serif">如何成为会员</text>
+          <text class="member-join-price">线下开通 · ¥365 / 年</text>
+        </view>
+        <text class="member-join-desc">本产品暂不支持小程序在线支付。请联系管理员转账后，由管理员在后台为您开通会员，开通后此页面将自动更新状态。</text>
+        <view class="btn-primary member-join-btn" bindtap="onShowPurchaseSheet">
+          <text>查看开通方式</text>
+        </view>
+      </view>
+
+      <view class="section-header-row">
+        <text class="section-label serif">个人资料</text>
+        <text class="section-action" bindtap="onShowProfileSheet">编辑 →</text>
+      </view>
       <view class="section-card">
-        <view class="section-header">
-          <text class="section-title">个人信息</text>
-          <text class="section-action" bindtap="onShowProfileSheet">编辑 →</text>
+        <view class="info-row">
+          <text class="info-label">微信授权名</text>
+          <text class="info-value muted">{{user.wechatName}}</text>
         </view>
         <view class="info-row">
           <text class="info-label">昵称</text>
@@ -70,47 +97,66 @@
         </view>
         <view class="info-row">
           <text class="info-label">真实姓名</text>
-          <text class="info-value {{user.realName ? '' : 'placeholder'}}">{{user.realName || '未填写'}}</text>
+          <text class="info-value {{user.realName ? '' : 'empty'}}">{{user.realName || '未填写'}}</text>
         </view>
-        <view class="info-row">
+        <view class="info-row no-border">
           <text class="info-label">手机号</text>
-          <text class="info-value">{{user.phone}}</text>
+          <text class="info-value muted">{{user.phone}}</text>
         </view>
       </view>
 
-      <view class="section-card stats-card">
-        <view class="stats-grid">
-          <view class="stat-cell">
-            <text class="stat-num">{{user.stats.diaries}}</text>
-            <text class="stat-label">日记</text>
+      <view class="section-header-row">
+        <text class="section-label serif">互动统计</text>
+      </view>
+      <view class="stats-grid">
+        <view class="stat-box">
+          <text class="stat-box-label">已记日记</text>
+          <view class="stat-box-value-row">
+            <text class="stat-box-num serif">{{user.stats.diaries || 0}}</text>
+            <text class="stat-box-unit">篇</text>
           </view>
-          <view class="stat-cell">
-            <text class="stat-num">{{user.stats.likes}}</text>
-            <text class="stat-label">获赞</text>
+        </view>
+        <view class="stat-box">
+          <text class="stat-box-label">获赞</text>
+          <view class="stat-box-value-row">
+            <text class="stat-box-num serif">{{user.stats.likes || 0}}</text>
+            <text class="stat-box-unit">次</text>
           </view>
-          <view class="stat-cell">
-            <text class="stat-num">{{user.stats.favorites}}</text>
-            <text class="stat-label">收藏</text>
+        </view>
+        <view class="stat-box">
+          <text class="stat-box-label">被收藏</text>
+          <view class="stat-box-value-row">
+            <text class="stat-box-num serif">{{user.stats.favorites || 0}}</text>
+            <text class="stat-box-unit">次</text>
           </view>
-          <view class="stat-cell">
-            <text class="stat-num">{{user.stats.comments + user.stats.shares}}</text>
-            <text class="stat-label">互动</text>
+        </view>
+        <view class="stat-box">
+          <text class="stat-box-label">评论与转发</text>
+          <view class="stat-box-value-row">
+            <text class="stat-box-num serif">{{(user.stats.comments || 0) + (user.stats.shares || 0)}}</text>
+            <text class="stat-box-unit">次</text>
           </view>
         </view>
       </view>
 
+      <view class="section-header-row">
+        <text class="section-label serif">会员权益</text>
+      </view>
       <view class="section-card benefits-card">
-        <text class="section-title" style="margin-bottom: 20rpx; display: block;">会员权益</text>
-        <view wx:for="{{benefits}}" wx:key="text" class="benefit-item dimmed">
-          <text class="benefit-icon">{{item.icon}}</text>
-          <text class="benefit-text">{{item.text}}</text>
-          <text class="benefit-lock">🔒</text>
+        <view wx:for="{{benefits}}" wx:key="title" class="benefit-item dimmed">
+          <text class="benefit-diamond">✦</text>
+          <view class="benefit-body">
+            <text class="benefit-title">{{item.title}}</text>
+            <text class="benefit-desc">{{item.desc}}</text>
+          </view>
         </view>
       </view>
+
     </block>
 
     <!-- ===== MEMBER STATE ===== -->
     <block wx:elif="{{user.identity === 'member'}}">
+
       <view class="identity-card member-card">
         <view class="avatar-wrap-click" bindtap="onShowProfileSheet">
           <view class="member-avatar-wrap">
@@ -128,32 +174,35 @@
             <text class="identity-label-badge member-badge">会员</text>
           </view>
           <text class="identity-phone">{{user.phone}}</text>
-          <view class="member-until">
-            <text class="until-text">有效至 {{user.memberUntil}}</text>
-          </view>
+          <text class="member-until-text">有效至 {{user.memberUntil}}</text>
         </view>
-        <view class="member-seal">
-          <text class="member-seal-text serif">会員之印</text>
+        <view class="id-seal member-seal">
+          <text class="member-seal-line serif">會員</text>
+          <text class="member-seal-line serif">之印</text>
         </view>
       </view>
 
-      <view class="days-card">
-        <view class="days-left-row">
-          <view>
-            <text class="days-num">{{user.daysLeft}}</text>
-            <text class="days-unit">天</text>
+      <view class="days-renew-card">
+        <view class="days-content">
+          <view class="days-num-row">
+            <text class="days-num serif">{{user.daysLeft || 0}}</text>
+            <text class="days-unit"> 天</text>
           </view>
-          <text class="days-label">会员剩余天数</text>
+          <text class="days-desc-label">会员剩余天数</text>
         </view>
         <view class="renew-btn" bindtap="onShowPurchaseSheet">
           <text>如何续费 →</text>
         </view>
       </view>
 
+      <view class="section-header-row">
+        <text class="section-label serif">个人资料</text>
+        <text class="section-action" bindtap="onShowProfileSheet">编辑 →</text>
+      </view>
       <view class="section-card">
-        <view class="section-header">
-          <text class="section-title">个人信息</text>
-          <text class="section-action" bindtap="onShowProfileSheet">编辑 →</text>
+        <view class="info-row">
+          <text class="info-label">微信授权名</text>
+          <text class="info-value muted">{{user.wechatName}}</text>
         </view>
         <view class="info-row">
           <text class="info-label">昵称</text>
@@ -161,73 +210,91 @@
         </view>
         <view class="info-row">
           <text class="info-label">真实姓名</text>
-          <text class="info-value {{user.realName ? '' : 'placeholder'}}">{{user.realName || '未填写'}}</text>
+          <text class="info-value {{user.realName ? '' : 'empty'}}">{{user.realName || '未填写'}}</text>
         </view>
-        <view class="info-row">
+        <view class="info-row no-border">
           <text class="info-label">手机号</text>
-          <text class="info-value">{{user.phone}}</text>
+          <text class="info-value muted">{{user.phone}}</text>
         </view>
       </view>
 
-      <view class="section-card stats-card">
-        <view class="stats-grid">
-          <view class="stat-cell">
-            <text class="stat-num">{{user.stats.diaries}}</text>
-            <text class="stat-label">日记</text>
+      <view class="section-header-row">
+        <text class="section-label serif">互动统计</text>
+      </view>
+      <view class="stats-grid">
+        <view class="stat-box">
+          <text class="stat-box-label">已记日记</text>
+          <view class="stat-box-value-row">
+            <text class="stat-box-num serif">{{user.stats.diaries || 0}}</text>
+            <text class="stat-box-unit">篇</text>
           </view>
-          <view class="stat-cell">
-            <text class="stat-num">{{user.stats.likes}}</text>
-            <text class="stat-label">获赞</text>
+        </view>
+        <view class="stat-box">
+          <text class="stat-box-label">获赞</text>
+          <view class="stat-box-value-row">
+            <text class="stat-box-num serif">{{user.stats.likes || 0}}</text>
+            <text class="stat-box-unit">次</text>
           </view>
-          <view class="stat-cell">
-            <text class="stat-num">{{user.stats.favorites}}</text>
-            <text class="stat-label">收藏</text>
+        </view>
+        <view class="stat-box">
+          <text class="stat-box-label">被收藏</text>
+          <view class="stat-box-value-row">
+            <text class="stat-box-num serif">{{user.stats.favorites || 0}}</text>
+            <text class="stat-box-unit">次</text>
           </view>
-          <view class="stat-cell">
-            <text class="stat-num">{{user.stats.comments + user.stats.shares}}</text>
-            <text class="stat-label">互动</text>
+        </view>
+        <view class="stat-box">
+          <text class="stat-box-label">评论与转发</text>
+          <view class="stat-box-value-row">
+            <text class="stat-box-num serif">{{(user.stats.comments || 0) + (user.stats.shares || 0)}}</text>
+            <text class="stat-box-unit">次</text>
           </view>
         </view>
       </view>
 
-      <view class="section-card" wx:if="{{user.latestOrder}}">
-        <text class="section-title" style="margin-bottom: 16rpx; display: block;">最近订单</text>
-        <view class="order-card">
-          <view class="order-row">
-            <text class="order-label">订单号</text>
-            <text class="order-value mono">{{user.latestOrder.id}}</text>
-          </view>
-          <view class="order-row">
-            <text class="order-label">金额</text>
-            <text class="order-value">¥{{user.latestOrder.amount}}</text>
-          </view>
-          <view class="order-row">
-            <text class="order-label">方式</text>
-            <text class="order-value">{{user.latestOrder.method}}</text>
-          </view>
-          <view class="order-row">
-            <text class="order-label">创建人</text>
-            <text class="order-value">{{user.latestOrder.createdBy}}</text>
-          </view>
-          <view class="order-row">
-            <text class="order-label">时间</text>
-            <text class="order-value">{{user.latestOrder.createdAt}}</text>
-          </view>
-          <view class="order-row">
-            <text class="order-label">状态</text>
+      <block wx:if="{{user.latestOrder}}">
+        <view class="section-header-row">
+          <text class="section-label serif">最近订单</text>
+        </view>
+        <view class="section-card">
+          <view class="order-header-row">
+            <view class="order-id-group">
+              <text class="order-id-label">订单号</text>
+              <text class="order-id-value mono">{{user.latestOrder.id}}</text>
+            </view>
             <text class="order-status paid">已支付</text>
           </view>
+          <view class="order-meta-grid">
+            <view class="order-meta-cell">
+              <text class="order-meta-key">金额</text>
+              <text class="order-meta-val">¥{{user.latestOrder.amount}}</text>
+            </view>
+            <view class="order-meta-cell">
+              <text class="order-meta-key">方式</text>
+              <text class="order-meta-val">{{user.latestOrder.method}}</text>
+            </view>
+            <view class="order-meta-cell order-meta-full">
+              <text class="order-meta-key">录入</text>
+              <text class="order-meta-val">{{user.latestOrder.createdBy}} · {{user.latestOrder.createdAt}}</text>
+            </view>
+          </view>
         </view>
-      </view>
+      </block>
 
+      <view class="section-header-row">
+        <text class="section-label serif">会员权益</text>
+      </view>
       <view class="section-card benefits-card">
-        <text class="section-title" style="margin-bottom: 20rpx; display: block;">会员权益</text>
-        <view wx:for="{{benefits}}" wx:key="text" class="benefit-item">
-          <text class="benefit-icon">{{item.icon}}</text>
-          <text class="benefit-text">{{item.text}}</text>
+        <view wx:for="{{benefits}}" wx:key="title" class="benefit-item">
+          <text class="benefit-diamond active">✦</text>
+          <view class="benefit-body">
+            <text class="benefit-title">{{item.title}}</text>
+            <text class="benefit-desc">{{item.desc}}</text>
+          </view>
           <text class="benefit-check">✓</text>
         </view>
       </view>
+
     </block>
 
     <view class="bottom-pad"></view>
@@ -238,9 +305,8 @@
     <view class="sheet-mask" bindtap="onCloseProfileSheet"></view>
     <view class="sheet profile-sheet" catchtap="">
       <view class="sheet-handle"></view>
-      <text class="sheet-sheet-title serif">编辑资料</text>
+      <text class="sheet-title serif">编辑资料</text>
 
-      <!-- Avatar picker -->
       <button class="avatar-picker-row" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
         <image wx:if="{{editAvatarUrl}}" src="{{editAvatarUrl}}" class="avatar-picker-img" mode="aspectFill" />
         <view wx:else class="avatar-picker-placeholder" style="background-color: {{avatarColor}};">
@@ -290,7 +356,7 @@
     <view class="sheet-mask" bindtap="onClosePurchaseSheet"></view>
     <view class="sheet purchase-sheet" catchtap="">
       <view class="sheet-handle"></view>
-      <text class="sheet-sheet-title serif">开通会员</text>
+      <text class="sheet-title serif">开通会员</text>
       <text class="purchase-subtitle">联系运营完成开通，每年 ¥365</text>
 
       <view class="steps-list">
