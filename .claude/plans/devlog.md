@@ -578,3 +578,28 @@ slow_query_log），当前数据量下暂无必要，上线后如需开启在 My
 - EXPLAIN 前后对比确认走索引、消除 filesort
 - diaries.user_id 外键约束确认完好
 - `npm test` 全绿：25 单测 + 17 集成 + 5 冒烟 + 5 回环
+
+---
+
+### 2026-07-03 16:55 — 3.4.3 本地缓存（自主循环第 4 轮）
+
+**类型**：前端 | 测试
+**模型**：claude-fable-5
+**Agent**：自主循环（/loop 动态节奏）
+**计划关联**：Phase 3.4.3 — 本地缓存
+**修改文件**：
+- `miniprogram/utils/cache.js` — 新增 TTL 本地缓存封装（wx.setStorageSync，统一 xs_cache: 前缀，存储异常静默降级）
+- `miniprogram/app.js` — loadTags 改为 stale-while-revalidate：冷启动先用缓存标签兜底，网络返回后刷新缓存（TTL 60 分钟）
+- `miniprogram/pages/square/index.js` — 广场首屏缓存：无搜索/筛选时先渲染缓存的第一页，网络返回后覆盖并回写缓存（TTL 10 分钟）
+- `test/unit/cache.test.js` — 缓存模块单测 6 条（TTL 过期、异常降级、前缀隔离）
+
+**变更说明**：
+最小化接入：只缓存两处冷启动体感最明显的数据（标签库 + 广场第一页），
+均为 stale-while-revalidate 模式，缓存只做兜底展示，不改变任何网络请求行为，
+搜索/筛选路径不走缓存。前缀隔离避免与业务 storage 冲突。
+
+**验证**：
+- `npm test` 全绿：31/31 单测（新增 6 条）+ 17 集成 + 5 冒烟 + 5 回环
+- 缓存展示效果需在微信开发者工具人工回归（断网冷启动应显示上次的广场列表与标签）
+
+**注**：Phase 3.4 至此全部完成。

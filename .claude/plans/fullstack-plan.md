@@ -188,7 +188,7 @@
 ### 3.4 离线与容错
 - [x] **3.4.1** 网络异常：request.js 统一错误处理 + toast 提示  `[Frontend]`
 - [x] **3.4.2** 乐观更新：点赞/收藏即时更新 UI + API 同步  `[Frontend]`
-- [ ] **3.4.3** 本地缓存（后续迭代）  `[Frontend]`
+- [x] **3.4.3** 本地缓存（utils/cache.js TTL 封装；标签 + 广场首屏 stale-while-revalidate）  `[Frontend]`
 
 ---
 

@@ -1,5 +1,6 @@
 const userApi = require('./api/user')
 const tagApi = require('./api/tag')
+const cache = require('./utils/cache')
 
 App({
   globalData: {
@@ -36,9 +37,15 @@ App({
   },
 
   async loadTags() {
+    // 先用本地缓存兜底，网络返回后刷新缓存（stale-while-revalidate）
+    if (!this.globalData.tags.length) {
+      const cached = cache.get('tags')
+      if (cached) this.globalData.tags = cached
+    }
     const tags = await tagApi.getAll()
     if (tags) {
       this.globalData.tags = tags
+      cache.set('tags', tags, 60)
     }
   },
 

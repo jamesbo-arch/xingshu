@@ -2,6 +2,7 @@ const app = getApp()
 const diaryApi = require('../../api/diary')
 const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
+const cache = require('../../utils/cache')
 
 Page({
   data: {
@@ -47,6 +48,12 @@ Page({
 
   async _loadDiaries(reset) {
     const page = reset ? 1 : this.data.page
+    const plain = !this.data.search && !this._isFiltersActive()
+    // 冷启动首屏：无搜索/筛选时先展示缓存的第一页，网络返回后覆盖
+    if (reset && plain && !this.data.diaries.length) {
+      const cached = cache.get('square:first')
+      if (cached) this.setData({ diaries: cached })
+    }
     const data = await diaryApi.getList({
       mode: 'square',
       page,
@@ -57,6 +64,7 @@ Page({
     if (data) {
       const active = this._isFiltersActive()
       const mapped = data.list.map(mapper.diary)
+      if (reset && plain) cache.set('square:first', mapped, 10)
       this.setData({
         diaries: reset ? mapped : [...this.data.diaries, ...mapped],
         page: page + 1,
