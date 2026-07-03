@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>醒书日记 · 四方客户旅程图</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Noto+Serif+SC:wght@200;300;400;500;600;700&family=Ma+Shan+Zheng&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f1e8;
+    --paper: #faf6ec;
+    --paper-2: #f0ebdc;
+    --ink: #2a2620;
+    --ink-2: #4a4438;
+    --ink-3: #847c6e;
+    --ink-4: #b8b0a0;
+    --seal: #b0353b;          /* 印章红 */
+    --gold: #a88638;
+    --line: #d6cdb8;
+    --line-2: #b8ad95;
+    
+    /* 四方角色色彩体系 */
+    --c-reader: #4a6b8a;        /* 雾蓝 - 阅读者 */
+    --c-reader-bg: #d8e1ec;
+    --c-writer: #a85a3a;        /* 朱砂 - 创作者 */
+    --c-writer-bg: #ecd9cc;
+    --c-member: #a88638;        /* 金棕 - 会员 */
+    --c-member-bg: #ecdcb8;
+    --c-operator: #5d6b66;      /* 青灰 - 运营者 */
+    --c-operator-bg: #d6dcd8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Serif SC', serif;
+    overflow-x: auto;
+  }
+  body {
+    /* 纸张纹理 */
+    background-color: var(--bg);
+    background-image:
+      radial-gradient(circle at 20% 15%, rgba(74,107,138,0.04), transparent 50%),
+      radial-gradient(circle at 80% 85%, rgba(176,53,59,0.04), transparent 50%),
+      repeating-linear-gradient(0deg, transparent, transparent 30px, rgba(168,134,56,0.015) 30px, rgba(168,134,56,0.015) 31px);
+    padding: 50px 40px;
+    min-height: 100vh;
+  }
+
+  /* HERO */
+  .hero {
+    max-width: 1800px;
+    margin: 0 auto 50px;
+    padding-bottom: 36px;
+    border-bottom: 2px double var(--line-2);
+    position: relative;
+  }
+  .hero::before {
+    content: "· CUSTOMER JOURNEY MAP · UGC DIARY ECOSYSTEM · v1.0 ·";
+    position: absolute;
+    top: -30px; left: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--ink-3);
+  }
+  .brand-row {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    margin-bottom: 18px;
+  }
+  .brand-zh-main {
+    font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
+    font-size: 64px;
+    color: var(--ink);
+    line-height: 1;
+    letter-spacing: 0.05em;
+    position: relative;
+  }
+  .brand-zh-main::after {
+    content: "醒";
+    position: absolute;
+    right: -28px; top: -8px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 14px;
+    color: var(--paper);
+    background: var(--seal);
+    width: 30px; height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 2px;
+    transform: rotate(8deg);
+    font-weight: 500;
+    box-shadow: 0 2px 6px rgba(176,53,59,0.3);
+  }
+  .brand-en {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 300;
+    font-style: italic;
+    color: var(--c-reader);
+    margin-left: 40px;
+    border-left: 1px solid var(--line-2);
+    padding-left: 24px;
+    letter-spacing: 0.02em;
+  }
+  .hero h1 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 46px;
+    font-weight: 400;
+    line-height: 1.1;
+    margin-bottom: 12px;
+  }
+  .hero h1 span {
+    color: var(--seal);
+    font-style: italic;
+  }
+  .hero .desc {
+    margin-top: 16px;
+    max-width: 860px;
+    font-size: 15px;
+    line-height: 1.9;
+    color: var(--ink-2);
+    font-weight: 300;
+  }
+  .hero .desc strong {
+    color: var(--seal);
+    font-weight: 500;
+  }
+
+  /* 四方角色图例 */
+  .role-legend {
+    max-width: 1800px;
+    margin: 0 auto 40px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .role-legend-item {
+    padding: 16px 20px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-left-width: 4px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+  }
+  .role-legend-item.reader { border-left-color: var(--c-reader); }
+  .role-legend-item.writer { border-left-color: var(--c-writer); }
+  .role-legend-item.member { border-left-color: var(--c-member); }
+  .role-legend-item.operator { border-left-color: var(--c-operator); }
+  .role-avatar {
+    width: 44px; height: 44px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
+    font-size: 22px;
+    color: var(--paper);
+    flex-shrink: 0;
+  }
+  .role-legend-item.reader .role-avatar { background: var(--c-reader); }
+  .role-legend-item.writer .role-avatar { background: var(--c-writer); }
+  .role-legend-item.member .role-avatar { background: var(--c-member); }
+  .role-legend-item.operator .role-avatar { background: var(--c-operator); }
+  .role-legend-text .role-zh {
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    margin-bottom: 3px;
+  }
+  .role-legend-text .role-en {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--ink-3);
+    letter-spacing: 0.2em;
+  }
+
+  /* 主容器 */
+  .journeys {
+    max-width: 1800px;
+    margin: 0 auto;
+  }
+
+  /* Journey Block */
+  .journey {
+    margin-bottom: 70px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    padding: 32px 28px 28px;
+    position: relative;
+    box-shadow: 0 2px 12px rgba(74,107,138,0.04);
+  }
+  .journey::before {
+    content: "";
+    position: absolute;
+    top: 12px; right: 12px;
+    width: 40px; height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(176,53,59,0.08), transparent 70%);
+    pointer-events: none;
+  }
+
+  .journey-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+  }
+  .journey-avatar {
+    width: 60px; height: 60px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
+    font-size: 32px;
+    color: var(--paper);
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .journey.reader .journey-avatar { background: var(--c-reader); }
+  .journey.writer .journey-avatar { background: var(--c-writer); }
+  .journey.member .journey-avatar { background: var(--c-member); }
+  .journey.operator .journey-avatar { background: var(--c-operator); }
+
+  .journey-title-block { flex: 1; }
+  .journey-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .journey.reader .journey-title em { color: var(--c-reader); font-style: italic; }
+  .journey.writer .journey-title em { color: var(--c-writer); font-style: italic; }
+  .journey.member .journey-title em { color: var(--c-member); font-style: italic; }
+  .journey.operator .journey-title em { color: var(--c-operator); font-style: italic; }
+  .journey-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--ink-3);
+    letter-spacing: 0.3em;
+  }
+  .journey-persona {
+    text-align: right;
+    font-size: 12px;
+    color: var(--ink-2);
+    line-height: 1.7;
+    max-width: 380px;
+  }
+  .journey-persona strong { color: var(--ink); font-weight: 500; }
+
+  /* Journey Table */
+  .journey-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .row-label {
+    width: 110px;
+    padding: 14px 14px 14px 0;
+    vertical-align: middle;
+    font-size: 12px;
+    color: var(--ink);
+    font-weight: 500;
+    letter-spacing: 0.2em;
+    text-align: left;
+    border-right: 1px solid var(--line);
+  }
+  .row-label-en {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 8px;
+    color: var(--ink-3);
+    letter-spacing: 0.2em;
+    margin-top: 3px;
+    font-weight: 400;
+  }
+
+  /* Stage Headers */
+  .stage-header {
+    padding: 12px 14px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--paper);
+    position: relative;
+    letter-spacing: 0.1em;
+  }
+  .stage-header-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 11px;
+    font-style: italic;
+    opacity: 0.85;
+    margin-right: 6px;
+  }
+  .stage-header-sub {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    opacity: 0.75;
+    letter-spacing: 0.15em;
+    margin-top: 4px;
+    display: block;
+    font-weight: 400;
+  }
+
+  /* 五个阶段从浅到深 */
+  .journey.reader .stage-header:nth-child(2) { background: #7e95ad; }
+  .journey.reader .stage-header:nth-child(3) { background: #607e9c; }
+  .journey.reader .stage-header:nth-child(4) { background: #4a6b8a; }
+  .journey.reader .stage-header:nth-child(5) { background: #38556e; }
+  .journey.reader .stage-header:nth-child(6) { background: #263d52; }
+
+  .journey.writer .stage-header:nth-child(2) { background: #c08770; }
+  .journey.writer .stage-header:nth-child(3) { background: #b67154; }
+  .journey.writer .stage-header:nth-child(4) { background: #a85a3a; }
+  .journey.writer .stage-header:nth-child(5) { background: #8a4630; }
+  .journey.writer .stage-header:nth-child(6) { background: #6b3424; }
+
+  .journey.member .stage-header:nth-child(2) { background: #c4a468; }
+  .journey.member .stage-header:nth-child(3) { background: #b69550; }
+  .journey.member .stage-header:nth-child(4) { background: #a88638; }
+  .journey.member .stage-header:nth-child(5) { background: #8a6e2c; }
+  .journey.member .stage-header:nth-child(6) { background: #6b5520; }
+
+  .journey.operator .stage-header:nth-child(2) { background: #889490; }
+  .journey.operator .stage-header:nth-child(3) { background: #6f7d78; }
+  .journey.operator .stage-header:nth-child(4) { background: #5d6b66; }
+  .journey.operator .stage-header:nth-child(5) { background: #485451; }
+  .journey.operator .stage-header:nth-child(6) { background: #323b39; }
+
+  /* Body cells */
+  .cell {
+    padding: 14px;
+    vertical-align: top;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    border-top: none;
+    border-left: none;
+    width: 18%;
+  }
+  .cell:first-of-type { border-left: 1px solid var(--line); }
+
+  .row-goal .cell { background: rgba(74,107,138,0.04); }
+  .row-behavior .cell { background: var(--paper); }
+  .row-touchpoint .cell { background: rgba(168,134,56,0.05); }
+  .row-emotion .cell {
+    background: var(--paper);
+    padding: 0;
+    height: 120px;
+    position: relative;
+    overflow: hidden;
+  }
+  .row-pain .cell { background: rgba(176,53,59,0.05); }
+  .row-opportunity .cell { background: rgba(168,134,56,0.09); }
+
+  /* Behavior icon */
+  .behavior-icon {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 1.5px solid var(--c-reader);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Ma Shan Zheng', 'Noto Serif SC', serif;
+    font-size: 15px;
+    color: var(--c-reader);
+    flex-shrink: 0;
+    margin: 0 auto;
+  }
+  .journey.writer .behavior-icon { border-color: var(--c-writer); color: var(--c-writer); }
+  .journey.member .behavior-icon { border-color: var(--c-member); color: var(--c-member); }
+  .journey.operator .behavior-icon { border-color: var(--c-operator); color: var(--c-operator); }
+  .behavior-text {
+    width: 100%;
+    text-align: center;
+    font-size: 10px;
+    color: var(--ink-2);
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+
+  /* Touchpoint */
+  .touchpoint-list {
+    font-size: 11px;
+    color: var(--ink-2);
+    line-height: 1.6;
+  }
+  .touchpoint-list span {
+    display: inline-block;
+    padding: 2px 8px;
+    margin: 2px 2px;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    font-size: 10px;
+  }
+
+  /* Pain & Opportunity */
+  .pain-text, .opportunity-text {
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  .pain-text::before {
+    content: "▲ ";
+    color: var(--seal);
+    font-weight: bold;
+  }
+  .opportunity-text::before {
+    content: "◆ ";
+    color: var(--gold);
+    font-weight: bold;
+  }
+
+  /* Note */
+  .section-note {
+    max-width: 1800px;
+    margin: 0 auto 40px;
+    padding: 22px 28px;
+    background: rgba(176,53,59,0.06);
+    border-left: 3px solid var(--seal);
+    font-size: 13px;
+    line-height: 1.9;
+    color: var(--ink-2);
+    position: relative;
+  }
+  .section-note::before {
+    content: "醒";
+    position: absolute;
+    top: 18px; right: 28px;
+    font-family: 'Ma Shan Zheng', serif;
+    font-size: 28px;
+    color: var(--seal);
+    opacity: 0.18;
+  }
+  .section-note strong {
+    color: var(--seal);
+    font-weight: 500;
+  }
+
+  /* Footer */
+  .footer {
+    max-width: 1800px;
+    margin: 80px auto 20px;
+    padding-top: 40px;
+    border-top: 1px solid var(--line-2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: 0.2em;
+  }
+
+  @media (max-width: 1200px) {
+    .role-legend { grid-template-columns: repeat(2, 1fr); }
+    .journey-header { flex-wrap: wrap; }
+    .journey-persona { text-align: left; max-width: 100%; }
+    body { padding: 30px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="brand-row">
+    <div class="brand-zh-main">醒 书 日 记</div>
+    <div class="brand-en">Mindful Diary</div>
+  </div>
+  <h1>Four-Role <span>Journey Maps</span></h1>
+  <p class="desc">
+    以「醒书日记」UGC 内容社区为核心的四方旅程图，清晰展示
+    <strong>阅读者、创作者、会员、运营者</strong> 在五个关键阶段的心理变化、行为动机以及痛点与机会点，
+    帮助制定更有效的激励策略、改进产品体验，并持续优化商业闭环。
+    核心商业逻辑：<strong>优质内容沉淀 · 会员订阅转化 · 长期阅读习惯养成</strong>。
+  </p>
+</section>
+
+<!-- Role Legend -->
+<div class="role-legend">
+  <div class="role-legend-item reader">
+    <div class="role-avatar">读</div>
+    <div class="role-legend-text">
+      <div class="role-zh">阅 读 者</div>
+      <div class="role-en">READER · CONTENT CONSUMER</div>
+    </div>
+  </div>
+  <div class="role-legend-item writer">
+    <div class="role-avatar">书</div>
+    <div class="role-legend-text">
+      <div class="role-zh">创 作 者</div>
+      <div class="role-en">WRITER · CONTENT CREATOR</div>
+    </div>
+  </div>
+  <div class="role-legend-item member">
+    <div class="role-avatar">员</div>
+    <div class="role-legend-text">
+      <div class="role-zh">会 员 用 户</div>
+      <div class="role-en">MEMBER · PAID SUBSCRIBER</div>
+    </div>
+  </div>
+  <div class="role-legend-item operator">
+    <div class="role-avatar">营</div>
+    <div class="role-legend-text">
+      <div class="role-zh">运 营 者</div>
+      <div class="role-en">OPERATOR · PLATFORM TEAM</div>
+    </div>
+  </div>
+</div>
+
+<div class="journeys">
+
+<!-- ========== 01 阅读者 Reader Journey ========== -->
+<div class="journey reader">
+  <div class="journey-header">
+    <div class="journey-avatar">读</div>
+    <div class="journey-title-block">
+      <div class="journey-title">The <em>Reader</em> Journey</div>
+      <div class="journey-subtitle">阅 读 者 · 内 容 消 费 旅 程</div>
+    </div>
+    <div class="journey-persona">
+      <strong>典型画像：</strong>喜欢阅读生活分享、寻找情感共鸣的人群<br/>
+      被朋友圈/小红书海报吸引，渴望优质日记内容<br/>
+      <strong>核心诉求：</strong>发现好内容 · 找到共鸣 · 安静阅读
+    </div>
+  </div>
+
+  <table class="journey-table">
+    <thead>
+      <tr>
+        <th class="row-label"></th>
+        <th class="stage-header">
+          <span class="stage-header-num">01</span>内容触达
+          <span class="stage-header-sub">DISCOVERY · 偶然遇见</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">02</span>进入广场
+          <span class="stage-header-sub">LANDING · 游客探索</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">03</span>授权与初互动
+          <span class="stage-header-sub">ENGAGE · 身份建立</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">04</span>沉浸式阅读
+          <span class="stage-header-sub">IMMERSION · 习惯养成</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">05</span>升级转化
+          <span class="stage-header-sub">CONVERSION · 付费会员</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="row-goal">
+        <td class="row-label">用 户 目 标<div class="row-label-en">GOAL</div></td>
+        <td class="cell">在社交平台看到日记分享海报，对内容产生兴趣</td>
+        <td class="cell">浏览广场，感受内容氛围，判断是否值得停留</td>
+        <td class="cell">授权手机号，完成首次点赞/收藏/评论</td>
+        <td class="cell">形成日常打开习惯、关注感兴趣的内容标签</td>
+        <td class="cell">遇到会员日记后决定付费、解锁完整内容生态</td>
+      </tr>
+      <tr class="row-behavior">
+        <td class="row-label">用 户 行 为<div class="row-label-en">BEHAVIOR</div></td>
+        <td class="cell">
+          <div class="behavior-icon">遇</div>
+          <div class="behavior-text">看到海报/链接<br/>扫码进入小程序</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">览</div>
+          <div class="behavior-text">浏览广场列表<br/>查看日记详情</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">许</div>
+          <div class="behavior-text">授权手机号<br/>首次点赞收藏</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">恋</div>
+          <div class="behavior-text">按标签筛选<br/>沉淀收藏夹</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">付</div>
+          <div class="behavior-text">购买年度会员<br/>解锁优质内容</div>
+        </td>
+      </tr>
+      <tr class="row-touchpoint">
+        <td class="row-label">接 触 点<div class="row-label-en">TOUCHPOINT</div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>朋友圈海报</span><span>小红书</span><span>微信群</span><span>公众号</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>醒书广场</span><span>日记详情页</span><span>搜索筛选</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>手机号授权页</span><span>点赞/收藏</span><span>评论框</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>我的收藏</span><span>标签筛选</span><span>评论互动</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>会员墙提示</span><span>会员中心</span><span>支付页</span>
+        </div></td>
+      </tr>
+      <tr class="row-emotion">
+        <td class="row-label">情 绪 曲 线<div class="row-label-en">EMOTION</div></td>
+        <td class="cell" colspan="5" style="padding:0; height:120px; position:relative;">
+          <svg viewBox="0 0 1000 120" width="100%" height="120" preserveAspectRatio="none" style="display:block;">
+            <line x1="0" y1="60" x2="1000" y2="60" stroke="#d6cdb8" stroke-width="0.5" stroke-dasharray="3,3"/>
+            <line x1="200" y1="0" x2="200" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="400" y1="0" x2="400" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="600" y1="0" x2="600" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="800" y1="0" x2="800" y2="120" stroke="#ece4d0" stroke-width="1"/>
+
+            <path d="M 50,70 Q 150,55 200,48 Q 300,40 400,55 Q 500,80 600,40 Q 700,25 800,50 Q 900,30 970,15"
+                  fill="none" stroke="#4a6b8a" stroke-width="2"/>
+            <path d="M 50,70 Q 150,55 200,48 Q 300,40 400,55 Q 500,80 600,40 Q 700,25 800,50 Q 900,30 970,15 L 970,120 L 50,120 Z"
+                  fill="url(#gradReader)" opacity="0.22"/>
+            <defs>
+              <linearGradient id="gradReader" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#4a6b8a"/>
+                <stop offset="100%" stop-color="#4a6b8a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <circle cx="100" cy="65" r="4" fill="#4a6b8a"/>
+            <circle cx="300" cy="42" r="4" fill="#4a6b8a"/>
+            <circle cx="500" cy="78" r="4" fill="#4a6b8a"/>
+            <circle cx="700" cy="28" r="4" fill="#4a6b8a"/>
+            <circle cx="900" cy="22" r="4" fill="#4a6b8a"/>
+            <text x="100" y="88" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">轻度好奇</text>
+            <text x="300" y="32" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">被氛围吸引</text>
+            <text x="500" y="98" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">授权犹豫</text>
+            <text x="700" y="18" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">阅读愉悦</text>
+            <text x="900" y="12" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">认同 · 归属</text>
+          </svg>
+        </td>
+      </tr>
+      <tr class="row-pain">
+        <td class="row-label">痛 点<div class="row-label-en">PAIN POINT</div></td>
+        <td class="cell"><div class="pain-text">海报信息不足，不清楚小程序到底提供什么价值</div></td>
+        <td class="cell"><div class="pain-text">游客可见内容有限，难以判断付费是否值得</div></td>
+        <td class="cell"><div class="pain-text">担心手机号被滥用，授权门槛抵触感强</div></td>
+        <td class="cell"><div class="pain-text">无明显引导，难以建立"每日一访"的习惯</div></td>
+        <td class="cell"><div class="pain-text">365元/年偏高，价值感模糊，决策门槛大</div></td>
+      </tr>
+      <tr class="row-opportunity">
+        <td class="row-label">机 会 点<div class="row-label-en">OPPORTUNITY</div></td>
+        <td class="cell"><div class="opportunity-text">海报增加"金句卡片"+作者头像，强化内容价值感</div></td>
+        <td class="cell"><div class="opportunity-text">游客模式提供7天试读期 · 精选编辑推荐位</div></td>
+        <td class="cell"><div class="opportunity-text">明确说明授权用途 · 授权后赠送"开篇红包"或试读券</div></td>
+        <td class="cell"><div class="opportunity-text">基于阅读偏好的标签推荐 · 每日精选推送 · 关注作者</div></td>
+        <td class="cell"><div class="opportunity-text">月卡试用（30元/月）+ 会员日记预览 + 限时优惠</div></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ========== 02 创作者 Writer Journey ========== -->
+<div class="journey writer">
+  <div class="journey-header">
+    <div class="journey-avatar">书</div>
+    <div class="journey-title-block">
+      <div class="journey-title">The <em>Writer</em> Journey</div>
+      <div class="journey-subtitle">创 作 者 · 内 容 生 产 旅 程</div>
+    </div>
+    <div class="journey-persona">
+      <strong>典型画像：</strong>有日记记录习惯、乐于分享心情感悟<br/>
+      希望被理解、被看见，追求精神共鸣<br/>
+      <strong>核心诉求：</strong>便捷记录 · 隐私可控 · 获得反馈
+    </div>
+  </div>
+
+  <table class="journey-table">
+    <thead>
+      <tr>
+        <th class="row-label"></th>
+        <th class="stage-header">
+          <span class="stage-header-num">01</span>创作动机
+          <span class="stage-header-sub">MOTIVATION · 萌生表达欲</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">02</span>首次创作
+          <span class="stage-header-sub">FIRST WRITE · 落笔成文</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">03</span>发布与等待
+          <span class="stage-header-sub">PUBLISH · 心怀期待</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">04</span>获得反馈
+          <span class="stage-header-sub">RESONANCE · 共鸣建立</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">05</span>持续输出
+          <span class="stage-header-sub">CULTIVATE · 形成习惯</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="row-goal">
+        <td class="row-label">用 户 目 标<div class="row-label-en">GOAL</div></td>
+        <td class="cell">受广场内容触动、想要记录此刻的心情或感悟</td>
+        <td class="cell">便捷写下日记、选合适标签、决定分享范围</td>
+        <td class="cell">作品被发布、期待被看见、关注是否有人回应</td>
+        <td class="cell">收获点赞收藏评论、感受到内容被认可</td>
+        <td class="cell">建立创作节奏、形成个人日记集、影响他人</td>
+      </tr>
+      <tr class="row-behavior">
+        <td class="row-label">用 户 行 为<div class="row-label-en">BEHAVIOR</div></td>
+        <td class="cell">
+          <div class="behavior-icon">念</div>
+          <div class="behavior-text">阅读他人日记<br/>感同身受 · 想写</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">笔</div>
+          <div class="behavior-text">点悬浮笔图标<br/>输入标题与正文</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">发</div>
+          <div class="behavior-text">设权限提交<br/>反复刷新查看</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">应</div>
+          <div class="behavior-text">查看互动统计<br/>回复评论 · 答谢</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">续</div>
+          <div class="behavior-text">日更或周更<br/>沉淀个人日记集</div>
+        </td>
+      </tr>
+      <tr class="row-touchpoint">
+        <td class="row-label">接 触 点<div class="row-label-en">TOUCHPOINT</div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>醒书广场</span><span>他人日记</span><span>标签灵感</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>新建日记页</span><span>标签库</span><span>权限设置</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>我的日记</span><span>广场展示位</span><span>互动通知</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>互动统计页</span><span>评论列表</span><span>转发海报</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>个人日记集</span><span>会员中心</span><span>创作排行</span>
+        </div></td>
+      </tr>
+      <tr class="row-emotion">
+        <td class="row-label">情 绪 曲 线<div class="row-label-en">EMOTION</div></td>
+        <td class="cell" colspan="5" style="padding:0; height:120px; position:relative;">
+          <svg viewBox="0 0 1000 120" width="100%" height="120" preserveAspectRatio="none" style="display:block;">
+            <line x1="0" y1="60" x2="1000" y2="60" stroke="#d6cdb8" stroke-width="0.5" stroke-dasharray="3,3"/>
+            <line x1="200" y1="0" x2="200" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="400" y1="0" x2="400" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="600" y1="0" x2="600" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="800" y1="0" x2="800" y2="120" stroke="#ece4d0" stroke-width="1"/>
+
+            <path d="M 50,55 Q 150,30 200,35 Q 300,55 400,50 Q 500,75 600,70 Q 700,30 800,20 Q 900,40 970,25"
+                  fill="none" stroke="#a85a3a" stroke-width="2"/>
+            <path d="M 50,55 Q 150,30 200,35 Q 300,55 400,50 Q 500,75 600,70 Q 700,30 800,20 Q 900,40 970,25 L 970,120 L 50,120 Z"
+                  fill="url(#gradWriter)" opacity="0.22"/>
+            <defs>
+              <linearGradient id="gradWriter" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#a85a3a"/>
+                <stop offset="100%" stop-color="#a85a3a" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <circle cx="100" cy="45" r="4" fill="#a85a3a"/>
+            <circle cx="300" cy="48" r="4" fill="#a85a3a"/>
+            <circle cx="500" cy="72" r="4" fill="#a85a3a"/>
+            <circle cx="700" cy="25" r="4" fill="#a85a3a"/>
+            <circle cx="900" cy="32" r="4" fill="#a85a3a"/>
+            <text x="100" y="32" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">灵感涌现</text>
+            <text x="300" y="38" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">沉浸创作</text>
+            <text x="500" y="92" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">忐忑等待</text>
+            <text x="700" y="15" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">惊喜共鸣</text>
+            <text x="900" y="22" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">写作成习惯</text>
+          </svg>
+        </td>
+      </tr>
+      <tr class="row-pain">
+        <td class="row-label">痛 点<div class="row-label-en">PAIN POINT</div></td>
+        <td class="cell"><div class="pain-text">想写但找不到方向，缺乏每日记录的提示与灵感</div></td>
+        <td class="cell"><div class="pain-text">编辑器功能简陋，无配图/无格式，影响表达欲望</div></td>
+        <td class="cell"><div class="pain-text">发布后无消息提醒，需反复手动刷新查看反馈</div></td>
+        <td class="cell"><div class="pain-text">点赞数低带来挫败感，难以维持创作动力</div></td>
+        <td class="cell"><div class="pain-text">缺少创作成长体系，努力沉淀缺乏长期价值感</div></td>
+      </tr>
+      <tr class="row-opportunity">
+        <td class="row-label">机 会 点<div class="row-label-en">OPPORTUNITY</div></td>
+        <td class="cell"><div class="opportunity-text">"今日话题"灵感卡片 · 每日推送写作提示词</div></td>
+        <td class="cell"><div class="opportunity-text">支持插入图片/语音 · 保留草稿 · 自动保存机制</div></td>
+        <td class="cell"><div class="opportunity-text">点赞收藏评论实时推送 · 首篇日记官方点赞激励</div></td>
+        <td class="cell"><div class="opportunity-text">"被引用""被转发"专属勋章 · 同类标签作者推荐</div></td>
+        <td class="cell"><div class="opportunity-text">连续创作徽章 · 年度创作集锦 · 优质作者扶持计划</div></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ========== 03 会员 Member Journey ========== -->
+<div class="journey member">
+  <div class="journey-header">
+    <div class="journey-avatar">员</div>
+    <div class="journey-title-block">
+      <div class="journey-title">The <em>Member</em> Journey</div>
+      <div class="journey-subtitle">会 员 用 户 · 付 费 订 阅 旅 程</div>
+    </div>
+    <div class="journey-persona">
+      <strong>典型画像：</strong>已是活跃用户，渴望解锁更优质内容<br/>
+      愿意为知识付费、追求圈层归属感<br/>
+      <strong>核心诉求：</strong>独家内容 · 身份认同 · 长期价值
+    </div>
+  </div>
+
+  <table class="journey-table">
+    <thead>
+      <tr>
+        <th class="row-label"></th>
+        <th class="stage-header">
+          <span class="stage-header-num">01</span>触发动机
+          <span class="stage-header-sub">TRIGGER · 遇到内容墙</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">02</span>决策付费
+          <span class="stage-header-sub">DECIDE · 价值评估</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">03</span>完成购买
+          <span class="stage-header-sub">PURCHASE · 365 / 年</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">04</span>享受权益
+          <span class="stage-header-sub">ENJOY · 解锁专属</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">05</span>续费决策
+          <span class="stage-header-sub">RENEWAL · 长期关系</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="row-goal">
+        <td class="row-label">用 户 目 标<div class="row-label-en">GOAL</div></td>
+        <td class="cell">遇到会员日记的"内容墙"，被优质内容钩起好奇</td>
+        <td class="cell">权衡 365 元/年是否值得，了解会员权益清单</td>
+        <td class="cell">顺利完成支付、即时开通会员、获得身份标识</td>
+        <td class="cell">畅读会员日记、感受身份感、形成阅读习惯</td>
+        <td class="cell">到期前评估留存价值、做出续费决定</td>
+      </tr>
+      <tr class="row-behavior">
+        <td class="row-label">用 户 行 为<div class="row-label-en">BEHAVIOR</div></td>
+        <td class="cell">
+          <div class="behavior-icon">遇</div>
+          <div class="behavior-text">遇到会员墙<br/>查看权益说明</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">权</div>
+          <div class="behavior-text">阅读权益详情<br/>查看会员日记</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">购</div>
+          <div class="behavior-text">点击微信支付<br/>开通年度会员</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">享</div>
+          <div class="behavior-text">解锁全部内容<br/>专属标识展示</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">续</div>
+          <div class="behavior-text">收到到期提醒<br/>评估并续费</div>
+        </td>
+      </tr>
+      <tr class="row-touchpoint">
+        <td class="row-label">接 触 点<div class="row-label-en">TOUCHPOINT</div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>会员墙提示</span><span>权限弹窗</span><span>引导文案</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>会员中心</span><span>权益对比</span><span>会员推荐位</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>会员购买页</span><span>微信支付</span><span>成功弹窗</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>会员专享区</span><span>身份标识</span><span>优先评论</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>到期提醒</span><span>续费页</span><span>专属客服</span>
+        </div></td>
+      </tr>
+      <tr class="row-emotion">
+        <td class="row-label">情 绪 曲 线<div class="row-label-en">EMOTION</div></td>
+        <td class="cell" colspan="5" style="padding:0; height:120px; position:relative;">
+          <svg viewBox="0 0 1000 120" width="100%" height="120" preserveAspectRatio="none" style="display:block;">
+            <line x1="0" y1="60" x2="1000" y2="60" stroke="#d6cdb8" stroke-width="0.5" stroke-dasharray="3,3"/>
+            <line x1="200" y1="0" x2="200" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="400" y1="0" x2="400" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="600" y1="0" x2="600" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="800" y1="0" x2="800" y2="120" stroke="#ece4d0" stroke-width="1"/>
+
+            <path d="M 50,40 Q 150,75 200,80 Q 300,90 400,70 Q 500,30 600,25 Q 700,20 800,28 Q 900,55 970,30"
+                  fill="none" stroke="#a88638" stroke-width="2"/>
+            <path d="M 50,40 Q 150,75 200,80 Q 300,90 400,70 Q 500,30 600,25 Q 700,20 800,28 Q 900,55 970,30 L 970,120 L 50,120 Z"
+                  fill="url(#gradMember)" opacity="0.22"/>
+            <defs>
+              <linearGradient id="gradMember" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#a88638"/>
+                <stop offset="100%" stop-color="#a88638" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <circle cx="100" cy="55" r="4" fill="#a88638"/>
+            <circle cx="300" cy="88" r="4" fill="#a88638"/>
+            <circle cx="500" cy="40" r="4" fill="#a88638"/>
+            <circle cx="700" cy="22" r="4" fill="#a88638"/>
+            <circle cx="900" cy="48" r="4" fill="#a88638"/>
+            <text x="100" y="42" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">好奇 · 想看</text>
+            <text x="300" y="105" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">付费犹豫</text>
+            <text x="500" y="28" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">完成开通</text>
+            <text x="700" y="14" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">满足 · 享受</text>
+            <text x="900" y="65" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">续费纠结</text>
+          </svg>
+        </td>
+      </tr>
+      <tr class="row-pain">
+        <td class="row-label">痛 点<div class="row-label-en">PAIN POINT</div></td>
+        <td class="cell"><div class="pain-text">会员墙突然出现造成阅读体验中断、用户产生抵触</div></td>
+        <td class="cell"><div class="pain-text">权益说明抽象、缺乏具体优质内容预览，价值感模糊</div></td>
+        <td class="cell"><div class="pain-text">只有年付选项 365元一次性投入过重，缺乏弹性</div></td>
+        <td class="cell"><div class="pain-text">付费后缺乏"专属感"，与游客体验差异不够明显</div></td>
+        <td class="cell"><div class="pain-text">续费时无优惠激励、缺乏年度回顾，留存动力弱</div></td>
+      </tr>
+      <tr class="row-opportunity">
+        <td class="row-label">机 会 点<div class="row-label-en">OPPORTUNITY</div></td>
+        <td class="cell"><div class="opportunity-text">会员墙增加"预览前 30%"+ 作者背景介绍，提升钩子</div></td>
+        <td class="cell"><div class="opportunity-text">展示当月新增会员日记数 · 优质标签 · 真实用户评价</div></td>
+        <td class="cell"><div class="opportunity-text">增加月卡（30元）/季卡（88元）阶梯方案 · 首月体验价</div></td>
+        <td class="cell"><div class="opportunity-text">会员勋章/头像框 · 优先评论位 · 月度专属精选推送</div></td>
+        <td class="cell"><div class="opportunity-text">提前30天续费8折 · 年度阅读报告 · 老会员专属内容</div></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ========== 04 运营者 Operator Journey ========== -->
+<div class="journey operator">
+  <div class="journey-header">
+    <div class="journey-avatar">营</div>
+    <div class="journey-title-block">
+      <div class="journey-title">The <em>Operator</em> Journey</div>
+      <div class="journey-subtitle">运 营 者 · 平 台 治 理 旅 程</div>
+    </div>
+    <div class="journey-persona">
+      <strong>角色定位：</strong>产品运营 + 内容审核 + 数据分析<br/>
+      负责用户管理、内容审核、数据监控、增长运营<br/>
+      <strong>核心诉求：</strong>合规有序 · 高效运营 · 数据驱动
+    </div>
+  </div>
+
+  <table class="journey-table">
+    <thead>
+      <tr>
+        <th class="row-label"></th>
+        <th class="stage-header">
+          <span class="stage-header-num">01</span>数据监控
+          <span class="stage-header-sub">MONITOR · 日常巡查</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">02</span>内容审核
+          <span class="stage-header-sub">MODERATE · 质量把控</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">03</span>用户运营
+          <span class="stage-header-sub">OPERATE · 分层触达</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">04</span>商业转化
+          <span class="stage-header-sub">CONVERT · 推动付费</span>
+        </th>
+        <th class="stage-header">
+          <span class="stage-header-num">05</span>数据迭代
+          <span class="stage-header-sub">ITERATE · 持续优化</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="row-goal">
+        <td class="row-label">业 务 目 标<div class="row-label-en">GOAL</div></td>
+        <td class="cell">每日查看数据概览、掌握平台整体健康度</td>
+        <td class="cell">审核违规内容、处理用户举报、保障内容质量</td>
+        <td class="cell">识别核心用户、激活沉默用户、提升 DAU 与留存</td>
+        <td class="cell">优化会员转化漏斗、提升付费率与续费率</td>
+        <td class="cell">沉淀运营数据、复盘策略效果、迭代产品功能</td>
+      </tr>
+      <tr class="row-behavior">
+        <td class="row-label">运 营 行 为<div class="row-label-en">BEHAVIOR</div></td>
+        <td class="cell">
+          <div class="behavior-icon">观</div>
+          <div class="behavior-text">查看数据概览<br/>关键指标巡检</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">审</div>
+          <div class="behavior-text">审核新内容<br/>处理违规删除</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">触</div>
+          <div class="behavior-text">分层触达推送<br/>策划话题活动</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">化</div>
+          <div class="behavior-text">优化会员路径<br/>策划促销活动</div>
+        </td>
+        <td class="cell">
+          <div class="behavior-icon">析</div>
+          <div class="behavior-text">数据复盘<br/>产品迭代提需求</div>
+        </td>
+      </tr>
+      <tr class="row-touchpoint">
+        <td class="row-label">接 触 点<div class="row-label-en">TOUCHPOINT</div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>数据概览页</span><span>核心指标卡</span><span>趋势图表</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>日记管理</span><span>评论管理</span><span>用户举报队列</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>用户管理</span><span>分层标签</span><span>消息推送</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>会员中心</span><span>促销配置</span><span>优惠券系统</span>
+        </div></td>
+        <td class="cell"><div class="touchpoint-list">
+          <span>数据导出</span><span>BI看板</span><span>产品需求</span>
+        </div></td>
+      </tr>
+      <tr class="row-emotion">
+        <td class="row-label">业 务 曲 线<div class="row-label-en">BUSINESS</div></td>
+        <td class="cell" colspan="5" style="padding:0; height:120px; position:relative;">
+          <svg viewBox="0 0 1000 120" width="100%" height="120" preserveAspectRatio="none" style="display:block;">
+            <line x1="0" y1="60" x2="1000" y2="60" stroke="#d6cdb8" stroke-width="0.5" stroke-dasharray="3,3"/>
+            <line x1="200" y1="0" x2="200" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="400" y1="0" x2="400" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="600" y1="0" x2="600" y2="120" stroke="#ece4d0" stroke-width="1"/>
+            <line x1="800" y1="0" x2="800" y2="120" stroke="#ece4d0" stroke-width="1"/>
+
+            <path d="M 50,85 Q 150,80 200,70 Q 300,65 400,55 Q 500,50 600,40 Q 700,35 800,25 Q 900,30 970,15"
+                  fill="none" stroke="#5d6b66" stroke-width="2"/>
+            <path d="M 50,85 Q 150,80 200,70 Q 300,65 400,55 Q 500,50 600,40 Q 700,35 800,25 Q 900,30 970,15 L 970,120 L 50,120 Z"
+                  fill="url(#gradOperator)" opacity="0.22"/>
+            <defs>
+              <linearGradient id="gradOperator" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#5d6b66"/>
+                <stop offset="100%" stop-color="#5d6b66" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <circle cx="100" cy="82" r="4" fill="#5d6b66"/>
+            <circle cx="300" cy="62" r="4" fill="#5d6b66"/>
+            <circle cx="500" cy="50" r="4" fill="#5d6b66"/>
+            <circle cx="700" cy="32" r="4" fill="#5d6b66"/>
+            <circle cx="900" cy="22" r="4" fill="#5d6b66"/>
+            <text x="100" y="102" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">早期投入</text>
+            <text x="300" y="52" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">内容池形成</text>
+            <text x="500" y="40" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">用户增长</text>
+            <text x="700" y="22" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">付费起量</text>
+            <text x="900" y="12" text-anchor="middle" font-family="Noto Serif SC" font-size="10" fill="#4a4438">飞轮转动</text>
+          </svg>
+        </td>
+      </tr>
+      <tr class="row-pain">
+        <td class="row-label">痛 点<div class="row-label-en">PAIN POINT</div></td>
+        <td class="cell"><div class="pain-text">指标分散、缺乏核心北极星指标、决策依据不清晰</div></td>
+        <td class="cell"><div class="pain-text">人工审核成本高、违规识别滞后、误删引发投诉</div></td>
+        <td class="cell"><div class="pain-text">用户分层粗放、推送命中率低、易引起骚扰反感</div></td>
+        <td class="cell"><div class="pain-text">会员转化漏斗未打通、付费节点不明、ROI 难测算</div></td>
+        <td class="cell"><div class="pain-text">数据导出依赖人工、缺乏自动报表、复盘周期长</div></td>
+      </tr>
+      <tr class="row-opportunity">
+        <td class="row-label">机 会 点<div class="row-label-en">OPPORTUNITY</div></td>
+        <td class="cell"><div class="opportunity-text">建立北极星指标体系（DAU/付费率/留存）一图掌握</div></td>
+        <td class="cell"><div class="opportunity-text">引入 AI 内容审核 · 关键词过滤 · 用户举报激励机制</div></td>
+        <td class="cell"><div class="opportunity-text">用户RFM分层 · 个性化推送 · 创作者扶持计划</div></td>
+        <td class="cell"><div class="opportunity-text">设计转化关键节点埋点 · A/B 测试不同价格策略</div></td>
+        <td class="cell"><div class="opportunity-text">建设自动化BI看板 · 每周运营复盘机制 · 数据驱动迭代</div></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+</div>
+
+<div class="section-note">
+  <strong>核心洞察：</strong>「醒书日记」作为UGC内容社区，与传统平台型产品最大的差异在于—— C 端用户同时是<strong>内容生产者和消费者</strong>，
+  一个人在不同时刻扮演"阅读者"和"创作者"的双重身份。因此产品设计的关键是建立两条平行旅程的<strong>正向反馈循环</strong>：
+  阅读者被好内容吸引 → 转化为创作者 → 生产更多优质内容 → 吸引更多阅读者。
+  而会员旅程是中间的<strong>商业化变现层</strong>，运营者旅程则是整个生态的<strong>治理与放大器</strong>。
+  四方旅程构成一个完整的飞轮，每一方的体验优化都会传导到其他三方。
+</div>
+
+<div class="footer">
+  <div>XINGSHU · JOURNEY MAP · v1.0</div>
+  <div>FOUR-ROLE UGC ECOSYSTEM BLUEPRINT</div>
+  <div>PREPARED FOR PRODUCT REVIEW</div>
+</div>
+
+</body>
+</html>
