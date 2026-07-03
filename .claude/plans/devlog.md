@@ -553,3 +553,28 @@
 - `node scripts/backup-db.js --verify` → 9 张表 56 行导出 17.8KB，恢复临时库后行数全部一致，临时库已清理
 - `npm test` 回归全绿（25 单测 + 16 集成 + 5 冒烟 + 5 回环）
 - `git check-ignore backups/` 确认备份产物不入 Git
+
+---
+
+### 2026-07-03 16:40 — 6.2 数据库索引优化（自主循环第 3 轮）
+
+**类型**：数据库 | 测试
+**模型**：claude-fable-5
+**Agent**：自主循环（/loop 动态节奏）
+**计划关联**：Phase 6.2 — 数据库索引优化 + 慢查询分析
+**修改文件**：
+- MySQL `diaries` 表 — 新增复合索引 `idx_status_created (status, created_at)`；删除冗余索引 `idx_user_id`（被 `idx_user_permission` 最左前缀覆盖，外键约束经确认仍由复合索引支撑）
+- MySQL `users` 表 — 删除重复索引 `idx_openid`（与唯一索引 `openid` 完全重复）
+- `test/api-test.js` — 新增 idx_status_created 存在性断言（16→17 条）
+
+**变更说明**：
+广场页热查询（status 过滤 + created_at 倒序分页）EXPLAIN 对比：
+- 优化前：type=ALL（全表扫描），Using filesort
+- 优化后：type=ref，key=idx_status_created，Backward index scan，无 filesort
+两处冗余索引删除可降低写放大。慢查询日志为服务器级配置（需 SUPER 权限开启
+slow_query_log），当前数据量下暂无必要，上线后如需开启在 MySQL 服务端配置。
+
+**验证**：
+- EXPLAIN 前后对比确认走索引、消除 filesort
+- diaries.user_id 外键约束确认完好
+- `npm test` 全绿：25 单测 + 17 集成 + 5 冒烟 + 5 回环

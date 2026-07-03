@@ -40,6 +40,10 @@ async function run() {
   await test('diaries images 字段存在', async () => {
     await db.query("SELECT images FROM diaries LIMIT 0")
   })
+  await test('diaries 热路径复合索引 (status, created_at)', async () => {
+    const [r] = await db.query("SHOW INDEX FROM diaries WHERE Key_name='idx_status_created'")
+    if (r.length !== 2) throw new Error('idx_status_created missing')
+  })
   await test('diaries 外键约束', async () => {
     const [r] = await db.query("SELECT REFERENCED_TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA='xingshu_dev' AND TABLE_NAME='diaries' AND COLUMN_NAME='user_id'")
     if (r[0].REFERENCED_TABLE_NAME !== 'users') throw new Error('FK missing')
