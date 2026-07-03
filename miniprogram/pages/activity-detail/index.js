@@ -1,6 +1,7 @@
 const activityApi = require('../../api/activity')
 const toast = require('../../utils/toast')
 const { call } = require('../../api/request')
+const { ensureLogin } = require('../../utils/auth-guard')
 
 Page({
   data: {
@@ -13,13 +14,27 @@ Page({
     signupName: '',
     signupContact: '',
     _sheetShow: false,
+    showLoginSheet: false,
   },
 
   onLoad(options) {
     const info = wx.getSystemInfoSync()
     this.setData({ statusBarHeight: info.statusBarHeight || 0 })
     this._id = parseInt(options.id, 10) || options.id
+    // v2.3：活动详情需微信登录（轻授权），未登录先拉起登录弹窗，取消则返回列表
+    if (!ensureLogin(this, () => this._load())) return
     this._load()
+  },
+
+  onLoginClose() {
+    this.setData({ showLoginSheet: false })
+    if (!this.data.activity) wx.navigateBack()
+  },
+  onLoginSuccess() {
+    this.setData({ showLoginSheet: false })
+    const action = this._pendingLoginAction
+    this._pendingLoginAction = null
+    if (typeof action === 'function') action()
   },
 
   async _load() {

@@ -1,0 +1,36 @@
+<view wx:if="{{_mounted}}">
+  <view class="sheet-mask {{_show ? 'mask-show' : ''}}" bindtap="onClose"></view>
+  <view class="sheet login-sheet {{_show ? 'sheet-show' : ''}}" catchtap="">
+    <view class="sheet-handle"></view>
+
+    <text class="login-title serif">成为醒书的一员</text>
+    <text class="login-subtitle">{{subtitle}}</text>
+
+    <!-- 协议勾选 -->
+    <view class="agree-row" bindtap="onToggleAgree">
+      <view class="agree-check {{agreed ? 'checked' : ''}}">
+        <text wx:if="{{agreed}}" class="agree-tick">✓</text>
+      </view>
+      <text class="agree-text">已阅读并同意<text class="agree-link">《服务协议》</text><text class="agree-link">《隐私协议》</text></text>
+    </view>
+
+    <!-- 微信登录：文字在图标上方 -->
+    <view class="login-btn-area" bindtap="onLogin">
+      <text class="login-btn-label">点击登录</text>
+      <view class="wx-icon {{agreed ? '' : 'wx-icon-dim'}}">
+        <view class="wx-bubble wx-bubble-main">
+          <view class="wx-eye"></view>
+          <view class="wx-eye"></view>
+        </view>
+        <view class="wx-bubble wx-bubble-sub">
+          <view class="wx-eye sm"></view>
+          <view class="wx-eye sm"></view>
+        </view>
+      </view>
+    </view>
+
+    <text class="login-footnote">仅获取你的微信身份标识（openid/unionid），不涉及手机号。</text>
+
+    <view class="safe-bottom"></view>
+  </view>
+</view>

@@ -16,10 +16,10 @@
         </view>
         <view class="identity-info">
           <view class="identity-name-row">
-            <text class="identity-name">未授权</text>
+            <text class="identity-name">未登录</text>
             <text class="identity-label-badge guest-badge">游客</text>
           </view>
-          <text class="identity-hint">未授权手机号 · 仅可浏览公众日记</text>
+          <text class="identity-hint">未登录 · 仅可浏览日记列表</text>
         </view>
         <view class="id-seal guest-seal">
           <text class="id-seal-text serif">游客</text>
@@ -28,9 +28,9 @@
 
       <view class="auth-section">
         <view class="btn-primary auth-btn" bindtap="onAuthorize">
-          <text>手机号验证 · 解锁完整功能</text>
+          <text>微信登录 · 解锁完整功能</text>
         </view>
-        <text class="auth-hint">授权仅用于身份核验，不会公开您的信息</text>
+        <text class="auth-hint">仅获取你的微信身份标识，不涉及手机号</text>
       </view>
 
       <view class="section-header-row">
@@ -297,8 +297,28 @@
 
     </block>
 
+    <!-- v2.3 设置：退出登录（仅登录后展示） -->
+    <block wx:if="{{user.identity !== 'guest'}}">
+      <view class="section-header-row">
+        <text class="section-label serif">设置</text>
+      </view>
+      <view class="section-card">
+        <view class="info-row no-border logout-row" bindtap="onLogout">
+          <text class="logout-text">退出登录</text>
+          <text class="logout-arrow">›</text>
+        </view>
+      </view>
+    </block>
+
     <view class="bottom-pad"></view>
   </scroll-view>
+
+  <!-- v2.3 微信登录弹窗 -->
+  <login-sheet
+    visible="{{showLoginSheet}}"
+    bind:close="onLoginClose"
+    bind:success="onLoginSuccess"
+  ></login-sheet>
 
   <!-- Profile edit sheet -->
   <view wx:if="{{showProfileSheet}}">

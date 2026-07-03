@@ -78,4 +78,12 @@
     bind:authorize="onGuardAuthorize"
     bind:joinMember="onGuardJoinMember"
   ></member-guard>
+
+  <!-- v2.3 微信登录弹窗 -->
+  <login-sheet
+    visible="{{showLoginSheet}}"
+    subtitle="你刚刚被打动了，对吗？登录后为喜欢的文字点赞、收藏，也开始记录属于你自己的故事。"
+    bind:close="onLoginClose"
+    bind:success="onLoginSuccess"
+  ></login-sheet>
 </view>

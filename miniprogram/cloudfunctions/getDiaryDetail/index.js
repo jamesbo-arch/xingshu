@@ -25,9 +25,9 @@ exports.main = async (event, context) => {
   if (diary.permission === 'private' && !isAuthor) {
     return { code: -1, msg: '日记不存在' }
   }
-  // v2.1 权限矩阵：未授权用户不可读任何日记详情（引导验证，不泄露内容）
+  // v2.3 权限矩阵：未登录用户不可读任何日记详情（引导微信登录，不泄露内容）
   if (!isAuthor && userIdentity === 'guest') {
-    return { code: -3, msg: '验证手机号后即可阅读' }
+    return { code: -3, msg: '登录后即可阅读' }
   }
   // v2.1 内容墙：已授权非会员读会员日记 → 服务端截断前 30% + 渐隐标记
   if (!isAuthor && diary.permission === 'member' && userIdentity !== 'member') {

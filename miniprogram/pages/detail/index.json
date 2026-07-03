@@ -3,6 +3,7 @@
   "navigationBarBackgroundColor": "#FBF7EE",
   "navigationBarTextStyle": "black",
   "usingComponents": {
-    "poster-sheet": "/components/poster-sheet/index"
+    "poster-sheet": "/components/poster-sheet/index",
+    "login-sheet": "/components/login-sheet/index"
   }
 }

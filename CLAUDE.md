@@ -73,7 +73,7 @@
 
 "醒书日记"（Xingshu Diary）—— 一款带有社区互动和会员体系的微信小程序日记应用。最初在 `project/` 目录下以 HTML/CSS/JS 原型设计，然后在 `miniprogram/` 目录下实现。设计交接的聊天记录位于 `chats/chat1.md`。
 
-应用有三种用户身份等级（`guest`、`authed`、`member`）和三种日记权限（`public`、`member`、`private`）。后端采用腾讯 CloudBase 云函数（22 个）+ MySQL 数据库（9 张表，通过 cpolar 隧道 `33.tcp.cpolar.top:11028` 连接）。身份认证：访客需通过 `auth` 页面完成手机号验证升级为 `authed`；会员通过线下转账 + 管理员手动确认激活。`data/mock.js` 仅保留作为设计参考，不再用于运行时数据。
+应用有三种用户身份等级（`guest`、`authed`、`member`）和三种日记权限（`public`、`member`、`private`）。后端采用腾讯 CloudBase 云函数（22 个）+ MySQL 数据库（9 张表，通过 cpolar 隧道 `33.tcp.cpolar.top:11028` 连接）。身份认证（PRD v2.3）：微信登录半屏弹窗（`components/login-sheet`）仅获取 openid/unionid，登录后升级为 `authed`，不涉及手机号；会员通过线下转账 + 管理员手动确认激活；会员中心可退出登录（回退 guest，重新登录恢复会员）。`data/mock.js` 仅保留作为设计参考，不再用于运行时数据。
 
 ## 开发方式
 
@@ -138,17 +138,20 @@
 
 ## 架构
 
-### 页面（共 7 个，4 个 tab 页 + 3 个非 tab 页）
+### 页面（共 8 个，5 个 tab 页 + 3 个非 tab 页）
 
 | 页面 | 路由 | Tab | 用途 |
 |------|-------|-----|---------|
 | square | `pages/square/index` | 是 (0) | 醒书广场——公开+会员日记流，搜索、筛选 |
-| collections | `pages/collections/index` | 是 (1) | 我的收藏——用户收藏的日记，支持搜索+筛选 |
-| mine | `pages/mine/index` | 是 (2) | 我的日记——用户自己的日记，支持编辑/删除 |
-| member | `pages/member/index` | 是 (3) | 会员中心——会员信息、购买流程、个人资料编辑 |
+| activities | `pages/activities/index` | 是 (1) | 醒书活动——活动列表（近期预告/往期回顾，M1.5 新增） |
+| collections | `pages/collections/index` | 是 (2) | 我的收藏——用户收藏的日记，支持搜索+筛选 |
+| mine | `pages/mine/index` | 是 (3) | 我的日记——用户自己的日记，支持编辑/删除 |
+| member | `pages/member/index` | 是 (4) | 会员中心——会员信息、购买流程、个人资料编辑、设置（退出登录） |
 | detail | `pages/detail/index` | 否 | 日记详情——查看单篇日记及评论，点赞/收藏/分享 |
 | compose | `pages/compose/index` | 否 | 写日记——新建/编辑日记表单，含标签和权限选择 |
-| auth | `pages/auth/index` | 否 | 手机号验证——访客强制验证手机号并同意协议后升级为 authed（Phase 6 新增） |
+| activity-detail | `pages/activity-detail/index` | 否 | 活动详情——图文详情、报名/取消、活动海报（M1.5 新增） |
+
+原 `pages/auth`（手机号验证页）已于 PRD v2.3 废除，登录改为 `components/login-sheet` 半屏弹窗（仅取 openid/unionid，不涉及手机号）。
 
 ### 共享组件
 
@@ -156,8 +159,9 @@
 - **`filter-sheet`** — 底部筛选面板，包含标签选择、作者搜索和三种时间模式（快捷范围 / 起止日期 / 年月）。触发 `apply`（携带完整 filters 对象）和 `close` 事件。
 - **`member-guard`** — 非会员点击会员专属内容时弹出的权限拦截弹窗。触发 `authorize` 和 `joinMember` 事件。已接入广场页和收藏页。
 - **`poster-sheet`** — 分享海报底部弹窗，包含头像、摘要和保存/分享操作。已接入广场页、收藏页（`bind:share` on diary-card）和详情页（底部栏 ↑ 按钮）。
+- **`login-sheet`** — v2.3 微信登录半屏弹窗（协议勾选 + 微信图标登录，仅取 openid/unionid）。由 `utils/auth-guard.js` 的 `ensureLogin(page, action)` 拉起，登录成功自动续做原操作。已接入广场/日记详情/活动详情/会员中心。
 
-所有底部弹层（filter-sheet / poster-sheet / member-guard）均使用 `_mounted` + `_show` 双状态驱动动画：`visible` 为 true 时先挂载 DOM（`_mounted=true`），20ms 后加 `sheet-show` class 触发 slide-up；为 false 时先移除 class，300ms 后卸载 DOM，保证退场动画完整播放。
+所有底部弹层（filter-sheet / poster-sheet / member-guard / login-sheet）均使用 `_mounted` + `_show` 双状态驱动动画：`visible` 为 true 时先挂载 DOM（`_mounted=true`），20ms 后加 `sheet-show` class 触发 slide-up；为 false 时先移除 class，300ms 后卸载 DOM，保证退场动画完整播放。
 
 ### 全局状态（`app.js` / `app.globalData`）
 
@@ -173,7 +177,7 @@
 | 文件 | 职责 |
 |------|------|
 | `request.js` | 核心封装——`call(name, data, options?)`，统一处理 `{code, data, msg}` 响应格式，code≠0 时自动 toast 错误 |
-| `user.js` | `login` / `getUserInfo` / `updateProfile` / `checkMember` / `getPhoneNumber` |
+| `user.js` | `login` / `getUserInfo` / `updateProfile` / `checkMember` |
 | `diary.js` | `getList` / `getDetail` / `create` / `update` / `remove` |
 | `social.js` | `toggleLike` / `toggleFav` / `createComment` / `getComments` / `deleteComment` |
 | `tag.js` | `getAll` / `add` |

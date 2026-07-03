@@ -134,3 +134,11 @@
     </view>
   </view>
 </view>
+
+<!-- v2.3 微信登录弹窗：未登录访问详情时在本页拉起（diary 为空时也需可见，故置于根节点之外） -->
+<login-sheet
+  visible="{{showLoginSheet}}"
+  subtitle="你刚刚被打动了，对吗？登录后为喜欢的文字点赞、收藏，也开始记录属于你自己的故事。"
+  bind:close="onLoginClose"
+  bind:success="onLoginSuccess"
+></login-sheet>

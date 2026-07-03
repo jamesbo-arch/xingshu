@@ -11,14 +11,17 @@ function parseSharerId(scene) {
 }
 
 exports.main = async (event, context) => {
-  const { OPENID } = cloud.getWXContext()
+  const { OPENID, UNIONID } = cloud.getWXContext()
 
   const [rows] = await db.query('SELECT * FROM users WHERE openid = ?', [OPENID])
 
   if (rows.length > 0) {
-    // 老用户扫码只跳转，不改变推荐关系
+    // 老用户扫码只跳转，不改变推荐关系；v2.3 顺带补录 unionid（历史用户为空时）
     const user = rows[0]
-    await db.query('UPDATE users SET last_active = NOW() WHERE id = ?', [user.id])
+    await db.query(
+      'UPDATE users SET last_active = NOW(), unionid = IFNULL(unionid, ?) WHERE id = ?',
+      [UNIONID || null, user.id]
+    )
     return { code: 0, data: user }
   }
 
@@ -30,9 +33,9 @@ exports.main = async (event, context) => {
   }
 
   const [result] = await db.query(
-    `INSERT INTO users (openid, nickname, identity, avatar_hue, referrer_user_id, created_by)
-     VALUES (?, ?, 'guest', ?, ?, ?)`,
-    [OPENID, event.nickname || '微信用户', event.avatarHue || 60, referrerId, OPENID]
+    `INSERT INTO users (openid, unionid, nickname, identity, avatar_hue, referrer_user_id, created_by)
+     VALUES (?, ?, ?, 'guest', ?, ?, ?)`,
+    [OPENID, UNIONID || null, event.nickname || '微信用户', event.avatarHue || 60, referrerId, OPENID]
   )
 
   const [newUser] = await db.query('SELECT * FROM users WHERE id = ?', [result.insertId])

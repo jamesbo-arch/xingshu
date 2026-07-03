@@ -7,7 +7,6 @@
     "pages/member/index",
     "pages/detail/index",
     "pages/compose/index",
-    "pages/auth/index",
     "pages/activity-detail/index"
   ],
   "tabBar": {

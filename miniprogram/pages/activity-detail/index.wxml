@@ -122,3 +122,11 @@
     </view>
   </view>
 </view>
+
+<!-- v2.3 微信登录弹窗：活动详情需轻授权，activity 为空时也需可见，故置于根节点之外 -->
+<login-sheet
+  visible="{{showLoginSheet}}"
+  subtitle="登录后即可查看活动详情并报名，加入一群认真生活的人。"
+  bind:close="onLoginClose"
+  bind:success="onLoginSuccess"
+></login-sheet>

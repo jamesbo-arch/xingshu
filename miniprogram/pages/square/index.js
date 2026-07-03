@@ -3,7 +3,7 @@ const diaryApi = require('../../api/diary')
 const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
 const cache = require('../../utils/cache')
-const { requireAuth } = require('../../utils/auth-guard')
+const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
 
 Page({
   data: {
@@ -15,6 +15,7 @@ Page({
     showPosterSheet: false,
     posterDiary: null,
     showMemberGuard: false,
+    showLoginSheet: false,
     userIdentity: 'guest',
     filters: {
       tags: [],
@@ -94,30 +95,32 @@ Page({
     this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true))
   },
 
-  // v2.1：guest 点卡片进入验证引导（验证后直达该日记）；authed 看会员日记走详情页渐隐
+  // v2.3：guest 点卡片先拉起微信登录弹窗，登录成功后直达该日记；authed 看会员日记走详情页渐隐
   onCardOpen(e) {
     const { id } = e.detail
-    if (!requireAuth('/pages/detail/index?id=' + id)) return
-    wx.navigateTo({ url: '/pages/detail/index?id=' + id })
+    const open = () => wx.navigateTo({ url: '/pages/detail/index?id=' + id })
+    if (!ensureLogin(this, open)) return
+    open()
+  },
+
+  onLoginClose() {
+    this.setData({ showLoginSheet: false })
+    this._pendingLoginAction = null
+  },
+  onLoginSuccess() {
+    this.setData({ userIdentity: (app.globalData.user || {}).identity || 'guest' })
+    handleLoginSuccess(this)
   },
 
   onCloseMemberGuard() { this.setData({ showMemberGuard: false }) },
   onGuardAuthorize() {
-    wx.showModal({
-      title: '微信授权', content: '授权后可获得完整账号功能，包括发布日记与查看会员内容。',
-      confirmText: '授权', cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          app.updateUser({ identity: 'authed' })
-          this.setData({ showMemberGuard: false, userIdentity: 'authed' })
-        }
-      },
-    })
+    this.setData({ showMemberGuard: false })
+    ensureLogin(this)
   },
   onGuardJoinMember() { this.setData({ showMemberGuard: false }); wx.switchTab({ url: '/pages/member/index' }) },
 
   async onCardLike(e) {
-    if (!requireAuth()) return
+    if (!ensureLogin(this, () => this.onCardLike(e))) return
     const { id } = e.detail
     const result = await socialApi.toggleLike(id, 'diary')
     if (result) {
@@ -132,7 +135,7 @@ Page({
   },
 
   async onCardFav(e) {
-    if (!requireAuth()) return
+    if (!ensureLogin(this, () => this.onCardFav(e))) return
     const { id } = e.detail
     const result = await socialApi.toggleFav(id)
     if (result) {
@@ -149,8 +152,9 @@ Page({
   onClosePoster() { this.setData({ showPosterSheet: false, posterDiary: null }) },
 
   onFabTap() {
-    if (!requireAuth('/pages/compose/index')) return
-    wx.navigateTo({ url: '/pages/compose/index' })
+    const go = () => wx.navigateTo({ url: '/pages/compose/index' })
+    if (!ensureLogin(this, go)) return
+    go()
   },
   onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
 })

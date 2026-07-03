@@ -831,3 +831,21 @@
 .bottom-pad {
   height: calc(100rpx + env(safe-area-inset-bottom) + 20rpx);
 }
+
+/* v2.3 设置 · 退出登录 */
+.logout-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8rpx 0;
+}
+
+.logout-text {
+  font-size: 28rpx;
+  color: #B3574A;
+}
+
+.logout-arrow {
+  font-size: 32rpx;
+  color: #C9C2B2;
+}

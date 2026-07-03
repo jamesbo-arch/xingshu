@@ -2,6 +2,7 @@ const app = getApp()
 const { hueToColor, getInitial } = require('../../utils/color')
 const userApi = require('../../api/user')
 const mapper = require('../../utils/mapper')
+const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
 
 Page({
   data: {
@@ -12,6 +13,7 @@ Page({
     statusBarHeight: 0,
     showProfileSheet: false,
     showPurchaseSheet: false,
+    showLoginSheet: false,
     editNickname: '',
     editRealName: '',
     editAvatarUrl: '',
@@ -52,8 +54,35 @@ Page({
     })
   },
 
+  // v2.3：微信登录半屏弹窗替代原手机号验证页
   onAuthorize() {
-    wx.navigateTo({ url: '/pages/auth/index' })
+    ensureLogin(this, () => this._loadUser())
+  },
+  onLoginClose() {
+    this.setData({ showLoginSheet: false })
+    this._pendingLoginAction = null
+  },
+  onLoginSuccess() {
+    handleLoginSuccess(this)
+    this._loadUser()
+  },
+
+  // v2.3 设置：退出登录（仅回退为未登录，重新登录后会员权益自动恢复）
+  async onLogout() {
+    const res = await new Promise(r => wx.showModal({
+      title: '退出登录',
+      content: '退出后将以未登录身份浏览，重新登录即可恢复全部功能与会员权益。',
+      confirmText: '退出',
+      cancelText: '取消',
+      success: r,
+    }))
+    if (!res.confirm) return
+    const result = await userApi.updateProfile({ logout: true })
+    if (result) {
+      app.globalData.user = result
+      this._loadUser()
+      wx.showToast({ title: '已退出登录', icon: 'none', duration: 1500 })
+    }
   },
 
   onShowPurchaseSheet() { this.setData({ showPurchaseSheet: true }) },

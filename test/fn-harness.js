@@ -22,9 +22,11 @@ Module._load = function (request, parent, isMain) {
  * @param {string} name  云函数目录名（如 'getTags'）
  * @param {object} event 事件参数
  * @param {string} openid 模拟的调用者 OPENID（'' 表示未注册的游客）
+ * @param {string} unionid 模拟的 UNIONID（v2.3 登录链路用，默认空）
  */
-function callFn(name, event = {}, openid = '') {
+function callFn(name, event = {}, openid = '', unionid = '') {
   ctx.OPENID = openid
+  ctx.UNIONID = unionid
   const fn = require(path.join(__dirname, '..', 'miniprogram', 'cloudfunctions', name, 'index.js'))
   return fn.main(event, {})
 }

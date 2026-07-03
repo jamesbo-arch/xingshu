@@ -14,6 +14,7 @@ Page({
     commentInput: '',
     showCommentInput: false,
     showPosterSheet: false,
+    showLoginSheet: false,
     userAvatarColor: '#8B7A4A',
     userAvatarInitial: '?',
   },
@@ -29,11 +30,10 @@ Page({
 
   async _loadDiary(id) {
     const res = await diaryApi.getDetailRaw(id)
-    // v2.1：未验证手机号 → 邀请式验证引导，验证成功直达本日记
+    // v2.3：未登录 → 原页拉起微信登录弹窗，登录成功后重载本日记
     if (res.code === -3) {
-      wx.redirectTo({
-        url: `/pages/auth/index?redirect=${encodeURIComponent('/pages/detail/index?id=' + id)}`,
-      })
+      this._pendingId = id
+      this.setData({ showLoginSheet: true })
       return
     }
     if (res.code !== 0 || !res.data) {
@@ -116,6 +116,16 @@ Page({
       await socialApi.deleteComment(id)
       this.setData({ comments: this.data.comments.filter(c => c.id !== id) })
     }
+  },
+
+  // v2.3 登录弹窗：未登录时不展示内容，取消登录则返回上一页
+  onLoginClose() {
+    this.setData({ showLoginSheet: false })
+    if (!this.data.diary) wx.navigateBack()
+  },
+  onLoginSuccess() {
+    this.setData({ showLoginSheet: false })
+    if (this._pendingId) this._loadDiary(this._pendingId)
   },
 
   onShare() { this.setData({ showPosterSheet: true }) },

@@ -11,6 +11,7 @@
 | `test/fn-activity-test.js` | ACT-A01 ~ A11 | M1.5.1 完成时 |
 | `test/fn-permission-test.js` | PERM-A01 ~ A08 | M1.5.2 完成时 |
 | `test/fn-referral-test.js` | REF-A01 ~ A09 | M1.5.4 完成时 |
+| `test/fn-auth-test.js` | AUTH-A01 ~ A06 | v2.3 授权改造完成时 |
 
 全部遵循现有约定：直连 MySQL 校验副作用、测试数据以 `test_` 前缀创建并在结束时硬删、失败退出码非 0。
 
@@ -31,7 +32,7 @@
 | ACT-A07 | 截止时间 | 超过 signup_deadline 报名 → 拒绝 |
 | ACT-A08 | 称呼必填 | 空称呼报名 → code -1 |
 | ACT-A09 | 取消报名 | `activity:cancelSignup` → 行移除/失效，计数 -1；未报名者取消 → 报错 |
-| ACT-A10 | 轻授权可报名 | 仅有 openid 的 guest 身份（未验证手机号）可正常报名——活动只需微信授权 |
+| ACT-A10 | 轻授权可报名 | 仅有 openid 的 guest 身份（未登录）可正常报名——活动只需微信授权（v2.3：前端在详情页拉起登录弹窗） |
 | ACT-A11 | admin 活动管理 | admin 云函数：创建/编辑/上下线活动；报名名单查询返回称呼/联系方式/报名时间 |
 
 ### 人工用例（开发者工具，M2.2 执行）
@@ -51,7 +52,7 @@
 
 ### 自动化用例（fn-permission-test.js）
 
-以三个种子身份执行：guest（未验证手机号）、authed（mock_me 类）、member（mock_yanqiu 类）+ 作者本人。
+以三个种子身份执行：guest（未登录）、authed（mock_me 类）、member（mock_yanqiu 类）+ 作者本人。
 
 | ID | 用例 | 预期 |
 |----|------|------|
@@ -76,14 +77,28 @@
 
 ---
 
-## M1.5.3 授权页文案重构
+## M1.5.3 微信登录半屏弹窗（v2.3 修订：废除手机号验证页，改为 login-sheet 组件）
+
+### 自动化用例（fn-auth-test.js）
 
 | ID | 用例 | 预期 |
 |----|------|------|
-| AUTH-M01（人工） | 文案 | 标题「成为醒书的一员」；互动触发进入时显示情境文案；承诺文字在底部 |
-| AUTH-M02（人工） | 触发点 | 详情点击/点赞/收藏/评论/新建 五个触发点均进入验证页 |
-| AUTH-M03（人工） | 回跳 | 验证成功回到原页面并自动完成原动作（如直达刚才点的日记） |
-| AUTH-A01（自动） | 身份升级 | updateUserProfile upgradeToAuthed：guest→authed 单向，不降级（已有覆盖，回归即可） |
+| AUTH-A01 | 数据列 | users.unionid / authorized_at 列存在 |
+| AUTH-A02 | 新用户登录 | login 创建用户 identity=guest，unionid 落库 |
+| AUTH-A03 | unionid 补录 | 历史用户 unionid 为空时再登录自动补录；已有值不覆盖 |
+| AUTH-A04 | 登录升级 | updateUserProfile authorize：guest→authed，authorized_at 写入 |
+| AUTH-A05 | 退出登录 | updateUserProfile logout：→guest，unionid/member_until 保留 |
+| AUTH-A06 | 会员恢复 | member_until 未过期时 authorize → 直接恢复 member 身份 |
+
+### 人工用例（M2.2 开发者工具回归）
+
+| ID | 用例 | 预期 |
+|----|------|------|
+| AUTH-M01（人工） | 弹窗文案 | 标题「成为醒书的一员」；互动触发显示情境副文案，会员中心显示通用版；底部小字说明仅获取 openid/unionid |
+| AUTH-M02（人工） | 触发点 | 广场点卡片/点赞/收藏/写日记、日记详情（-3）、活动详情、会员中心「微信登录」按钮均拉起半屏弹窗，不发生页面跳转 |
+| AUTH-M03（人工） | 协议勾选 | 未勾选《服务协议》《隐私协议》时点击登录 → 提示先勾选；勾选后图标点亮可登录 |
+| AUTH-M04（人工） | 自动续做 | 登录成功弹窗收起并自动继续原操作（进入详情/完成点赞等）；详情页取消登录则返回上一页 |
+| AUTH-M05（人工） | 退出登录 | 会员中心「设置 → 退出登录」二次确认后回退为未登录态；重新登录后会员身份恢复 |
 
 ---
 
