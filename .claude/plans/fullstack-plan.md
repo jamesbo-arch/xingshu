@@ -282,7 +282,7 @@
     - 小程序：新增 activities Tab 页（预告/往期两态）+ activity-detail 页（文字+图片、一键报名/取消）；tabBar 扩为 5 个（需图标素材）
     - 管理后台：Activities 管理页（创建/编辑/上下线 + 报名名单查看）
     - 范围红线：不做可配置表单、候补、核销、富文本、提醒、Excel 导出（见 PRD 3.1.7 首发范围划分）
-- [ ] **M1.5.2** 日记权限矩阵收紧（PRD v2.1 矩阵表）  `[Backend+Frontend]`
+- [x] **M1.5.2** 日记权限矩阵收紧 — getDiaryDetail 引导码-3/30% 服务端截断；getDiaryList 卡片放宽+摘要防泄露；guest 互动触发验证引导（auth-guard + redirect 回跳）；详情页渐隐+会员 CTA；fn-permission-test 9/9
     - getDiaryDetail：guest 请求公众日记返回引导码；authed 请求会员日记返回服务端截断的前 30% + truncated 标记
     - 详情页：guest 点击卡片进入验证引导（邀请式文案）；会员日记渐隐遮罩 + "完整内容向会员开放" + 开通入口
 - [ ] **M1.5.3** 授权页文案重构 + 小程序名称"醒书"  `[Frontend]`

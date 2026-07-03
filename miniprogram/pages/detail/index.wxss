@@ -401,3 +401,50 @@
   border-radius: 8px;
   background: rgba(126, 102, 64, 0.06);
 }
+
+/* v2.1 会员内容墙：30% 预览渐隐 */
+.detail-content.is-truncated {
+  position: relative;
+  overflow: hidden;
+}
+
+.content-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 160rpx;
+  background: linear-gradient(180deg, rgba(251, 247, 238, 0) 0%, #FBF7EE 92%);
+  pointer-events: none;
+}
+
+.member-wall {
+  text-align: center;
+  padding: 8rpx 40rpx 40rpx;
+}
+
+.member-wall-text {
+  display: block;
+  font-size: 32rpx;
+  letter-spacing: 4rpx;
+  color: #2A2723;
+  margin-bottom: 12rpx;
+}
+
+.member-wall-hint {
+  display: block;
+  font-size: 24rpx;
+  color: #A8A39B;
+  line-height: 1.7;
+  margin-bottom: 28rpx;
+}
+
+.member-wall-btn {
+  display: inline-block;
+  padding: 18rpx 64rpx;
+  border-radius: 999rpx;
+  background: linear-gradient(135deg, #E5C16D, #B89968);
+  color: #FFFCF5;
+  font-size: 28rpx;
+  letter-spacing: 4rpx;
+}

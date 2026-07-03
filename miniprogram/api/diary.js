@@ -7,6 +7,10 @@ module.exports = {
   getDetail(diaryId) {
     return call('getDiaryDetail', { diaryId })
   },
+  // 返回完整 {code, data, msg}，供详情页处理权限引导码（-3 需验证）
+  getDetailRaw(diaryId) {
+    return call('getDiaryDetail', { diaryId }, { raw: true })
+  },
   create(data) {
     return call('createDiary', data)
   },

@@ -28,10 +28,8 @@ App({
     const user = await userApi.login()
     if (user) {
       this.globalData.user = user
-      if (user.identity === 'guest') {
-        wx.reLaunch({ url: '/pages/auth/index' })
-        return
-      }
+      // v2.1 克制原则：不再强制 guest 跳验证页——游客可自由浏览列表，
+      // 验证在互动/查看详情的瞬间触发（utils/auth-guard.js）
     }
     await this.loadTags()
   },

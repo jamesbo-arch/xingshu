@@ -28,11 +28,20 @@ Page({
   },
 
   async _loadDiary(id) {
-    const raw = await diaryApi.getDetail(id)
-    if (!raw) {
-      wx.showToast({ title: '日记不存在', icon: 'none', duration: 1500 })
+    const res = await diaryApi.getDetailRaw(id)
+    // v2.1：未验证手机号 → 邀请式验证引导，验证成功直达本日记
+    if (res.code === -3) {
+      wx.redirectTo({
+        url: `/pages/auth/index?redirect=${encodeURIComponent('/pages/detail/index?id=' + id)}`,
+      })
       return
     }
+    if (res.code !== 0 || !res.data) {
+      wx.showToast({ title: res.msg || '日记不存在', icon: 'none', duration: 1500 })
+      setTimeout(() => wx.navigateBack(), 1200)
+      return
+    }
+    const raw = res.data
     const diary = mapper.diary(raw)
     const commentsData = await socialApi.getComments(id, 1)
     const comments = commentsData ? commentsData.list.map(mapper.comment) : []
@@ -54,6 +63,8 @@ Page({
     const images = this.data.diary.images || []
     wx.previewImage({ current: images[e.currentTarget.dataset.index], urls: images })
   },
+
+  onGoMember() { wx.switchTab({ url: '/pages/member/index' }) },
 
   async onLike() {
     const diary = this.data.diary

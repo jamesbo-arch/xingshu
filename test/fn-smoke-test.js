@@ -17,12 +17,15 @@ async function run() {
     if (!Array.isArray(r.data) || r.data.length < 20) throw new Error(`got ${r.data && r.data.length}`)
   })
 
-  await test('getDiaryList square 模式（游客）只返回 public 日记', async () => {
+  await test('getDiaryList square 模式（游客）可见公众+会员卡片、无私密、全部摘要', async () => {
+    // v2.1 权限矩阵：guest 列表可见公众+会员的卡片（内容截断为摘要），私密不可见
     const r = await callFn('getDiaryList', { mode: 'square', page: 1, pageSize: 10 }, '')
     if (r.code !== 0) throw new Error(`code=${r.code}`)
     if (!Array.isArray(r.data.list)) throw new Error('data.list 不是数组')
-    const bad = r.data.list.find(d => d.permission !== 'public')
-    if (bad) throw new Error(`游客看到了 ${bad.permission} 日记 id=${bad.id}`)
+    const leak = r.data.list.find(d => d.permission === 'private')
+    if (leak) throw new Error(`游客看到了私密日记 id=${leak.id}`)
+    const notExcerpt = r.data.list.find(d => !d.excerpt)
+    if (notExcerpt) throw new Error(`游客拿到了未截断内容 id=${notExcerpt.id}`)
   })
 
   await test('getDiaryList mine 模式只返回本人日记', async () => {

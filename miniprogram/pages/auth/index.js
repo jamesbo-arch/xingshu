@@ -11,9 +11,11 @@ Page({
     manualPhone: '',
   },
 
-  onLoad() {
+  onLoad(options) {
     const info = wx.getSystemInfoSync()
     this.setData({ statusBarHeight: info.statusBarHeight || 0 })
+    // v2.1：互动触发进入时携带回跳地址，验证成功后直达原目标
+    this._redirect = options.redirect ? decodeURIComponent(options.redirect) : ''
   },
 
   onManualPhoneInput(e) {
@@ -59,7 +61,14 @@ Page({
       if (result) {
         app.globalData.user = result
         await app.loadTags()
-        wx.reLaunch({ url: '/pages/square/index' })
+        if (this._redirect) {
+          wx.redirectTo({
+            url: this._redirect,
+            fail: () => wx.reLaunch({ url: '/pages/square/index' }),
+          })
+        } else {
+          wx.reLaunch({ url: '/pages/square/index' })
+        }
       } else {
         throw new Error('save failed')
       }

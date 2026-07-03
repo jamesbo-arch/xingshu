@@ -27,18 +27,14 @@ exports.main = async (event, context) => {
       where += ' AND d.id IN (SELECT target_id FROM interactions WHERE user_id = ? AND target_type = ? AND action = ?)'
       params.push(userId, 'diary', 'favorite')
     } else {
-      // square: exclude private diaries of other users
+      // square（v2.1 矩阵）：所有身份可见公众+会员日记的卡片，仅排除他人私密；
+      // 无完整阅读权的行在返回前截断为摘要（见下方 EXCERPT 处理）
       if (userId) {
         where += ' AND (d.permission != ? OR d.user_id = ?)'
         params.push('private', userId)
       } else {
-        where += ' AND d.permission = ?'
-        params.push('public')
-      }
-      // member check
-      if (userIdentity !== 'member') {
         where += ' AND d.permission != ?'
-        params.push('member')
+        params.push('private')
       }
     }
   }
@@ -87,10 +83,24 @@ exports.main = async (event, context) => {
     [...likedParams, ...params, pageSize, offset]
   )
 
+  // v2.1 内容墙：无完整阅读权的行截断为摘要，防止列表接口泄露全文
+  const EXCERPT_LEN = 80
+  const canReadFull = (d) => {
+    if (userId && d.user_id === userId) return true
+    if (userIdentity === 'member') return true
+    if (userIdentity === 'authed') return d.permission === 'public'
+    return false // guest：一律摘要
+  }
+
   const list = diaries.map(d => {
     const tags = d.tags_csv ? d.tags_csv.split(',') : []
     delete d.tags_csv
-    return { ...d, tags, isLiked: d.isLiked === 1, isFavorited: d.isFavorited === 1 }
+    const row = { ...d, tags, isLiked: d.isLiked === 1, isFavorited: d.isFavorited === 1 }
+    if (!canReadFull(d)) {
+      row.content = (d.content || '').slice(0, EXCERPT_LEN)
+      row.excerpt = true
+    }
+    return row
   })
 
   return { code: 0, data: { list, total, page, pageSize } }

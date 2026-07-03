@@ -3,6 +3,7 @@ const diaryApi = require('../../api/diary')
 const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
 const cache = require('../../utils/cache')
+const { requireAuth } = require('../../utils/auth-guard')
 
 Page({
   data: {
@@ -93,14 +94,10 @@ Page({
     this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true))
   },
 
+  // v2.1：guest 点卡片进入验证引导（验证后直达该日记）；authed 看会员日记走详情页渐隐
   onCardOpen(e) {
     const { id } = e.detail
-    const diary = this.data.diaries.find(d => d.id === id)
-    const identity = (app.globalData.user || {}).identity || 'guest'
-    if (diary && diary.permission === 'member' && identity !== 'member') {
-      this.setData({ showMemberGuard: true, userIdentity: identity })
-      return
-    }
+    if (!requireAuth('/pages/detail/index?id=' + id)) return
     wx.navigateTo({ url: '/pages/detail/index?id=' + id })
   },
 
@@ -120,6 +117,7 @@ Page({
   onGuardJoinMember() { this.setData({ showMemberGuard: false }); wx.switchTab({ url: '/pages/member/index' }) },
 
   async onCardLike(e) {
+    if (!requireAuth()) return
     const { id } = e.detail
     const result = await socialApi.toggleLike(id, 'diary')
     if (result) {
@@ -134,6 +132,7 @@ Page({
   },
 
   async onCardFav(e) {
+    if (!requireAuth()) return
     const { id } = e.detail
     const result = await socialApi.toggleFav(id)
     if (result) {
@@ -149,6 +148,9 @@ Page({
   },
   onClosePoster() { this.setData({ showPosterSheet: false, posterDiary: null }) },
 
-  onFabTap() { wx.navigateTo({ url: '/pages/compose/index' }) },
+  onFabTap() {
+    if (!requireAuth('/pages/compose/index')) return
+    wx.navigateTo({ url: '/pages/compose/index' })
+  },
   onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
 })

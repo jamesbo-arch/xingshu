@@ -28,8 +28,15 @@
       <text wx:for="{{diary.tags}}" wx:key="*this" class="seal-tag lg">{{item}}</text>
     </view>
 
-    <view class="detail-content">
+    <view class="detail-content {{diary.truncated ? 'is-truncated' : ''}}">
       <text class="content-text">{{diary.content}}</text>
+      <view wx:if="{{diary.truncated}}" class="content-fade"></view>
+    </view>
+
+    <view wx:if="{{diary.truncated}}" class="member-wall">
+      <text class="member-wall-text serif">完整内容向会员开放</text>
+      <text class="member-wall-hint">会员费不只是看内容，更是你对这份认真的承诺</text>
+      <view class="member-wall-btn" bindtap="onGoMember">了解会员</view>
     </view>
 
     <view wx:if="{{diary.images && diary.images.length}}" class="detail-images">

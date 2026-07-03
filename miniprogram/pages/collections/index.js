@@ -69,14 +69,9 @@ Page({
   onCloseFilter() { this.setData({ showFilterSheet: false }) },
   onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
 
+  // v2.1：会员日记直接进详情（非会员见 30% 渐隐），不再弹窗拦截
   onCardOpen(e) {
     const { id } = e.detail
-    const diary = this.data.diaries.find(d => d.id === id)
-    const identity = (app.globalData.user || {}).identity || 'guest'
-    if (diary && diary.permission === 'member' && identity !== 'member') {
-      this.setData({ showMemberGuard: true, userIdentity: identity })
-      return
-    }
     wx.navigateTo({ url: '/pages/detail/index?id=' + id })
   },
   onCloseMemberGuard() { this.setData({ showMemberGuard: false }) },
