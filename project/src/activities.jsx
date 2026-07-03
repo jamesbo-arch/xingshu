@@ -131,7 +131,7 @@ function SignupSheet({ a, app, onClose }) {
   );
 }
 
-// ───────────────── 活动海报（带参小程序码 + 推荐人说明）─────────────────
+// ───────────────── 活动海报（带参小程序码，推荐人参数隐含于码中不展示）─────────────────
 function ActivityPosterSheet({ a, app, onClose }) {
   return (
     <>
