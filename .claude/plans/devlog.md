@@ -648,3 +648,29 @@ M2.1 云函数 dev 部署、M2.2 人工回归、M3.1 密码轮换。
 
 **验证**：
 - grep 确认全文未勾选项 17 个全部位于路线图章节，原位置无残留复选框
+
+---
+
+### 2026-07-03 18:20 — M1.1 脏文件入库 + M1.2 头像上传核验关闭
+
+**类型**：前端 | 配置 | 文档 | 测试
+**模型**：claude-fable-5
+**Agent**：主会话直接执行
+**计划关联**：上线路线图 M1.1 / M1.2（=2.1.4）
+**修改文件**：
+- 提交 5d764b4 — member 页 UI 升级（印章徽标、权益双行卡片）+ auth 页移除微信一键取号改为手动输入（6 月 4 日遗留改动，用户确认入库）
+- 提交 f93e520 — project.config.json 开发者工具配置漂移
+- 提交 6d1d13c — doc/04_醒书日记四方旅程图.html 设计文档
+- `.claude/plans/fullstack-plan.md` — M1.1 / M1.2 打勾
+
+**变更说明**：
+M1.1：入库前核验——node --check 语法通过，auth/member 两页 wxml 事件绑定与 js 方法
+逐一比对无悬空引用。M1.2：核验发现头像上传链路 Phase 6 已完整实现
+（button open-type="chooseAvatar" → 临时路径检测 → wx.cloud.uploadFile 到 avatars/ →
+updateUserProfile 存 avatar_url），无需新开发，通过 harness 做了
+设置→读回→还原的回环验证后直接关闭该项。
+
+**验证**：
+- updateUserProfile 头像回环：PASS（mock_me 设置 fake fileID → 读回一致 → 还原）
+- wxml/js 绑定一致性比对：无差异
+- 提交后工作区干净（仅 settings.local.json 随权限授权自然变化）

@@ -77,12 +77,25 @@
       "Bash(grep -nE '^#{2,3} |\\\\- \\\\[ \\\\]' .claude/plans/fullstack-plan.md)",
       "Bash(node scripts/backup-db.js --verify)",
       "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('.claude/settings.local.json','utf8'\\)\\); console.log\\('JSON 有效，Bash/PowerShell 全量放行规则已生效'\\)\")",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(SCRATCH=\"C:/Users/gzcjb/AppData/Local/Temp/claude/d--workspace-xingshu/adc299ee-e1cc-4b30-8ead-7d7413a756c9/scratchpad\" *)",
+      "Bash(sed -i 's/- \\\\[ \\\\] \\\\*\\\\*3\\\\.4\\\\.3\\\\*\\\\* 本地缓存（后续迭代）/- [x] **3.4.3** 本地缓存（utils\\\\/cache.js TTL 封装；标签 + 广场首屏 stale-while-revalidate）/' .claude/plans/fullstack-plan.md)",
+      "Bash(node --check miniprogram/pages/square/index.js)",
+      "Bash(node --check miniprogram/pages/compose/index.js)",
+      "Bash(sed -i \\\\ *)",
+      "Bash(stat -c '%y %n' miniprogram/pages/member/index.wxml miniprogram/pages/auth/index.js miniprogram/project.config.json \"doc/04_醒书日记四方旅程图.html\" 2>/dev/null | sed 's/\\\\.[0-9]* +0800//'; echo \"---最后一次提交时间---\"; git log -1 --format='%ai %s' e050dc4)",
+      "Read(//d/workspace/xingshu/**)",
+      "Bash(node --check miniprogram/pages/member/index.js)",
+      "Bash(node --check miniprogram/pages/auth/index.js)",
+      "Bash(git commit -m 'chore: 开发者工具自动写入的编译选项（minifyWXML/swc/editorSetting 等） *)",
+      "Bash(git commit -m 'docs: 新增醒书日记四方旅程图设计文档 *)",
+      "Bash(git commit -m 'docs: M1.1/M1.2 完成 — 脏文件入库核验记录 + 头像上传核验关闭 *)"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",
       "C:\\Users\\James\\.agents\\skills\\miniprogram-development",
-      "D:\\workspace\\xingshu\\.claude\\plans"
+      "D:\\workspace\\xingshu\\.claude\\plans",
+      "d:\\workspace\\xingshu\\.claude\\plans"
     ]
   }
 }

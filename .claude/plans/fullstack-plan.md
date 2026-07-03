@@ -266,8 +266,8 @@
 
 ### M1 — 开发收尾（Claude 为主，头部有 2 个用户决策）
 
-- [ ] **M1.1** 处置 member/auth 页约 900 行未提交改动（提交 / 丢弃 / 继续完善）`[用户决策]` → 解锁 M1.2
-- [ ] **M1.2** (=2.1.4) 头像上传：选图 → 云存储直传 → updateProfile  `[Claude]`
+- [x] **M1.1** 处置 member/auth 页未提交改动 — 用户确认全部提交（5d764b4 UI 升级 / f93e520 配置 / 6d1d13c 文档）
+- [x] **M1.2** (=2.1.4) 头像上传 — 核验发现 Phase 6 已实现（chooseAvatar → wx.cloud.uploadFile avatars/ → updateUserProfile），harness 回环验证通过
 - [ ] **M1.3** 管理后台对接真实云函数 API（替换 `admin/src/api/index.js` 的 mock）`[Claude]` → 解锁 M1.4；**会员线下激活闭环的上线前置**（否则管理员无法在界面上确认收款激活会员）
 - [ ] **M1.4** (=4.2.4 + 4.3.5) admin 导出用户 Excel + 批量操作  `[Claude]`
 
