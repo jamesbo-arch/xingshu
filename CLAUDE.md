@@ -73,13 +73,15 @@
 
 "醒书日记"（Xingshu Diary）—— 一款带有社区互动和会员体系的微信小程序日记应用。最初在 `project/` 目录下以 HTML/CSS/JS 原型设计，然后在 `miniprogram/` 目录下实现。设计交接的聊天记录位于 `chats/chat1.md`。
 
-应用有三种用户身份等级（`guest`、`authed`、`member`）和三种日记权限（`public`、`member`、`private`）。目前没有后端——所有状态存储在 `app.globalData` 中，由 `data/mock.js` 提供种子数据。
+应用有三种用户身份等级（`guest`、`authed`、`member`）和三种日记权限（`public`、`member`、`private`）。后端采用腾讯 CloudBase 云函数（22 个）+ MySQL 数据库（9 张表，通过 cpolar 隧道 `33.tcp.cpolar.top:11028` 连接）。身份认证：访客需通过 `auth` 页面完成手机号验证升级为 `authed`；会员通过线下转账 + 管理员手动确认激活。`data/mock.js` 仅保留作为设计参考，不再用于运行时数据。
 
 ## 开发方式
 
 在微信开发者工具中打开 `miniprogram/` 作为项目根目录。appid 为 `wx841de0568655b384`，基础库版本 `2.26.0`。
 
-没有构建工具、代码检查工具或测试框架。项目为纯微信小程序原生代码——每个页面/组件包含四种文件：`.js`、`.json`、`.wxml`、`.wxss`。
+项目为纯微信小程序原生代码——每个页面/组件包含四种文件：`.js`、`.json`、`.wxml`、`.wxss`。
+
+`miniprogram/project.private.config.json` 由微信开发者工具本地生成（含个人 libVersion、compileHotReLoad 等设置），**不得纳入 Git 追踪**，已在 `.gitignore` 中排除。
 
 ## Git 提交规则
 
@@ -136,7 +138,7 @@
 
 ## 架构
 
-### 页面（共 6 个，4 个 tab 页 + 2 个非 tab 页）
+### 页面（共 7 个，4 个 tab 页 + 3 个非 tab 页）
 
 | 页面 | 路由 | Tab | 用途 |
 |------|-------|-----|---------|
@@ -146,6 +148,7 @@
 | member | `pages/member/index` | 是 (3) | 会员中心——会员信息、购买流程、个人资料编辑 |
 | detail | `pages/detail/index` | 否 | 日记详情——查看单篇日记及评论，点赞/收藏/分享 |
 | compose | `pages/compose/index` | 否 | 写日记——新建/编辑日记表单，含标签和权限选择 |
+| auth | `pages/auth/index` | 否 | 手机号验证——访客强制验证手机号并同意协议后升级为 authed（Phase 6 新增） |
 
 ### 共享组件
 
@@ -163,16 +166,73 @@
 - `addDiary(diary)` / `updateDiary(id, patch)` / `deleteDiary(id)` — 日记增删改
 - `updateUser(patch)` — 将 patch 合并到当前用户
 
+### API 封装层（`miniprogram/api/`）
+
+前端与云函数之间的桥梁，统一通过 `wx.cloud.callFunction` 调用：
+
+| 文件 | 职责 |
+|------|------|
+| `request.js` | 核心封装——`call(name, data, options?)`，统一处理 `{code, data, msg}` 响应格式，code≠0 时自动 toast 错误 |
+| `user.js` | `login` / `getUserInfo` / `updateProfile` / `checkMember` / `getPhoneNumber` |
+| `diary.js` | `getList` / `getDetail` / `create` / `update` / `remove` |
+| `social.js` | `toggleLike` / `toggleFav` / `createComment` / `getComments` / `deleteComment` |
+| `tag.js` | `getAll` / `add` |
+
+所有 API 文件均通过 `mapper.js` 将 MySQL 行转为前端 camelCase 格式后再返回。
+
 ### 工具模块
 
 - **`utils/filter.js`** — `applyFilters(diaries, mode, search, filters)`。mode（`square`/`collections`/`mine`）先按收藏/归属/可见性进行预筛选，再应用搜索关键词、标签、作者和时间筛选（快捷范围、日期范围或年月）。
+- **`utils/mapper.js`** — MySQL `snake_case` ↔ 前端 `camelCase` 字段映射。`toDiary(dbRow)`、`toComment(dbRow)`、`toUser(dbRow)` 等函数将数据库行转为前端格式；反向映射 `fromDiary(data)` 用于写入。所有 API 层（`api/`）均先通过 mapper 再做返回。
 - **`utils/color.js`** — `hueToColor(hue)` 根据色相值映射到暖土色系头像颜色。`getInitial(name)` 返回名字首字符作为头像兜底展示。
 - **`utils/toast.js`** — 统一封装 `wx.showToast`：`success(title)`、`info(title, duration?)`、`error(title)`。
 
-### 自定义 TabBar
+### 测试
 
-`custom-tab-bar/` 实现了四 tab 导航栏。每个页面的 `onShow` 中调用 `this.getTabBar().setData({ selected: N })` 来同步当前选中态。
+统一入口为根目录 `npm test`（Loop Engineering 的验证闭环，任一失败即退出码非 0）：
+
+```bash
+npm test          # 全量：连通性检查 → 24 条 utils 单测 → 15 条 MySQL 集成测试 → 5 条云函数冒烟测试
+npm run test:unit # 仅 utils 纯函数单测（node:test，不依赖数据库）
+npm run test:e2e  # 20 条端到端流程测试（含写库与清理）
+node test/seed.js       # 向 MySQL 插入种子数据
+node test/reset-user.js # 列出所有用户；带 <openid> 参数重置指定用户为 guest（开发调试用）
+```
+
+关键测试文件：
+- `test/ping-db.js` — 数据库连通性检查，隧道不可达时 5 秒内失败并给出指引。**自动化循环遇到此失败应停止并报告，而非重试。**
+- `test/unit/*.test.js` — `utils/`（filter/mapper/color）纯函数单测，使用 Node 内置 `node:test`
+- `test/fn-harness.js` — 云函数本地调用 harness：拦截 `wx-server-sdk` 注入可控 OPENID，云函数代码无需部署即可本地真实执行
+- `test/fn-smoke-test.js` — 基于 harness 的只读冒烟测试（getTags / getDiaryList / getUserInfo）
+
+测试依赖根目录的 `mysql2`（根 `package.json` 唯一依赖），首次运行前需在仓库根目录 `npm install`。
+
+测试文档：
+- `test/checklist.md` — 回归测试清单（3×3 权限矩阵 + 6 页面 + 组件动画）
+- `test/frontend-test-cases.md` — 前端测试用例（40+ 条，含 P0/P1/P2 优先级）
+- `test/常用测试指令.md` — 常用测试命令速查
+
+### CloudBase 云函数
+
+**环境 ID**：`cloud1-1gpabyik2db3478f`（在 `app.js` 中通过 `wx.cloud.init` 初始化，根目录 `cloudbaserc.json` 也指向同一环境）。早期 Phase 1 曾使用 `awakebook-env-1g0oford0bea44cc`（已于 Phase 6 弃用，勿再使用）。
+
+**云函数目录**：`miniprogram/cloudfunctions/` 下共 22 个云函数（按类别分组见完整计划 `.claude/plans/fullstack-plan.md` Phase 2）。
+
+**数据库连接配置（唯一来源：根目录 `.env`）**：每个云函数目录下的 `db.js` 由 `npm run sync-db`（`scripts/sync-db-config.js`）从 `.env` 生成，**已从 Git 追踪中排除，勿手改、勿提交**。修改连接信息（如 cpolar 隧道地址变更）的流程：改 `.env` → `npm run sync-db` → 重新部署云函数。测试脚本统一通过 `config/db.js` 读取同一份 `.env`。当前连接目标为 `33.tcp.cpolar.top:11028/xingshu_dev`。新 clone 仓库后需先复制 `.env.example` 为 `.env` 并运行 `npm run sync-db`。
+
+### 管理后台
+
+`admin/` 是 Vue 3 + Vite 独立 Web 应用（6 个页面：Dashboard / Users / UserDetail / Diaries / DiaryDetail / Interactions）。**当前 `src/api/index.js` 使用 mock 数据，尚未对接生产云函数。** 构建产物约 100KB，UI 配色为深蓝主色 `#3578F6`。
+
+```bash
+cd admin
+npm install       # 首次
+npm run dev       # 本地开发服务器
+npm run build     # 构建产物
+```
 
 ### 设计参考
 
 `project/index.html` 是最终原型（主设计文件）。`chats/chat1.md` 中的聊天记录包含设计决策：温暖文艺的视觉风格，衬线字体标题，纸质感，印章风格标签，会员内容采用金色点缀，背景色为 `#FBF7EE` 暖纸色。
+
+产品需求文档位于 `doc/醒书日记小程序及管理后台PRD文档.md`，原型设计资料位于 `doc/醒书日记-原型设计/`。

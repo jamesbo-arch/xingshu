@@ -456,3 +456,41 @@
 - `node test/api-test.js` → 15/15 PASS
 - `node test/e2e-flow-test.js` → 20/20 PASS
 - 所有测试数据已自动清理
+
+---
+
+### 2026-07-03 15:30 — Loop Engineering 第一阶段：风险修复 + 验证闭环
+
+**类型**：配置 | 测试
+**模型**：claude-fable-5
+**Agent**：主会话直接执行
+**计划关联**：Loop Engineering 落地路径第一阶段（风险修复 + 后端验证环）
+**修改文件**：
+- `.env` / `.env.example` — 数据库连接配置唯一来源（.env 不入 Git）
+- `config/db.js` — 共享配置加载器，test/ 脚本统一由此读取连接信息
+- `scripts/sync-db-config.js` — 从 .env 重新生成 20 个云函数 db.js
+- `.gitignore` — 排除 .env、cloudfunctions/*/db.js、project.private.config.json
+- `test/api-test.js` / `e2e-flow-test.js` / `seed.js` / `reset-user.js` — 内嵌连接信息改为引用 config/db.js
+- `test/ping-db.js` — 连通性快速检查（5 秒超时，循环遇错应停止而非重试）
+- `test/unit/{filter,mapper,color}.test.js` — utils 纯函数单测 24 条（node:test）
+- `test/fn-harness.js` — 云函数本地调用 harness（拦截 wx-server-sdk 注入 OPENID）
+- `test/fn-smoke-test.js` — 云函数只读冒烟测试 5 条
+- `package.json` — 新增 test / test:unit / test:e2e / sync-db 脚本
+- `cloudbaserc.json` — envId 修正为 cloud1-1gpabyik2db3478f（与 app.js 对齐）
+- `CLAUDE.md` — 更新测试章节与云函数连接配置说明
+
+**变更说明**：
+1. 风险修复：数据库凭据从 24 处硬编码（20 个 db.js + 4 个测试脚本）收敛到根目录 .env 单一来源；
+   20 个 db.js 移出 Git 追踪（git rm --cached），由 sync 脚本按需生成。
+2. Loop Engineering 第一阶段：建立统一 npm test 验证闭环——连通性检查 → utils 单测 →
+   MySQL 集成测试 → 云函数本地冒烟测试，任一失败退出码非 0，可作为自动化循环的出口判据。
+3. 云函数代码首次可本地真实执行（此前 e2e 测试仅直连 SQL，不经过云函数代码路径）。
+
+**遗留风险**（需用户决策）：
+- 数据库密码仍存在于 Git 历史中，且当前密码强度弱。建议：改 MySQL 密码 → 更新 .env →
+  npm run sync-db → 重新部署 20 个云函数（顺序不可颠倒，否则线上云函数断连）。
+
+**验证**：
+- `npm test` → 连通性 OK + 24/24 单测 + 15/15 集成 + 5/5 冒烟，EXIT=0
+- `npm run test:e2e` → 20/20 PASS，测试数据自动清理
+- `git check-ignore` 确认 .env、db.js、project.private.config.json 均被忽略

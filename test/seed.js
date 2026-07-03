@@ -1,13 +1,7 @@
 // 种子数据脚本 — 将 mock.js 数据写入 MySQL
 const mysql = require('mysql2/promise')
 
-const DB = {
-  host: '33.tcp.cpolar.top',
-  port: 11028,
-  user: 'james',
-  password: '751279',
-  database: 'xingshu_dev',
-}
+const DB = require('../config/db')
 
 const USERS = [
   { openid: 'mock_yanqiu',    nickname: '砚秋',   avatarHue: 35,  identity: 'member' },

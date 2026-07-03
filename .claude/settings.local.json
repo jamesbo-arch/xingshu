@@ -37,11 +37,45 @@
       "Bash(rm -f src/components/HelloWorld.vue src/style.css)",
       "Bash(npm run *)",
       "Bash(node test/api-test.js)",
-      "Bash(node test/e2e-flow-test.js)"
+      "Bash(node test/e2e-flow-test.js)",
+      "Bash(Get-ChildItem -Recurse -Depth 2 \"d:\\\\workspace\\\\xingshu\\\\admin\\\\\")",
+      "Bash(Get-ChildItem -Recurse -Depth 0 -Filter \"*.test.*\" \"d:\\\\workspace\\\\xingshu\")",
+      "Bash(Get-ChildItem -Recurse -Depth 0 -Filter \"*.spec.*\" \"d:\\\\workspace\\\\xingshu\")",
+      "Bash(Get-ChildItem -Recurse -Depth 0 -Filter \"test*\" \"d:\\\\workspace\\\\xingshu\")",
+      "Bash(Get-ChildItem \"d:\\\\workspace\\\\xingshu\\\\.claude\\\\settings.json\" -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem \"d:\\\\workspace\\\\xingshu\\\\.claude\\\\settings.local.json\" -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem -Recurse -Directory \"d:\\\\workspace\\\\xingshu\\\\miniprogram\\\\pages\\\\\")",
+      "Bash(Get-ChildItem \"d:\\\\workspace\\\\xingshu\\\\.github\\\\workflows\\\\*.yml\" -Recurse -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem \"d:\\\\workspace\\\\xingshu\" -Filter \"Dockerfile*\" -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem \"d:\\\\workspace\\\\xingshu\" -Filter \"docker-compose*\" -ErrorAction SilentlyContinue)",
+      "Bash(Get-ChildItem \"d:\\\\workspace\\\\xingshu\" -Filter \".docker*\" -ErrorAction SilentlyContinue)",
+      "Bash(git -C \"d:/workspace/xingshu\" log --oneline -5 --format=\"%h %ai %s\")",
+      "Bash(git -C \"d:/workspace/xingshu\" -c diff.renameLimit=9999 diff --name-status HEAD~5..HEAD -- \"miniprogram/project.private.config.json\")",
+      "Bash(git -C \"d:/workspace/xingshu\" log --all --oneline -- \"miniprogram/project.private.config.json\")",
+      "Bash(git -C \"d:/workspace/xingshu\" status --short)",
+      "Bash(git -C \"d:/workspace/xingshu\" diff --stat HEAD)",
+      "Bash(git -C \"d:/workspace/xingshu\" diff HEAD -- .claude/settings.local.json)",
+      "Bash(git -C \"d:/workspace/xingshu\" diff HEAD -- miniprogram/project.config.json)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Read(//c/Users/gzcjb/.claude/**)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\(process.env.USERPROFILE + '/.claude/settings.json', 'utf8'\\)\\); console.log\\('JSON 语法有效'\\)\")",
+      "Bash(node scripts/sync-db-config.js)",
+      "Bash(git rm *)",
+      "Bash(git check-ignore *)",
+      "Bash(node test/ping-db.js)",
+      "Bash(node test/reset-user.js)",
+      "Bash(node --test test/unit/)",
+      "Bash(node --test \"test/unit/*.test.js\")",
+      "Bash(node test/fn-smoke-test.js)",
+      "Bash(npm test *)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(cat >> *)"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",
-      "C:\\Users\\James\\.agents\\skills\\miniprogram-development"
+      "C:\\Users\\James\\.agents\\skills\\miniprogram-development",
+      "D:\\workspace\\xingshu\\.claude\\plans"
     ]
   }
 }

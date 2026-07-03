@@ -1,7 +1,7 @@
 // API 集成测试 — 直接读 MySQL 验证数据结构完整性
 const mysql = require('mysql2/promise')
 
-const DB = { host:'33.tcp.cpolar.top', port:11028, user:'james', password:'751279', database:'xingshu_dev' }
+const DB = require('../config/db')
 
 async function run() {
   const db = await mysql.createConnection(DB)

@@ -1,3 +1,10 @@
 node_modules/
 miniprogram/cloudfunctions/*/node_modules/
 package-lock.json
+
+# 数据库连接凭据 — 唯一来源为 .env，各云函数 db.js 由 scripts/sync-db-config.js 生成
+.env
+miniprogram/cloudfunctions/*/db.js
+
+# 微信开发者工具本地生成的个人配置
+miniprogram/project.private.config.json
