@@ -197,11 +197,7 @@ function ActivityPosterSheet({ a, app, onClose }) {
           </div>
         </div>
 
-        <div style={{ fontSize: 10, color: 'var(--ink-5)', textAlign: 'center', margin: '10px 0' }}>
-          醒书人 No.{app.user?.memberNo || 8} 与你分享 · 扫码进入将记录 TA 为你的推荐人
-        </div>
-
-        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
           <button className="btn btn-ghost" style={{ flex: 1 }}
                   onClick={() => { app.toast('图片已保存至相册'); onClose(); }}>
             保存图片

@@ -778,11 +778,8 @@ function PosterSheet({ d, onClose, app }) {
           </div>
         </div>
 
-        <div style={{ fontSize: 11, color: 'var(--ink-4)', textAlign: 'center', margin: '12px 0 2px' }}>
+        <div style={{ fontSize: 11, color: 'var(--ink-4)', textAlign: 'center', margin: '12px 0' }}>
           扫描二维码查看完整日记
-        </div>
-        <div style={{ fontSize: 10, color: 'var(--ink-5)', textAlign: 'center', marginBottom: 10 }}>
-          醒书人 No.8 与你分享 · 扫码进入将记录 TA 为你的推荐人
         </div>
 
         <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
