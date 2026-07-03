@@ -105,28 +105,36 @@ Page({
   onBack() { wx.navigateBack() },
 
   async onPublish() {
+    // 防双击：图片上传拉长发布耗时，重复点击会创建重复日记
+    if (this._publishing) return
+    this._publishing = true
     const { title, content, selectedTags, permission, isEditing, diaryId } = this.data
     if (!this.canPublish()) {
       wx.showToast({ title: '标题和内容不能为空', icon: 'none', duration: 1500 })
+      this._publishing = false
       return
     }
-    let images
     try {
-      if (this.data.images.length) wx.showLoading({ title: '上传图片中…', mask: true })
-      images = await this.uploadImages()
-    } catch (err) {
-      wx.hideLoading()
-      wx.showToast({ title: '图片上传失败，请重试', icon: 'none', duration: 1500 })
-      return
-    }
-    if (this.data.images.length) wx.hideLoading()
-    const data = { title: title.trim(), content: content.trim(), images, tags: selectedTags, permission }
-    if (isEditing && diaryId) {
-      const result = await diaryApi.update(diaryId, data)
-      if (result) { wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 }); wx.navigateBack() }
-    } else {
-      const result = await diaryApi.create(data)
-      if (result) { wx.showToast({ title: '发布成功', icon: 'success', duration: 1500 }); wx.navigateBack() }
+      let images
+      try {
+        if (this.data.images.length) wx.showLoading({ title: '上传图片中…', mask: true })
+        images = await this.uploadImages()
+      } catch (err) {
+        wx.hideLoading()
+        wx.showToast({ title: '图片上传失败，请重试', icon: 'none', duration: 1500 })
+        return
+      }
+      if (this.data.images.length) wx.hideLoading()
+      const data = { title: title.trim(), content: content.trim(), images, tags: selectedTags, permission }
+      if (isEditing && diaryId) {
+        const result = await diaryApi.update(diaryId, data)
+        if (result) { wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 }); wx.navigateBack() }
+      } else {
+        const result = await diaryApi.create(data)
+        if (result) { wx.showToast({ title: '发布成功', icon: 'success', duration: 1500 }); wx.navigateBack() }
+      }
+    } finally {
+      this._publishing = false
     }
   },
 })

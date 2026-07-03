@@ -47,6 +47,9 @@ Page({
   },
 
   async _loadDiaries(reset) {
+    // 防重入：缓存使首屏瞬间可滚动，网络返回前触底会用未自增的 page 重复请求
+    if (this._loading) return
+    this._loading = true
     const page = reset ? 1 : this.data.page
     const plain = !this.data.search && !this._isFiltersActive()
     // 冷启动首屏：无搜索/筛选时先展示缓存的第一页，网络返回后覆盖
@@ -72,6 +75,7 @@ Page({
         filtersActive: active,
       })
     }
+    this._loading = false
   },
 
   _isFiltersActive() {
