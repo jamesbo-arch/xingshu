@@ -529,3 +529,27 @@
 **验证**：
 - `npm test` 全绿：连通性 + 25/25 单测 + 16/16 集成 + 5/5 冒烟 + 5/5 回环，EXIT=0
 - 回环测试确认 JSON 列经 mysql2 自动解析为数组、空数组清除、软删除后不可查
+
+---
+
+### 2026-07-03 16:25 — 7.3 数据库备份脚本（自主循环第 2 轮）
+
+**类型**：后端 | 配置
+**模型**：claude-fable-5
+**Agent**：自主循环（/loop 动态节奏）
+**计划关联**：Phase 7.3 — 数据备份
+**修改文件**：
+- `scripts/backup-db.js` — 纯 Node 备份脚本（无需 mysqldump）：SHOW CREATE TABLE + 分批 INSERT 导出到 backups/*.sql；--verify 模式恢复到临时库比对行数后删除临时库
+- `package.json` — 新增 npm run backup
+- `.gitignore` — 排除 backups/
+- `.claude/plans/fullstack-plan.md` — 7.3 打勾（定时调度 schtasks 命令见脚本头部注释，需宿主机手动启用）
+
+**变更说明**：
+选择 7.3 而非 4.2.4（admin 导出 Excel）：admin 仍用 mock 数据，导出功能等 API 对接后做才有意义；
+备份脚本在密码轮换悬而未决 + cpolar 隧道脆弱的背景下价值最高。JSON 列（diaries.images）
+经 JSON.stringify 后转义写入，恢复校验确认无损。
+
+**验证**：
+- `node scripts/backup-db.js --verify` → 9 张表 56 行导出 17.8KB，恢复临时库后行数全部一致，临时库已清理
+- `npm test` 回归全绿（25 单测 + 16 集成 + 5 冒烟 + 5 回环）
+- `git check-ignore backups/` 确认备份产物不入 Git

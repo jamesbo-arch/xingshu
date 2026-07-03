@@ -1,6 +1,8 @@
 {
   "permissions": {
     "allow": [
+      "Bash",
+      "PowerShell",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",
@@ -70,7 +72,12 @@
       "Bash(node test/fn-smoke-test.js)",
       "Bash(npm test *)",
       "Bash(echo \"EXIT=$?\")",
-      "Bash(cat >> *)"
+      "Bash(cat >> *)",
+      "Bash(git config *)",
+      "Bash(grep -nE '^#{2,3} |\\\\- \\\\[ \\\\]' .claude/plans/fullstack-plan.md)",
+      "Bash(node scripts/backup-db.js --verify)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('.claude/settings.local.json','utf8'\\)\\); console.log\\('JSON 有效，Bash/PowerShell 全量放行规则已生效'\\)\")",
+      "Bash(git commit *)"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",

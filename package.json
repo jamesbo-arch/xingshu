@@ -3,7 +3,8 @@
     "test": "node test/ping-db.js && node --test \"test/unit/*.test.js\" && node test/api-test.js && node test/fn-smoke-test.js && node test/fn-roundtrip-test.js",
     "test:unit": "node --test \"test/unit/*.test.js\"",
     "test:e2e": "node test/ping-db.js && node test/e2e-flow-test.js",
-    "sync-db": "node scripts/sync-db-config.js"
+    "sync-db": "node scripts/sync-db-config.js",
+    "backup": "node scripts/backup-db.js"
   },
   "dependencies": {
     "mysql2": "^3.22.3"

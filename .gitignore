@@ -8,3 +8,6 @@ miniprogram/cloudfunctions/*/db.js
 
 # 微信开发者工具本地生成的个人配置
 miniprogram/project.private.config.json
+
+# 数据库备份产物
+backups/
