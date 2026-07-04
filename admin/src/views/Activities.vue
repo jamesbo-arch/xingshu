@@ -113,26 +113,3 @@ async function openSignups(a) {
   showSignups.value = true
 }
 </script>
-
-<style scoped>
-.page-title { font-size:22px; font-weight:700; margin-bottom:24px; }
-.filter-bar { display:flex; gap:12px; margin-bottom:16px; }
-.data-table { width:100%; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); border-collapse:collapse; }
-.data-table th { background:#F9FAFB; padding:10px 14px; text-align:left; font-size:13px; font-weight:600; color:#6B7280; border-bottom:1px solid #E5E7EB; }
-.data-table td { padding:10px 14px; font-size:14px; border-bottom:1px solid #F3F4F6; }
-.badge { padding:2px 8px; border-radius:4px; font-size:12px; }
-.badge-online { background:#D1FAE5; color:#065F46; } .badge-draft { background:#F3F4F6; color:#6B7280; } .badge-finished { background:#DBEAFE; color:#1E40AF; }
-.link { color:#3578F6; cursor:pointer; }
-.btn { padding:6px 12px; border:none; border-radius:6px; font-size:13px; cursor:pointer; }
-.btn-primary { background:#3578F6; color:#fff; }
-.btn-ghost { background:#F3F4F6; color:#4B5563; border:1px solid #E5E7EB; }
-.modal-mask { position:fixed; inset:0; background:rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; z-index:50; }
-.modal { background:#fff; border-radius:12px; padding:24px 28px; width:640px; max-height:84vh; overflow-y:auto; }
-.modal-title { font-size:17px; font-weight:700; margin-bottom:18px; }
-.form-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; }
-.form-grid label, .block-label { font-size:13px; color:#6B7280; display:flex; flex-direction:column; gap:5px; }
-.block-label { margin-top:12px; }
-.input-full, .textarea { padding:8px 10px; border:1px solid #E5E7EB; border-radius:6px; font-size:14px; width:100%; box-sizing:border-box; }
-.textarea { resize:vertical; font-family:inherit; }
-.modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:20px; }
-</style>

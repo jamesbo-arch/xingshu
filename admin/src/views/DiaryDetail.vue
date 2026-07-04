@@ -49,20 +49,3 @@ async function onDeleteComment(c) {
   comments.value = comments.value.filter(x => x.id !== c.id)
 }
 </script>
-
-<style scoped>
-.back-link { color:#3578F6; text-decoration:none; font-size:14px; display:inline-block; margin-bottom:20px; }
-.detail-card { background:#fff; border-radius:8px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,.06); margin-bottom:24px; }
-.detail-card h1 { font-size:20px; margin-bottom:20px; }
-.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
-.info-grid div { font-size:14px; } .info-grid label { display:block; color:#9CA3AF; font-size:12px; margin-bottom:2px; }
-.content-box { background:#F9FAFB; padding:20px; border-radius:6px; font-size:15px; line-height:1.8; white-space:pre-wrap; }
-.badge { padding:2px 8px; border-radius:4px; font-size:12px; }
-.badge-public { background:#D1FAE5; color:#065F46; } .badge-member { background:#FEF3C7; color:#92400E; } .badge-private { background:#F3F4F6; color:#6B7280; }
-.section h2 { font-size:16px; font-weight:600; margin-bottom:16px; }
-.data-table { width:100%; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); border-collapse:collapse; }
-.data-table th { background:#F9FAFB; padding:10px 14px; text-align:left; font-size:13px; font-weight:600; color:#6B7280; border-bottom:1px solid #E5E7EB; }
-.data-table td { padding:10px 14px; font-size:14px; border-bottom:1px solid #F3F4F6; }
-.btn { padding:4px 12px; border:none; border-radius:4px; font-size:13px; cursor:pointer; }
-.btn-danger { background:#FF6B6B; color:#fff; }
-</style>

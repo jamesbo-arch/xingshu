@@ -106,7 +106,7 @@
 }
 
 .act-badge-open { color: #fff; background: #B6452F; }
-.act-badge-full { color: #66615A; background: rgba(239, 231, 212, 0.94); }
+.act-badge-full { color: #7A746A; background: rgba(239, 231, 212, 0.94); }
 .act-badge-past { color: #FBF7EE; background: rgba(42, 39, 35, 0.72); }
 
 .act-card-body {
@@ -126,7 +126,7 @@
   align-items: center;
   gap: 12rpx;
   font-size: 25rpx;
-  color: #66615A;
+  color: #7A746A;
   margin-bottom: 10rpx;
   line-height: 1.5;
 }
@@ -183,7 +183,7 @@
 
 .act-empty-title {
   font-size: 30rpx;
-  color: #66615A;
+  color: #7A746A;
   display: block;
   margin-bottom: 12rpx;
 }

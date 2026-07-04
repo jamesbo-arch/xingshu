@@ -42,21 +42,3 @@ onMounted(async () => {
 
 function typeLabel(t) { return { order:'订单', diary:'日记', warning:'提醒', user:'用户' }[t] || t }
 </script>
-
-<style scoped>
-.page-title { font-size:22px; font-weight:700; margin-bottom:24px; }
-.kpi-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:32px; }
-.kpi-card { background:#fff; border-radius:8px; padding:20px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
-.kpi-label { font-size:13px; color:#9CA3AF; margin-bottom:8px; }
-.kpi-value { font-size:28px; font-weight:700; color:#1F2937; }
-.kpi-delta { font-size:13px; margin-top:4px; }
-.kpi-delta.up { color:#06D6A0; } .kpi-delta.down { color:#FF6B6B; }
-
-.section h2 { font-size:16px; font-weight:600; margin-bottom:16px; }
-.activity-list { background:#fff; border-radius:8px; box-shadow:0 1px 3px rgba(0,0,0,.06); }
-.activity-item { display:flex; align-items:center; gap:12px; padding:12px 20px; border-bottom:1px solid #F3F4F6; font-size:14px; }
-.activity-tag { padding:2px 8px; border-radius:4px; font-size:12px; }
-.tag-order { background:#DBEAFE; color:#1E40AF; } .tag-diary { background:#D1FAE5; color:#065F46; }
-.tag-warning { background:#FEF3C7; color:#92400E; } .tag-user { background:#EDE9FE; color:#5B21B6; }
-.activity-time { margin-left:auto; color:#9CA3AF; font-size:12px; }
-</style>

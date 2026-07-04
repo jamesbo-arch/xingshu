@@ -56,18 +56,3 @@ function search() {
   )
 }
 </script>
-
-<style scoped>
-.page-title { font-size:22px; font-weight:700; margin-bottom:24px; }
-.filter-bar { display:flex; gap:12px; margin-bottom:16px; }
-.input, .select { padding:8px 12px; border:1px solid #E5E7EB; border-radius:6px; font-size:14px; }
-.input { width:240px; }
-.data-table { width:100%; background:#fff; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.06); border-collapse:collapse; }
-.data-table th { background:#F9FAFB; padding:10px 14px; text-align:left; font-size:13px; font-weight:600; color:#6B7280; border-bottom:1px solid #E5E7EB; }
-.data-table td { padding:10px 14px; font-size:14px; border-bottom:1px solid #F3F4F6; }
-.badge { padding:2px 8px; border-radius:4px; font-size:12px; }
-.badge-member { background:#FEF3C7; color:#92400E; } .badge-authed { background:#DBEAFE; color:#1E40AF; } .badge-guest { background:#F3F4F6; color:#6B7280; }
-.link { color:#3578F6; text-decoration:none; }
-.btn { padding:8px 14px; border:none; border-radius:6px; font-size:13px; cursor:pointer; }
-.btn-primary { background:#3578F6; color:#fff; }
-</style>

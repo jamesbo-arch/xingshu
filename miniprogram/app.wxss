@@ -38,7 +38,7 @@ view, scroll-view, swiper, input, textarea, image, button, text {
   background: rgba(182, 69, 47, 0.04);
   border-radius: 2px;
   white-space: nowrap;
-  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'STSong', 'SimSun', serif;
 }
 
 .seal-tag.lg {

@@ -665,12 +665,12 @@
 
 .avatar-picker-arrow {
   font-size: 36rpx;
-  color: #C8C2B6;
+  color: #D6D0C2;
 }
 
 .profile-divider {
   height: 1rpx;
-  background: #F0EBE0;
+  background: #EFE7D4;
   margin: 0 0 8rpx;
 }
 
@@ -847,5 +847,5 @@
 
 .logout-arrow {
   font-size: 32rpx;
-  color: #C9C2B2;
+  color: #D6D0C2;
 }
