@@ -1367,3 +1367,15 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `components/filter-sheet/index.wxml` — 三处 `xxx.indexOf(item) >= 0` 改为 `set[key]` 布尔查找（`tagSet[item]` / `yearSet[item]` / `monthSet[item.n]`）
 - 保留上一步的 `Number()` 转换（保证 set 键与 wxml 数字一致）
 **验证**：真机核对——标签/年份/月份点击均显示选中态、可多选、应用后筛选生效。
+
+---
+
+### 2026-07-05 — 全局排查 WXML .indexOf() 选中态坑，修 compose 标签选择器
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：filter-sheet 选中态坑修复后，全局扫描所有 wxml 绑定里的方法调用（`.indexOf/.includes/.some/.find/.split/.slice/.join/.toFixed` 等，微信 WXML 不可靠支持）。
+**结果**：仅 `pages/compose/index.wxml` 的标签选择器同病（`pickerSelectedTags.indexOf(item) >= 0`，选标签时无选中态）；其余 wxml 无风险方法调用（admin 是 Vue，模板支持方法调用不受限）。
+**修复**：compose 加 `toTagSet` 工具 + `pickerTagSet` 布尔表，onOpenTagPicker/togglePickerTag/onClearPickerTags 同步重建，wxml 绑 `pickerTagSet[item]`。
+**教训（记入规约）**：小程序 WXML 绑定中判断"是否选中/包含"一律用**布尔查找表对象**（`set[key]`），禁用 `.indexOf()/.includes()` 等方法调用。
+**验证**：真机核对——写日记选标签显示朱砂选中态。

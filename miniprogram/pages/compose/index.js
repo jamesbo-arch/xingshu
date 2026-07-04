@@ -1,6 +1,13 @@
 const app = getApp()
 const diaryApi = require('../../api/diary')
 
+// 数组 → 布尔查找表（WXML 里用 set[key] 判断选中，避免不可靠的 .indexOf() 表达式）
+function toTagSet(arr) {
+  const o = {}
+  ;(arr || []).forEach(t => { o[t] = true })
+  return o
+}
+
 Page({
   data: {
     diaryId: null,
@@ -14,6 +21,7 @@ Page({
     showTagPicker: false,
     allTags: [],
     pickerSelectedTags: [],
+    pickerTagSet: {},
     permOptions: [
       { key: 'public', label: '公众', desc: '所有人可见', icon: '◎' },
       { key: 'member', label: '会员', desc: '仅会员可见', icon: '★' },
@@ -87,16 +95,20 @@ Page({
   removeTag(e) {
     this.setData({ selectedTags: this.data.selectedTags.filter(t => t !== e.currentTarget.dataset.tag) })
   },
-  onOpenTagPicker() { this.setData({ showTagPicker: true, pickerSelectedTags: [...this.data.selectedTags] }) },
+  // WXML 不可靠支持 .indexOf()，选中态改绑布尔查找表 pickerTagSet
+  onOpenTagPicker() {
+    const tags = [...this.data.selectedTags]
+    this.setData({ showTagPicker: true, pickerSelectedTags: tags, pickerTagSet: toTagSet(tags) })
+  },
   onCloseTagPicker() { this.setData({ showTagPicker: false }) },
   togglePickerTag(e) {
     const tag = e.currentTarget.dataset.tag
     const tags = [...this.data.pickerSelectedTags]
     const idx = tags.indexOf(tag)
     idx >= 0 ? tags.splice(idx, 1) : tags.push(tag)
-    this.setData({ pickerSelectedTags: tags })
+    this.setData({ pickerSelectedTags: tags, pickerTagSet: toTagSet(tags) })
   },
-  onClearPickerTags() { this.setData({ pickerSelectedTags: [] }) },
+  onClearPickerTags() { this.setData({ pickerSelectedTags: [], pickerTagSet: {} }) },
   onConfirmTags() { this.setData({ selectedTags: [...this.data.pickerSelectedTags], showTagPicker: false }) },
 
   canPublish() {

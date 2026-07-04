@@ -123,7 +123,7 @@
         <text
           wx:for="{{allTags}}"
           wx:key="*this"
-          class="seal-tag {{pickerSelectedTags.indexOf(item) >= 0 ? 'selected' : ''}}"
+          class="seal-tag {{pickerTagSet[item] ? 'selected' : ''}}"
           data-tag="{{item}}"
           bindtap="togglePickerTag"
         >{{item}}</text>
