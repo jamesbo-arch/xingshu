@@ -35,6 +35,8 @@ Page({
   onLoad(options) {
     const info = wx.getSystemInfoSync()
     this.setData({ statusBarHeight: info.statusBarHeight || 0, allTags: app.globalData.tags })
+    // 离开前脏检查的基线：新建为默认值，编辑为加载到的原值
+    this._original = this._snapshot()
 
     if (options.diaryId) {
       const id = parseInt(options.diaryId, 10) || options.diaryId
@@ -45,11 +47,42 @@ Page({
             title: diary.title || '', content: diary.content || '',
             images: diary.images || [],
             selectedTags: diary.tags || [], permission: diary.permission || 'public',
-          })
+          }, () => { this._original = this._snapshot() })
         }
       })
     }
   },
+
+  // 当前表单快照，用于对比是否有未保存改动
+  _snapshot() {
+    const { title, content, images, selectedTags, permission } = this.data
+    return {
+      title: (title || '').trim(),
+      content: (content || '').trim(),
+      images: (images || []).join(','),
+      tags: (selectedTags || []).join(','),
+      permission,
+    }
+  },
+  _isDirty() {
+    const a = this._snapshot()
+    const b = this._original || {}
+    return a.title !== b.title || a.content !== b.content ||
+      a.images !== b.images || a.tags !== b.tags || a.permission !== b.permission
+  },
+  // 有未保存内容时二次确认，确认后才返回；无改动直接返回
+  _confirmLeave() {
+    if (!this._isDirty()) { wx.navigateBack(); return }
+    wx.showModal({
+      title: this.data.isEditing ? '放弃修改' : '放弃日记',
+      content: '当前内容尚未保存，确定要放弃并返回吗？',
+      confirmText: '放弃',
+      cancelText: '继续编辑',
+      confirmColor: '#B23B3B',
+      success: res => { if (res.confirm) wx.navigateBack() },
+    })
+  },
+  onCancel() { this._confirmLeave() },
 
   onTitleInput(e) { this.setData({ title: e.detail.value }) },
   onContentInput(e) { this.setData({ content: e.detail.value }) },
@@ -114,7 +147,7 @@ Page({
   canPublish() {
     return this.data.title.trim().length > 0 && this.data.content.trim().length > 0
   },
-  onBack() { wx.navigateBack() },
+  onBack() { this._confirmLeave() },
 
   async onPublish() {
     // 防双击：图片上传拉长发布耗时，重复点击会创建重复日记

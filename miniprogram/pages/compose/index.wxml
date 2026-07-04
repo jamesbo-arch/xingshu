@@ -1,18 +1,13 @@
 <view class="page-wrap paper-bg">
   <!-- Status bar spacer -->
   <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
-  <!-- Custom nav bar -->
+  <!-- Custom nav bar（发布按钮下移到底部固定栏，避免右上角被微信胶囊遮挡） -->
   <view class="compose-nav">
     <view class="nav-back" bindtap="onBack">
       <text class="nav-back-icon">←</text>
     </view>
     <text class="nav-title serif">{{isEditing ? '编辑日记' : '新建日记'}}</text>
-    <view
-      class="nav-publish {{title && content ? '' : 'disabled'}}"
-      bindtap="onPublish"
-    >
-      <text>{{isEditing ? '保存' : '发布'}}</text>
-    </view>
+    <view class="nav-back"></view>
   </view>
 
   <scroll-view class="compose-scroll" scroll-y enhanced show-scrollbar="{{false}}">
@@ -112,6 +107,15 @@
 
     <view class="compose-bottom-pad"></view>
   </scroll-view>
+
+  <!-- Bottom action bar（固定：取消 / 发布） -->
+  <view class="compose-actionbar">
+    <view class="action-cancel" bindtap="onCancel">取消</view>
+    <view
+      class="action-publish {{title && content ? '' : 'disabled'}}"
+      bindtap="onPublish"
+    >{{isEditing ? '保存' : '发布'}}</view>
+  </view>
 
   <!-- Tag picker sheet -->
   <view wx:if="{{showTagPicker}}">

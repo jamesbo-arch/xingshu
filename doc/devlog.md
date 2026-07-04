@@ -1394,3 +1394,17 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `pages/member/index.js` — 引入 `toggleTabBar`，`onLoginClose` 恢复 tab-bar（登录开合由 auth-guard 集中处理）
 **说明**：login-sheet 的开（ensureLogin）与登录成功（handleLoginSuccess）都在 auth-guard，集中隐藏/恢复；仅「用户点关闭不登录」的 dismiss 路径需各页补一次恢复。detail/activity-detail 是非 tab 页，getTabBar 取不到，守卫自动跳过。
 **验证**：微信开发者工具真机核对——广场/收藏点分享出海报，底部保存/分享按钮不再被 tab-bar 遮挡；广场/会员中心点互动拉起登录弹窗，底部登录按钮完整可点；关闭弹窗后 tab-bar 恢复。
+
+---
+
+### 2026-07-05 — 写日记发布按钮下移底部固定栏 + 未保存二次确认
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：新建/编辑日记页发布按钮在右上角，被微信胶囊（··· ◉）遮挡不好点。改为底部固定操作栏「取消 / 发布」；且已填内容时点取消或左上角 ← 返回需二次确认，确认后才回列表。
+**修改文件**：
+- `pages/compose/index.wxml` — 移除顶栏右上角发布按钮（右侧留等宽占位保持标题居中）；scroll 后新增 `.compose-actionbar`（取消 + 发布/保存）
+- `pages/compose/index.wxss` — `page-wrap` 改 `height:100vh` 走 flex 列布局（nav / scroll flex:1 min-height:0 / actionbar）；删除已不用的 `.nav-publish`；新增 `.compose-actionbar/.action-cancel/.action-publish`（底部安全区内边距）
+- `pages/compose/index.js` — 新增 `_snapshot()/_isDirty()/_confirmLeave()`；onLoad 记录基线 `_original`（编辑模式在详情加载回调里重记）；`onBack` 与新增 `onCancel` 均走 `_confirmLeave`（有未保存改动→wx.showModal「放弃/继续编辑」，确认才 navigateBack；无改动直接返回）
+**说明**：脏检查对比 title/content/images/tags/permission 快照。发布成功仍走原 navigateBack，不触发确认。custom 导航无原生返回键，仅 ← 与边缘滑动手势；手势无法拦截（小程序无 onBackPress），属固有限制。
+**验证**：微信开发者工具核对——发布按钮不再被胶囊遮挡；空白页点取消/←直接返回；填了标题或正文后点取消/←弹确认，选「继续编辑」留在页、选「放弃」返回列表；编辑模式未改动直接返回、改动后弹确认。
