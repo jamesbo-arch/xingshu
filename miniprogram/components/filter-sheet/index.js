@@ -122,7 +122,8 @@ Component({
     },
 
     toggleYear(e) {
-      const year = e.currentTarget.dataset.year
+      // 强制转 Number：dataset 数字值可能变字符串，与 wxml 里数字 item 比较会不匹配、选中态加不上
+      const year = Number(e.currentTarget.dataset.year)
       const years = [...this.data.localFilters.years]
       const idx = years.indexOf(year)
       if (idx >= 0) {
@@ -134,7 +135,7 @@ Component({
     },
 
     toggleMonth(e) {
-      const month = e.currentTarget.dataset.month
+      const month = Number(e.currentTarget.dataset.month)
       const months = [...this.data.localFilters.months]
       const idx = months.indexOf(month)
       if (idx >= 0) {

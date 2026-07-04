@@ -1344,3 +1344,13 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - 滚动：改为**打开筛选时隐藏自定义 tab-bar**（custom-tab-bar 加 `hidden` 态 + `hidden` 属性；square/collections onOpenFilter→隐藏、onClose/onApply→恢复），随之 filter-btns 底部 padding 从 120rpx 收回到仅安全区，`.filter-sheet` max-height 放宽到 92vh → 内容一屏放下、无滚动、按钮不被遮
 - `test/fn-filter-test.js`（新增）— 6 条：无筛选基线 / quick=year/today/all / range 起止 / ym 年份；挂入 npm test（现 137 条）
 **验证**：fn-filter-test 6/6；`npm test` 全量 137 条全绿；getDiaryList 已部署。真机核对时间筛选生效 + 弹层无滚动、按钮可见。
+
+---
+
+### 2026-07-05 — 修复：筛选弹层年/月选择无选中态
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**根因**：只有年份/月份（数字类型）的选择失效，标签/快捷时间（字符串）正常——微信 `dataset` 数字值坑：`data-month="{{item.n}}"` 传出的值成了字符串 `"1"`，`toggleMonth` 存进 `months` 数组后，wxml 里用数字 `item.n` 做 `indexOf` 匹配不上，active 类永远加不上。
+**修复**：`components/filter-sheet/index.js` 的 `toggleYear`/`toggleMonth` 对 `dataset.year`/`dataset.month` 强制 `Number()`，保证数组存数字、与 wxml 比较一致。（getDiaryList 的 ym 分支本就有 `map(Number)` 兜底，无需重部署。）
+**验证**：真机核对——点击年份/月份显示朱蓝选中态、可多选、应用后筛选生效。
