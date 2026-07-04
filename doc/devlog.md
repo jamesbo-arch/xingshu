@@ -1220,3 +1220,19 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 **变更**：`git mv .claude/plans/{devlog,fullstack-plan}.md doc/`；更新 CLAUDE.md 三处路径（devlog 规则、计划步骤规则、云函数目录说明）与 `.claude/` Git 追踪说明；fullstack-plan 速查表指针改 `doc/devlog.md`。历史 devlog 条目内旧 `.claude/plans/...` 路径为当时记录，保留不改。
 **效果**：devlog/plan 现为普通文件，`dontAsk` 模式自动放行，追加日志/更新计划不再打断。
 **验证**：本条即写在迁移后的 `doc/devlog.md`，无确认弹窗即为成功。
+
+---
+
+### 2026-07-04 — 后台 A 档：用户/日记管理向原型展示对齐
+
+**类型**：前端 | 云函数 | 测试 | 部署
+**模型**：claude-opus-4-8
+**计划关联**：后台差异盘点 A 档（展示对齐，低风险只读；推荐人展示/修改保留）
+**修改文件**：
+- `cloudfunctions/admin/index.js` — USER_SELECT 补 `favorites/comments/shares` 三项跨日记汇总子查询（列表"互动合计"与详情五格共用），已部署
+- `admin/src/views/Users.vue` — 列表加 用户（头像色块+昵称）/真实姓名/互动合计/最后活跃 列 + 会员有效期带"剩 N 天"；搜索扩到 真实姓名/ID；导出补收藏/评论/转发列
+- `admin/src/views/UserDetail.vue` — 加互动统计五格（日记/赞/藏/评/转）
+- `admin/src/views/Diaries.vue` — 列表加 标签列（印章+N）/转发列/标题摘要；搜索扩到 作者/ID；标签筛选（前端从已加载日记聚合去重）；删除确认带互动总数警示
+- `test/fn-admin-test.js` — users 形状断言补 favorites/comments/shares/lastActive/realName
+**未做（记录）**：日记列表"已编辑"标记——本项目 `diaries.updated_at` 会被点赞/评论等互动 UPDATE 抬高，据此判断会误标，需专设"内容修改时间"列，归入后续（B/后续档）。
+**验证**：fn-admin-test 12/12（含新字段断言）；`npm test` 全量 122 条全绿；`cd admin && npm run build` 通过；admin 云函数重新部署 Active。UI 观感对齐待开发者工具/浏览器人工核对。

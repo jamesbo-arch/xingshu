@@ -43,7 +43,9 @@ async function run() {
     await conn.end()
     if (r.data.total !== c) throw new Error(`total=${r.data.total}，库内 ${c}`)
     const u = r.data.list[0]
-    for (const k of ['id', 'nickname', 'identity', 'avatarHue', 'diaries', 'likes', 'registeredAt']) {
+    // A档：互动合计需 favorites/comments/shares + lastActive/realName（列表展示对齐）
+    for (const k of ['id', 'nickname', 'identity', 'avatarHue', 'diaries', 'likes',
+                     'favorites', 'comments', 'shares', 'lastActive', 'realName', 'registeredAt']) {
       if (!(k in u)) throw new Error(`缺少字段 ${k}`)
     }
   })

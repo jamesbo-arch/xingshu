@@ -24,6 +24,18 @@
       </div>
     </div>
 
+    <!-- A档 互动统计五格 -->
+    <div v-if="user" class="section">
+      <h2>互动统计</h2>
+      <div class="stat-grid">
+        <div class="stat-cell"><div class="stat-num">{{ user.diaries || 0 }}</div><div class="stat-lbl">日记</div></div>
+        <div class="stat-cell"><div class="stat-num">{{ user.likes || 0 }}</div><div class="stat-lbl">获赞</div></div>
+        <div class="stat-cell"><div class="stat-num">{{ user.favorites || 0 }}</div><div class="stat-lbl">被收藏</div></div>
+        <div class="stat-cell"><div class="stat-num">{{ user.comments || 0 }}</div><div class="stat-lbl">评论</div></div>
+        <div class="stat-cell"><div class="stat-num">{{ user.shares || 0 }}</div><div class="stat-lbl">转发</div></div>
+      </div>
+    </div>
+
     <!-- v2.4 会员订单历史 -->
     <div v-if="orders.length" class="section">
       <h2>会员订单 ({{ orders.length }})</h2>
@@ -129,3 +141,16 @@ async function onClearReferrer() {
   } catch (e) { alert(e.message) }
 }
 </script>
+
+<style scoped>
+.stat-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; }
+.stat-cell {
+  background: var(--bg-content);
+  border: 0.5px solid var(--tbl-border);
+  border-radius: 10px;
+  padding: 16px 12px;
+  text-align: center;
+}
+.stat-num { font-family: var(--font-serif); font-size: 24px; font-weight: 700; color: var(--ink); }
+.stat-lbl { font-size: 12px; color: var(--ink-3); margin-top: 4px; letter-spacing: 1px; }
+</style>

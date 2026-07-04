@@ -40,6 +40,9 @@ const USER_SELECT = `
          GREATEST(COALESCE(DATEDIFF(u.member_until, CURDATE()), 0), 0) AS daysLeft,
          u.diary_count AS diaries,
          (SELECT COALESCE(SUM(d.like_count),0) FROM diaries d WHERE d.user_id = u.id AND d.status = 'active') AS likes,
+         (SELECT COALESCE(SUM(d.fav_count),0) FROM diaries d WHERE d.user_id = u.id AND d.status = 'active') AS favorites,
+         (SELECT COALESCE(SUM(d.comment_count),0) FROM diaries d WHERE d.user_id = u.id AND d.status = 'active') AS comments,
+         (SELECT COALESCE(SUM(d.share_count),0) FROM diaries d WHERE d.user_id = u.id AND d.status = 'active') AS shares,
          DATE_FORMAT(u.created_at, '%Y-%m-%d') AS registeredAt,
          DATE_FORMAT(u.updated_at, '%Y-%m-%d') AS lastActive,
          u.referrer_user_id AS referrerId, r.nickname AS referrerName
