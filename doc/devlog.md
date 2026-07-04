@@ -1354,3 +1354,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 **根因**：只有年份/月份（数字类型）的选择失效，标签/快捷时间（字符串）正常——微信 `dataset` 数字值坑：`data-month="{{item.n}}"` 传出的值成了字符串 `"1"`，`toggleMonth` 存进 `months` 数组后，wxml 里用数字 `item.n` 做 `indexOf` 匹配不上，active 类永远加不上。
 **修复**：`components/filter-sheet/index.js` 的 `toggleYear`/`toggleMonth` 对 `dataset.year`/`dataset.month` 强制 `Number()`，保证数组存数字、与 wxml 比较一致。（getDiaryList 的 ym 分支本就有 `map(Number)` 兜底，无需重部署。）
 **验证**：真机核对——点击年份/月份显示朱蓝选中态、可多选、应用后筛选生效。
+
+---
+
+### 2026-07-05 — 修复（真因）：筛选弹层选中态 —— WXML 不支持 .indexOf() 表达式
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：上一条的 `Number()` 强制转换未解决年/月选中态。重新定位——规律是**等值判断的正常、`indexOf` 判断的失效**：快捷时间用 `quickRange === item.key`（等值）能选中；标签/年份/月份都用 `xxx.indexOf(item) >= 0`。**WXML 的 `{{}}` 表达式不可靠支持 `.indexOf()` 等方法调用**，故这三处选中态都加不上（标签同病，只是未被注意）。
+**修复**（不在 WXML 调方法，改绑布尔查找表）：
+- `components/filter-sheet/index.js` — 新增 `toSet(arr)` 工具 + data 加 `tagSet/yearSet/monthSet`；toggleTag/Year/Month、filters 观察器、onReset 里同步重建对应 set
+- `components/filter-sheet/index.wxml` — 三处 `xxx.indexOf(item) >= 0` 改为 `set[key]` 布尔查找（`tagSet[item]` / `yearSet[item]` / `monthSet[item.n]`）
+- 保留上一步的 `Number()` 转换（保证 set 键与 wxml 数字一致）
+**验证**：真机核对——标签/年份/月份点击均显示选中态、可多选、应用后筛选生效。

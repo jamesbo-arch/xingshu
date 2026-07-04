@@ -15,7 +15,7 @@
         <text
           wx:for="{{allTags}}"
           wx:key="*this"
-          class="seal-tag {{localFilters.tags.indexOf(item) >= 0 ? 'selected' : ''}}"
+          class="seal-tag {{tagSet[item] ? 'selected' : ''}}"
           data-tag="{{item}}"
           bindtap="toggleTag"
         >{{item}}</text>
@@ -83,7 +83,7 @@
           <view
             wx:for="{{availableYears}}"
             wx:key="*this"
-            class="ym-item {{localFilters.years.indexOf(item) >= 0 ? 'active' : ''}}"
+            class="ym-item {{yearSet[item] ? 'active' : ''}}"
             data-year="{{item}}"
             bindtap="toggleYear"
           >{{item}}</view>
@@ -93,7 +93,7 @@
           <view
             wx:for="{{availableMonths}}"
             wx:key="n"
-            class="ym-item {{localFilters.months.indexOf(item.n) >= 0 ? 'active' : ''}}"
+            class="ym-item {{monthSet[item.n] ? 'active' : ''}}"
             data-month="{{item.n}}"
             bindtap="toggleMonth"
           >{{item.label}}</view>

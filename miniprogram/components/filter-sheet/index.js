@@ -1,3 +1,10 @@
+// 数组 → 布尔查找表（WXML 里用 set[key] 判断选中，避免不可靠的 .indexOf() 表达式）
+function toSet(arr) {
+  const o = {}
+  ;(arr || []).forEach(x => { o[x] = true })
+  return o
+}
+
 Component({
   // 允许 app.wxss 全局类（seal-tag/.selected/btn-ghost/btn-primary）穿透组件样式隔离
   options: { addGlobalClass: true },
@@ -29,6 +36,10 @@ Component({
       years: [],
       months: [],
     },
+    // 选中集合（WXML 不可靠支持 .indexOf()，改为在 JS 预算布尔查找表）
+    tagSet: {},
+    yearSet: {},
+    monthSet: {},
     timeTabs: ['快速', '起止日期', '年 / 月'],
     quickRanges: [
       { key: 'all', label: '全部时间' },
@@ -61,17 +72,23 @@ Component({
     },
     'filters': function(val) {
       if (val) {
+        const tags = val.tags ? [...val.tags] : []
+        const years = val.years ? [...val.years] : []
+        const months = val.months ? [...val.months] : []
         this.setData({
           localFilters: {
-            tags: val.tags ? [...val.tags] : [],
+            tags,
             author: val.author || '',
             timeMode: val.timeMode || 'quick',
             quickRange: val.quickRange || 'all',
             dateFrom: val.dateFrom || '',
             dateTo: val.dateTo || '',
-            years: val.years ? [...val.years] : [],
-            months: val.months ? [...val.months] : [],
+            years,
+            months,
           },
+          tagSet: toSet(tags),
+          yearSet: toSet(years),
+          monthSet: toSet(months),
         })
       }
     },
@@ -95,7 +112,7 @@ Component({
       } else {
         tags.push(tag)
       }
-      this.setData({ 'localFilters.tags': tags })
+      this.setData({ 'localFilters.tags': tags, tagSet: toSet(tags) })
     },
 
     onAuthorInput(e) {
@@ -131,7 +148,7 @@ Component({
       } else {
         years.push(year)
       }
-      this.setData({ 'localFilters.years': years })
+      this.setData({ 'localFilters.years': years, yearSet: toSet(years) })
     },
 
     toggleMonth(e) {
@@ -143,7 +160,7 @@ Component({
       } else {
         months.push(month)
       }
-      this.setData({ 'localFilters.months': months })
+      this.setData({ 'localFilters.months': months, monthSet: toSet(months) })
     },
 
     onReset() {
@@ -158,6 +175,9 @@ Component({
           years: [],
           months: [],
         },
+        tagSet: {},
+        yearSet: {},
+        monthSet: {},
       })
     },
 
