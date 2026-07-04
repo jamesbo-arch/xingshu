@@ -61,10 +61,11 @@ const COMMENT_SELECT = `
   FROM comments c JOIN users u ON c.user_id = u.id JOIN diaries d ON c.diary_id = d.id`
 
 // 订单查询：附用户信息 + 据 valid_until 实时计算状态（active/expiring≤15天/expired/pending）
+// 注：不含 proof_url（凭证 base64 较大），仅 orderDetail 单独取，避免列表/历史返回过重
 const ORDER_SELECT = `
   SELECT o.id, o.user_id AS userId, u.nickname AS userName, COALESCE(u.phone,'') AS userPhone,
          u.avatar_hue AS avatarHue, o.amount, o.plan, o.method, o.status,
-         o.member_days AS memberDays, o.proof_url AS proofUrl, o.note, o.created_by AS createdBy,
+         o.member_days AS memberDays, o.note, o.created_by AS createdBy,
          DATE_FORMAT(o.valid_from, '%Y-%m-%d') AS validFrom,
          DATE_FORMAT(o.valid_until, '%Y-%m-%d') AS validUntil,
          DATE_FORMAT(o.payment_time, '%Y-%m-%d %H:%i') AS paymentTime,
@@ -348,7 +349,11 @@ const handlers = {
   async orderDetail({ id } = {}) {
     const [rows] = await db.query(`${ORDER_SELECT} WHERE o.id = ?`, [id])
     if (!rows.length) throw new Error('订单不存在')
-    return { order: rowToOrder(rows[0]) }
+    const order = rowToOrder(rows[0])
+    // 凭证 base64 单独取，仅详情需要
+    const [[proof]] = await db.query('SELECT proof_url AS proofUrl FROM orders WHERE id = ?', [id])
+    order.proofUrl = proof.proofUrl || ''
+    return { order }
   },
 
   async userOrders({ userId } = {}) {

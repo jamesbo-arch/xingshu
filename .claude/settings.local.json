@@ -3,6 +3,8 @@
     "allow": [
       "Bash",
       "PowerShell",
+      "Edit",
+      "Write",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git push *)",

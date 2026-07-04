@@ -89,15 +89,14 @@
           <label class="block-label">备注（转账流水号 / 优惠原因）
             <input v-model="form.note" class="input-full" placeholder="选填" />
           </label>
-          <label class="block-label">支付凭证（图片 ≤5MB，选填）</label>
+          <label class="block-label">支付凭证（转账截图，自动压缩，选填）</label>
           <div v-if="!proofPreview" class="proof-upload" @click="$refs.proofInput.click()">
-            点击上传转账截图
+            {{ uploading ? '处理中…' : '点击上传转账截图' }}
             <input ref="proofInput" type="file" accept="image/*" hidden @change="onProof" />
           </div>
           <div v-else class="proof-thumb">
             <img :src="proofPreview" />
             <button class="rm" @click="clearProof">×</button>
-            <span v-if="uploading" class="dim"> 上传中…</span>
           </div>
         </div>
 
@@ -190,7 +189,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getOrders, getOrderDetail, createOrder, getUsers, uploadProof, resolveFileUrl } from '../api/index.js'
+import { getOrders, getOrderDetail, createOrder, getUsers, fileToProofDataUrl } from '../api/index.js'
 
 const route = useRoute()
 
@@ -241,11 +240,13 @@ function filterUsers() {
 async function onProof(e) {
   const file = e.target.files[0]
   if (!file) return
-  if (file.size > 5 * 1024 * 1024) { alert('图片不能超过 5MB'); return }
-  proofPreview.value = URL.createObjectURL(file)
+  if (file.size > 10 * 1024 * 1024) { alert('图片过大，请选择 10MB 以内'); return }
   uploading.value = true
-  try { form.value.proofUrl = await uploadProof(file) }
-  catch (err) { alert('凭证上传失败：' + err.message); proofPreview.value = '' }
+  try {
+    const dataUrl = await fileToProofDataUrl(file)  // 客户端缩放为 JPEG dataURL
+    form.value.proofUrl = dataUrl
+    proofPreview.value = dataUrl
+  } catch (err) { alert('凭证处理失败：' + err.message) }
   finally { uploading.value = false }
 }
 function clearProof() { proofPreview.value = ''; form.value.proofUrl = null }
@@ -268,7 +269,7 @@ async function submit() {
 async function openDetail(id) {
   const d = (await getOrderDetail(id)).order
   detail.value = d
-  proofResolved.value = d.proofUrl ? await resolveFileUrl(d.proofUrl) : ''
+  proofResolved.value = d.proofUrl || ''  // dataURL 直接展示
 }
 function openImg(url) { window.open(url, '_blank') }
 </script>

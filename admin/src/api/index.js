@@ -70,19 +70,28 @@ export async function getOrderDetail(id) { return call('orderDetail', { id }) }
 export async function getUserOrders(userId) { return call('userOrders', { userId }) }
 export async function createOrder(data) { return call('createOrder', data) }
 
-// 支付凭证上传到 TCB 云存储，返回 fileID（供 proof_url 存储）
-export async function uploadProof(file) {
-  await ensureSignIn()
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
-  const cloudPath = `admin/order-proof/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
-  const res = await app.uploadFile({ cloudPath, filePath: file })
-  return res.fileID
-}
-
-// 将 cloud:// fileID 解析为可访问临时 URL（http 外链原样返回）
-export async function resolveFileUrl(fileID) {
-  if (!fileID || !String(fileID).startsWith('cloud://')) return fileID || ''
-  await ensureSignIn()
-  const res = await app.getTempFileURL({ fileList: [fileID] })
-  return (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) || ''
+// 支付凭证：客户端等比缩放到 ≤1280px 并转 JPEG dataURL，随建单经鉴权云函数写入 DB。
+// 不走云存储（匿名登录无写权限，且会绕过密码鉴权），dataURL 直接可 <img src> 展示。
+export function fileToProofDataUrl(file, maxSide = 1280, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onerror = () => reject(new Error('读取图片失败'))
+    reader.onload = () => {
+      const img = new Image()
+      img.onerror = () => reject(new Error('解析图片失败'))
+      img.onload = () => {
+        let { width, height } = img
+        if (width > maxSide || height > maxSide) {
+          const r = Math.min(maxSide / width, maxSide / height)
+          width = Math.round(width * r); height = Math.round(height * r)
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width; canvas.height = height
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height)
+        resolve(canvas.toDataURL('image/jpeg', quality))
+      }
+      img.src = reader.result
+    }
+    reader.readAsDataURL(file)
+  })
 }
