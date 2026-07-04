@@ -3,6 +3,7 @@ const diaryApi = require('../../api/diary')
 const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
 const cache = require('../../utils/cache')
+const filterUtil = require('../../utils/filter')
 const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
 
 Page({
@@ -63,8 +64,7 @@ Page({
       mode: 'square',
       page,
       keyword: this.data.search || undefined,
-      tag: this.data.filters.tags[0] || undefined,
-      author: this.data.filters.author || undefined,
+      ...filterUtil.listQuery(this.data.filters),
     })
     if (data) {
       const active = this._isFiltersActive()
@@ -89,9 +89,12 @@ Page({
   onSearchClear() { this.setData({ search: '' }, () => this._loadDiaries(true)) },
   onSearchConfirm() { this._loadDiaries(true) },
 
-  onOpenFilter() { this.setData({ showFilterSheet: true, allTags: app.globalData.tags }) },
-  onCloseFilter() { this.setData({ showFilterSheet: false }) },
+  // 弹层打开时隐藏自定义 tab-bar，避免其独立层遮挡弹层底部按钮
+  _tabBar(hidden) { const tb = this.getTabBar && this.getTabBar(); if (tb) tb.setData({ hidden }) },
+  onOpenFilter() { this.setData({ showFilterSheet: true, allTags: app.globalData.tags }); this._tabBar(true) },
+  onCloseFilter() { this.setData({ showFilterSheet: false }); this._tabBar(false) },
   onApplyFilter(e) {
+    this._tabBar(false)
     this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true))
   },
 

@@ -1,6 +1,7 @@
 Component({
   data: {
     selected: 0,
+    hidden: false,  // 底部弹层打开时隐藏，避免遮挡弹层按钮
     color: '#A8A39B',
     selectedColor: '#2A2723',
     list: [

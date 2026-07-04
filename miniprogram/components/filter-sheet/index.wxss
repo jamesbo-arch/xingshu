@@ -35,6 +35,7 @@
 
 .filter-sheet {
   padding: 24rpx 32rpx 40rpx;
+  max-height: 92vh;  /* 打开时已隐藏 tab-bar，放宽高度使内容一屏放下、避免垂直滚动 */
 }
 
 .sheet-handle {
@@ -210,13 +211,13 @@
   font-weight: 600;
 }
 
-/* Bottom buttons — 避让自定义 tab-bar（fixed bottom，高 100rpx + 安全区，盖在页面弹层之上） */
+/* Bottom buttons（打开筛选时 tab-bar 已隐藏，仅留安全区即可） */
 .filter-btns {
   display: flex;
   flex-direction: row;
   gap: 16rpx;
   margin-top: 20rpx;
-  padding-bottom: calc(100rpx + env(safe-area-inset-bottom) + 20rpx);
+  padding-bottom: calc(env(safe-area-inset-bottom) + 8rpx);
 }
 
 .filter-btn-reset {

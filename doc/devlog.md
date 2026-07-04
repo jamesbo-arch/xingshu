@@ -1327,3 +1327,20 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - filter-sheet 布局：①作者输入框 `height:76rpx`（原 padding 太矮）②时间内容区包 `.time-content` 加 `min-height:300rpx`（切换 快速/起止日期/年月 时弹窗不再一高一低）
 **修改文件**：`components/{filter-sheet,diary-card,poster-sheet}/index.js`（addGlobalClass）；`components/filter-sheet/index.{wxml,wxss}`（输入框高度 + 时间区固定高度）
 **验证**：真机重新编译核对——标签印章胶囊 + 点击朱砂选中、按钮墨底/描边、输入框高度合适、切时间页签高度稳定。
+
+---
+
+### 2026-07-05 — 修复：日记列表时间筛选无效 + 筛选弹层垂直滚动
+
+**类型**：云函数 | 前端 | 测试 | 部署
+**模型**：claude-opus-4-8
+**问题**：
+1. **时间筛选无效**：`getDiaryList` 只支持 keyword/tag/author/permission，无时间参数；square/collections 也只传这三项——时间条件（快速/起止日期/年月）收集了却从没传给后端，故无筛选效果。
+2. **弹层垂直滚动**：filter-sheet 因上一轮为避让 tab-bar 加了 120rpx 底部 padding，加内容本身较高 → 超过 max-height 80vh 出现滚动。
+**修复**：
+- `cloudfunctions/getDiaryList/index.js` — 新增时间筛选（quick 7 档 / range 起止 / ym 年月），按 `d.created_at` 下推 SQL；已部署
+- `utils/filter.js` — 新增 `listQuery(filters)` 把筛选转为服务端参数（tag/author/时间三模式）
+- `pages/square/index.js`、`pages/collections/index.js` — `_loadDiaries` 改用 `...filterUtil.listQuery(this.data.filters)` 传全部条件
+- 滚动：改为**打开筛选时隐藏自定义 tab-bar**（custom-tab-bar 加 `hidden` 态 + `hidden` 属性；square/collections onOpenFilter→隐藏、onClose/onApply→恢复），随之 filter-btns 底部 padding 从 120rpx 收回到仅安全区，`.filter-sheet` max-height 放宽到 92vh → 内容一屏放下、无滚动、按钮不被遮
+- `test/fn-filter-test.js`（新增）— 6 条：无筛选基线 / quick=year/today/all / range 起止 / ym 年份；挂入 npm test（现 137 条）
+**验证**：fn-filter-test 6/6；`npm test` 全量 137 条全绿；getDiaryList 已部署。真机核对时间筛选生效 + 弹层无滚动、按钮可见。

@@ -2,6 +2,7 @@ const app = getApp()
 const diaryApi = require('../../api/diary')
 const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
+const filterUtil = require('../../utils/filter')
 
 Page({
   data: {
@@ -44,8 +45,7 @@ Page({
     const data = await diaryApi.getList({
       mode: 'collections', page,
       keyword: this.data.search || undefined,
-      tag: this.data.filters.tags[0] || undefined,
-      author: this.data.filters.author || undefined,
+      ...filterUtil.listQuery(this.data.filters),
     })
     if (data) {
       const active = this._isFiltersActive()
@@ -65,9 +65,10 @@ Page({
   onSearchInput(e) { this.setData({ search: e.detail.value }) },
   onSearchClear() { this.setData({ search: '' }, () => this._loadDiaries(true)) },
   onSearchConfirm() { this._loadDiaries(true) },
-  onOpenFilter() { this.setData({ showFilterSheet: true, allTags: app.globalData.tags }) },
-  onCloseFilter() { this.setData({ showFilterSheet: false }) },
-  onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
+  _tabBar(hidden) { const tb = this.getTabBar && this.getTabBar(); if (tb) tb.setData({ hidden }) },
+  onOpenFilter() { this.setData({ showFilterSheet: true, allTags: app.globalData.tags }); this._tabBar(true) },
+  onCloseFilter() { this.setData({ showFilterSheet: false }); this._tabBar(false) },
+  onApplyFilter(e) { this._tabBar(false); this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
 
   // v2.1：会员日记直接进详情（非会员见 30% 渐隐），不再弹窗拦截
   onCardOpen(e) {

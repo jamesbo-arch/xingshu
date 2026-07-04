@@ -76,4 +76,21 @@ function applyFilters(diaries, mode, search, filters) {
   return arr
 }
 
-module.exports = { applyFilters }
+// 将筛选条件转为 getDiaryList 服务端参数（标签取首个、作者、时间三模式），undefined 项不传
+function listQuery(filters = {}) {
+  const q = {
+    tag: (filters.tags && filters.tags[0]) || undefined,
+    author: (filters.author && filters.author.trim()) || undefined,
+  }
+  const mode = filters.timeMode || 'quick'
+  if (mode === 'quick' && filters.quickRange && filters.quickRange !== 'all') {
+    q.timeMode = 'quick'; q.quickRange = filters.quickRange
+  } else if (mode === 'range' && (filters.dateFrom || filters.dateTo)) {
+    q.timeMode = 'range'; q.dateFrom = filters.dateFrom || undefined; q.dateTo = filters.dateTo || undefined
+  } else if (mode === 'ym' && ((filters.years && filters.years.length) || (filters.months && filters.months.length))) {
+    q.timeMode = 'ym'; q.years = filters.years || []; q.months = filters.months || []
+  }
+  return q
+}
+
+module.exports = { applyFilters, listQuery }

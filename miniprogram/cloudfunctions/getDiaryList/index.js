@@ -56,6 +56,29 @@ exports.main = async (event, context) => {
     params.push(permission)
   }
 
+  // 时间筛选（三选一模式：quick 快捷 / range 起止日期 / ym 年月）——按 d.created_at
+  const { timeMode, quickRange, dateFrom, dateTo, years, months } = event
+  if (timeMode === 'quick' && quickRange && quickRange !== 'all') {
+    const QUICK = {
+      today:        'DATE(d.created_at) = CURDATE()',
+      yesterday:    'DATE(d.created_at) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)',
+      week:         'd.created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY)',
+      month:        'YEAR(d.created_at)=YEAR(CURDATE()) AND MONTH(d.created_at)=MONTH(CURDATE())',
+      'last-month': 'YEAR(d.created_at)=YEAR(DATE_SUB(CURDATE(),INTERVAL 1 MONTH)) AND MONTH(d.created_at)=MONTH(DATE_SUB(CURDATE(),INTERVAL 1 MONTH))',
+      'half-year':  'd.created_at >= DATE_SUB(CURDATE(), INTERVAL 183 DAY)',
+      year:         'd.created_at >= DATE_SUB(CURDATE(), INTERVAL 365 DAY)',
+    }
+    if (QUICK[quickRange]) where += ' AND (' + QUICK[quickRange] + ')'
+  } else if (timeMode === 'range') {
+    if (dateFrom) { where += ' AND DATE(d.created_at) >= ?'; params.push(dateFrom) }
+    if (dateTo)   { where += ' AND DATE(d.created_at) <= ?'; params.push(dateTo) }
+  } else if (timeMode === 'ym') {
+    const ys = (years || []).map(Number).filter(n => n)
+    const ms = (months || []).map(Number).filter(n => n >= 1 && n <= 12)
+    if (ys.length) { where += ` AND YEAR(d.created_at) IN (${ys.map(() => '?').join(',')})`; params.push(...ys) }
+    if (ms.length) { where += ` AND MONTH(d.created_at) IN (${ms.map(() => '?').join(',')})`; params.push(...ms) }
+  }
+
   const offset = (page - 1) * pageSize
   const [countRows] = await db.query(`SELECT COUNT(*) AS total FROM diaries d ${where}`, params)
   const total = countRows[0].total
