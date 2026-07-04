@@ -77,6 +77,7 @@
           <view class="comment-header-row">
             <text class="comment-user {{item.isMine ? 'comment-mine' : ''}}">{{item.user}}</text>
             <text class="comment-time">{{item.time}}</text>
+            <text class="comment-reply-btn" data-id="{{item.id}}" data-user="{{item.user}}" bindtap="onReplyComment">回复</text>
             <text wx:if="{{item.isMine}}" class="comment-delete-btn" data-id="{{item.id}}" bindtap="onDeleteComment">删除</text>
           </view>
           <text class="comment-content">{{item.content}}</text>
@@ -86,7 +87,10 @@
                 <text>{{reply.user ? reply.user[0] : '?'}}</text>
               </view>
               <view class="reply-body">
-                <text class="reply-user">{{reply.user}}</text>
+                <view class="reply-header-row">
+                  <text class="reply-user">{{reply.user}}</text>
+                  <text wx:if="{{reply.isMine}}" class="reply-delete-btn" data-id="{{reply.id}}" data-parent="{{item.id}}" bindtap="onDeleteReply">删除</text>
+                </view>
                 <text class="reply-content">{{reply.content}}</text>
                 <text class="reply-time">{{reply.time}}</text>
               </view>
@@ -127,7 +131,7 @@
       <view class="avatar sm" style="background-color: {{userAvatarColor}}; flex-shrink: 0;">
         <text>{{userAvatarInitial}}</text>
       </view>
-      <input class="comment-real-input" placeholder="说点什么…" placeholder-style="color:#A8A39B;"
+      <input class="comment-real-input" placeholder="{{replyTo ? '回复 ' + replyTo.user : '说点什么…'}}" placeholder-style="color:#A8A39B;"
         value="{{commentInput}}" bindinput="onCommentInput" focus="{{showCommentInput}}"
         confirm-type="send" bindconfirm="onSubmitComment"/>
       <view class="comment-submit {{commentInput ? 'active' : ''}}" bindtap="onSubmitComment">发送</view>

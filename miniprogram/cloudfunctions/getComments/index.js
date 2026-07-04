@@ -33,7 +33,7 @@ exports.main = async (event, context) => {
        WHERE c.parent_id = ? AND c.is_deleted = 0 ORDER BY c.created_at ASC`,
       [comment.id]
     )
-    comment.replies = replies
+    comment.replies = replies.map(r => ({ ...r, isMine: userId ? r.user_id === userId : false }))
     comment.isMine = userId ? comment.user_id === userId : false
   }
 

@@ -13,6 +13,7 @@ Page({
     avatarInitial: '?',
     commentInput: '',
     showCommentInput: false,
+    replyTo: null,
     showPosterSheet: false,
     showLoginSheet: false,
     userAvatarColor: '#8B7A4A',
@@ -89,17 +90,34 @@ Page({
     }
   },
 
-  onShowCommentInput() { this.setData({ showCommentInput: true }) },
-  onHideCommentInput() { this.setData({ showCommentInput: false, commentInput: '' }) },
+  // 发一级评论：清空 replyTo（回复态）
+  onShowCommentInput() { this.setData({ showCommentInput: true, replyTo: null }) },
+  onHideCommentInput() { this.setData({ showCommentInput: false, commentInput: '', replyTo: null }) },
   onCommentInput(e) { this.setData({ commentInput: e.detail.value }) },
+
+  // 点某条评论的「回复」→ 打开输入框，占位显示 "回复 @昵称"
+  onReplyComment(e) {
+    const { id, user } = e.currentTarget.dataset
+    this.setData({ replyTo: { id, user }, showCommentInput: true })
+  },
 
   async onSubmitComment() {
     const text = this.data.commentInput.trim()
     if (!text) return
     const diary = this.data.diary
-    const result = await socialApi.createComment(diary.id, text)
-    if (result) {
-      const mapped = mapper.comment(result)
+    const replyTo = this.data.replyTo
+    const result = await socialApi.createComment(diary.id, text, replyTo ? replyTo.id : undefined)
+    if (!result) return
+    const mapped = { ...mapper.comment(result), isMine: true }
+    if (replyTo) {
+      // 二级回复：并入所属评论的 replies（后端不计入日记评论数，故 diary.comments 不变）
+      const comments = this.data.comments.map(c => {
+        if (c.id !== replyTo.id) return c
+        return { ...c, replies: [...(c.replies || []), mapped] }
+      })
+      this.setData({ commentInput: '', showCommentInput: false, replyTo: null, comments })
+      wx.showToast({ title: '回复已发布', icon: 'none', duration: 1500 })
+    } else {
       this.setData({
         commentInput: '', showCommentInput: false,
         comments: [mapped, ...this.data.comments],
@@ -116,6 +134,19 @@ Page({
       await socialApi.deleteComment(id)
       this.setData({ comments: this.data.comments.filter(c => c.id !== id) })
     }
+  },
+
+  // 删除自己的二级回复：仅从所属评论的 replies 移除（日记评论数不受影响）
+  async onDeleteReply(e) {
+    const { id, parent } = e.currentTarget.dataset
+    const res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除此回复?', success: r }))
+    if (!res.confirm) return
+    await socialApi.deleteComment(id)
+    const comments = this.data.comments.map(c => {
+      if (c.id !== parent) return c
+      return { ...c, replies: (c.replies || []).filter(rp => rp.id !== id) }
+    })
+    this.setData({ comments })
   },
 
   // v2.3 登录弹窗：未登录时不展示内容，取消登录则返回上一页

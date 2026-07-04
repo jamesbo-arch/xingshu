@@ -51,6 +51,8 @@ async function run() {
     if (!p || !Array.isArray(p.replies)) throw new Error('父评论无 replies 数组')
     if (p.replies.length !== 2) throw new Error(`期望 2 条回复，实际 ${p.replies.length}`)
     if (p.replies[0].content !== '二级回复1') throw new Error('回复未按时间正序')
+    // 回复须带 isMine（本人回复），供前端回复删除入口判定
+    if (p.replies.some(x => x.isMine !== true)) throw new Error('回复缺 isMine 标记')
   })
 
   await test('CMT-A03 删除自己的回复 → 软删且父评论计数不变', async () => {

@@ -1183,3 +1183,20 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **类型**：配置
 **变更**：allow 列表加 `"Edit"`、`"Write"` 两条工具级通配规则（与既有 `"Bash"`/`"PowerShell"` 一致），文件写入不再逐次确认。起因：devlog 追加反复用 `cat >>`（Bash 应避免的用法）触发确认；改用 Edit 工具但缺 Edit/Write 放行规则同样弹窗。**注意**：settings.local.json 中途修改不热生效，需重启 Claude Code（或切 acceptEdits 模式）后当前会话才生效。
+
+---
+
+### 2026-07-04 — M2.1b 评论二级回复入口（PRD 3.1.1 承诺项落地）
+
+**类型**：前端 | 云函数 | 测试 | 部署
+**模型**：claude-opus-4-8
+**计划关联**：M2.1b（PRD §3 盘点标记的前端缺口：后端早支持 parentId，前端无回复入口）
+**修改文件**：
+- `cloudfunctions/getComments/index.js` — 每条 reply 补 `isMine`（供前端回复删除入口判定），已部署
+- `pages/detail/index.js` — 加 `replyTo` 态；`onReplyComment`（打开输入框、占位"回复 @昵称"）；`onSubmitComment` 分支（带 parentId 时并入所属评论 replies，且**不增加 diary.comments**，与后端"回复不计入日记评论数"一致）；`onDeleteReply`（仅从所属评论 replies 移除）
+- `pages/detail/index.wxml` — 评论头部加「回复」按钮；输入框占位动态（回复态显示"回复 @昵称"）；回复项加自己可见的「删除」
+- `pages/detail/index.wxss` — `.comment-reply-btn`（蓝）/`.reply-header-row`/`.reply-delete-btn`
+- `test/fn-comment-test.js` — CMT-A02 增断言：回复须带 isMine
+- `test/prd-ch3-test-cases.md` — CMT 行/清单更新为已实现；`.claude/plans/fullstack-plan.md` — M2.1b 打勾
+
+**验证**：fn-comment-test 6 断言全绿；`npm test` 全量 122 条全绿；getComments 已 wxcloud 部署 Active。UI（CMT-M02/M03：回复按钮、@占位、回复入列、自己回复删除）待 M2.2 开发者工具人工回归。

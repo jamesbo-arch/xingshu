@@ -198,6 +198,12 @@
   padding: 0 8rpx;
 }
 
+.comment-reply-btn {
+  font-size: 22rpx;
+  color: #4577A4;
+  padding: 0 8rpx;
+}
+
 .comment-content {
   font-size: 28rpx;
   color: #4A453E;
@@ -227,11 +233,24 @@
   flex: 1;
 }
 
+.reply-header-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .reply-user {
   font-size: 24rpx;
   font-weight: 600;
   color: #2A2723;
   display: block;
+}
+
+.reply-delete-btn {
+  font-size: 20rpx;
+  color: #C0856A;
+  padding: 0 8rpx;
 }
 
 .reply-content {
