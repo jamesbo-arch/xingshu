@@ -2,7 +2,7 @@ const app = getApp()
 const { hueToColor, getInitial } = require('../../utils/color')
 const userApi = require('../../api/user')
 const mapper = require('../../utils/mapper')
-const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
+const { ensureLogin, handleLoginSuccess, toggleTabBar } = require('../../utils/auth-guard')
 
 Page({
   data: {
@@ -60,6 +60,7 @@ Page({
   },
   onLoginClose() {
     this.setData({ showLoginSheet: false })
+    toggleTabBar(this, false)
     this._pendingLoginAction = null
   },
   onLoginSuccess() {

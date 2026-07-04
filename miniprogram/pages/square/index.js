@@ -108,6 +108,7 @@ Page({
 
   onLoginClose() {
     this.setData({ showLoginSheet: false })
+    this._tabBar(false)
     this._pendingLoginAction = null
   },
   onLoginSuccess() {
@@ -150,9 +151,9 @@ Page({
   onCardShare(e) {
     const { id } = e.detail
     const diary = this.data.diaries.find(d => d.id === id)
-    if (diary) this.setData({ showPosterSheet: true, posterDiary: diary })
+    if (diary) { this.setData({ showPosterSheet: true, posterDiary: diary }); this._tabBar(true) }
   },
-  onClosePoster() { this.setData({ showPosterSheet: false, posterDiary: null }) },
+  onClosePoster() { this.setData({ showPosterSheet: false, posterDiary: null }); this._tabBar(false) },
 
   onFabTap() {
     const go = () => wx.navigateTo({ url: '/pages/compose/index' })

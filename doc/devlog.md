@@ -1379,3 +1379,18 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 **修复**：compose 加 `toTagSet` 工具 + `pickerTagSet` 布尔表，onOpenTagPicker/togglePickerTag/onClearPickerTags 同步重建，wxml 绑 `pickerTagSet[item]`。
 **教训（记入规约）**：小程序 WXML 绑定中判断"是否选中/包含"一律用**布尔查找表对象**（`set[key]`），禁用 `.indexOf()/.includes()` 等方法调用。
 **验证**：真机核对——写日记选标签显示朱砂选中态。
+
+---
+
+### 2026-07-05 — 其余底部弹层接入 tab-bar 隐藏（poster/login）
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：filter-sheet 已用「打开弹层隐藏自定义 tab-bar」修掉底部按钮被独立层遮挡的坑（见规约第 4 条）。tab 页上的其余底部弹层同理——poster-sheet（保存/分享按钮）、login-sheet（点击登录按钮）在底部，会被 tab-bar 盖住。member-guard 当前无任何 `showMemberGuard: true` 触发（inert），本次不动。
+**修改文件**：
+- `utils/auth-guard.js` — 新增 `toggleTabBar(page, hidden)`（`page.getTabBar && ...` 守卫，非 tab 页静默跳过）；`ensureLogin` 拉起登录弹窗时隐藏、`handleLoginSuccess` 收起时恢复；导出 `toggleTabBar` 供各页 dismiss 路径复用
+- `pages/square/index.js` — `onLoginClose` 加 `_tabBar(false)`；`onCardShare` 开 poster 时 `_tabBar(true)`、`onClosePoster` `_tabBar(false)`
+- `pages/collections/index.js` — poster 同 square（该页无 login-sheet）
+- `pages/member/index.js` — 引入 `toggleTabBar`，`onLoginClose` 恢复 tab-bar（登录开合由 auth-guard 集中处理）
+**说明**：login-sheet 的开（ensureLogin）与登录成功（handleLoginSuccess）都在 auth-guard，集中隐藏/恢复；仅「用户点关闭不登录」的 dismiss 路径需各页补一次恢复。detail/activity-detail 是非 tab 页，getTabBar 取不到，守卫自动跳过。
+**验证**：微信开发者工具真机核对——广场/收藏点分享出海报，底部保存/分享按钮不再被 tab-bar 遮挡；广场/会员中心点互动拉起登录弹窗，底部登录按钮完整可点；关闭弹窗后 tab-bar 恢复。
