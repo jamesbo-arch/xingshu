@@ -3,6 +3,7 @@ const { hueToColor, getInitial } = require('../../utils/color')
 const diaryApi = require('../../api/diary')
 const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
+const { lock, throttle } = require('../../utils/guard')
 
 Page({
   data: {
@@ -65,29 +66,33 @@ Page({
     wx.previewImage({ current: images[e.currentTarget.dataset.index], urls: images })
   },
 
-  onGoMember() { wx.switchTab({ url: '/pages/member/index' }) },
+  onGoMember() { throttle(this, 'nav', () => wx.switchTab({ url: '/pages/member/index' })) },
 
-  async onLike() {
-    const diary = this.data.diary
-    if (!diary) return
-    const result = await socialApi.toggleLike(diary.id, 'diary')
-    if (result) {
-      this.setData({
-        diary: { ...diary, isLiked: result.liked, likes: diary.likes + (result.liked ? 1 : -1) }
-      })
-    }
+  onLike() {
+    return lock(this, 'like', async () => {
+      const diary = this.data.diary
+      if (!diary) return
+      const result = await socialApi.toggleLike(diary.id, 'diary')
+      if (result) {
+        this.setData({
+          diary: { ...diary, isLiked: result.liked, likes: diary.likes + (result.liked ? 1 : -1) }
+        })
+      }
+    })
   },
 
-  async onFav() {
-    const diary = this.data.diary
-    if (!diary) return
-    const result = await socialApi.toggleFav(diary.id)
-    if (result) {
-      wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
-      this.setData({
-        diary: { ...diary, isFavorited: result.favorited, favorites: diary.favorites + (result.favorited ? 1 : -1) }
-      })
-    }
+  onFav() {
+    return lock(this, 'fav', async () => {
+      const diary = this.data.diary
+      if (!diary) return
+      const result = await socialApi.toggleFav(diary.id)
+      if (result) {
+        wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
+        this.setData({
+          diary: { ...diary, isFavorited: result.favorited, favorites: diary.favorites + (result.favorited ? 1 : -1) }
+        })
+      }
+    })
   },
 
   // 发一级评论：清空 replyTo（回复态）
@@ -101,52 +106,58 @@ Page({
     this.setData({ replyTo: { id, user }, showCommentInput: true })
   },
 
-  async onSubmitComment() {
-    const text = this.data.commentInput.trim()
-    if (!text) return
-    const diary = this.data.diary
-    const replyTo = this.data.replyTo
-    const result = await socialApi.createComment(diary.id, text, replyTo ? replyTo.id : undefined)
-    if (!result) return
-    const mapped = { ...mapper.comment(result), isMine: true }
-    if (replyTo) {
-      // 二级回复：并入所属评论的 replies（后端不计入日记评论数，故 diary.comments 不变）
-      const comments = this.data.comments.map(c => {
-        if (c.id !== replyTo.id) return c
-        return { ...c, replies: [...(c.replies || []), mapped] }
-      })
-      this.setData({ commentInput: '', showCommentInput: false, replyTo: null, comments })
-      wx.showToast({ title: '回复已发布', icon: 'none', duration: 1500 })
-    } else {
-      this.setData({
-        commentInput: '', showCommentInput: false,
-        comments: [mapped, ...this.data.comments],
-        diary: { ...diary, comments: diary.comments + 1 },
-      })
-      wx.showToast({ title: '评论已发布', icon: 'none', duration: 1500 })
-    }
+  onSubmitComment() {
+    return lock(this, 'comment', async () => {
+      const text = this.data.commentInput.trim()
+      if (!text) return
+      const diary = this.data.diary
+      const replyTo = this.data.replyTo
+      const result = await socialApi.createComment(diary.id, text, replyTo ? replyTo.id : undefined)
+      if (!result) return
+      const mapped = { ...mapper.comment(result), isMine: true }
+      if (replyTo) {
+        // 二级回复：并入所属评论的 replies（后端不计入日记评论数，故 diary.comments 不变）
+        const comments = this.data.comments.map(c => {
+          if (c.id !== replyTo.id) return c
+          return { ...c, replies: [...(c.replies || []), mapped] }
+        })
+        this.setData({ commentInput: '', showCommentInput: false, replyTo: null, comments })
+        wx.showToast({ title: '回复已发布', icon: 'none', duration: 1500 })
+      } else {
+        this.setData({
+          commentInput: '', showCommentInput: false,
+          comments: [mapped, ...this.data.comments],
+          diary: { ...diary, comments: diary.comments + 1 },
+        })
+        wx.showToast({ title: '评论已发布', icon: 'none', duration: 1500 })
+      }
+    })
   },
 
-  async onDeleteComment(e) {
+  onDeleteComment(e) {
     const { id } = e.currentTarget.dataset
-    const res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除此评论?', success: r }))
-    if (res.confirm) {
-      await socialApi.deleteComment(id)
-      this.setData({ comments: this.data.comments.filter(c => c.id !== id) })
-    }
+    return lock(this, 'delComment', async () => {
+      const res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除此评论?', success: r }))
+      if (res.confirm) {
+        await socialApi.deleteComment(id)
+        this.setData({ comments: this.data.comments.filter(c => c.id !== id) })
+      }
+    })
   },
 
   // 删除自己的二级回复：仅从所属评论的 replies 移除（日记评论数不受影响）
-  async onDeleteReply(e) {
+  onDeleteReply(e) {
     const { id, parent } = e.currentTarget.dataset
-    const res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除此回复?', success: r }))
-    if (!res.confirm) return
-    await socialApi.deleteComment(id)
-    const comments = this.data.comments.map(c => {
-      if (c.id !== parent) return c
-      return { ...c, replies: (c.replies || []).filter(rp => rp.id !== id) }
+    return lock(this, 'delReply' + id, async () => {
+      const res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除此回复?', success: r }))
+      if (!res.confirm) return
+      await socialApi.deleteComment(id)
+      const comments = this.data.comments.map(c => {
+        if (c.id !== parent) return c
+        return { ...c, replies: (c.replies || []).filter(rp => rp.id !== id) }
+      })
+      this.setData({ comments })
     })
-    this.setData({ comments })
   },
 
   // v2.3 登录弹窗：未登录时不展示内容，取消登录则返回上一页
@@ -162,7 +173,7 @@ Page({
   onShare() { this.setData({ showPosterSheet: true }) },
   onPosterClose() { this.setData({ showPosterSheet: false }) },
   onShareApp() { wx.showToast({ title: '请使用右上角分享', icon: 'none', duration: 2000 }) },
-  onBack() { wx.navigateBack() },
+  onBack() { throttle(this, 'nav', () => wx.navigateBack()) },
 
   getCommentAvatarColor(hue) { return hueToColor(hue) },
   getCommentInitial(name) { return getInitial(name) },

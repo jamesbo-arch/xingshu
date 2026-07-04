@@ -1,5 +1,6 @@
 const app = getApp()
 const diaryApi = require('../../api/diary')
+const { throttle } = require('../../utils/guard')
 
 // 数组 → 布尔查找表（WXML 里用 set[key] 判断选中，避免不可靠的 .indexOf() 表达式）
 function toTagSet(arr) {
@@ -72,14 +73,17 @@ Page({
   },
   // 有未保存内容时二次确认，确认后才返回；无改动直接返回
   _confirmLeave() {
-    if (!this._isDirty()) { wx.navigateBack(); return }
-    wx.showModal({
-      title: this.data.isEditing ? '放弃修改' : '放弃日记',
-      content: '当前内容尚未保存，确定要放弃并返回吗？',
-      confirmText: '放弃',
-      cancelText: '继续编辑',
-      confirmColor: '#B23B3B',
-      success: res => { if (res.confirm) wx.navigateBack() },
+    // 防连点：无改动时防双击两次 navigateBack；有改动时防弹出两个 modal
+    throttle(this, 'leave', () => {
+      if (!this._isDirty()) { wx.navigateBack(); return }
+      wx.showModal({
+        title: this.data.isEditing ? '放弃修改' : '放弃日记',
+        content: '当前内容尚未保存，确定要放弃并返回吗？',
+        confirmText: '放弃',
+        cancelText: '继续编辑',
+        confirmColor: '#B23B3B',
+        success: res => { if (res.confirm) wx.navigateBack() },
+      })
     })
   },
   onCancel() { this._confirmLeave() },

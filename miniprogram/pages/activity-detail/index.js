@@ -2,6 +2,7 @@ const activityApi = require('../../api/activity')
 const toast = require('../../utils/toast')
 const { call } = require('../../api/request')
 const { ensureLogin } = require('../../utils/auth-guard')
+const { lock, throttle } = require('../../utils/guard')
 
 Page({
   data: {
@@ -52,7 +53,7 @@ Page({
     })
   },
 
-  onBack() { wx.navigateBack() },
+  onBack() { throttle(this, 'nav', () => wx.navigateBack()) },
 
   // 报名弹层（_mounted/_show 双状态动画模式与其他 sheet 一致，此处简化为单状态）
   onOpenSignup() {
@@ -83,20 +84,22 @@ Page({
     }
   },
 
-  async onCancelSignup() {
-    const res = await new Promise(resolve => wx.showModal({
-      title: '取消报名？',
-      content: '取消后名额将释放给其他醒书人',
-      confirmText: '取消报名',
-      cancelText: '再想想',
-      success: resolve,
-    }))
-    if (!res.confirm) return
-    const r = await activityApi.cancelSignup(this._id)
-    if (r) {
-      toast.info('已取消报名')
-      this._load()
-    }
+  onCancelSignup() {
+    return lock(this, 'cancelSignup', async () => {
+      const res = await new Promise(resolve => wx.showModal({
+        title: '取消报名？',
+        content: '取消后名额将释放给其他醒书人',
+        confirmText: '取消报名',
+        cancelText: '再想想',
+        success: resolve,
+      }))
+      if (!res.confirm) return
+      const r = await activityApi.cancelSignup(this._id)
+      if (r) {
+        toast.info('已取消报名')
+        this._load()
+      }
+    })
   },
 
   onPreviewImage(e) {
@@ -119,24 +122,26 @@ Page({
     this.setData({ _posterShow: false })
     setTimeout(() => this.setData({ showPoster: false }), 300)
   },
-  async onSaveQr() {
+  onSaveQr() {
     if (!this.data.qrFileID) { toast.info('小程序码生成中，稍候再试'); return }
-    try {
-      const dl = await wx.cloud.downloadFile({ fileID: this.data.qrFileID })
-      await new Promise((resolve, reject) => wx.saveImageToPhotosAlbum({
-        filePath: dl.tempFilePath, success: resolve, fail: reject,
-      }))
-      toast.success('已保存到相册')
-    } catch (err) {
-      if (err.errMsg && err.errMsg.indexOf('auth deny') >= 0) {
-        wx.showModal({
-          title: '需要相册权限', content: '请在设置中允许访问相册',
-          confirmText: '去设置',
-          success: (r) => { if (r.confirm) wx.openSetting() },
-        })
-      } else {
-        toast.error('保存失败，请重试')
+    return lock(this, 'saveQr', async () => {
+      try {
+        const dl = await wx.cloud.downloadFile({ fileID: this.data.qrFileID })
+        await new Promise((resolve, reject) => wx.saveImageToPhotosAlbum({
+          filePath: dl.tempFilePath, success: resolve, fail: reject,
+        }))
+        toast.success('已保存到相册')
+      } catch (err) {
+        if (err.errMsg && err.errMsg.indexOf('auth deny') >= 0) {
+          wx.showModal({
+            title: '需要相册权限', content: '请在设置中允许访问相册',
+            confirmText: '去设置',
+            success: (r) => { if (r.confirm) wx.openSetting() },
+          })
+        } else {
+          toast.error('保存失败，请重试')
+        }
       }
-    }
+    })
   },
 })

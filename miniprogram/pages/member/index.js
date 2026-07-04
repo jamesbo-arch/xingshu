@@ -3,6 +3,7 @@ const { hueToColor, getInitial } = require('../../utils/color')
 const userApi = require('../../api/user')
 const mapper = require('../../utils/mapper')
 const { ensureLogin, handleLoginSuccess, toggleTabBar } = require('../../utils/auth-guard')
+const { lock } = require('../../utils/guard')
 
 Page({
   data: {
@@ -69,21 +70,23 @@ Page({
   },
 
   // v2.3 设置：退出登录（仅回退为未登录，重新登录后会员权益自动恢复）
-  async onLogout() {
-    const res = await new Promise(r => wx.showModal({
-      title: '退出登录',
-      content: '退出后将以未登录身份浏览，重新登录即可恢复全部功能与会员权益。',
-      confirmText: '退出',
-      cancelText: '取消',
-      success: r,
-    }))
-    if (!res.confirm) return
-    const result = await userApi.updateProfile({ logout: true })
-    if (result) {
-      app.globalData.user = result
-      this._loadUser()
-      wx.showToast({ title: '已退出登录', icon: 'none', duration: 1500 })
-    }
+  onLogout() {
+    return lock(this, 'logout', async () => {
+      const res = await new Promise(r => wx.showModal({
+        title: '退出登录',
+        content: '退出后将以未登录身份浏览，重新登录即可恢复全部功能与会员权益。',
+        confirmText: '退出',
+        cancelText: '取消',
+        success: r,
+      }))
+      if (!res.confirm) return
+      const result = await userApi.updateProfile({ logout: true })
+      if (result) {
+        app.globalData.user = result
+        this._loadUser()
+        wx.showToast({ title: '已退出登录', icon: 'none', duration: 1500 })
+      }
+    })
   },
 
   onShowPurchaseSheet() { this.setData({ showPurchaseSheet: true }) },
@@ -107,13 +110,13 @@ Page({
   onNicknameInput(e) { this.setData({ editNickname: e.detail.value }) },
   onRealNameInput(e) { this.setData({ editRealName: e.detail.value }) },
 
-  async onSaveProfile() {
+  onSaveProfile() {
     const nickname = this.data.editNickname.trim()
     if (!nickname) {
       wx.showToast({ title: '昵称不能为空', icon: 'none', duration: 1500 })
       return
     }
-
+    return lock(this, 'saveProfile', async () => {
     wx.showLoading({ title: '保存中…', mask: true })
     try {
       let avatarUrl = this.data.editAvatarUrl
@@ -142,6 +145,7 @@ Page({
       wx.hideLoading()
       wx.showToast({ title: '保存失败，请重试', icon: 'none', duration: 2000 })
     }
+    })
   },
 
   onCopyWechat() {

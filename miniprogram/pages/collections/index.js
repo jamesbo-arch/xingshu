@@ -3,6 +3,7 @@ const diaryApi = require('../../api/diary')
 const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
 const filterUtil = require('../../utils/filter')
+const { lock, throttle } = require('../../utils/guard')
 
 Page({
   data: {
@@ -73,7 +74,7 @@ Page({
   // v2.1：会员日记直接进详情（非会员见 30% 渐隐），不再弹窗拦截
   onCardOpen(e) {
     const { id } = e.detail
-    wx.navigateTo({ url: '/pages/detail/index?id=' + id })
+    throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + id }))
   },
   onCloseMemberGuard() { this.setData({ showMemberGuard: false }) },
   onGuardAuthorize() {
@@ -90,19 +91,23 @@ Page({
   },
   onGuardJoinMember() { this.setData({ showMemberGuard: false }); wx.switchTab({ url: '/pages/member/index' }) },
 
-  async onCardLike(e) {
+  onCardLike(e) {
     const { id } = e.detail
-    const result = await socialApi.toggleLike(id, 'diary')
-    if (result) {
-      this.setData({
-        diaries: this.data.diaries.map(d => d.id === id ? { ...d, isLiked: result.liked, likes: d.likes + (result.liked ? 1 : -1) } : d)
-      })
-    }
+    return lock(this, 'like' + id, async () => {
+      const result = await socialApi.toggleLike(id, 'diary')
+      if (result) {
+        this.setData({
+          diaries: this.data.diaries.map(d => d.id === id ? { ...d, isLiked: result.liked, likes: d.likes + (result.liked ? 1 : -1) } : d)
+        })
+      }
+    })
   },
-  async onCardFav(e) {
+  onCardFav(e) {
     const { id } = e.detail
-    const result = await socialApi.toggleFav(id)
-    if (result) wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
+    return lock(this, 'fav' + id, async () => {
+      const result = await socialApi.toggleFav(id)
+      if (result) wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
+    })
   },
   onCardShare(e) {
     const { id } = e.detail

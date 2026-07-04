@@ -1408,3 +1408,25 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `pages/compose/index.js` — 新增 `_snapshot()/_isDirty()/_confirmLeave()`；onLoad 记录基线 `_original`（编辑模式在详情加载回调里重记）；`onBack` 与新增 `onCancel` 均走 `_confirmLeave`（有未保存改动→wx.showModal「放弃/继续编辑」，确认才 navigateBack；无改动直接返回）
 **说明**：脏检查对比 title/content/images/tags/permission 快照。发布成功仍走原 navigateBack，不触发确认。custom 导航无原生返回键，仅 ← 与边缘滑动手势；手势无法拦截（小程序无 onBackPress），属固有限制。
 **验证**：微信开发者工具核对——发布按钮不再被胶囊遮挡；空白页点取消/←直接返回；填了标题或正文后点取消/←弹确认，选「继续编辑」留在页、选「放弃」返回列表；编辑模式未改动直接返回、改动后弹确认。
+
+---
+
+### 2026-07-05 — 全站按钮防连点（重复提交 / 重复打开页面）
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：用户要求检查所有按钮点击，防止连续点击导致重复提交。全量盘点小程序各页/组件的变更类与导航类点击处理。
+**新增**：`utils/guard.js` —— `lock(ctx,key,task)`（异步提交防重：in-flight 未完成前重复触发忽略，finally 释放锁）+ `throttle(ctx,key,fn,cooldown=600)`（同步动作/导航防连点）。ctx 用 Page/Component 的 this，key 可带 id 区分不同目标。
+**应用（原本无防护的）**：
+- `detail`：onSubmitComment（**评论重复提交**，最关键）→ lock；onLike/onFav → lock；onDeleteComment/onDeleteReply → lock（兼防双 modal）；onGoMember/onBack → throttle
+- `mine`：onCardOpen/onCardEdit/onFabTap → throttle（防重复打开页）；onCardDelete → lock
+- `square`：onCardOpen/onFabTap → throttle；onCardLike/onCardFav → lock（带 id）
+- `collections`：同 square
+- `activities`：onOpen → throttle
+- `activity-detail`：onBack → throttle；onCancelSignup → lock；onSaveQr → lock（onSubmitSignup 原有 _submitting 保留）
+- `member`：onLogout → lock；onSaveProfile → lock（原有 loading mask 保留）
+- `compose`：_confirmLeave（取消/返回）→ throttle（防双 modal / 双 navigateBack）；onPublish 原有 _publishing 保留
+- `poster-sheet` 组件：onSaveImage → throttle 2s（生成+存相册耗时长，防重复保存）
+**已自带防护、未改**：compose.onPublish(_publishing)、activity-detail.onSubmitSignup(_submitting)、login-sheet.onLogin(_logging)；后台 admin 关键写操作已由 `:disabled` 忙标志（Orders.submit/Diaries.onSave/Login）或阻塞式 `confirm()`（各删除）覆盖。
+**测试**：`test/unit/guard.test.js` 新增 7 条（lock in-flight 去重/完成后可再触发/不同 key 隔离/抛错释放锁；throttle cooldown 去重/超时可再触发/不同 key 隔离）。`npm run test:unit` 38 条全绿；11 个改动 JS 文件 `node --check` 通过。
+**验证**：纯前端交互接线，需微信开发者工具真机核对——快速连点评论发布只产生一条、连点卡片不重复打开详情页、连点点赞不出现点了又取消。

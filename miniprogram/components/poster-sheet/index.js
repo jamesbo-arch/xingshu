@@ -1,6 +1,7 @@
 const { hueToColor, getInitial } = require('../../utils/color')
 const toast = require('../../utils/toast')
 const { call } = require('../../api/request')
+const { throttle } = require('../../utils/guard')
 
 Component({
   // 允许 app.wxss 全局类（seal-tag/btn-primary/btn-ghost）穿透组件样式隔离
@@ -74,6 +75,11 @@ Component({
     },
 
     onSaveImage() {
+      // 生成+保存海报耗时较长，2s 内防连点，避免重复保存到相册
+      throttle(this, 'save', () => this._doSaveImage(), 2000)
+    },
+
+    _doSaveImage() {
       wx.getSetting({
         success: (res) => {
           if (res.authSetting['scope.writePhotosAlbum'] === false) {

@@ -1,4 +1,5 @@
 const activityApi = require('../../api/activity')
+const { throttle } = require('../../utils/guard')
 
 Page({
   data: {
@@ -41,7 +42,8 @@ Page({
   },
 
   onOpen(e) {
-    wx.navigateTo({ url: `/pages/activity-detail/index?id=${e.currentTarget.dataset.id}` })
+    const id = e.currentTarget.dataset.id
+    throttle(this, 'open', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
   },
 
   onPullDownRefresh() {

@@ -5,6 +5,7 @@ const mapper = require('../../utils/mapper')
 const cache = require('../../utils/cache')
 const filterUtil = require('../../utils/filter')
 const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
+const { lock, throttle } = require('../../utils/guard')
 
 Page({
   data: {
@@ -101,7 +102,7 @@ Page({
   // v2.3：guest 点卡片先拉起微信登录弹窗，登录成功后直达该日记；authed 看会员日记走详情页渐隐
   onCardOpen(e) {
     const { id } = e.detail
-    const open = () => wx.navigateTo({ url: '/pages/detail/index?id=' + id })
+    const open = () => throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + id }))
     if (!ensureLogin(this, open)) return
     open()
   },
@@ -123,29 +124,33 @@ Page({
   },
   onGuardJoinMember() { this.setData({ showMemberGuard: false }); wx.switchTab({ url: '/pages/member/index' }) },
 
-  async onCardLike(e) {
+  onCardLike(e) {
     if (!ensureLogin(this, () => this.onCardLike(e))) return
     const { id } = e.detail
-    const result = await socialApi.toggleLike(id, 'diary')
-    if (result) {
-      const diaries = this.data.diaries.map(d => {
-        if (d.id === id) {
-          return { ...d, isLiked: result.liked, likes: d.likes + (result.liked ? 1 : -1) }
-        }
-        return d
-      })
-      this.setData({ diaries })
-    }
+    return lock(this, 'like' + id, async () => {
+      const result = await socialApi.toggleLike(id, 'diary')
+      if (result) {
+        const diaries = this.data.diaries.map(d => {
+          if (d.id === id) {
+            return { ...d, isLiked: result.liked, likes: d.likes + (result.liked ? 1 : -1) }
+          }
+          return d
+        })
+        this.setData({ diaries })
+      }
+    })
   },
 
-  async onCardFav(e) {
+  onCardFav(e) {
     if (!ensureLogin(this, () => this.onCardFav(e))) return
     const { id } = e.detail
-    const result = await socialApi.toggleFav(id)
-    if (result) {
-      const msg = result.favorited ? '已收藏' : '已取消收藏'
-      wx.showToast({ title: msg, icon: 'none', duration: 1500 })
-    }
+    return lock(this, 'fav' + id, async () => {
+      const result = await socialApi.toggleFav(id)
+      if (result) {
+        const msg = result.favorited ? '已收藏' : '已取消收藏'
+        wx.showToast({ title: msg, icon: 'none', duration: 1500 })
+      }
+    })
   },
 
   onCardShare(e) {
@@ -156,7 +161,7 @@ Page({
   onClosePoster() { this.setData({ showPosterSheet: false, posterDiary: null }); this._tabBar(false) },
 
   onFabTap() {
-    const go = () => wx.navigateTo({ url: '/pages/compose/index' })
+    const go = () => throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/compose/index' }))
     if (!ensureLogin(this, go)) return
     go()
   },

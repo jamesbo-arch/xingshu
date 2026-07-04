@@ -1,6 +1,7 @@
 const app = getApp()
 const diaryApi = require('../../api/diary')
 const mapper = require('../../utils/mapper')
+const { lock, throttle } = require('../../utils/guard')
 
 Page({
   data: {
@@ -58,18 +59,20 @@ Page({
   onCloseFilter() { this.setData({ showFilterSheet: false }) },
   onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
 
-  onCardOpen(e) { wx.navigateTo({ url: '/pages/detail/index?id=' + e.detail.id }) },
-  onCardEdit(e) { wx.navigateTo({ url: '/pages/compose/index?diaryId=' + e.detail.id }) },
-  async onCardDelete(e) {
+  onCardOpen(e) { throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + e.detail.id })) },
+  onCardEdit(e) { throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/compose/index?diaryId=' + e.detail.id })) },
+  onCardDelete(e) {
     const { id } = e.detail
-    const res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除后不可恢复', success: r }))
-    if (res.confirm) {
-      await diaryApi.remove(id)
-      this.setData({ diaries: this.data.diaries.filter(d => d.id !== id) })
-      wx.showToast({ title: '删除成功', icon: 'none', duration: 1500 })
-    }
+    return lock(this, 'del' + id, async () => {
+      const res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除后不可恢复', success: r }))
+      if (res.confirm) {
+        await diaryApi.remove(id)
+        this.setData({ diaries: this.data.diaries.filter(d => d.id !== id) })
+        wx.showToast({ title: '删除成功', icon: 'none', duration: 1500 })
+      }
+    })
   },
 
-  onFabTap() { wx.navigateTo({ url: '/pages/compose/index' }) },
+  onFabTap() { throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/compose/index' })) },
   onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
 })
