@@ -88,10 +88,18 @@
 .author-input {
   background: #F5EFE2;
   border-radius: 10px;
-  padding: 18rpx 24rpx;
+  padding: 0 24rpx;
+  height: 76rpx;
+  line-height: 76rpx;
   font-size: 28rpx;
   color: #2A2723;
   width: 100%;
+  box-sizing: border-box;
+}
+
+/* 固定时间内容区高度，切换 快速/起止日期/年月 时弹窗不再一高一低 */
+.time-content {
+  min-height: 300rpx;
 }
 
 /* Time tabs */

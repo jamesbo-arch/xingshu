@@ -1,6 +1,8 @@
 const { hueToColor, getInitial } = require('../../utils/color')
 
 Component({
+  // 允许 app.wxss 全局类（seal-tag/perm-badge 等）穿透组件样式隔离
+  options: { addGlobalClass: true },
   properties: {
     diary: {
       type: Object,

@@ -1314,3 +1314,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 **修改文件**：`pages/square/index.js`、`pages/collections/index.js`（onOpenFilter 刷新 allTags）；`components/filter-sheet/index.wxss`（按钮避让 tab-bar）
 **遗留提示**：poster-sheet/login-sheet/member-guard 在 tab 页也可能被 tab-bar 遮底部（这些弹层横跨 tab 页与非 tab 页，静态 padding 不合适），列入 M2.2 人工回归逐一核对。
 **验证**：真机重新编译核对（标签正常渲染为印章胶囊、应用按钮可见可点）。
+
+---
+
+### 2026-07-04 — 修复：组件样式隔离致全局类失效（标签无印章样式/按钮无色）+ 筛选弹层布局
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**根因**：微信自定义组件默认**样式隔离**，`app.wxss` 全局类（seal-tag/.selected/perm-badge/btn-primary/btn-ghost）穿不进组件——filter-sheet 标签退化为纯文字、无选中态、底部按钮无背景色；diary-card 卡片标签同样无印章样式、perm-badge 无底色；poster-sheet 按钮无色。这三个组件都用全局类却没开 `addGlobalClass`（此前标签为空掩盖了问题）。
+**修复**：
+- filter-sheet / diary-card / poster-sheet 三组件 `Component` 加 `options: { addGlobalClass: true }` → 全局印章标签/权限徽章/按钮样式生效，标签选中态（.seal-tag.selected 朱砂底白字）恢复
+- filter-sheet 布局：①作者输入框 `height:76rpx`（原 padding 太矮）②时间内容区包 `.time-content` 加 `min-height:300rpx`（切换 快速/起止日期/年月 时弹窗不再一高一低）
+**修改文件**：`components/{filter-sheet,diary-card,poster-sheet}/index.js`（addGlobalClass）；`components/filter-sheet/index.{wxml,wxss}`（输入框高度 + 时间区固定高度）
+**验证**：真机重新编译核对——标签印章胶囊 + 点击朱砂选中、按钮墨底/描边、输入框高度合适、切时间页签高度稳定。

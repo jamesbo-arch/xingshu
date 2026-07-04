@@ -3,6 +3,8 @@ const toast = require('../../utils/toast')
 const { call } = require('../../api/request')
 
 Component({
+  // 允许 app.wxss 全局类（seal-tag/btn-primary/btn-ghost）穿透组件样式隔离
+  options: { addGlobalClass: true },
   properties: {
     visible: {
       type: Boolean,

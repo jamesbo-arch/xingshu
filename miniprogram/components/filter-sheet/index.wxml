@@ -49,6 +49,7 @@
         >{{item}}</view>
       </view>
 
+      <view class="time-content">
       <!-- Quick mode -->
       <view wx:if="{{localFilters.timeMode === 'quick'}}" class="quick-grid">
         <view
@@ -97,6 +98,7 @@
             bindtap="toggleMonth"
           >{{item.label}}</view>
         </view>
+      </view>
       </view>
     </view>
 

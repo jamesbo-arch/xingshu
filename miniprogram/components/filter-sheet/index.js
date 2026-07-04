@@ -1,4 +1,6 @@
 Component({
+  // 允许 app.wxss 全局类（seal-tag/.selected/btn-ghost/btn-primary）穿透组件样式隔离
+  options: { addGlobalClass: true },
   properties: {
     visible: {
       type: Boolean,
