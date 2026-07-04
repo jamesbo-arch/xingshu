@@ -190,6 +190,35 @@
 | ORDER-M06 | 用户详情联动 | 用户详情页「开通/续费会员」跳订单页并预置该用户；「会员订单」区列出其订单 |
 | ORDER-M07 | 状态筛选 | 列表按 生效中/即将到期/已过期 筛选，徽章颜色与状态一致 |
 
+### ADMIN-EDIT · 后台编辑/代发/ID/分页（B/C/D/E 档）
+
+后端由 `test/fn-admin-edit-test.js` 覆盖（经 admin 云函数，HMAC token 鉴权）；前端为 UserDetail 编辑态、Diaries 编辑/代发弹窗、分页组件。
+
+#### 自动化用例（fn-admin-edit-test.js）
+
+| ID | 档 | 用例 | 预期 |
+|----|----|------|------|
+| AE-A01 | B | updateUser 改资料 | 改昵称/真实姓名/手机号 → 落库；身份不变；写 admin_logs（旧值→新值） |
+| AE-A02 | B | updateUser 校验 | 缺 userId 拒绝；用户不存在拒绝 |
+| AE-A03 | B | updateDiary 改内容 | 改标题/正文/权限 → 落库；**content_edited_at 置位**；写审计 |
+| AE-A04 | B | updateDiary 改标签 | 传 tags → diary_tags 重建为新集合 |
+| AE-A05 | C | createDiary 代发 | 指定 authorId 新建 → 日记归属该用户；该用户 diary_count +1；写审计 |
+| AE-A06 | C | createDiary 校验 | 作者不存在 / 缺标题或内容 → 拒绝 |
+| AE-A07 | D | userDetail 返回 openid/unionid | userDetail 响应含 openid、unionid（unionid 可空） |
+| AE-A08 | B | 已编辑标记 | 新建日记 diaries 列表 editedAt 空；updateDiary 后 editedAt 非空 |
+| AE-A09 | E | 列表分页参数 | users/diaries 传 page/pageSize → 返回该页切片 + total（若采用服务端分页）；客户端分页则此项转人工 AE-M06 |
+
+#### 人工用例（M2.2 admin Web 回归）
+
+| ID | 档 | 用例 | 预期 |
+|----|----|------|------|
+| AE-M01 | B | 用户资料编辑 | 用户详情「编辑」→ 改昵称/真实姓名/手机号 → 保存生效；微信授权名只读 |
+| AE-M02 | D | ID 展示复制 | 详情展示系统ID(主键)/OpenID/UnionID，逐行「复制」反馈；UnionID 无则灰显"未获取"；附含义说明 |
+| AE-M03 | B | 日记编辑弹窗 | 「编辑」→ 标题(≤30 计数)/正文/标签(系统标签选)/权限 回填并可改 → 保存生效 |
+| AE-M04 | C | 后台代发日记 | 「新建日记」→ 选作者(非游客) → 填写发布 → 列表出现，作者为所选用户，标"代发" |
+| AE-M05 | B | 已编辑标记 | 编辑过内容的日记，列表标题旁显示"已编辑"；仅被点赞/评论过的不误标 |
+| AE-M06 | E | 分页 | 列表底部分页：切换每页 10/20/50、上一页/下一页/跳页；筛选后重置到第 1 页 |
+
 ### CALM · 克制原则巡检（人工，发版前走查）
 
 | ID | 用例 | 预期 |

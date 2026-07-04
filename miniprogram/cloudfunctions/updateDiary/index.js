@@ -23,6 +23,10 @@ exports.main = async (event, context) => {
     if (content !== undefined) { fields.push('content = ?'); values.push(content) }
     if (permission !== undefined) { fields.push('permission = ?'); values.push(permission) }
     if (images !== undefined) { fields.push('images = ?'); values.push(images && images.length ? JSON.stringify(images) : null) }
+    // 内容类变更（标题/正文/标签/权限）置"已编辑"时间（与点赞/评论等互动 UPDATE 无关）
+    if (title !== undefined || content !== undefined || permission !== undefined || tags !== undefined) {
+      fields.push('content_edited_at = NOW()')
+    }
     fields.push('updated_by = ?'); values.push(userId)
     values.push(diaryId)
 

@@ -10,7 +10,8 @@
         <option value="">全部标签</option>
         <option v-for="t in allTags" :key="t" :value="t">{{ t }}</option>
       </select>
-      <button class="btn btn-primary" @click="onExport">导出 Excel（{{ filtered.length }}）</button>
+      <button class="btn btn-primary" @click="openCreate">+ 新建日记</button>
+      <button class="btn btn-ghost" @click="onExport">导出（{{ filtered.length }}）</button>
       <button class="btn btn-danger" :disabled="!selected.length" @click="onBatchDelete">
         批量删除{{ selected.length ? `（${selected.length}）` : '' }}
       </button>
@@ -22,11 +23,12 @@
         <th>赞</th><th>藏</th><th>评</th><th>转</th><th>操作</th>
       </tr></thead>
       <tbody>
-        <tr v-for="d in filtered" :key="d.id">
+        <tr v-for="d in paged" :key="d.id">
           <td><input type="checkbox" :value="d.id" v-model="selected" /></td>
           <td>{{ d.id }}</td>
           <td>
             <router-link :to="'/diaries/'+d.id" class="link">{{ d.title }}</router-link>
+            <span v-if="d.editedAt" class="edited-tag">已编辑</span>
             <div class="excerpt">{{ excerpt(d.content) }}</div>
           </td>
           <td>{{ d.author }}</td>
@@ -37,30 +39,88 @@
           <td class="dim">{{ d.createdAt }}</td>
           <td><span class="badge" :class="'badge-'+d.permission">{{ permLabel(d.permission) }}</span></td>
           <td>{{ d.likes }}</td><td>{{ d.favorites }}</td><td>{{ d.comments }}</td><td>{{ d.shares }}</td>
-          <td><button class="btn btn-danger" @click="onDelete(d)">删除</button></td>
+          <td class="ops">
+            <button class="btn btn-ghost" @click="openEdit(d)">编辑</button>
+            <button class="btn btn-danger" @click="onDelete(d)">删除</button>
+          </td>
         </tr>
         <tr v-if="!filtered.length"><td colspan="12" class="empty">暂无日记</td></tr>
       </tbody>
     </table>
+    <Paginate v-model:page="page" v-model:pageSize="pageSize" :total="filtered.length" />
+
+    <!-- 日记编辑 / 后台代发弹窗 -->
+    <div v-if="showForm" class="modal-mask" @click.self="showForm = false">
+      <div class="modal">
+        <h2 class="modal-title">{{ form.id ? '编辑日记' : '新建日记（后台代发）' }}</h2>
+
+        <!-- 作者：新建时可选（代发），编辑时只读 -->
+        <label class="block-label">作者
+          <template v-if="form.id">
+            <input class="input-full" :value="form.authorName + '（原作者不可变更）'" readonly />
+          </template>
+          <template v-else>
+            <input v-model="authorKeyword" class="input-full" placeholder="搜索作者昵称/手机号/ID（仅非游客）" @input="filterAuthors" />
+            <div v-if="!pickedAuthor" class="candidate-list">
+              <div v-for="u in authorCandidates" :key="u.id" class="candidate" @click="pickAuthor(u)">
+                {{ u.nickname }}（ID {{ u.id }}{{ u.phone ? ' · '+u.phone : '' }}） · {{ idLabel(u.identity) }}
+              </div>
+              <div v-if="!authorCandidates.length" class="candidate dim">无匹配的非游客用户</div>
+            </div>
+            <div v-else class="picked-author">以 <b>{{ pickedAuthor.nickname }}</b>（ID {{ pickedAuthor.id }}）身份发布
+              <a class="link" @click="pickedAuthor = null">重选</a></div>
+          </template>
+        </label>
+
+        <label class="block-label">标题（{{ (form.title||'').length }}/30）
+          <input v-model="form.title" class="input-full" maxlength="30" />
+        </label>
+        <label class="block-label">正文（{{ (form.content||'').length }} 字）
+          <textarea v-model="form.content" class="textarea" rows="6" />
+        </label>
+
+        <label class="block-label">标签</label>
+        <div class="tag-picker">
+          <span v-for="t in sysTags" :key="t" class="tag-opt" :class="{ on: form.tags.includes(t) }" @click="toggleTag(t)">{{ t }}</span>
+        </div>
+
+        <label class="block-label">权限</label>
+        <div class="seg-pick">
+          <span v-for="p in ['public','member','private']" :key="p" class="opt" :class="{ active: form.permission===p }" @click="form.permission=p">{{ permLabel(p) }}</span>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-ghost" @click="showForm = false">取消</button>
+          <button class="btn btn-primary" :disabled="saving" @click="onSave">{{ saving ? '保存中…' : '保存' }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getDiaries, deleteDiary, deleteDiaries } from '../api/index.js'
+import { getDiaries, deleteDiary, deleteDiaries, updateDiary, createDiary, getTagList, getUsers } from '../api/index.js'
 import { exportCsv } from '../utils/csv.js'
+import Paginate from '../components/Paginate.vue'
 
 const diaries = ref([]), filtered = ref([]), keyword = ref(''), permission = ref(''), tag = ref('')
-const selected = ref([])
-const allTags = ref([])
+const selected = ref([]), allTags = ref([])
+const page = ref(1), pageSize = ref(20)
+const paged = computed(() => filtered.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
+
+// 编辑/代发弹窗
+const showForm = ref(false), form = ref({ tags: [] }), saving = ref(false)
+const sysTags = ref([]), allUsers = ref([])
+const authorKeyword = ref(''), authorCandidates = ref([]), pickedAuthor = ref(null)
 
 onMounted(async () => {
   diaries.value = (await getDiaries()).list
   filtered.value = diaries.value
-  // 标签筛选下拉：从已加载日记动态聚合去重（与原型一致，纯前端）
   allTags.value = [...new Set(diaries.value.flatMap(d => d.tags || []))].sort()
 })
 function permLabel(p) { return { public:'公众', member:'会员', private:'私密' }[p] || p }
+function idLabel(i) { return { guest:'游客', authed:'已授权', member:'会员' }[i] || i }
 function excerpt(c) { return c ? (c.length > 50 ? c.slice(0, 50) + '…' : c) : '' }
 function search() {
   const k = keyword.value.trim()
@@ -70,11 +130,15 @@ function search() {
     (!tag.value || (d.tags || []).includes(tag.value))
   )
   selected.value = selected.value.filter(id => filtered.value.some(d => d.id === id))
+  page.value = 1
 }
 const allChecked = computed(() =>
-  filtered.value.length > 0 && filtered.value.every(d => selected.value.includes(d.id)))
+  paged.value.length > 0 && paged.value.every(d => selected.value.includes(d.id)))
 function toggleAll(e) {
-  selected.value = e.target.checked ? filtered.value.map(d => d.id) : []
+  const ids = paged.value.map(d => d.id)
+  selected.value = e.target.checked
+    ? [...new Set([...selected.value, ...ids])]
+    : selected.value.filter(id => !ids.includes(id))
 }
 function interTotal(d) { return (d.likes||0) + (d.favorites||0) + (d.comments||0) + (d.shares||0) }
 async function onDelete(d) {
@@ -100,10 +164,56 @@ function removeLocal(ids) {
 function onExport() {
   exportCsv(
     `醒书日记列表-${new Date().toISOString().slice(0, 10)}.csv`,
-    ['日记ID', '标题', '作者', '发布时间', '权限', '标签', '点赞', '收藏', '评论', '转发'],
+    ['日记ID', '标题', '作者', '发布时间', '权限', '标签', '点赞', '收藏', '评论', '转发', '已编辑'],
     filtered.value.map(d => [d.id, d.title, d.author, d.createdAt, permLabel(d.permission),
-      (d.tags || []).join('、'), d.likes, d.favorites, d.comments, d.shares])
+      (d.tags || []).join('、'), d.likes, d.favorites, d.comments, d.shares, d.editedAt ? '是' : ''])
   )
+}
+
+// ── 编辑 / 代发 ──
+async function ensureMeta() {
+  if (!sysTags.value.length) sysTags.value = (await getTagList()).list
+  if (!allUsers.value.length) allUsers.value = (await getUsers()).list
+}
+async function openEdit(d) {
+  await ensureMeta()
+  form.value = { id: d.id, authorName: d.author, title: d.title, content: d.content, permission: d.permission, tags: [...(d.tags || [])] }
+  showForm.value = true
+}
+async function openCreate() {
+  await ensureMeta()
+  form.value = { title: '', content: '', permission: 'public', tags: [] }
+  pickedAuthor.value = null; authorKeyword.value = ''; filterAuthors()
+  showForm.value = true
+}
+function filterAuthors() {
+  const k = authorKeyword.value.trim()
+  authorCandidates.value = allUsers.value
+    .filter(u => u.identity !== 'guest')
+    .filter(u => !k || u.nickname.includes(k) || (u.phone || '').includes(k) || String(u.id) === k)
+    .slice(0, 20)
+}
+function pickAuthor(u) { pickedAuthor.value = u }
+function toggleTag(t) {
+  const i = form.value.tags.indexOf(t)
+  if (i >= 0) form.value.tags.splice(i, 1); else form.value.tags.push(t)
+}
+async function onSave() {
+  if (!form.value.title.trim() || !form.value.content.trim()) { alert('标题和内容不能为空'); return }
+  if (!form.value.id && !pickedAuthor.value) { alert('请选择作者'); return }
+  saving.value = true
+  try {
+    if (form.value.id) {
+      await updateDiary({ id: form.value.id, title: form.value.title.trim(), content: form.value.content.trim(), permission: form.value.permission, tags: form.value.tags })
+    } else {
+      await createDiary({ authorId: pickedAuthor.value.id, title: form.value.title.trim(), content: form.value.content.trim(), permission: form.value.permission, tags: form.value.tags })
+    }
+    showForm.value = false
+    diaries.value = (await getDiaries()).list
+    allTags.value = [...new Set(diaries.value.flatMap(d => d.tags || []))].sort()
+    search()
+  } catch (e) { alert('保存失败：' + e.message) }
+  finally { saving.value = false }
 }
 </script>
 
@@ -118,4 +228,15 @@ function onExport() {
 .tag-more { font-size: 11px; color: var(--ink-4); }
 .dim { color: #A8A39B; font-size: 12px; }
 .empty { text-align: center; color: #A8A39B; padding: 24px; }
+.edited-tag { margin-left: 8px; font-size: 10px; color: var(--warn); background: rgba(192,147,83,0.14); padding: 1px 6px; border-radius: 3px; }
+.ops { display: flex; gap: 6px; }
+
+.picked-author { margin-top: 8px; font-size: 13px; color: var(--ink-2); }
+.tag-picker { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.tag-opt {
+  padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+  border: 0.5px solid var(--tbl-border); background: var(--bg-canvas); color: var(--ink-2);
+  font-family: var(--font-serif);
+}
+.tag-opt.on { background: var(--vermilion); color: #fff; border-color: var(--vermilion); }
 </style>

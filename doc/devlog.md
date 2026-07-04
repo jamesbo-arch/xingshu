@@ -1236,3 +1236,27 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `test/fn-admin-test.js` — users 形状断言补 favorites/comments/shares/lastActive/realName
 **未做（记录）**：日记列表"已编辑"标记——本项目 `diaries.updated_at` 会被点赞/评论等互动 UPDATE 抬高，据此判断会误标，需专设"内容修改时间"列，归入后续（B/后续档）。
 **验证**：fn-admin-test 12/12（含新字段断言）；`npm test` 全量 122 条全绿；`cd admin && npm run build` 通过；admin 云函数重新部署 Active。UI 观感对齐待开发者工具/浏览器人工核对。
+
+---
+
+### 2026-07-04 — 后台 B/C/D/E 档：编辑/代发/ID展示/分页
+
+**类型**：数据库 | 云函数 | 前端 | 测试 | 部署
+**模型**：claude-opus-4-8
+**计划关联**：后台差异盘点 B/C/D/E 档（用户批准全部推进，test-first）
+**测试先行**：`test/prd-ch3-test-cases.md` 新增 ADMIN-EDIT 小节（AE-A01~08 自动 + AE-M01~06 人工）；`test/fn-admin-edit-test.js`（8/8）挂入 npm test（现 130 条）
+**DB**：diaries 加 `content_edited_at DATETIME`（仅标题/正文/标签/权限变更置位，与点赞/评论等互动 UPDATE 无关，解决 A 档遗留的"已编辑"误标问题）
+**后端**（`cloudfunctions/admin/index.js`，均走 HMAC 鉴权 + 审计；已部署）：
+- B `updateUser`（改昵称/真实姓名/手机号，身份不动，审计旧值→新值）
+- B `updateDiary`（改标题/正文/权限/标签，置 content_edited_at，diary_tags 重建，审计）
+- C `createDiary`（代发：指定 authorId，created_by 记作者 id[INT 列]，diary_count+1，审计）
+- D userDetail 单独取 openid/unionid（不进列表，隐私+减载）
+- `tagList`（系统标签名，供编辑/代发标签选择器）；DIARY_SELECT 加 editedAt
+- mini `updateDiary` 同步置 content_edited_at（已部署）
+**前端**（`admin/`）：
+- `components/Paginate.vue`（新建，客户端分页 10/20/50+页码）接入 Users/Diaries/Orders 列表；筛选后回第 1 页
+- `views/UserDetail.vue` — 资料编辑态（昵称/真实姓名/手机号，微信授权名只读）+ 身份标识区（系统ID/OpenID/UnionID 展示 + navigator.clipboard 复制 + 含义说明，UnionID 空显"未获取"）
+- `views/Diaries.vue` — 编辑/代发弹窗（作者选择[代发]/标题≤30计数/正文/系统标签选择器/权限分段）；列表"已编辑"标记；per-row 编辑
+- `api/index.js` — updateUser/updateDiary/createDiary/getTagList
+**E 档决策**：采用**客户端分页**（Paginate 切片 filtered），保留既有客户端搜索/筛选，当前数据量足够；未走服务端 LIMIT/OFFSET（会打断客户端过滤），故 AE-A09 自动化转人工 AE-M06。
+**验证**：fn-admin-edit-test 8/8；`npm test` 全量 130 条全绿；`cd admin && npm run build` 通过；admin/updateDiary 云函数已部署 Active。编辑/代发/复制/分页 UI 待开发者工具人工回归（AE-M01~06）。

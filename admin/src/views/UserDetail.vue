@@ -2,13 +2,22 @@
   <div>
     <router-link to="/users" class="back-link">← 返回用户列表</router-link>
     <div v-if="user" class="detail-card">
-      <h1>{{ user.nickname || '未命名用户' }}</h1>
-      <div class="info-grid">
+      <div class="card-head">
+        <h1>{{ user.nickname || '未命名用户' }}</h1>
+        <button v-if="!editing" class="btn btn-ghost" @click="startEdit">编辑资料</button>
+        <span v-else>
+          <button class="btn btn-ghost" @click="editing = false">取消</button>
+          <button class="btn btn-primary" @click="onSaveProfile">保存</button>
+        </span>
+      </div>
+
+      <!-- 查看态 -->
+      <div v-if="!editing" class="info-grid">
         <div><label>ID</label><span>{{ user.id }}</span></div>
         <div><label>手机号</label><span>{{ user.phone || '-' }}</span></div>
         <div><label>真实姓名</label><span>{{ user.realName || '-' }}</span></div>
         <div><label>身份</label><span class="badge" :class="'badge-'+user.identity">{{ identityLabel(user.identity) }}</span></div>
-        <div><label>会员到期</label><span>{{ user.memberUntil || '-' }}</span></div>
+        <div><label>会员到期</label><span>{{ user.memberUntil || '-' }}<span v-if="user.memberUntil" class="dim"> · 剩 {{ user.daysLeft }} 天</span></span></div>
         <div><label>注册时间</label><span>{{ user.registeredAt }}</span></div>
         <div><label>最后活跃</label><span>{{ user.lastActive }}</span></div>
         <div>
@@ -16,11 +25,42 @@
           <span>{{ user.referrerName || '无' }}<a class="link edit-ref" @click="openReferrerEdit">修改</a></span>
         </div>
       </div>
+
+      <!-- 编辑态（B 档：昵称/真实姓名/手机号；微信授权名不可改） -->
+      <div v-else class="edit-grid">
+        <label>昵称<input v-model="form.nickname" class="input-full" maxlength="16" /></label>
+        <label>真实姓名<input v-model="form.realName" class="input-full" maxlength="16" placeholder="线下核对用" /></label>
+        <label>手机号<input v-model="form.phone" class="input-full" maxlength="11" placeholder="可手动修正" /></label>
+      </div>
+
       <!-- v2.4 开通/续费会员入口（游客不可开通） -->
-      <div v-if="user.identity !== 'guest'" style="margin-top:16px">
+      <div v-if="!editing && user.identity !== 'guest'" style="margin-top:16px">
         <router-link :to="'/orders?create='+user.id" class="btn btn-danger">
           {{ user.identity === 'member' ? '续费会员' : '开通会员' }}
         </router-link>
+      </div>
+    </div>
+
+    <!-- D 档 身份标识（微信身份，只读 + 一键复制） -->
+    <div v-if="user" class="section">
+      <h2>身份标识</h2>
+      <div class="id-card">
+        <div class="id-row">
+          <span class="id-k">系统 ID<span class="id-pk">主键</span></span>
+          <span class="id-v mono">{{ user.id }}</span>
+          <button class="btn btn-ghost id-copy" @click="copy(String(user.id))">复制</button>
+        </div>
+        <div class="id-row">
+          <span class="id-k">WeChat OpenID</span>
+          <span class="id-v mono">{{ user.openid || '—' }}</span>
+          <button class="btn btn-ghost id-copy" :disabled="!user.openid" @click="copy(user.openid)">复制</button>
+        </div>
+        <div class="id-row">
+          <span class="id-k">WeChat UnionID</span>
+          <span class="id-v mono" :class="{ empty: !user.unionid }">{{ user.unionid || '未获取' }}</span>
+          <button class="btn btn-ghost id-copy" :disabled="!user.unionid" @click="copy(user.unionid)">复制</button>
+        </div>
+        <p class="id-note">系统 ID 为数据库主键；OpenID 是用户在本小程序的唯一标识；UnionID 用于同主体多应用打通（需绑定微信开放平台，未绑定时为空）。</p>
       </div>
     </div>
 
@@ -96,12 +136,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getUserDetail, getUsers, updateReferrer, getUserOrders } from '../api/index.js'
+import { getUserDetail, getUsers, updateReferrer, getUserOrders, updateUser } from '../api/index.js'
 
 const route = useRoute()
 const user = ref(null), diaries = ref([]), referred = ref([]), orders = ref([])
 const showRefEdit = ref(false), refKeyword = ref(''), refSelected = ref(null)
 const allUsers = ref([]), candidates = ref([])
+const editing = ref(false), form = ref({})
 
 onMounted(load)
 async function load() {
@@ -112,6 +153,23 @@ async function load() {
 
 function identityLabel(i) { return { guest:'游客', authed:'已授权', member:'会员' }[i] || i }
 function stateLabel(s) { return { active:'生效中', expiring:'即将到期', expired:'已过期', pending:'待生效', refunded:'已退款', cancelled:'已取消' }[s] || s }
+
+function startEdit() {
+  form.value = { nickname: user.value.nickname || '', realName: user.value.realName || '', phone: user.value.phone || '' }
+  editing.value = true
+}
+async function onSaveProfile() {
+  if (!form.value.nickname.trim()) { alert('昵称不能为空'); return }
+  try {
+    await updateUser({ userId: user.value.id, nickname: form.value.nickname.trim(), realName: form.value.realName.trim(), phone: form.value.phone.trim() })
+    editing.value = false
+    await load()
+  } catch (e) { alert('保存失败：' + e.message) }
+}
+async function copy(text) {
+  if (!text) return
+  try { await navigator.clipboard.writeText(text) } catch { /* 忽略 */ }
+}
 
 async function openReferrerEdit() {
   if (!allUsers.value.length) allUsers.value = (await getUsers()).list
@@ -153,4 +211,22 @@ async function onClearReferrer() {
 }
 .stat-num { font-family: var(--font-serif); font-size: 24px; font-weight: 700; color: var(--ink); }
 .stat-lbl { font-size: 12px; color: var(--ink-3); margin-top: 4px; letter-spacing: 1px; }
+
+.card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.card-head h1 { margin: 0; }
+.card-head .btn { margin-left: 8px; }
+.dim { color: var(--ink-4); font-size: 12px; }
+
+.edit-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.edit-grid label { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--ink-3); font-family: var(--font-serif); letter-spacing: 1px; }
+
+.id-card { background: var(--bg-content); border: 0.5px solid var(--tbl-border); border-radius: 12px; padding: 6px 18px; box-shadow: var(--shadow-1); }
+.id-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 0.5px solid var(--tbl-border); }
+.id-row:last-of-type { border-bottom: none; }
+.id-k { width: 160px; flex-shrink: 0; font-size: 13px; color: var(--ink-3); font-family: var(--font-serif); letter-spacing: 1px; }
+.id-pk { display: inline-block; margin-left: 8px; padding: 1px 6px; font-size: 10px; border-radius: 3px; background: var(--gold-soft); color: var(--gold-deep); }
+.id-v { flex: 1; font-size: 13px; color: var(--ink-2); word-break: break-all; }
+.id-v.empty { color: var(--ink-4); }
+.id-copy { flex-shrink: 0; }
+.id-note { font-size: 11px; color: var(--ink-4); line-height: 1.7; padding: 12px 0 4px; margin: 0; }
 </style>

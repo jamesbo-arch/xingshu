@@ -24,7 +24,7 @@
         <th>支付时间</th><th>会员有效期</th><th>状态</th><th>录入人</th><th>操作</th>
       </tr></thead>
       <tbody>
-        <tr v-for="o in filtered" :key="o.id">
+        <tr v-for="o in paged" :key="o.id">
           <td class="mono">{{ o.id }}</td>
           <td>{{ o.userName }}<span v-if="o.userPhone" class="dim"> · {{ o.userPhone }}</span></td>
           <td>{{ o.plan }}</td>
@@ -39,6 +39,7 @@
         <tr v-if="!filtered.length"><td colspan="10" class="empty">暂无订单</td></tr>
       </tbody>
     </table>
+    <Paginate v-model:page="page" v-model:pageSize="pageSize" :total="filtered.length" />
 
     <!-- ===== 创建订单向导 ===== -->
     <div v-if="showCreate" class="modal-mask" @click.self="showCreate = false">
@@ -190,6 +191,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getOrders, getOrderDetail, createOrder, getUsers, fileToProofDataUrl } from '../api/index.js'
+import Paginate from '../components/Paginate.vue'
 
 const route = useRoute()
 
@@ -197,6 +199,8 @@ const methods = ['微信转账', '支付宝转账', '银行转账', '现金', '�
 
 const orders = ref([]), keyword = ref(''), status = ref('')
 const filtered = computed(() => orders.value)  // 服务端已按 status 派生，前端直接展示
+const page = ref(1), pageSize = ref(20)
+const paged = computed(() => filtered.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
 
 const showCreate = ref(false), step = ref(1)
 const allUsers = ref([]), candidates = ref([]), userKeyword = ref(''), picked = ref(null)
@@ -214,7 +218,7 @@ onMounted(async () => {
     if (u) openCreate(u)
   }
 })
-async function load() { orders.value = (await getOrders({ keyword: keyword.value, status: status.value })).list }
+async function load() { orders.value = (await getOrders({ keyword: keyword.value, status: status.value })).list; page.value = 1 }
 let t
 function search() { clearTimeout(t); t = setTimeout(load, 250) }
 

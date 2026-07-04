@@ -51,6 +51,7 @@ const USER_SELECT = `
 const DIARY_SELECT = `
   SELECT d.id, d.title, d.content, d.permission, d.status,
          DATE_FORMAT(d.created_at, '%Y-%m-%d %H:%i') AS createdAt,
+         d.content_edited_at AS editedAt,
          d.like_count AS likes, d.fav_count AS favorites,
          d.comment_count AS comments, d.share_count AS shares,
          u.nickname AS author, u.id AS authorId,
@@ -132,13 +133,110 @@ const handlers = {
   async userDetail({ id } = {}) {
     const [users] = await db.query(`${USER_SELECT} WHERE u.id = ?`, [id])
     if (!users.length) throw new Error('用户不存在')
+    // D 档：微信身份标识（openid/unionid）单独取，仅详情返回，不进列表
+    const [[ids]] = await db.query(
+      "SELECT openid, COALESCE(unionid,'') AS unionid FROM users WHERE id = ?", [id])
+    const user = { ...users[0], openid: ids.openid, unionid: ids.unionid }
     const [diaries] = await db.query(
       `${DIARY_SELECT} WHERE d.user_id = ? AND d.status = 'active' ORDER BY d.created_at DESC`, [id])
     // v2.2 "他推荐的用户"
     const [referred] = await db.query(
       `SELECT id, nickname, identity, DATE_FORMAT(created_at, '%Y-%m-%d') AS registeredAt
        FROM users WHERE referrer_user_id = ? ORDER BY created_at DESC`, [id])
-    return { user: users[0], diaries: diaries.map(rowToDiary), referred }
+    return { user, diaries: diaries.map(rowToDiary), referred }
+  },
+
+  // B 档：管理员编辑用户资料（昵称/真实姓名/手机号），身份不动，写审计
+  async updateUser({ userId, nickname, realName, phone } = {}) {
+    if (!userId) throw new Error('缺少用户 ID')
+    const [users] = await db.query(
+      'SELECT nickname, real_name AS realName, phone FROM users WHERE id = ?', [userId])
+    if (!users.length) throw new Error('用户不存在')
+    const before = users[0]
+    const fields = [], values = []
+    if (nickname !== undefined) { fields.push('nickname = ?'); values.push(nickname) }
+    if (realName !== undefined) { fields.push('real_name = ?'); values.push(realName) }
+    if (phone !== undefined) { fields.push('phone = ?'); values.push(phone) }
+    if (!fields.length) throw new Error('无可更新字段')
+    values.push(userId)
+    await db.query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values)
+    await auditLog('updateUser', 'user', userId, { before, after: { nickname, realName, phone } })
+    const [after] = await db.query(`${USER_SELECT} WHERE u.id = ?`, [userId])
+    return { user: after[0] }
+  },
+
+  // B 档：管理员编辑日记（标题/正文/权限/标签），置 content_edited_at，写审计
+  async updateDiary({ id, title, content, permission, tags } = {}) {
+    if (!id) throw new Error('缺少日记 ID')
+    const [rows] = await db.query("SELECT id FROM diaries WHERE id = ? AND status = 'active'", [id])
+    if (!rows.length) throw new Error('日记不存在或已删除')
+    const conn = await db.getConnection()
+    try {
+      await conn.beginTransaction()
+      const fields = [], values = []
+      if (title !== undefined) { fields.push('title = ?'); values.push(title) }
+      if (content !== undefined) { fields.push('content = ?'); values.push(content) }
+      if (permission !== undefined) { fields.push('permission = ?'); values.push(permission) }
+      if (title !== undefined || content !== undefined || permission !== undefined || tags !== undefined) {
+        fields.push('content_edited_at = NOW()')
+      }
+      if (fields.length) {
+        values.push(id)
+        await conn.query(`UPDATE diaries SET ${fields.join(', ')} WHERE id = ?`, values)
+      }
+      if (tags !== undefined) {
+        await conn.query('DELETE FROM diary_tags WHERE diary_id = ?', [id])
+        for (const name of tags) {
+          let [t] = await conn.query('SELECT id FROM tags WHERE name = ?', [name])
+          const tagId = t.length ? t[0].id
+            : (await conn.query('INSERT INTO tags (name, usage_count) VALUES (?, 0)', [name]))[0].insertId
+          await conn.query('INSERT INTO diary_tags (diary_id, tag_id) VALUES (?, ?)', [id, tagId])
+        }
+      }
+      await conn.commit()
+    } catch (err) {
+      await conn.rollback()
+      throw err
+    } finally {
+      conn.release()
+    }
+    await auditLog('updateDiary', 'diary', id, { title, permission })
+    const [d] = await db.query(`${DIARY_SELECT} WHERE d.id = ?`, [id])
+    return { diary: rowToDiary(d[0]) }
+  },
+
+  // C 档：后台代发日记（以指定用户身份发布），写审计
+  async createDiary({ authorId, title, content, permission = 'public', tags = [] } = {}) {
+    if (!authorId) throw new Error('缺少作者 ID')
+    if (!title || !content) throw new Error('标题和内容不能为空')
+    const [author] = await db.query('SELECT id FROM users WHERE id = ?', [authorId])
+    if (!author.length) throw new Error('作者不存在')
+    const conn = await db.getConnection()
+    let diaryId
+    try {
+      await conn.beginTransaction()
+      // created_by 为 INT（用户 id 列），代发以作者 id 记录；管理员留痕走 admin_logs
+      const [r] = await conn.query(
+        'INSERT INTO diaries (user_id, title, content, permission, created_by) VALUES (?,?,?,?,?)',
+        [authorId, title, content, permission, authorId])
+      diaryId = r.insertId
+      for (const name of tags) {
+        let [t] = await conn.query('SELECT id FROM tags WHERE name = ?', [name])
+        const tagId = t.length ? t[0].id
+          : (await conn.query('INSERT INTO tags (name, usage_count) VALUES (?, 0)', [name]))[0].insertId
+        await conn.query('INSERT INTO diary_tags (diary_id, tag_id) VALUES (?, ?)', [diaryId, tagId])
+      }
+      await conn.query('UPDATE users SET diary_count = diary_count + 1 WHERE id = ?', [authorId])
+      await conn.commit()
+    } catch (err) {
+      await conn.rollback()
+      throw err
+    } finally {
+      conn.release()
+    }
+    await auditLog('createDiary', 'diary', diaryId, { authorId, title })
+    const [d] = await db.query(`${DIARY_SELECT} WHERE d.id = ?`, [diaryId])
+    return { diary: rowToDiary(d[0]) }
   },
 
   // v2.2 管理员修改推荐人：非本人、不得互为推荐循环，写审计（旧值→新值）
@@ -178,6 +276,12 @@ const handlers = {
     const [comments] = await db.query(
       `${COMMENT_SELECT} WHERE c.diary_id = ? AND c.is_deleted = 0 ORDER BY c.created_at ASC`, [id])
     return { diary: rowToDiary(rows[0]), comments }
+  },
+
+  // 系统标签名列表（供日记编辑/代发的标签选择器）
+  async tagList() {
+    const [rows] = await db.query("SELECT name FROM tags WHERE is_active = 1 ORDER BY usage_count DESC, name ASC")
+    return { list: rows.map(r => r.name) }
   },
 
   async comments({ keyword, userId } = {}) {

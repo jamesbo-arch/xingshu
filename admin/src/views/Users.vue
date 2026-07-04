@@ -17,7 +17,7 @@
         <th>会员有效期</th><th>日记</th><th>互动</th><th>推荐人</th><th>注册</th><th>最后活跃</th><th>操作</th>
       </tr></thead>
       <tbody>
-        <tr v-for="u in filtered" :key="u.id">
+        <tr v-for="u in paged" :key="u.id">
           <td>{{ u.id }}</td>
           <td>
             <span class="u-cell">
@@ -42,15 +42,19 @@
         <tr v-if="!filtered.length"><td colspan="12" class="empty">暂无用户</td></tr>
       </tbody>
     </table>
+    <Paginate v-model:page="page" v-model:pageSize="pageSize" :total="filtered.length" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { getUsers } from '../api/index.js'
 import { exportCsv } from '../utils/csv.js'
+import Paginate from '../components/Paginate.vue'
 
 const users = ref([]), filtered = ref([]), keyword = ref(''), identity = ref('')
+const page = ref(1), pageSize = ref(20)
+const paged = computed(() => filtered.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
 
 onMounted(async () => { users.value = (await getUsers()).list; filtered.value = users.value })
 function identityLabel(i) { return { guest:'游客', authed:'已授权', member:'会员' }[i] || i }
@@ -70,6 +74,7 @@ function search() {
     (!k || (u.nickname || '').includes(k) || (u.realName || '').includes(k) || (u.phone || '').includes(k) || String(u.id) === k) &&
     (!identity.value || u.identity === identity.value)
   )
+  page.value = 1  // 筛选后回到第 1 页
 }
 </script>
 

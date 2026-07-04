@@ -60,6 +60,11 @@ export async function deleteDiaries(ids) { return call('deleteDiaries', { ids })
 export async function deleteComment(id) { return call('deleteComment', { id }) }
 export async function getComments(params = {}) { return call('comments', params) }
 export async function updateReferrer(userId, referrerId) { return call('updateReferrer', { userId, referrerId }) }
+// B/C 档：编辑用户资料、编辑日记、后台代发日记、系统标签列表
+export async function updateUser(data) { return call('updateUser', data) }
+export async function updateDiary(data) { return call('updateDiary', data) }
+export async function createDiary(data) { return call('createDiary', data) }
+export async function getTagList() { return call('tagList') }
 export async function getActivities() { return call('activityList') }
 export async function saveActivity(data) { return call('activitySave', data) }
 export async function getActivitySignups(id) { return call('activitySignups', { id }) }
