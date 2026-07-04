@@ -83,6 +83,15 @@
 
 `miniprogram/project.private.config.json` 由微信开发者工具本地生成（含个人 libVersion、compileHotReLoad 等设置），**不得纳入 Git 追踪**，已在 `.gitignore` 中排除。
 
+### 小程序编码约定（踩坑记，务必遵守）
+
+以下几条都因静态读码难发现、需真机才现形，务必默认遵守：
+
+1. **WXML 绑定禁用方法调用判断选中/包含**：`{{arr.indexOf(x) >= 0}}` / `.includes()` 在 WXML `{{}}` 表达式中**不可靠、静默失效**（等值判断如 `a === b` 才可靠）。多选/选中态一律在 JS 预算**布尔查找表**对象，绑 `{{set[key]}}`（如 filter-sheet 的 `tagSet/yearSet/monthSet`、compose 的 `pickerTagSet`）。
+2. **自定义组件用全局类必须开 `addGlobalClass`**：组件默认样式隔离，`app.wxss` 的全局类（seal-tag/perm-badge/btn-primary 等）穿不进组件——须在 `Component({ options: { addGlobalClass: true } })`。页面（Page）不隔离，无需此项。
+3. **`dataset` 数字值可能变字符串**：`data-x="{{numberVal}}"` 取出常为字符串，与数字比较会不匹配——handler 里 `Number()` 强制转换。
+4. **底部弹层被自定义 tab-bar 遮挡**：custom-tab-bar 是独立层（盖在页面级弹层之上，z-index 不跨层比较）。tab 页上的底部 sheet 打开时应隐藏 tab-bar（`getTabBar().setData({ hidden: true })`，见 square/collections 的 `_tabBar()`），而非靠 padding 避让。
+
 ## Git 提交规则
 
 **`.claude/` 目录（含 agents、skills、settings）必须纳入 Git 追踪并在每次变更后推送。** 这些文件是项目开发环境的重要组成部分，与源代码等同对待。（开发日志 `doc/devlog.md` 与开发计划 `doc/fullstack-plan.md` 已于 2026-07-04 迁出 `.claude/`，见「开发日志维护」。）
