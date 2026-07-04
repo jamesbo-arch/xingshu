@@ -63,3 +63,26 @@ export async function updateReferrer(userId, referrerId) { return call('updateRe
 export async function getActivities() { return call('activityList') }
 export async function saveActivity(data) { return call('activitySave', data) }
 export async function getActivitySignups(id) { return call('activitySignups', { id }) }
+
+// v2.4 会员订单管理
+export async function getOrders(params = {}) { return call('orderList', params) }
+export async function getOrderDetail(id) { return call('orderDetail', { id }) }
+export async function getUserOrders(userId) { return call('userOrders', { userId }) }
+export async function createOrder(data) { return call('createOrder', data) }
+
+// 支付凭证上传到 TCB 云存储，返回 fileID（供 proof_url 存储）
+export async function uploadProof(file) {
+  await ensureSignIn()
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+  const cloudPath = `admin/order-proof/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`
+  const res = await app.uploadFile({ cloudPath, filePath: file })
+  return res.fileID
+}
+
+// 将 cloud:// fileID 解析为可访问临时 URL（http 外链原样返回）
+export async function resolveFileUrl(fileID) {
+  if (!fileID || !String(fileID).startsWith('cloud://')) return fileID || ''
+  await ensureSignIn()
+  const res = await app.getTempFileURL({ fileList: [fileID] })
+  return (res.fileList && res.fileList[0] && res.fileList[0].tempFileURL) || ''
+}

@@ -293,6 +293,19 @@
     - 小程序：app onLaunch/onShow 解析 scene 直达对应详情页；活动详情页加分享入口 + 活动海报弹层（复用 poster-sheet 模式）；日记海报二维码替换为真实带参码
     - admin 后台：用户列表/详情展示推荐人与"他推荐的用户"；管理员可修改/清空用户推荐人（校验非本人、无循环，写 admin_logs）
 
+### M1.6 — 会员订单管理模块（v2.4，填补"后台无法开通会员"的功能空洞，上线前必做）
+
+对照后台原型补齐：管理员在后台记录线下转账并即时开通/续期会员。
+
+- [x] **M1.6.1** DB：orders 加 `proof_url` 列、`method` 放宽为 VARCHAR(16)
+- [x] **M1.6.2** PRD 补写：v2.4 修订行 + §3.2 会员订单管理 + §4.2 导航 + §5.2.7 订单管理页 + §5.2.3 订单历史/开通入口
+- [x] **M1.6.3** 测试先行：`test/fn-order-test.js`（ORDER-A01~A08，8/8）+ prd-ch3 ORDER 小节；挂入 npm test（现 122 条）
+- [x] **M1.6.4** admin 云函数 handlers：orderList / orderDetail / userOrders / createOrder（时长叠加 + 单事务激活 + 审计）`[Backend]`
+- [x] **M1.6.5** admin API 层 + Orders.vue（订单列表 + 三步建单向导 + 凭证上传 + 详情弹窗）+ 路由 + 侧栏 nav + UserDetail 订单区/开通入口 `[Frontend]`
+- [ ] **M1.6.6** 部署 admin 云函数（wxcloud CLI）`[CI/CD]`
+- [ ] **M1.6.7** admin Web 人工回归（ORDER-M01~M07）：三步建单 → 用户端会员即时生效 → 详情/续期叠加 `[用户+QA]`
+- 存量弃用：C 端 `createOrder`/`activateMember`（鉴权错误、无凭证叠加）已由 admin.createOrder 取代，勿用；C 端 `getOrderList`（本人订单）保留。
+
 ### M2 — 部署与人工验证（需用户在场，建议一次批处理）
 
 - [x] **M2.1** 云函数部署到 dev 环境 — activity 新建 + 7 个改动函数经 wxcloud CLI 全部部署（含 M1.4/M1.5 全部后端改动）

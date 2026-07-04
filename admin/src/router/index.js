@@ -4,6 +4,7 @@ import { isLoggedIn } from '../api'
 const routes = [
   { path: '/login', name: 'Login', component: () => import('../views/Login.vue'), meta: { public: true } },
   { path: '/', name: 'Dashboard', component: () => import('../views/Dashboard.vue') },
+  { path: '/orders', name: 'Orders', component: () => import('../views/Orders.vue') },
   { path: '/users', name: 'Users', component: () => import('../views/Users.vue') },
   { path: '/users/:id', name: 'UserDetail', component: () => import('../views/UserDetail.vue') },
   { path: '/diaries', name: 'Diaries', component: () => import('../views/Diaries.vue') },

@@ -161,6 +161,35 @@
 | ADM-M07 | Interactions | 互动明细 | 点赞/收藏/评论列表可见明细（操作者/时间）；删除违规评论生效 |
 | ADM-M08 | Activities | 活动管理 | 创建（必填校验）→ 列表出现；编辑回填；上下线切换后小程序端列表同步（draft 不可见）；报名名单展示称呼/联系方式/时间 |
 
+### ORDER · 会员订单管理（v2.4，PRD §5.2.7）
+
+后端已落地并挂入 npm test（`test/fn-order-test.js`，8/8 PASS）。前端为 admin Web 新页 `admin/src/views/Orders.vue`。
+
+#### 自动化用例（fn-order-test.js，经 admin 云函数）
+
+| ID | 用例 | 预期 |
+|----|------|------|
+| ORDER-A01 | 鉴权 | 无 token 调 orderList → code -401 |
+| ORDER-A02 | 建单开通 | createOrder（authed 用户）→ 订单 paid、用户变 member、valid_until = 今日+365 |
+| ORDER-A03 | 时长叠加 | 为现会员续期 → valid_until 从原 member_until 顺延（不覆盖剩余天数） |
+| ORDER-A04 | 游客拦截 | 为 guest 建单 → 拒绝 |
+| ORDER-A05 | 参数校验 | 金额 ≤0 / 缺 userId → 拒绝 |
+| ORDER-A06 | 审计 | 建单写 admin_logs（action=createOrder，target=订单号） |
+| ORDER-A07 | 状态派生 | orderList 据 valid_until 派生 expiring(≤15天)/expired；status 筛选生效 |
+| ORDER-A08 | 归属/详情 | userOrders 仅返回本人订单；orderDetail 返回单笔完整信息 |
+
+#### 人工用例（M2.2 admin Web 回归）
+
+| ID | 用例 | 预期 |
+|----|------|------|
+| ORDER-M01 | 三步向导 | 会员订单页「创建订单」→ 选用户（游客不出现在候选）→ 填单 → 确认，步进器状态正确 |
+| ORDER-M02 | 凭证上传 | 上传转账截图 ≤5MB → 缩略图预览 / 移除；确认页显示"已上传" |
+| ORDER-M03 | 开通生效 | 确认开通后订单入列 status=生效中；小程序端该用户会员中心刷新即显示会员身份与有效期 |
+| ORDER-M04 | 续期叠加 | 对现会员建单，确认页提示"顺延"，开通后有效期在原到期日基础上 +365 |
+| ORDER-M05 | 订单详情 | 详情弹窗展示订单头卡（金额/状态印章/有效期）、支付信息、凭证放大、时间线 |
+| ORDER-M06 | 用户详情联动 | 用户详情页「开通/续费会员」跳订单页并预置该用户；「会员订单」区列出其订单 |
+| ORDER-M07 | 状态筛选 | 列表按 生效中/即将到期/已过期 筛选，徽章颜色与状态一致 |
+
 ### CALM · 克制原则巡检（人工，发版前走查）
 
 | ID | 用例 | 预期 |

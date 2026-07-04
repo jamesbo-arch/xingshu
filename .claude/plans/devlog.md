@@ -1130,3 +1130,35 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 视觉效果待用户 `cd admin && npm run dev` 与开发者工具确认
 
 **遗留建议**：Android 真机衬线需 wx.loadFontFace 加载字体子集（需准备字体文件 + 合法域名/云存储，列入 M2 收尾可选项）
+
+---
+
+### 2026-07-04 — 会员订单管理模块（v2.4）：填补后台无法开通会员的功能空洞
+
+**类型**：数据库 | 云函数 | 前端 | 测试 | 文档 | 部署
+**模型**：claude-fable-5
+**计划关联**：M1.6（后台原型↔PRD↔实现 手术式对比，补齐 PRD 缺失的会员订单模块）
+**背景**：三方对比发现后台原型完整设计了「会员订单管理」（线下转账开通/续期会员），但 PRD §5.2 无页面规格、admin Web 无此页、admin 云函数无对应 action——PRD §5.1.11 声称"管理员后台确认收款并激活"却无任何可用 UI/接口，付费用户无法被开通。本次补齐。
+
+**修改文件**：
+- MySQL `orders` 表 — 加 `proof_url VARCHAR(512)`；`method` enum→VARCHAR(16)（容纳微信/支付宝/银行/现金/其他）
+- `doc/醒书日记...PRD文档.md` — v2.4 修订行 + §3.2 会员订单管理职责 + §4.2 导航加「会员订单」+ §5.2.7 订单管理页完整规格 + §5.2.3 订单历史与开通入口
+- `cloudfunctions/admin/index.js` — 新增 ORDER_SELECT + orderState 派生 + 4 handlers：orderList（状态筛选 active/expiring≤15天/expired）、orderDetail、userOrders、createOrder（**单事务**：校验非游客 → 生成 XS 单号 → paid 落库 → **时长叠加**（现会员从 member_until 顺延）→ 激活会员 → 审计）
+- `admin/src/api/index.js` — getOrders/getOrderDetail/getUserOrders/createOrder + uploadProof（TCB 云存储）+ resolveFileUrl（fileID→临时URL）
+- `admin/src/theme.css` — 订单状态徽章 + 步进器 + 订单头卡 + 时间线 + 凭证/上传区 + 用户预览卡 + 确认核对表
+- `admin/src/views/Orders.vue`（新建）— 订单列表 + 状态筛选 + 三步建单向导（选用户/填单+凭证/确认）+ 详情弹窗；`?create=<userId>` 从用户详情预置
+- `admin/src/{App.vue,router/index.js}` — 侧栏 nav + /orders 路由
+- `admin/src/views/UserDetail.vue` — 会员订单历史区 + 开通/续费会员入口
+- `test/fn-order-test.js`（新建）— ORDER-A01~A08，挂入 npm test（现 122 条）
+- `test/prd-ch3-test-cases.md` — ORDER 小节（A01~08 自动 + M01~07 人工）
+- `.claude/plans/fullstack-plan.md` — 新增 M1.6 里程碑（M1.6.1~5 已完成，6/7 部署与人工回归待做）
+
+**存量处置**：C 端 `createOrder`/`activateMember`（鉴权 identity='member' 错误、无凭证、无叠加）**弃用**，已由 admin.createOrder 取代，勿用；C 端 `getOrderList`（查本人订单，供会员中心 latestOrder）保留。
+
+**验证**：
+- `node test/fn-order-test.js` 8/8 PASS（含时长叠加续期、鉴权、状态派生、审计）
+- `npm test` 全量 122 条全绿；`cd admin && npm run build` 通过
+- admin 云函数经 wxcloud CLI 部署，Active/deployed
+- 人工端到端（ORDER-M01~07：三步建单→用户端会员即时生效）待 M1.6.7 于 admin Web 回归
+
+**范围外（后续可选，本次未做）**：OpenID/UnionID 展示复制、Dashboard 趋势图渲染/快速操作/到期KPI、全站真实分页、后台代发日记、退款停用/打印凭证、⌘K 搜索

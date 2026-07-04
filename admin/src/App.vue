@@ -11,6 +11,7 @@
       </div>
       <nav>
         <router-link to="/" class="nav-item" active-class="active" exact>数据概览</router-link>
+        <router-link to="/orders" class="nav-item" active-class="active">会员订单</router-link>
         <router-link to="/users" class="nav-item" active-class="active">用户管理</router-link>
         <router-link to="/diaries" class="nav-item" active-class="active">日记管理</router-link>
         <router-link to="/interactions" class="nav-item" active-class="active">互动数据</router-link>

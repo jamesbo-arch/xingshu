@@ -16,6 +16,25 @@
           <span>{{ user.referrerName || '无' }}<a class="link edit-ref" @click="openReferrerEdit">修改</a></span>
         </div>
       </div>
+      <!-- v2.4 开通/续费会员入口（游客不可开通） -->
+      <div v-if="user.identity !== 'guest'" style="margin-top:16px">
+        <router-link :to="'/orders?create='+user.id" class="btn btn-danger">
+          {{ user.identity === 'member' ? '续费会员' : '开通会员' }}
+        </router-link>
+      </div>
+    </div>
+
+    <!-- v2.4 会员订单历史 -->
+    <div v-if="orders.length" class="section">
+      <h2>会员订单 ({{ orders.length }})</h2>
+      <table class="data-table">
+        <thead><tr><th>订单号</th><th>金额</th><th>支付方式</th><th>支付时间</th><th>有效期</th><th>状态</th></tr></thead>
+        <tbody><tr v-for="o in orders" :key="o.id">
+          <td class="mono">{{ o.id }}</td><td>¥{{ o.amount }}</td><td>{{ o.method }}</td>
+          <td>{{ o.paymentTime || '-' }}</td><td>{{ o.validFrom }} → {{ o.validUntil }}</td>
+          <td><span class="badge" :class="'badge-'+o.state">{{ stateLabel(o.state) }}</span></td>
+        </tr></tbody>
+      </table>
     </div>
 
     <!-- v2.2 修改推荐人弹窗 -->
@@ -65,10 +84,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getUserDetail, getUsers, updateReferrer } from '../api/index.js'
+import { getUserDetail, getUsers, updateReferrer, getUserOrders } from '../api/index.js'
 
 const route = useRoute()
-const user = ref(null), diaries = ref([]), referred = ref([])
+const user = ref(null), diaries = ref([]), referred = ref([]), orders = ref([])
 const showRefEdit = ref(false), refKeyword = ref(''), refSelected = ref(null)
 const allUsers = ref([]), candidates = ref([])
 
@@ -76,9 +95,11 @@ onMounted(load)
 async function load() {
   const data = await getUserDetail(route.params.id)
   user.value = data.user; diaries.value = data.diaries; referred.value = data.referred || []
+  orders.value = (await getUserOrders(route.params.id)).list
 }
 
 function identityLabel(i) { return { guest:'游客', authed:'已授权', member:'会员' }[i] || i }
+function stateLabel(s) { return { active:'生效中', expiring:'即将到期', expired:'已过期', pending:'待生效', refunded:'已退款', cancelled:'已取消' }[s] || s }
 
 async function openReferrerEdit() {
   if (!allUsers.value.length) allUsers.value = (await getUsers()).list

@@ -60,6 +60,33 @@ const COMMENT_SELECT = `
          DATE_FORMAT(c.created_at, '%Y-%m-%d %H:%i') AS time
   FROM comments c JOIN users u ON c.user_id = u.id JOIN diaries d ON c.diary_id = d.id`
 
+// 订单查询：附用户信息 + 据 valid_until 实时计算状态（active/expiring≤15天/expired/pending）
+const ORDER_SELECT = `
+  SELECT o.id, o.user_id AS userId, u.nickname AS userName, COALESCE(u.phone,'') AS userPhone,
+         u.avatar_hue AS avatarHue, o.amount, o.plan, o.method, o.status,
+         o.member_days AS memberDays, o.proof_url AS proofUrl, o.note, o.created_by AS createdBy,
+         DATE_FORMAT(o.valid_from, '%Y-%m-%d') AS validFrom,
+         DATE_FORMAT(o.valid_until, '%Y-%m-%d') AS validUntil,
+         DATE_FORMAT(o.payment_time, '%Y-%m-%d %H:%i') AS paymentTime,
+         DATE_FORMAT(o.created_at, '%Y-%m-%d %H:%i') AS createdAt,
+         DATEDIFF(o.valid_until, CURDATE()) AS daysToExpiry
+  FROM orders o JOIN users u ON o.user_id = u.id`
+
+// 依 status 与到期天数派生展示态：pending/refunded/cancelled 原样返回；paid 再分 active/expiring/expired
+function orderState(row) {
+  if (row.status !== 'paid') return row.status
+  const d = row.daysToExpiry
+  if (d == null) return 'active'
+  if (d < 0) return 'expired'
+  if (d <= 15) return 'expiring'
+  return 'active'
+}
+function rowToOrder(r) {
+  const state = orderState(r)
+  delete r.daysToExpiry
+  return { ...r, state }
+}
+
 function rowToDiary(r) {
   const tags = r.tags_csv ? r.tags_csv.split(',') : []
   delete r.tags_csv
@@ -301,6 +328,89 @@ const handlers = {
     await db.query('UPDATE diaries SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?', [rows[0].diary_id])
     await auditLog('deleteComment', 'comment', id, { diaryId: rows[0].diary_id })
     return true
+  },
+
+  // ── 会员订单管理（v2.4：线下转账开通/续期会员）──
+  async orderList({ keyword, status } = {}) {
+    const where = [], params = []
+    if (keyword) {
+      where.push('(o.id LIKE ? OR u.nickname LIKE ? OR u.phone LIKE ?)')
+      params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
+    }
+    const [rows] = await db.query(
+      `${ORDER_SELECT} ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY o.created_at DESC`, params)
+    let list = rows.map(rowToOrder)
+    // 展示态筛选（active/expiring/expired）在派生后过滤
+    if (status) list = list.filter(o => o.state === status)
+    return { list, total: list.length }
+  },
+
+  async orderDetail({ id } = {}) {
+    const [rows] = await db.query(`${ORDER_SELECT} WHERE o.id = ?`, [id])
+    if (!rows.length) throw new Error('订单不存在')
+    return { order: rowToOrder(rows[0]) }
+  },
+
+  async userOrders({ userId } = {}) {
+    if (!userId) throw new Error('缺少用户 ID')
+    const [rows] = await db.query(
+      `${ORDER_SELECT} WHERE o.user_id = ? ORDER BY o.created_at DESC`, [userId])
+    return { list: rows.map(rowToOrder), total: rows.length }
+  },
+
+  // 建单即开通：记录一笔已完成的线下转账，直接 paid 并激活/续期会员（含时长叠加）
+  async createOrder({ userId, amount, plan = '年度会员', method = 'offline',
+                      memberDays = 365, paymentTime = null, note = '', proofUrl = null } = {}) {
+    if (!userId) throw new Error('缺少用户 ID')
+    const amt = Number(amount)
+    if (!amt || isNaN(amt) || amt <= 0) throw new Error('金额无效')
+    const days = Number(memberDays) || 365
+
+    const [users] = await db.query(
+      "SELECT id, identity, DATE_FORMAT(member_from,'%Y-%m-%d') AS memberFrom, member_until FROM users WHERE id = ?",
+      [userId])
+    if (!users.length) throw new Error('用户不存在')
+    const user = users[0]
+    if (user.identity === 'guest') throw new Error('游客不可开通会员，需先登录')
+
+    // 时长叠加：现会员（未过期）从原到期日顺延，否则从今日起算
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const [[calc]] = await db.query(
+      `SELECT CURDATE() AS today,
+              CASE WHEN ? = 'member' AND ? IS NOT NULL AND ? >= CURDATE() THEN ? ELSE CURDATE() END AS base`,
+      [user.identity, user.member_until, user.member_until, user.member_until])
+    const validFrom = todayStr
+    const [[dates]] = await db.query(
+      'SELECT DATE_FORMAT(DATE_ADD(?, INTERVAL ? DAY), "%Y-%m-%d") AS validUntil', [calc.base, days])
+    const validUntil = dates.validUntil
+    // 首次开通用今日为 member_from，续期保留原 member_from
+    const memberFrom = (user.identity === 'member' && user.memberFrom) ? user.memberFrom : validFrom
+
+    const orderId = 'XS-' + todayStr.replace(/-/g, '') + '-' +
+      Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+    const payTime = paymentTime || new Date().toISOString().slice(0, 19).replace('T', ' ')
+
+    const conn = await db.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query(
+        `INSERT INTO orders (id, user_id, amount, plan, method, status, member_days,
+           valid_from, valid_until, payment_time, note, proof_url, created_by)
+         VALUES (?,?,?,?,?,'paid',?,?,?,?,?,?,'admin-web')`,
+        [orderId, userId, amt, plan, method, days, validFrom, validUntil, payTime, note, proofUrl])
+      await conn.query(
+        "UPDATE users SET identity = 'member', member_from = ?, member_until = ? WHERE id = ?",
+        [memberFrom, validUntil, userId])
+      await conn.commit()
+    } catch (err) {
+      await conn.rollback()
+      throw err
+    } finally {
+      conn.release()
+    }
+    await auditLog('createOrder', 'order', orderId, { userId, amount: amt, validUntil, renew: user.identity === 'member' })
+    const [orderRows] = await db.query(`${ORDER_SELECT} WHERE o.id = ?`, [orderId])
+    return { order: rowToOrder(orderRows[0]), validUntil }
   },
 }
 
