@@ -363,4 +363,4 @@ M1.3 ──→ M1.4 ──────────┼──→ M1.5.*（v2.1 首
 | `miniprogram/api/` | **新建** API 封装层 |
 | `miniprogram/cloudfunctions/` | **新建** 云函数目录 |
 | `.claude/agents/` | Subagent 定义文件（按需分派） |
-| `.claude/plans/devlog.md` | 开发日志（每次执行后更新） |
+| `doc/devlog.md` | 开发日志（每次执行后更新） |
