@@ -202,13 +202,13 @@
   font-weight: 600;
 }
 
-/* Bottom buttons */
+/* Bottom buttons — 避让自定义 tab-bar（fixed bottom，高 100rpx + 安全区，盖在页面弹层之上） */
 .filter-btns {
   display: flex;
   flex-direction: row;
   gap: 16rpx;
   margin-top: 20rpx;
-  padding-bottom: env(safe-area-inset-bottom);
+  padding-bottom: calc(100rpx + env(safe-area-inset-bottom) + 20rpx);
 }
 
 .filter-btn-reset {

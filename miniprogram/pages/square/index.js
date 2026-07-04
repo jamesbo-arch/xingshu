@@ -89,7 +89,7 @@ Page({
   onSearchClear() { this.setData({ search: '' }, () => this._loadDiaries(true)) },
   onSearchConfirm() { this._loadDiaries(true) },
 
-  onOpenFilter() { this.setData({ showFilterSheet: true }) },
+  onOpenFilter() { this.setData({ showFilterSheet: true, allTags: app.globalData.tags }) },
   onCloseFilter() { this.setData({ showFilterSheet: false }) },
   onApplyFilter(e) {
     this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true))

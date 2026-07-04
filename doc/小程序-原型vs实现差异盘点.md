@@ -82,7 +82,8 @@
 
 | 组件 | 原型 | 实现 | 结论 |
 |---|---|---|---|
-| diary-card / filter-sheet / poster-sheet | ✅ | ✅ | ✅ |
+| diary-card / poster-sheet | ✅ | ✅ | ✅ |
+| filter-sheet | ✅ | ⚠️→已修（2026-07-04） | 曾有 2 个**运行时** bug：①标签空（allTags 在 onLoad 快照、早于异步 loadTags）②底部「应用筛选」被自定义 tab-bar 遮挡。静态读码未发现，真机暴露后已修 |
 | member-guard（会员内容拦截弹窗） | ❌ 无 | ➕ 有（v2.1） | ➕ |
 | login-sheet（微信登录半屏弹窗） | ❌ 无（tweak 模拟） | ➕ 有（v2.3） | ➕ |
 | Tweaks 面板（身份/字体/主色/会员风格切换） | 设计期工具 | — 非产品功能，不落地 | 不适用 |

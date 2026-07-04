@@ -1300,3 +1300,17 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 **新增文件**：`doc/小程序-原型vs实现差异盘点.md` — 逐页对比表（广场/活动/收藏/我的/会员/详情/写日记/组件）+ 实现领先项 + 真正 gap + 结论。
 **关键结论**：视觉/页面结构高度一致；功能上**实现是原型的超集**（沿 PRD v2.1~v2.3 演进出微信登录、权限矩阵、退出登录、真实后端、带参码、评论回复）。真正落地缺失只有 1 个次要项——广场右上角「会员」快捷 chip（有底部 Tab 兜底）。一处需避免误判：原型"手机号授权"是被 v2.3 有意取代的旧设计，非 gap。
 **验证**：文档审阅；用户"仅报告"，无代码改动。
+
+---
+
+### 2026-07-04 — 修复：日记查询筛选弹层 2 个运行时 bug
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：用户真机截图暴露 filter-sheet 两处问题（静态原型对照未发现——运行时数据时机 + 微信自定义 tabBar 层级问题，需真机/模拟器才现形）。
+**问题与修复**：
+1. **标签空**：`square/collections` 的 `onLoad` 里 `allTags: app.globalData.tags` 是一次性快照，而标签是异步加载（且在 `await 登录` 之后才 loadTags），onLoad 时 globalData.tags 仍为空、之后不刷新 → 修：`onOpenFilter` 打开时用当下 `app.globalData.tags` 刷新 allTags。
+2. **底部「应用筛选」被遮**：自定义 tab-bar（`position:fixed;bottom:0;z-index:50;height:100rpx+安全区`）作为独立层盖在页面级弹层之上，遮住 filter-sheet 底部按钮 → 修：`filter-sheet` 的 `.filter-btns` 底部 padding 加 `calc(100rpx + env(safe-area-inset-bottom) + 20rpx)` 避让。
+**修改文件**：`pages/square/index.js`、`pages/collections/index.js`（onOpenFilter 刷新 allTags）；`components/filter-sheet/index.wxss`（按钮避让 tab-bar）
+**遗留提示**：poster-sheet/login-sheet/member-guard 在 tab 页也可能被 tab-bar 遮底部（这些弹层横跨 tab 页与非 tab 页，静态 padding 不合适），列入 M2.2 人工回归逐一核对。
+**验证**：真机重新编译核对（标签正常渲染为印章胶囊、应用按钮可见可点）。
