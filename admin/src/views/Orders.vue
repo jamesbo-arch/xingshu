@@ -24,7 +24,7 @@
         <th>支付时间</th><th>会员有效期</th><th>状态</th><th>录入人</th><th>操作</th>
       </tr></thead>
       <tbody>
-        <tr v-for="o in paged" :key="o.id">
+        <tr v-for="o in orders" :key="o.id">
           <td class="mono">{{ o.id }}</td>
           <td>{{ o.userName }}<span v-if="o.userPhone" class="dim"> · {{ o.userPhone }}</span></td>
           <td>{{ o.plan }}</td>
@@ -36,10 +36,10 @@
           <td class="dim">{{ o.createdBy }}</td>
           <td><button class="btn btn-ghost" @click="openDetail(o.id)">详情</button></td>
         </tr>
-        <tr v-if="!filtered.length"><td colspan="10" class="empty">暂无订单</td></tr>
+        <tr v-if="!orders.length"><td colspan="10" class="empty">暂无订单</td></tr>
       </tbody>
     </table>
-    <Paginate v-model:page="page" v-model:pageSize="pageSize" :total="filtered.length" />
+    <Paginate :page="page" :pageSize="pageSize" :total="total" @change="onPage" />
 
     <!-- ===== 创建订单向导 ===== -->
     <div v-if="showCreate" class="modal-mask" @click.self="showCreate = false">
@@ -198,9 +198,7 @@ const route = useRoute()
 const methods = ['微信转账', '支付宝转账', '银行转账', '现金', '其他']
 
 const orders = ref([]), keyword = ref(''), status = ref('')
-const filtered = computed(() => orders.value)  // 服务端已按 status 派生，前端直接展示
-const page = ref(1), pageSize = ref(20)
-const paged = computed(() => filtered.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
+const page = ref(1), pageSize = ref(20), total = ref(0)  // 服务端分页
 
 const showCreate = ref(false), step = ref(1)
 const allUsers = ref([]), candidates = ref([]), userKeyword = ref(''), picked = ref(null)
@@ -213,14 +211,18 @@ onMounted(async () => {
   // 从用户详情页「开通/续费会员」跳转而来：?create=<userId> 自动打开建单向导并预置该用户
   const uid = Number(route.query.create)
   if (uid) {
-    if (!allUsers.value.length) allUsers.value = (await getUsers()).list
+    if (!allUsers.value.length) allUsers.value = (await getUsers({ page: 1, pageSize: 100000 })).list
     const u = allUsers.value.find(x => x.id === uid)
     if (u) openCreate(u)
   }
 })
-async function load() { orders.value = (await getOrders({ keyword: keyword.value, status: status.value })).list; page.value = 1 }
+async function load() {
+  const r = await getOrders({ keyword: keyword.value || undefined, status: status.value || undefined, page: page.value, pageSize: pageSize.value })
+  orders.value = r.list; total.value = r.total
+}
 let t
-function search() { clearTimeout(t); t = setTimeout(load, 250) }
+function search() { clearTimeout(t); t = setTimeout(() => { page.value = 1; load() }, 250) }
+function onPage({ page: p, pageSize: ps }) { page.value = p; pageSize.value = ps; load() }
 
 function stateLabel(s) { return { active:'生效中', expiring:'即将到期', expired:'已过期', pending:'待生效', refunded:'已退款', cancelled:'已取消' }[s] || s }
 function idLabel(i) { return { guest:'游客', authed:'已授权', member:'会员' }[i] || i }
@@ -229,7 +231,7 @@ async function openCreate(presetUser) {
   step.value = 1; picked.value = presetUser || null; userKeyword.value = ''
   form.value = { plan: '年度会员', method: '微信转账', amount: 365, paymentDate: new Date().toISOString().slice(0, 10), note: '', proofUrl: null }
   proofPreview.value = ''
-  if (!allUsers.value.length) allUsers.value = (await getUsers()).list
+  if (!allUsers.value.length) allUsers.value = (await getUsers({ page: 1, pageSize: 100000 })).list
   filterUsers()
   showCreate.value = true
 }

@@ -1260,3 +1260,31 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `api/index.js` — updateUser/updateDiary/createDiary/getTagList
 **E 档决策**：采用**客户端分页**（Paginate 切片 filtered），保留既有客户端搜索/筛选，当前数据量足够；未走服务端 LIMIT/OFFSET（会打断客户端过滤），故 AE-A09 自动化转人工 AE-M06。
 **验证**：fn-admin-edit-test 8/8；`npm test` 全量 130 条全绿；`cd admin && npm run build` 通过；admin/updateDiary 云函数已部署 Active。编辑/代发/复制/分页 UI 待开发者工具人工回归（AE-M01~06）。
+
+---
+
+### 2026-07-04 — 修复：日记编辑弹窗权限选项无法点选（补 .seg-pick 样式）
+
+**类型**：前端
+**问题**：日记编辑/代发弹窗「权限」三项挤成一行"公众会员私密"、看不出可点。根因：`.seg-pick`/`.opt` 样式当初移植 theme.css 时漏了（只搬了当时用到的类）。
+**修复**：`admin/src/theme.css` 补 `.seg-pick`/`.opt`（取自原型：胶囊、悬停底色、选中墨底白字）。提交 `bbacc36`。
+
+---
+
+### 2026-07-04 — 后台三列表升级服务端分页（应对日记预期几千篇）
+
+**类型**：云函数 | 前端 | 测试 | 部署
+**模型**：claude-opus-4-8
+**背景**：用户指出日记预期几千篇。E 档原为客户端分页（一次拉全量）。**决定性隐患**：`admin.diaries` 列表每行返回完整正文 `d.content`，几千篇会撑爆 callFunction 返回体上限直接失败。故三列表（用户/日记/订单）升级服务端分页。
+**后端**（`cloudfunctions/admin/index.js`，已部署）：
+- 新增 `pageArgs()`（page≥1、pageSize 1..100）；`DIARY_LIST_SELECT`（`LEFT(content,80)` 摘要，详情 `DIARY_SELECT` 仍全文）
+- `users`/`diaries`/`orderList` 加 `page/pageSize + COUNT total + LIMIT/OFFSET`，返回 `{list,total,page,pageSize}`
+- 搜索扩展：users 加 real_name/id；diaries 加 author(u.nickname)/id
+- **订单状态下推 SQL**：active/expiring(≤15天)/expired 由 `DATEDIFF(valid_until,CURDATE())` 在 WHERE 派生（否则分页切片与状态筛选打架）
+- userDetail 的用户日记列表也改摘要 select
+**前端**（`admin/`）：
+- `components/Paginate.vue` 改受控 + 发 `change{page,pageSize}`（避免翻页/改每页条数双请求）
+- Users/Diaries/Orders 改**服务端驱动**：`reload()` 调 API（keyword/筛选/page/pageSize），搜索防抖后 page=1 重载，翻页 onPage 重载；去掉客户端 filtered/slice
+- 日记标签下拉改用 `getTagList()` 全量系统标签（不再从当前页聚合）；作者选择器/订单建单用户选择器改 `getUsers({pageSize:100000})` 取全量；导出改按当前筛选拉全量再导
+**测试**：`fn-admin-test` 加分页断言（page/pageSize/total + 第2页不重叠，共 13）；`fn-admin-edit`(AE-A08)/`fn-order`(ORDER-A07) 定位测试数据处改传 `pageSize:100000`
+**验证**：`npm test` 全量 131 条全绿；admin build 通过；admin 云函数已部署。翻页/每页条数/跨页搜索 UI 待开发者工具人工回归。

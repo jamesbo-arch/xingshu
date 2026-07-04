@@ -56,6 +56,23 @@ async function run() {
     if (r.data.list.some(u => u.identity !== 'member')) throw new Error('筛选失效')
   })
 
+  await test('users/diaries 服务端分页：page/pageSize/total 返回且切片正确', async () => {
+    const r = await admin('users', { page: 1, pageSize: 2 })
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.page !== 1 || r.data.pageSize !== 2) throw new Error('分页字段缺失')
+    if (r.data.list.length > 2) throw new Error(`page1 应 ≤2 条，实际 ${r.data.list.length}`)
+    if (typeof r.data.total !== 'number' || r.data.total < r.data.list.length) throw new Error('total 异常')
+    // 第 2 页与第 1 页不重叠（库内用户 >2 时）
+    if (r.data.total > 2) {
+      const r2 = await admin('users', { page: 2, pageSize: 2 })
+      const p1 = r.data.list.map(u => u.id), p2 = r2.data.list.map(u => u.id)
+      if (p2.some(id => p1.includes(id))) throw new Error('第 2 页与第 1 页重叠')
+    }
+    const d = await admin('diaries', { page: 1, pageSize: 3 })
+    if (d.data.page !== 1 || d.data.pageSize !== 3 || typeof d.data.total !== 'number') throw new Error('diaries 分页字段缺失')
+    if (d.data.list.length > 3) throw new Error('diaries page1 应 ≤3 条')
+  })
+
   await test('diaries 列表含 tags 数组与作者', async () => {
     const r = await admin('diaries')
     if (r.code !== 0) throw new Error(r.msg)

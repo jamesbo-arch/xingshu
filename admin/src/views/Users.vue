@@ -2,14 +2,14 @@
   <div>
     <h1 class="page-title">用户管理</h1>
     <div class="filter-bar">
-      <input v-model="keyword" placeholder="搜索昵称/真实姓名/手机号/ID" class="input" @input="search" />
-      <select v-model="identity" class="select" @change="search">
+      <input v-model="keyword" placeholder="搜索昵称/真实姓名/手机号/ID" class="input" @input="onFilter" />
+      <select v-model="identity" class="select" @change="onFilter">
         <option value="">全部身份</option>
         <option value="guest">游客</option>
         <option value="authed">已授权</option>
         <option value="member">会员</option>
       </select>
-      <button class="btn btn-primary" @click="onExport">导出 Excel（{{ filtered.length }}）</button>
+      <button class="btn btn-primary" @click="onExport">导出 Excel（{{ total }}）</button>
     </div>
     <table class="data-table">
       <thead><tr>
@@ -17,7 +17,7 @@
         <th>会员有效期</th><th>日记</th><th>互动</th><th>推荐人</th><th>注册</th><th>最后活跃</th><th>操作</th>
       </tr></thead>
       <tbody>
-        <tr v-for="u in paged" :key="u.id">
+        <tr v-for="u in list" :key="u.id">
           <td>{{ u.id }}</td>
           <td>
             <span class="u-cell">
@@ -39,42 +39,43 @@
           <td class="dim">{{ u.lastActive }}</td>
           <td><router-link :to="'/users/'+u.id" class="link">详情</router-link></td>
         </tr>
-        <tr v-if="!filtered.length"><td colspan="12" class="empty">暂无用户</td></tr>
+        <tr v-if="!list.length"><td colspan="12" class="empty">暂无用户</td></tr>
       </tbody>
     </table>
-    <Paginate v-model:page="page" v-model:pageSize="pageSize" :total="filtered.length" />
+    <Paginate :page="page" :pageSize="pageSize" :total="total" @change="onPage" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { getUsers } from '../api/index.js'
 import { exportCsv } from '../utils/csv.js'
 import Paginate from '../components/Paginate.vue'
 
-const users = ref([]), filtered = ref([]), keyword = ref(''), identity = ref('')
-const page = ref(1), pageSize = ref(20)
-const paged = computed(() => filtered.value.slice((page.value - 1) * pageSize.value, page.value * pageSize.value))
+const list = ref([]), keyword = ref(''), identity = ref('')
+const page = ref(1), pageSize = ref(20), total = ref(0)
+let timer = null
 
-onMounted(async () => { users.value = (await getUsers()).list; filtered.value = users.value })
+onMounted(reload)
+async function reload() {
+  const r = await getUsers({ keyword: keyword.value.trim() || undefined, identity: identity.value || undefined, page: page.value, pageSize: pageSize.value })
+  list.value = r.list; total.value = r.total
+}
+function onFilter() { clearTimeout(timer); timer = setTimeout(() => { page.value = 1; reload() }, 250) }
+function onPage({ page: p, pageSize: ps }) { page.value = p; pageSize.value = ps; reload() }
+
 function identityLabel(i) { return { guest:'游客', authed:'已授权', member:'会员' }[i] || i }
 function hue(h) { return `hsl(${h == null ? 60 : h}, 30%, 45%)` }
 function initial(name) { return name ? name.trim()[0] : '?' }
-function onExport() {
+async function onExport() {
+  // 导出全量匹配（不分页），列表已为摘要字段、无重正文
+  const r = await getUsers({ keyword: keyword.value.trim() || undefined, identity: identity.value || undefined, page: 1, pageSize: 100000 })
   exportCsv(
     `醒书用户列表-${new Date().toISOString().slice(0, 10)}.csv`,
     ['用户ID', '昵称', '真实姓名', '手机号', '身份', '会员到期', '剩余天数', '日记数', '获赞', '收藏', '评论', '转发', '注册时间', '最后活跃'],
-    filtered.value.map(u => [u.id, u.nickname, u.realName, u.phone, identityLabel(u.identity),
+    r.list.map(u => [u.id, u.nickname, u.realName, u.phone, identityLabel(u.identity),
       u.memberUntil || '', u.daysLeft || 0, u.diaries, u.likes, u.favorites, u.comments, u.shares, u.registeredAt, u.lastActive])
   )
-}
-function search() {
-  const k = keyword.value.trim()
-  filtered.value = users.value.filter(u =>
-    (!k || (u.nickname || '').includes(k) || (u.realName || '').includes(k) || (u.phone || '').includes(k) || String(u.id) === k) &&
-    (!identity.value || u.identity === identity.value)
-  )
-  page.value = 1  // 筛选后回到第 1 页
 }
 </script>
 

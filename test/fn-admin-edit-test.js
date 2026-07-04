@@ -93,7 +93,7 @@ async function run() {
   })
 
   await test('AE-A08 已编辑标记：新建代发日记 editedAt 空；被编辑日记 editedAt 非空', async () => {
-    const r = await admin('diaries', {})
+    const r = await admin('diaries', { pageSize: 100000 })  // 取全量以定位测试数据（服务端分页后）
     if (r.code !== 0) throw new Error(r.msg)
     const edited = r.data.list.find(d => d.id === diaryId)
     const fresh = r.data.list.find(d => d.id === newDiaryId)

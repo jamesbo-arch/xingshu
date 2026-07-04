@@ -90,15 +90,16 @@ async function run() {
     await conn.query(
       "INSERT INTO orders (id,user_id,amount,plan,method,status,member_days,valid_from,valid_until,payment_time,created_by) " +
       "VALUES ('XS-TESTEXPIRING',?,365,'年度会员','offline','paid',365,CURDATE(),DATE_ADD(CURDATE(),INTERVAL 10 DAY),NOW(),'admin-web')", [authedId])
-    const r = await admin('orderList', {})
+    const r = await admin('orderList', { pageSize: 100000 })  // 取全量以定位测试数据（服务端分页后）
     if (r.code !== 0) throw new Error(r.msg)
     const expired = r.data.list.find(o => o.id === 'XS-TESTEXPIRED')
     const expiring = r.data.list.find(o => o.id === 'XS-TESTEXPIRING')
     if (!expired || expired.state !== 'expired') throw new Error(`过期单 state=${expired && expired.state}`)
     if (!expiring || expiring.state !== 'expiring') throw new Error(`临期单 state=${expiring && expiring.state}`)
-    // 状态筛选
-    const rf = await admin('orderList', { status: 'expired' })
+    // 状态筛选（SQL 下推）
+    const rf = await admin('orderList', { status: 'expired', pageSize: 100000 })
     if (!rf.data.list.every(o => o.state === 'expired')) throw new Error('状态筛选未生效')
+    if (!rf.data.list.some(o => o.id === 'XS-TESTEXPIRED')) throw new Error('expired 筛选应含测试过期单')
   })
 
   await test('ORDER-A08 userOrders 归属过滤 + orderDetail', async () => {

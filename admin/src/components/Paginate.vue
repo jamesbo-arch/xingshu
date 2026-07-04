@@ -8,7 +8,7 @@
     </select>
     <span class="pg-pages">
       <button class="pg-btn" :disabled="page <= 1" @click="go(page - 1)">上一页</button>
-      <button v-for="p in pageList" :key="p" class="pg-num" :class="{ active: p === page, dis: p === '…' }"
+      <button v-for="(p, i) in pageList" :key="i" class="pg-num" :class="{ active: p === page, dis: p === '…' }"
               :disabled="p === '…'" @click="go(p)">{{ p }}</button>
       <button class="pg-btn" :disabled="page >= totalPages" @click="go(page + 1)">下一页</button>
     </span>
@@ -17,8 +17,9 @@
 
 <script setup>
 import { computed } from 'vue'
+// 受控组件：父传 page/pageSize/total，任何翻页/改每页条数只发一次 change（父据此单次 reload）
 const props = defineProps({ page: Number, pageSize: Number, total: Number })
-const emit = defineEmits(['update:page', 'update:pageSize'])
+const emit = defineEmits(['change'])
 
 const totalPages = computed(() => Math.max(1, Math.ceil(props.total / props.pageSize)))
 const pageList = computed(() => {
@@ -31,8 +32,11 @@ const pageList = computed(() => {
   out.push(n)
   return out
 })
-function go(p) { if (p !== '…' && p >= 1 && p <= totalPages.value && p !== props.page) emit('update:page', p) }
-function onSize(e) { emit('update:pageSize', Number(e.target.value)); emit('update:page', 1) }
+function go(p) {
+  if (p === '…' || p < 1 || p > totalPages.value || p === props.page) return
+  emit('change', { page: p, pageSize: props.pageSize })
+}
+function onSize(e) { emit('change', { page: 1, pageSize: Number(e.target.value) }) }
 </script>
 
 <style scoped>

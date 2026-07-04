@@ -48,6 +48,7 @@ const USER_SELECT = `
          u.referrer_user_id AS referrerId, r.nickname AS referrerName
   FROM users u LEFT JOIN users r ON u.referrer_user_id = r.id`
 
+// 详情用：全文
 const DIARY_SELECT = `
   SELECT d.id, d.title, d.content, d.permission, d.status,
          DATE_FORMAT(d.created_at, '%Y-%m-%d %H:%i') AS createdAt,
@@ -57,6 +58,16 @@ const DIARY_SELECT = `
          u.nickname AS author, u.id AS authorId,
          (SELECT GROUP_CONCAT(t.name ORDER BY t.name) FROM diary_tags dt JOIN tags t ON t.id = dt.tag_id WHERE dt.diary_id = d.id) AS tags_csv
   FROM diaries d JOIN users u ON d.user_id = u.id`
+
+// 列表用：正文仅取前 80 字摘要（避免几千篇全文撑爆 callFunction 返回体）
+const DIARY_LIST_SELECT = DIARY_SELECT.replace('d.content,', 'LEFT(d.content, 80) AS content,')
+
+// 分页参数规整：page≥1，pageSize 限 1..100
+function pageArgs({ page = 1, pageSize = 20 } = {}) {
+  const ps = Math.min(Math.max(Number(pageSize) || 20, 1), 100)
+  const p = Math.max(Number(page) || 1, 1)
+  return { limit: ps, offset: (p - 1) * ps, page: p, pageSize: ps }
+}
 
 const COMMENT_SELECT = `
   SELECT c.id, c.diary_id AS diaryId, d.title AS diaryTitle,
@@ -121,13 +132,19 @@ async function deleteDiaryById(id) {
 // ---- action 处理器 ----
 
 const handlers = {
-  async users({ identity, keyword } = {}) {
+  async users({ identity, keyword, page, pageSize } = {}) {
     const where = [], params = []
     if (identity) { where.push('u.identity = ?'); params.push(identity) }
-    if (keyword) { where.push('(u.nickname LIKE ? OR u.phone LIKE ?)'); params.push(`%${keyword}%`, `%${keyword}%`) }
+    if (keyword) {
+      where.push('(u.nickname LIKE ? OR u.phone LIKE ? OR u.real_name LIKE ? OR u.id = ?)')
+      params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, Number(keyword) || 0)
+    }
+    const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : ''
+    const [[{ total }]] = await db.query(`SELECT COUNT(*) total FROM users u ${whereSql}`, params)
+    const { limit, offset, page: p, pageSize: ps } = pageArgs({ page, pageSize })
     const [rows] = await db.query(
-      `${USER_SELECT} ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY u.created_at DESC`, params)
-    return { list: rows, total: rows.length }
+      `${USER_SELECT} ${whereSql} ORDER BY u.created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset])
+    return { list: rows, total, page: p, pageSize: ps }
   },
 
   async userDetail({ id } = {}) {
@@ -138,7 +155,7 @@ const handlers = {
       "SELECT openid, COALESCE(unionid,'') AS unionid FROM users WHERE id = ?", [id])
     const user = { ...users[0], openid: ids.openid, unionid: ids.unionid }
     const [diaries] = await db.query(
-      `${DIARY_SELECT} WHERE d.user_id = ? AND d.status = 'active' ORDER BY d.created_at DESC`, [id])
+      `${DIARY_LIST_SELECT} WHERE d.user_id = ? AND d.status = 'active' ORDER BY d.created_at DESC`, [id])
     // v2.2 "他推荐的用户"
     const [referred] = await db.query(
       `SELECT id, nickname, identity, DATE_FORMAT(created_at, '%Y-%m-%d') AS registeredAt
@@ -257,17 +274,24 @@ const handlers = {
     return true
   },
 
-  async diaries({ keyword, permission, tag } = {}) {
+  async diaries({ keyword, permission, tag, page, pageSize } = {}) {
     const where = ["d.status = 'active'"], params = []
-    if (keyword) { where.push('(d.title LIKE ? OR d.content LIKE ?)'); params.push(`%${keyword}%`, `%${keyword}%`) }
+    if (keyword) {
+      where.push('(d.title LIKE ? OR d.content LIKE ? OR u.nickname LIKE ? OR d.id = ?)')
+      params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, Number(keyword) || 0)
+    }
     if (permission) { where.push('d.permission = ?'); params.push(permission) }
     if (tag) {
       where.push('EXISTS (SELECT 1 FROM diary_tags dt2 JOIN tags t2 ON t2.id = dt2.tag_id WHERE dt2.diary_id = d.id AND t2.name = ?)')
       params.push(tag)
     }
+    const whereSql = 'WHERE ' + where.join(' AND ')
+    const [[{ total }]] = await db.query(
+      `SELECT COUNT(*) total FROM diaries d JOIN users u ON d.user_id = u.id ${whereSql}`, params)
+    const { limit, offset, page: p, pageSize: ps } = pageArgs({ page, pageSize })
     const [rows] = await db.query(
-      `${DIARY_SELECT} WHERE ${where.join(' AND ')} ORDER BY d.created_at DESC`, params)
-    return { list: rows.map(rowToDiary), total: rows.length }
+      `${DIARY_LIST_SELECT} ${whereSql} ORDER BY d.created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset])
+    return { list: rows.map(rowToDiary), total, page: p, pageSize: ps }
   },
 
   async diaryDetail({ id } = {}) {
@@ -439,18 +463,24 @@ const handlers = {
   },
 
   // ── 会员订单管理（v2.4：线下转账开通/续期会员）──
-  async orderList({ keyword, status } = {}) {
+  async orderList({ keyword, status, page, pageSize } = {}) {
     const where = [], params = []
     if (keyword) {
       where.push('(o.id LIKE ? OR u.nickname LIKE ? OR u.phone LIKE ?)')
       params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
     }
+    // 状态下推 SQL（服务端分页要求）：active/expiring(≤15天)/expired 由 valid_until 与今日派生
+    if (status === 'active') where.push("(o.status='paid' AND (o.valid_until IS NULL OR DATEDIFF(o.valid_until,CURDATE())>15))")
+    else if (status === 'expiring') where.push("(o.status='paid' AND DATEDIFF(o.valid_until,CURDATE()) BETWEEN 0 AND 15)")
+    else if (status === 'expired') where.push("(o.status='paid' AND DATEDIFF(o.valid_until,CURDATE())<0)")
+    else if (status) where.push('o.status = ?'), params.push(status)
+    const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : ''
+    const [[{ total }]] = await db.query(
+      `SELECT COUNT(*) total FROM orders o JOIN users u ON o.user_id = u.id ${whereSql}`, params)
+    const { limit, offset, page: p, pageSize: ps } = pageArgs({ page, pageSize })
     const [rows] = await db.query(
-      `${ORDER_SELECT} ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY o.created_at DESC`, params)
-    let list = rows.map(rowToOrder)
-    // 展示态筛选（active/expiring/expired）在派生后过滤
-    if (status) list = list.filter(o => o.state === status)
-    return { list, total: list.length }
+      `${ORDER_SELECT} ${whereSql} ORDER BY o.created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset])
+    return { list: rows.map(rowToOrder), total, page: p, pageSize: ps }
   },
 
   async orderDetail({ id } = {}) {
