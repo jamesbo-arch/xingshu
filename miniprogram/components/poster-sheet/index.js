@@ -63,8 +63,11 @@ Component({
           this.setData({ qrFileID: res.fileID })
           const dl = await wx.cloud.downloadFile({ fileID: res.fileID })
           this._qrTempPath = dl.tempFilePath
+        } else {
+          // 失败仍回退占位，但打印原因便于真机定位（多为小程序码接口配额/未发布等）
+          console.warn('[poster] generateMiniCode 未返回 fileID，回退占位码')
         }
-      } catch (e) {}
+      } catch (e) { console.error('[poster] _loadQr error:', e) }
     },
     onMaskTap() {
       this.triggerEvent('close')
