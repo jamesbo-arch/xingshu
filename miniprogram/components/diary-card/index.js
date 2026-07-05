@@ -62,6 +62,23 @@ Component({
       if (perm === 'private') return '私密'
       return ''
     },
+
+    // 自定义方法须置于 methods 内，否则 this._updateAvatar 取不到（报 not a function）
+    _updateAvatar(d) {
+      if (!d) return
+      const hue = d.author_avatar_hue || d.avatarHue
+      const name = d.author_name || d.author
+      const patch = {}
+      if (hue !== undefined) {
+        patch.avatarColor = hueToColor(hue)
+        patch.avatarInitial = getInitial(name || '?')
+      }
+      if (d.created_at && !d.created_at_text) {
+        const t = d.created_at.replace('T', ' ').substring(5, 16)
+        patch.created_at_text = t
+      }
+      if (Object.keys(patch).length) this.setData(patch)
+    },
   },
 
   lifetimes: {
@@ -74,22 +91,6 @@ Component({
     'diary': function(d) {
       this._updateAvatar(d)
     },
-  },
-
-  _updateAvatar(d) {
-    if (!d) return
-    const hue = d.author_avatar_hue || d.avatarHue
-    const name = d.author_name || d.author
-    const patch = {}
-    if (hue !== undefined) {
-      patch.avatarColor = hueToColor(hue)
-      patch.avatarInitial = getInitial(name || '?')
-    }
-    if (d.created_at && !d.created_at_text) {
-      const t = d.created_at.replace('T', ' ').substring(5, 16)
-      patch.created_at_text = t
-    }
-    if (Object.keys(patch).length) this.setData(patch)
   },
 
   data: {

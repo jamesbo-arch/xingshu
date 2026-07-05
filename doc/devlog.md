@@ -1469,3 +1469,20 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - 保存失败处理：`console.error` 打印真实 errMsg；拒绝文案放宽匹配（deny/denied/authorize/cancel/auth 任一→引导去设置）；其余错误 toast **带出真实原因**（`保存失败：<errMsg>`）。canvasToTempFilePath 失败也打印 errMsg。
 **说明**：若在**微信开发者工具模拟器**里测，`saveImageToPhotosAlbum` 无法真正写入相册、必失败——需用预览/真机调试。真机若仍失败，新版会显示「保存失败：<具体原因>」便于进一步定位。`pages/activity-detail` 的 onSaveQr 存在同款窄判断（未报暂不动）。
 **验证**：`node --check` 通过。待真机复核保存成功/或反馈具体错误文案。
+
+---
+
+### 2026-07-05 — 修分享海报小程序码两个真 bug
+
+**类型**：云函数 / 前端
+**模型**：claude-opus-4-8
+**背景**：真机/工具打开分享海报只显示占位小格子。Console 暴露两处：①`errCode -604101 function has no permission to call this API`（云函数无权调 wxacode.getUnlimited）②`TypeError: this._updateAvatar is not a function`（diary-card 观察器）。
+
+**Bug1｜云函数无 openapi 权限**：
+- 新增 `miniprogram/cloudfunctions/generateMiniCode/config.json` 声明 `permissions.openapi: ["wxacode.getUnlimited"]`。
+- **注意**：该权限须由「微信开发者工具 → 右键 generateMiniCode → 上传并部署」读取 config.json 生效；wxcloud CLI 上传不一定应用 openapi 权限——若 CLI 部署后仍报 -604101，改用开发者工具部署。
+
+**Bug2｜_updateAvatar 位置错误**：
+- `components/diary-card/index.js`：`_updateAvatar` 原定义在 `Component({})` 顶层（非 `methods` 内），`this._updateAvatar` 取不到→attached/diary 观察器报 not a function。移入 `methods` 修复。纯前端，即时生效。
+
+**验证**：diary-card `node --check` 通过。generateMiniCode 已 CLI 重部署；openapi 权限待用开发者工具部署确认。海报小程序码待复核。
