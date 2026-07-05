@@ -46,16 +46,16 @@
   <view class="card-stats">
     <view class="stats-left">
       <view class="stat-item like-wrap" catch:tap="onLike">
-        <text class="stat-icon {{diary.isLiked ? 'liked' : ''}}">{{diary.isLiked ? '♥' : '♡'}}</text>
+        <view class="stat-icon {{diary.isLiked ? 'ic-heart-on' : 'ic-heart'}}"></view>
         <text class="stat-count {{diary.isLiked ? 'liked' : ''}}">{{diary.likes}}</text>
         <text wx:if="{{showLikeAnim}}" class="like-float">+1</text>
       </view>
       <view class="stat-item" catch:tap="onFav">
-        <text class="stat-icon {{diary.isFavorited ? 'faved' : ''}}">{{diary.isFavorited ? '◆' : '◇'}}</text>
+        <view class="stat-icon {{diary.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
         <text class="stat-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.favorites}}</text>
       </view>
       <view class="stat-item">
-        <text class="stat-icon">◎</text>
+        <view class="stat-icon ic-comment"></view>
         <text class="stat-count">{{diary.comments}}</text>
       </view>
     </view>
@@ -69,7 +69,7 @@
         </view>
       </view>
       <view wx:else class="stat-item" catch:tap="onShare">
-        <text class="stat-icon">↑</text>
+        <view class="stat-icon ic-share"></view>
         <text class="stat-count">{{diary.shares}}</text>
       </view>
     </view>

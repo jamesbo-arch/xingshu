@@ -325,16 +325,11 @@
 }
 
 .bar-action-icon {
-  font-size: 32rpx;
-  color: #A8A39B;
-}
-
-.bar-action-icon.liked {
-  color: #C25A4E;
-}
-
-.bar-action-icon.faved {
-  color: #C9A14A;
+  width: 36rpx;
+  height: 36rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .bar-action-count {

@@ -182,17 +182,13 @@
   100% { opacity: 0; transform: translateX(-50%) translateY(-48rpx); }
 }
 
+/* 线性图标（对齐原型 lucide 描边风格）——背景图定义在 app.wxss 的 .ic-* 全局类 */
 .stat-icon {
-  font-size: 36rpx;
-  color: #A8A39B;
-}
-
-.stat-icon.liked {
-  color: #C25A4E;
-}
-
-.stat-icon.faved {
-  color: #C9A14A;
+  width: 34rpx;
+  height: 34rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .stat-count {

@@ -110,15 +110,15 @@
     </view>
     <view class="bar-actions">
       <view class="bar-action" bindtap="onLike">
-        <text class="bar-action-icon {{diary.isLiked ? 'liked' : ''}}">{{diary.isLiked ? '♥' : '♡'}}</text>
+        <view class="bar-action-icon {{diary.isLiked ? 'ic-heart-on' : 'ic-heart'}}"></view>
         <text class="bar-action-count {{diary.isLiked ? 'liked' : ''}}">{{diary.likes}}</text>
       </view>
       <view class="bar-action" bindtap="onFav">
-        <text class="bar-action-icon {{diary.isFavorited ? 'faved' : ''}}">{{diary.isFavorited ? '◆' : '◇'}}</text>
+        <view class="bar-action-icon {{diary.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
         <text class="bar-action-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.favorites}}</text>
       </view>
       <view class="bar-action" bindtap="onShare">
-        <text class="bar-action-icon">↑</text>
+        <view class="bar-action-icon ic-share"></view>
       </view>
     </view>
   </view>

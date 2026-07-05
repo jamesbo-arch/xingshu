@@ -1499,3 +1499,17 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `components/poster-sheet`、`components/filter-sheet`：`onSheetTap` 原 `e.stopPropagation()`（wxml 本就是 catchtap，冒泡已阻止）→ 改空函数 no-op。
 **说明**：`project/`、`doc/原型设计/` 里的 stopPropagation 是 React 原型，不受影响。login-sheet/member-guard 无此用法。
 **验证**：三组件 `node --check` 通过。真机核对——列表卡片点赞/收藏/分享/编辑/删除只触发自身、不再误开详情、Console 无 stopPropagation 报错。
+
+---
+
+### 2026-07-05 — 小图标对齐原型（第一批：点赞/收藏/评论/分享 线性图标）
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：小程序此前用 unicode 字形（♥♡◆◇◎↑）当图标，与原型的 lucide 描边线性图标差异明显（尤其分享 ↑、评论 ◎）。小程序不支持内联 `<svg>`，改用 **data-URI SVG 背景**渲染（矢量清晰、无网络、颜色随状态内置）。
+**修改文件**：
+- `app.wxss` — 新增六个全局线性图标类 `.ic-heart/.ic-heart-on/.ic-bookmark/.ic-bookmark-on/.ic-comment/.ic-share`（SVG 取自原型 `project/src/icons.jsx`，颜色对齐 --like #C25A4E / --fav #C9A14A / 静默 #A8A39B）。组件用需 addGlobalClass（diary-card 已开）。
+- `components/diary-card` — 三个 stat 图标与分享图标由 `<text>字形` 改 `<view class="stat-icon ic-*">`；`.stat-icon` 改为 34rpx 背景盒；删除失效的 `.stat-icon.liked/.faved`（改由 ic-*-on 变体表达激活色）。
+- `pages/detail` — 底部栏 `bar-action-icon` 同样改线性图标（36rpx 盒）。
+**范围**：本批仅四个 stat 图标（卡片 + 详情，出现最频繁、差异最大）。权限徽标（⊕/★/⊗）、写日记可见范围图标、评论✎、会员会字徽 等暂未动，待确认渲染无误后按需继续。
+**验证**：改动为 wxml/wxss，需开发者工具真机核对 SVG 背景渲染。逻辑无 JS 改动。
