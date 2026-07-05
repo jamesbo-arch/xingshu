@@ -7,16 +7,18 @@ exports.main = async (event, context) => {
   const { diaryId } = event
   if (!diaryId) return { code: -1, msg: '缺少日记ID' }
 
-  const [users] = await db.query('SELECT id, identity FROM users WHERE openid = ?', [OPENID])
+  // 用户与日记两条查询互相独立，并行执行
+  const [[users], [diaries]] = await Promise.all([
+    db.query('SELECT id, identity FROM users WHERE openid = ?', [OPENID]),
+    db.query(
+      `SELECT d.*, u.nickname AS author_name, u.avatar_hue AS author_avatar_hue,
+              u.identity AS author_identity
+       FROM diaries d JOIN users u ON d.user_id = u.id
+       WHERE d.id = ? AND d.status = ?`, [diaryId, 'active']
+    ),
+  ])
   const userId = users.length ? users[0].id : null
   const userIdentity = users.length ? users[0].identity : 'guest'
-
-  const [diaries] = await db.query(
-    `SELECT d.*, u.nickname AS author_name, u.avatar_hue AS author_avatar_hue,
-            u.identity AS author_identity
-     FROM diaries d JOIN users u ON d.user_id = u.id
-     WHERE d.id = ? AND d.status = ?`, [diaryId, 'active']
-  )
   if (!diaries.length) return { code: -1, msg: '日记不存在' }
 
   const diary = diaries[0]
@@ -37,26 +39,24 @@ exports.main = async (event, context) => {
     diary.fullLength = full.length
   }
 
-  // Check like/fav status
-  if (userId) {
-    const [liked] = await db.query(
+  // 标签必取；点赞/收藏态仅登录用户需要——三条并行（未登录用空结果占位）
+  const emptyRows = Promise.resolve([[]])
+  const [[tags], [liked], [faved]] = await Promise.all([
+    db.query('SELECT t.name FROM tags t JOIN diary_tags dt ON t.id = dt.tag_id WHERE dt.diary_id = ?', [diaryId]),
+    userId ? db.query(
       'SELECT action FROM interactions WHERE user_id = ? AND target_type = ? AND target_id = ? AND action = ?',
       [userId, 'diary', diaryId, 'like']
-    )
-    const [faved] = await db.query(
+    ) : emptyRows,
+    userId ? db.query(
       'SELECT action FROM interactions WHERE user_id = ? AND target_type = ? AND target_id = ? AND action = ?',
       [userId, 'diary', diaryId, 'favorite']
-    )
+    ) : emptyRows,
+  ])
+  diary.tags = tags.map(t => t.name)
+  if (userId) {
     diary.isLiked = liked.length > 0
     diary.isFavorited = faved.length > 0
   }
-
-  // Get tags
-  const [tags] = await db.query(
-    'SELECT t.name FROM tags t JOIN diary_tags dt ON t.id = dt.tag_id WHERE dt.diary_id = ?',
-    [diaryId]
-  )
-  diary.tags = tags.map(t => t.name)
 
   return { code: 0, data: diary }
 }

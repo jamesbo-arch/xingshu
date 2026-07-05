@@ -1547,3 +1547,20 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 **保留（品牌/装饰，刻意不改）**：login-sheet 的微信 logo（view 手绘品牌标）与协议勾选 ✓（微小复选钩）、member-guard ★（inert 从不展示）、member benefit-diamond ✦、poster 分隔 ◆、广场空状态 ○。
 **至此**：底部导航 + 卡片/详情/写日记 + 三个列表页 + 活动 + 会员中心的功能性小图标全部改为原型 lucide 描边风格，共 31 个 data-URI SVG 图标类集中于 app.wxss。
 **验证**：全量文件无残留目标字形；data-URI SVG 背景渲染需开发者工具核对。
+
+---
+
+### 2026-07-06 — 日记详情页打开性能优化（并行化 + 消 N+1）
+
+**类型**：前端 / 云函数
+**模型**：claude-opus-4-8
+**背景**：用户反馈日记详情页打开很慢。定位三处串行瓶颈（cpolar 隧道下每次往返都有延迟）：
+1. 客户端 `getDiaryDetail` 与 `getComments` 两次云函数调用**串行 await**；
+2. `getComments` 对每条一级评论**逐条查回复（N+1）**，20 条评论即 20 次串行 DB 往返；
+3. `getDiaryDetail` 内 5 条 DB 查询全串行。
+**优化**：
+- `pages/detail/index.js` `_loadDiary` — 详情 + 评论改 `Promise.all` 并行（省一次整轮云函数往返，含冷启动；无需部署即生效）。
+- `cloudfunctions/getComments` — 用户/总数/一级评论三查询并行；回复改 `parent_id IN (...)` **一次批量取**后 JS 分组，N+1 → 常数次查询。
+- `cloudfunctions/getDiaryDetail` — 用户+日记并行；标签/点赞态/收藏态并行（未登录用空结果占位）。5 次串行 → 2 批并行。
+**验证**：`node --check` 通过；`fn-comment-test` 5/5（含回复批量取）、`fn-permission-test` 9/9（getDiaryDetail 权限矩阵/内容墙不回归）。两个云函数已 wxcloud CLI 部署（Active）。
+**预期**：首屏打开从「串行 2 云调用 + 评论 N+1」降到「并行 2 云调用、各自内部并行」，慢隧道下体感提升明显。

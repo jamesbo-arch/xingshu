@@ -7,33 +7,44 @@ exports.main = async (event, context) => {
   const { diaryId, page = 1, pageSize = 20 } = event
   if (!diaryId) return { code: -1, msg: '缺少日记ID' }
 
-  const [users] = await db.query('SELECT id FROM users WHERE openid = ?', [OPENID])
-  const userId = users.length ? users[0].id : null
-
   const offset = (page - 1) * pageSize
-  const [countRows] = await db.query(
-    'SELECT COUNT(*) AS total FROM comments WHERE diary_id = ? AND parent_id IS NULL AND is_deleted = 0',
-    [diaryId]
-  )
+  // 用户、总数、当前页一级评论三条查询互相独立，并行执行（连接池支持并发）
+  const [[users], [countRows], [comments]] = await Promise.all([
+    db.query('SELECT id FROM users WHERE openid = ?', [OPENID]),
+    db.query(
+      'SELECT COUNT(*) AS total FROM comments WHERE diary_id = ? AND parent_id IS NULL AND is_deleted = 0',
+      [diaryId]
+    ),
+    db.query(
+      `SELECT c.*, u.nickname AS user_name, u.avatar_hue AS user_avatar_hue
+       FROM comments c JOIN users u ON c.user_id = u.id
+       WHERE c.diary_id = ? AND c.parent_id IS NULL AND c.is_deleted = 0
+       ORDER BY c.created_at DESC LIMIT ? OFFSET ?`,
+      [diaryId, pageSize, offset]
+    ),
+  ])
+  const userId = users.length ? users[0].id : null
   const total = countRows[0].total
 
-  const [comments] = await db.query(
-    `SELECT c.*, u.nickname AS user_name, u.avatar_hue AS user_avatar_hue
-     FROM comments c JOIN users u ON c.user_id = u.id
-     WHERE c.diary_id = ? AND c.parent_id IS NULL AND c.is_deleted = 0
-     ORDER BY c.created_at DESC LIMIT ? OFFSET ?`,
-    [diaryId, pageSize, offset]
-  )
-
-  // fetch replies for each comment
-  for (const comment of comments) {
+  // 一次性取本页所有一级评论的回复（parent_id IN (...)），避免逐条 N+1 查询
+  const ids = comments.map(c => c.id)
+  const repliesByParent = {}
+  if (ids.length) {
+    const placeholders = ids.map(() => '?').join(',')
     const [replies] = await db.query(
       `SELECT c.*, u.nickname AS user_name, u.avatar_hue AS user_avatar_hue
        FROM comments c JOIN users u ON c.user_id = u.id
-       WHERE c.parent_id = ? AND c.is_deleted = 0 ORDER BY c.created_at ASC`,
-      [comment.id]
+       WHERE c.parent_id IN (${placeholders}) AND c.is_deleted = 0
+       ORDER BY c.created_at ASC`,
+      ids
     )
-    comment.replies = replies.map(r => ({ ...r, isMine: userId ? r.user_id === userId : false }))
+    for (const r of replies) {
+      const mapped = { ...r, isMine: userId ? r.user_id === userId : false }
+      ;(repliesByParent[r.parent_id] = repliesByParent[r.parent_id] || []).push(mapped)
+    }
+  }
+  for (const comment of comments) {
+    comment.replies = repliesByParent[comment.id] || []
     comment.isMine = userId ? comment.user_id === userId : false
   }
 

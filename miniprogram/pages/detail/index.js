@@ -31,7 +31,11 @@ Page({
   },
 
   async _loadDiary(id) {
-    const res = await diaryApi.getDetailRaw(id)
+    // 详情与评论并行拉取，避免两次云函数往返串行（首屏打开慢的主因）
+    const [res, commentsData] = await Promise.all([
+      diaryApi.getDetailRaw(id),
+      socialApi.getComments(id, 1),
+    ])
     // v2.3：未登录 → 原页拉起微信登录弹窗，登录成功后重载本日记
     if (res.code === -3) {
       this._pendingId = id
@@ -45,7 +49,6 @@ Page({
     }
     const raw = res.data
     const diary = mapper.diary(raw)
-    const commentsData = await socialApi.getComments(id, 1)
     const comments = commentsData ? commentsData.list.map(mapper.comment) : []
     const user = app.globalData.user || {}
 
