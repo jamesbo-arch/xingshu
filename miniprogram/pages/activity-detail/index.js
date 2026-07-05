@@ -19,7 +19,7 @@ Page({
   },
 
   onLoad(options) {
-    const info = wx.getSystemInfoSync()
+    const info = wx.getWindowInfo()
     this.setData({ statusBarHeight: info.statusBarHeight || 0 })
     this._id = parseInt(options.id, 10) || options.id
     // v2.3：活动详情需微信登录（轻授权），未登录先拉起登录弹窗，取消则返回列表

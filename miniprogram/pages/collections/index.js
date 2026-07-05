@@ -26,7 +26,7 @@ Page({
   },
 
   onLoad() {
-    const info = wx.getSystemInfoSync()
+    const info = wx.getWindowInfo()
     this.setData({
       statusBarHeight: info.statusBarHeight || 0,
       allTags: app.globalData.tags,

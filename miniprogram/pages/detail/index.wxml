@@ -33,7 +33,7 @@
     </view>
 
     <view class="detail-content {{diary.truncated ? 'is-truncated' : ''}}">
-      <text class="content-text">{{diary.content}}</text>
+      <text class="content-text" user-select>{{diary.content}}</text>
       <view wx:if="{{diary.truncated}}" class="content-fade"></view>
     </view>
 

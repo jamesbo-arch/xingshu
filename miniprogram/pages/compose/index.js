@@ -34,7 +34,7 @@ Page({
   },
 
   onLoad(options) {
-    const info = wx.getSystemInfoSync()
+    const info = wx.getWindowInfo()
     this.setData({ statusBarHeight: info.statusBarHeight || 0, allTags: app.globalData.tags })
     // 离开前脏检查的基线：新建为默认值，编辑为加载到的原值
     this._original = this._snapshot()

@@ -192,6 +192,13 @@
   gap: 6rpx;
 }
 
+/* 预览小程序码尺寸（此前无此类，image 按原图尺寸铺满导致过大）*/
+.qr-image {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 4rpx;
+}
+
 .qr-grid {
   width: 52rpx;
   height: 52rpx;
