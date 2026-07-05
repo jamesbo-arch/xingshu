@@ -1564,3 +1564,17 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `cloudfunctions/getDiaryDetail` — 用户+日记并行；标签/点赞态/收藏态并行（未登录用空结果占位）。5 次串行 → 2 批并行。
 **验证**：`node --check` 通过；`fn-comment-test` 5/5（含回复批量取）、`fn-permission-test` 9/9（getDiaryDetail 权限矩阵/内容墙不回归）。两个云函数已 wxcloud CLI 部署（Active）。
 **预期**：首屏打开从「串行 2 云调用 + 评论 N+1」降到「并行 2 云调用、各自内部并行」，慢隧道下体感提升明显。
+
+---
+
+### 2026-07-06 — 缩小海报预览二维码 + 清理 Console 告警
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：用户反馈分享海报二维码过大，且 Console 有报错/建议。
+**修改**：
+- `components/poster-sheet/index.wxss` — 新增 `.qr-image { width/height: 104rpx }`。此前该类**根本不存在**，`<image class="qr-image">` 按原图（280px 小程序码）铺满故过大。
+- 7 个页面 `wx.getSystemInfoSync()` → `wx.getWindowInfo()`（仅取 statusBarHeight），消「getSystemInfoSync is deprecated」告警。
+- `pages/detail/index.wxml` — 正文 `content-text` 加 `user-select`，支持长按复制，消编译提示。
+**Console 其余项说明（非本项目代码，环境噪声）**：`reportRealtimeAction:fail not support`（开发者工具模拟器不支持实时上报）、`SharedArrayBuffer` 弃用（Chromium 层）、`Error: timeout`（多为云函数冷启动超过默认调用超时，框架原样打印一条红错，但我方 request.js/_loadQr 均 try/catch 兜底、已优雅降级，非逻辑 bug；真机热启动通常不复现）。
+**验证**：7 页 `node --check` 通过；海报二维码尺寸、告警清理待开发者工具核对。
