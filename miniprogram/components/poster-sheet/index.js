@@ -73,9 +73,8 @@ Component({
       this.triggerEvent('close')
     },
 
-    onSheetTap(e) {
-      e.stopPropagation()
-    },
+    // wxml 用 catchtap 绑定即已阻止冒泡到遮罩，无需（小程序也没有）e.stopPropagation
+    onSheetTap() {},
 
     onSaveImage() {
       // 生成+保存海报耗时较长，2s 内防连点，避免重复保存到相册

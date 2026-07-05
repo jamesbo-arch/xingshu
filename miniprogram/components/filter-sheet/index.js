@@ -99,9 +99,8 @@ Component({
       this.triggerEvent('close')
     },
 
-    onSheetTap(e) {
-      e.stopPropagation()
-    },
+    // wxml 用 catchtap 绑定即已阻止冒泡到遮罩，无需（小程序也没有）e.stopPropagation
+    onSheetTap() {},
 
     toggleTag(e) {
       const tag = e.currentTarget.dataset.tag

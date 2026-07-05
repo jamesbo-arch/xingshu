@@ -1486,3 +1486,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `components/diary-card/index.js`：`_updateAvatar` 原定义在 `Component({})` 顶层（非 `methods` 内），`this._updateAvatar` 取不到→attached/diary 观察器报 not a function。移入 `methods` 修复。纯前端，即时生效。
 
 **验证**：diary-card `node --check` 通过。generateMiniCode 已 CLI 重部署；openapi 权限待用开发者工具部署确认。海报小程序码待复核。
+
+---
+
+### 2026-07-05 — 修 e.stopPropagation is not a function（小程序无此方法）
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：小程序码修复后 Console 报 `TypeError: e.stopPropagation is not a function`（poster-sheet onSheetTap）。小程序事件对象**没有 e.stopPropagation()**（那是网页 DOM API），阻止冒泡须用 `catch:tap` 绑定。全项目排查到三处误用。
+**修改文件**：
+- `components/diary-card`：根 view `bindtap=onTap`（开详情），子元素赞/藏/评/删/分享原为 `bindtap` + 处理器里 `e.stopPropagation()`——该调用抛错致处理器中断、且事件仍冒泡到 onTap。**卡片互动一直是坏的**（点赞既报错又误开详情）。改：5 个子绑定 `bindtap`→`catch:tap`（框架级阻止冒泡），js 删除 5 处 `e.stopPropagation()`。
+- `components/poster-sheet`、`components/filter-sheet`：`onSheetTap` 原 `e.stopPropagation()`（wxml 本就是 catchtap，冒泡已阻止）→ 改空函数 no-op。
+**说明**：`project/`、`doc/原型设计/` 里的 stopPropagation 是 React 原型，不受影响。login-sheet/member-guard 无此用法。
+**验证**：三组件 `node --check` 通过。真机核对——列表卡片点赞/收藏/分享/编辑/删除只触发自身、不再误开详情、Console 无 stopPropagation 报错。

@@ -29,30 +29,26 @@ Component({
       this.triggerEvent('open', { id: this.data.diary.id })
     },
 
-    onLike(e) {
-      e.stopPropagation()
+    // 以下五个由 wxml 的 catch:tap 绑定阻止冒泡到卡片 onTap（小程序无 e.stopPropagation）
+    onLike() {
       this.triggerEvent('like', { id: this.data.diary.id })
       this.setData({ showLikeAnim: true })
       setTimeout(() => this.setData({ showLikeAnim: false }), 800)
     },
 
-    onFav(e) {
-      e.stopPropagation()
+    onFav() {
       this.triggerEvent('fav', { id: this.data.diary.id })
     },
 
-    onEdit(e) {
-      e.stopPropagation()
+    onEdit() {
       this.triggerEvent('edit', { id: this.data.diary.id })
     },
 
-    onDelete(e) {
-      e.stopPropagation()
+    onDelete() {
       this.triggerEvent('delete', { id: this.data.diary.id })
     },
 
-    onShare(e) {
-      e.stopPropagation()
+    onShare() {
       this.triggerEvent('share', { id: this.data.diary.id })
     },
 

@@ -45,12 +45,12 @@
   <!-- Stats row -->
   <view class="card-stats">
     <view class="stats-left">
-      <view class="stat-item like-wrap" bindtap="onLike">
+      <view class="stat-item like-wrap" catch:tap="onLike">
         <text class="stat-icon {{diary.isLiked ? 'liked' : ''}}">{{diary.isLiked ? '♥' : '♡'}}</text>
         <text class="stat-count {{diary.isLiked ? 'liked' : ''}}">{{diary.likes}}</text>
         <text wx:if="{{showLikeAnim}}" class="like-float">+1</text>
       </view>
-      <view class="stat-item" bindtap="onFav">
+      <view class="stat-item" catch:tap="onFav">
         <text class="stat-icon {{diary.isFavorited ? 'faved' : ''}}">{{diary.isFavorited ? '◆' : '◇'}}</text>
         <text class="stat-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.favorites}}</text>
       </view>
@@ -61,14 +61,14 @@
     </view>
     <view class="stats-right">
       <view wx:if="{{showActions}}" class="action-btns">
-        <view class="action-btn edit-btn" bindtap="onEdit">
+        <view class="action-btn edit-btn" catch:tap="onEdit">
           <text>编辑</text>
         </view>
-        <view class="action-btn delete-btn" bindtap="onDelete">
+        <view class="action-btn delete-btn" catch:tap="onDelete">
           <text>删除</text>
         </view>
       </view>
-      <view wx:else class="stat-item" bindtap="onShare">
+      <view wx:else class="stat-item" catch:tap="onShare">
         <text class="stat-icon">↑</text>
         <text class="stat-count">{{diary.shares}}</text>
       </view>
