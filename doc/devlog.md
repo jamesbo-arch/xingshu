@@ -1578,3 +1578,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `pages/detail/index.wxml` — 正文 `content-text` 加 `user-select`，支持长按复制，消编译提示。
 **Console 其余项说明（非本项目代码，环境噪声）**：`reportRealtimeAction:fail not support`（开发者工具模拟器不支持实时上报）、`SharedArrayBuffer` 弃用（Chromium 层）、`Error: timeout`（多为云函数冷启动超过默认调用超时，框架原样打印一条红错，但我方 request.js/_loadQr 均 try/catch 兜底、已优雅降级，非逻辑 bug；真机热启动通常不复现）。
 **验证**：7 页 `node --check` 通过；海报二维码尺寸、告警清理待开发者工具核对。
+
+---
+
+### 2026-07-06 — 修海报二维码扫不出（画布 QR 过小）
+
+**类型**：前端 / 云函数
+**模型**：claude-opus-4-8
+**背景**：保存到相册的海报里小程序码扫不出。根因：画布绘制的 QR 仅 `cell*3 = 54px`，带中心 logo 的小程序码在此尺寸下模块太小、无法识别（与预览 .qr-image 是两套，预览已单独缩小）。
+**修改**：
+- `components/poster-sheet/index.js` — 画布 QR 由 54px 放大到 **130px**（qsize），重定位到作者行右下（qx=W-54-130，qy=ty-24），占位块与「扫码阅读」标签同步按 qsize 缩放；640×960 画布下方留白足够容纳（最长内容时 QR 底部约 858 < 底框 936）。
+- `cloudfunctions/generateMiniCode` — getUnlimited `width` 280→**430**，提升源码分辨率，抵御微信分享时的图片再压缩；已重新部署。
+**说明**：需**重新打开海报并保存**才会生成放大后的新码；旧的已存图不会变。
+**验证**：poster/generateMiniCode `node --check` 通过；实际扫码待真机核对。

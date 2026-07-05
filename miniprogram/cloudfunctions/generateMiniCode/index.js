@@ -17,7 +17,7 @@ exports.main = async (event, context) => {
     const result = await cloud.openapi.wxacode.getUnlimited({
       scene,
       page,
-      width: 280,
+      width: 430,
       checkPath: false,
     })
 

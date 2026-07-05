@@ -246,18 +246,21 @@ Component({
         ctx.fillText(d.created_at || d.time || '', 128, ty + 30)
 
         // QR：优先绘制真实带参小程序码（v2.2），失败回退占位块
-        const qx = W - 110, qy = ty - 16
-        const cell = 18
+        // 放大到 130px（此前仅 54px，带 logo 的小程序码过小扫不出）；下方留白足够容纳
+        const qsize = 130
+        const qx = W - 54 - qsize
+        const qy = ty - 24
         const qrLabel = () => {
           ctx.fillStyle = '#A8A39B'
           ctx.font = '17px sans-serif'
           ctx.textAlign = 'center'
-          ctx.fillText('扫码阅读', qx + (cell * 3) / 2, qy + cell * 3 + 20)
+          ctx.fillText('扫码阅读', qx + qsize / 2, qy + qsize + 22)
         }
         const drawQrPlaceholder = () => {
           ctx.fillStyle = '#2A2723'
-          ;[[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]].forEach(([r, c]) => {
-            ctx.fillRect(qx + c * cell, qy + r * cell, cell - 2, cell - 2)
+          const c = qsize / 3
+          ;[[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]].forEach(([r, col]) => {
+            ctx.fillRect(qx + col * c, qy + r * c, c - 3, c - 3)
           })
           qrLabel()
         }
@@ -289,7 +292,7 @@ Component({
 
         if (this._qrTempPath) {
           const img = canvas.createImage()
-          img.onload = () => { ctx.drawImage(img, qx, qy, cell * 3, cell * 3); qrLabel(); exportImage() }
+          img.onload = () => { ctx.drawImage(img, qx, qy, qsize, qsize); qrLabel(); exportImage() }
           img.onerror = () => { drawQrPlaceholder(); exportImage() }
           img.src = this._qrTempPath
           return
