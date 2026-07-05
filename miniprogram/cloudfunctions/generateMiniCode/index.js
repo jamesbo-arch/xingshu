@@ -28,6 +28,9 @@ exports.main = async (event, context) => {
 
     return { code: 0, data: { fileID: uploadResult.fileID } }
   } catch (err) {
-    return { code: -1, msg: '生成小程序码失败: ' + err.message }
+    // 暴露 errCode/errMsg 便于定位（未发布小程序常见 41030 / 未上线）
+    const detail = err && (err.errCode || err.errMsg || err.message) ? `errCode=${err.errCode} errMsg=${err.errMsg || err.message}` : String(err)
+    console.error('[generateMiniCode] getUnlimited 失败:', detail, 'scene=', scene, 'page=', page)
+    return { code: -1, msg: '生成小程序码失败: ' + detail }
   }
 }

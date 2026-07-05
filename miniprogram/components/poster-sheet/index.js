@@ -58,14 +58,14 @@ Component({
       try {
         const app = getApp()
         const sharerId = (app.globalData.user || {}).id
-        const res = await call('generateMiniCode', { diaryId, sharerId }, { showError: false })
-        if (res && res.fileID) {
-          this.setData({ qrFileID: res.fileID })
-          const dl = await wx.cloud.downloadFile({ fileID: res.fileID })
+        // raw 取完整信封，失败时把服务端 msg 打出来便于定位
+        const res = await call('generateMiniCode', { diaryId, sharerId }, { raw: true })
+        if (res && res.code === 0 && res.data && res.data.fileID) {
+          this.setData({ qrFileID: res.data.fileID })
+          const dl = await wx.cloud.downloadFile({ fileID: res.data.fileID })
           this._qrTempPath = dl.tempFilePath
         } else {
-          // 失败仍回退占位，但打印原因便于真机定位（多为小程序码接口配额/未发布等）
-          console.warn('[poster] generateMiniCode 未返回 fileID，回退占位码')
+          console.warn('[poster] 小程序码生成失败，回退占位码。原因：', res && res.msg)
         }
       } catch (e) { console.error('[poster] _loadQr error:', e) }
     },
