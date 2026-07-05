@@ -82,18 +82,27 @@ Component({
     _doSaveImage() {
       wx.getSetting({
         success: (res) => {
-          if (res.authSetting['scope.writePhotosAlbum'] === false) {
-            wx.showModal({
-              title: '需要相册权限',
-              content: '请在设置中允许"醒书日记"访问你的相册',
-              confirmText: '去设置',
-              cancelText: '取消',
-              success: (r) => { if (r.confirm) wx.openSetting() },
-            })
-            return
-          }
-          this._renderAndSave()
+          const scope = res.authSetting['scope.writePhotosAlbum']
+          if (scope === true) { this._renderAndSave(); return }
+          if (scope === false) { this._openAlbumSetting(); return }
+          // 从未申请过 → 主动拉起授权，避免首次保存时隐式弹窗被误判为失败
+          wx.authorize({
+            scope: 'scope.writePhotosAlbum',
+            success: () => this._renderAndSave(),
+            fail: () => this._openAlbumSetting(),
+          })
         },
+        fail: () => this._renderAndSave(),
+      })
+    },
+
+    _openAlbumSetting() {
+      wx.showModal({
+        title: '需要相册权限',
+        content: '请在设置中允许"醒书日记"访问你的相册',
+        confirmText: '去设置',
+        cancelText: '取消',
+        success: (r) => { if (r.confirm) wx.openSetting() },
       })
     },
 
@@ -258,21 +267,21 @@ Component({
                 filePath: r.tempFilePath,
                 success: () => { toast.success('已保存到相册'); this._recordShare() },
                 fail: (err) => {
-                  const denied = err.errMsg && err.errMsg.indexOf('auth deny') >= 0
-                  if (denied) {
-                    wx.showModal({
-                      title: '需要相册权限',
-                      content: '请在设置中允许访问相册',
-                      confirmText: '去设置',
-                      success: (r2) => { if (r2.confirm) wx.openSetting() },
-                    })
+                  const msg = (err && err.errMsg) || ''
+                  console.error('[poster] saveImageToPhotosAlbum fail:', msg)
+                  // 各版本拒绝授权的文案不一（auth deny / authorize / denied / cancel）统一引导去设置
+                  if (/deny|denied|authorize|cancel|auth/i.test(msg)) {
+                    this._openAlbumSetting()
                   } else {
-                    toast.error('保存失败，请重试')
+                    toast.error('保存失败：' + (msg.replace('saveImageToPhotosAlbum:fail ', '') || '请重试'))
                   }
                 },
               })
             },
-            fail: () => toast.error('图片生成失败'),
+            fail: (err) => {
+              console.error('[poster] canvasToTempFilePath fail:', (err && err.errMsg) || err)
+              toast.error('图片生成失败')
+            },
           }, this)
         }
 

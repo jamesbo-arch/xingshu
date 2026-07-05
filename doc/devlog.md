@@ -1456,3 +1456,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 **待办（部署）**：`recordShare` 是**新云函数**，wxcloud CLI 的 `function:upload` 仅能更新已存在函数、无法创建（报 `ResourceNotFound.Function`）。需在**微信开发者工具**中右键 `cloudfunctions/recordShare` →「上传并部署：云端安装依赖」完成一次性创建，分享计数方在真机生效。其余改动无需部署（getDiaryList/Detail 未改）。
 
 **验证**：`npm test` 全量通过（新增 fn-share 7 条）；`node test/recalc-counts.js` 复核显示全部计数器已与实际一致；11 处改动文件 `node --check` 通过。真机核对：广场/收藏分享保存海报后卡片分享数 +1（同一用户重复分享不再涨）。
+
+---
+
+### 2026-07-05 — 修分享海报「保存图片」失败：相册授权健壮化 + 暴露真实错误
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：真机点「保存图片」报「保存失败，请重试」。定位：图片已生成（否则报「图片生成失败」），失败发生在 `saveImageToPhotosAlbum` 的**非 auth deny** 分支，被旧代码笼统吞成「保存失败，请重试」，看不到真实原因。
+**修改文件**：`miniprogram/components/poster-sheet/index.js`
+- `_doSaveImage`：改为 getSetting 判 scope——已授权直存；曾拒绝引导去设置；**未申请过则先 `wx.authorize({scope:'scope.writePhotosAlbum'})` 主动申请**，避免首次隐式弹窗被误判失败；getSetting 失败兜底直存。抽出 `_openAlbumSetting()` 复用。
+- 保存失败处理：`console.error` 打印真实 errMsg；拒绝文案放宽匹配（deny/denied/authorize/cancel/auth 任一→引导去设置）；其余错误 toast **带出真实原因**（`保存失败：<errMsg>`）。canvasToTempFilePath 失败也打印 errMsg。
+**说明**：若在**微信开发者工具模拟器**里测，`saveImageToPhotosAlbum` 无法真正写入相册、必失败——需用预览/真机调试。真机若仍失败，新版会显示「保存失败：<具体原因>」便于进一步定位。`pages/activity-detail` 的 onSaveQr 存在同款窄判断（未报暂不动）。
+**验证**：`node --check` 通过。待真机复核保存成功/或反馈具体错误文案。
