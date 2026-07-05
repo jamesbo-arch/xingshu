@@ -291,7 +291,7 @@
             <text class="benefit-title">{{item.title}}</text>
             <text class="benefit-desc">{{item.desc}}</text>
           </view>
-          <text class="benefit-check">✓</text>
+          <view class="benefit-check ic-check-g"></view>
         </view>
       </view>
 
@@ -305,7 +305,7 @@
       <view class="section-card">
         <view class="info-row no-border logout-row" bindtap="onLogout">
           <text class="logout-text">退出登录</text>
-          <text class="logout-arrow">›</text>
+          <view class="logout-arrow ic-chevron"></view>
         </view>
       </view>
     </block>
@@ -333,7 +333,7 @@
           <text class="avatar-picker-initial">{{avatarInitial}}</text>
         </view>
         <text class="avatar-picker-label">更换头像</text>
-        <text class="avatar-picker-arrow">›</text>
+        <view class="avatar-picker-arrow ic-chevron"></view>
       </button>
 
       <view class="profile-divider"></view>

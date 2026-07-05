@@ -31,8 +31,8 @@
         </view>
         <view class="act-card-body">
           <text class="act-card-title serif">{{item.title}}</text>
-          <view class="act-meta"><text class="act-meta-icon">🗓</text><text>{{item.start_time}}</text></view>
-          <view class="act-meta"><text class="act-meta-icon">📍</text><text>{{item.type === 'online' ? '线上活动' : item.city + ' · ' + item.location}}</text></view>
+          <view class="act-meta"><view class="act-meta-icon ic-calendar"></view><text>{{item.start_time}}</text></view>
+          <view class="act-meta"><view class="act-meta-icon ic-pin"></view><text>{{item.type === 'online' ? '线上活动' : item.city + ' · ' + item.location}}</text></view>
           <view class="act-progress-row">
             <view class="act-progress"><view class="act-progress-fill" style="width: {{item.pct}}%"></view></view>
             <text class="act-count">{{item.signup_count}}/{{item.capacity}} 人</text>
@@ -58,7 +58,7 @@
         </view>
         <view class="act-card-body">
           <text class="act-card-title serif">{{item.title}}</text>
-          <view class="act-meta"><text class="act-meta-icon">🗓</text><text>{{item.start_time}}</text></view>
+          <view class="act-meta"><view class="act-meta-icon ic-calendar"></view><text>{{item.start_time}}</text></view>
           <text class="act-count-past">{{item.signup_count}} 位醒书人参与</text>
         </view>
       </view>

@@ -1531,3 +1531,19 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `components/filter-sheet` — 关闭 ×→ic-close。
 **未改（第三批待做/装饰性）**：会员中心、活动列表/详情、poster 分隔符 ◆、login-sheet/member-guard、广场空状态 ○。
 **验证**：custom-tab-bar/compose `node --check` 通过；已转换文件无残留旧字形。data-URI SVG 背景渲染需开发者工具核对。
+
+---
+
+### 2026-07-06 — 小图标对齐原型（第三批：活动/会员中心）
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：延续图标全量线性化，收尾活动与会员中心。
+**新增图标类（app.wxss）**：ic-calendar / ic-pin / ic-users（活动元信息）、ic-chevron（列表行箭头）。
+**改动文件**：
+- `pages/activities` — 卡片元信息 🗓/📍 改 ic-calendar/ic-pin。
+- `pages/activity-detail` — 返回 ←→ic-back、海报入口 ↗→ic-share、🗓/📍/👥→calendar/pin/users。
+- `pages/member` — 会员权益 ✓→ic-check-g；退出/头像行箭头 ›→ic-chevron。
+**保留（品牌/装饰，刻意不改）**：login-sheet 的微信 logo（view 手绘品牌标）与协议勾选 ✓（微小复选钩）、member-guard ★（inert 从不展示）、member benefit-diamond ✦、poster 分隔 ◆、广场空状态 ○。
+**至此**：底部导航 + 卡片/详情/写日记 + 三个列表页 + 活动 + 会员中心的功能性小图标全部改为原型 lucide 描边风格，共 31 个 data-URI SVG 图标类集中于 app.wxss。
+**验证**：全量文件无残留目标字形；data-URI SVG 背景渲染需开发者工具核对。

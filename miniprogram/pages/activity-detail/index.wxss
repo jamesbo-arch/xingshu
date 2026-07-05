@@ -22,8 +22,11 @@
 }
 
 .nav-back-icon {
-  font-size: 40rpx;
-  color: #2A2723;
+  width: 40rpx;
+  height: 40rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .nav-title {
@@ -121,7 +124,7 @@
   line-height: 1.5;
 }
 
-.act-meta-icon { font-size: 24rpx; flex-shrink: 0; }
+.act-meta-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; background-repeat: no-repeat; background-position: center; background-size: contain; }
 
 .act-progress-row {
   display: flex;
@@ -328,9 +331,11 @@
 
 /* v2.2 活动海报弹层 */
 .nav-share-icon {
-  font-size: 36rpx;
-  color: #4A453E;
-  padding: 16rpx;
+  width: 40rpx;
+  height: 40rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .nav-right {

@@ -1,9 +1,9 @@
 <view class="page-wrap paper-bg" wx:if="{{activity}}">
   <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
   <view class="detail-nav">
-    <view class="nav-back" bindtap="onBack"><text class="nav-back-icon">←</text></view>
+    <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
     <text class="nav-title serif">{{isPast ? '活動回顧' : '活動詳情'}}</text>
-    <view class="nav-right" bindtap="onOpenPoster"><text class="nav-share-icon">↗</text></view>
+    <view class="nav-right" bindtap="onOpenPoster"><view class="nav-share-icon ic-share"></view></view>
   </view>
 
   <scroll-view class="detail-scroll" scroll-y enhanced show-scrollbar="{{false}}">
@@ -21,9 +21,9 @@
       <text class="detail-title serif">{{activity.title}}</text>
 
       <view class="act-info-card">
-        <view class="act-meta"><text class="act-meta-icon">🗓</text><text>{{activity.start_time}}{{activity.end_time ? ' – ' + activity.end_time : ''}}</text></view>
-        <view class="act-meta"><text class="act-meta-icon">📍</text><text>{{activity.type === 'online' ? '线上 · ' + activity.location : activity.city + ' · ' + activity.location}}</text></view>
-        <view class="act-meta"><text class="act-meta-icon">👥</text><text>组织方：{{activity.organizer}}</text></view>
+        <view class="act-meta"><view class="act-meta-icon ic-calendar"></view><text>{{activity.start_time}}{{activity.end_time ? ' – ' + activity.end_time : ''}}</text></view>
+        <view class="act-meta"><view class="act-meta-icon ic-pin"></view><text>{{activity.type === 'online' ? '线上 · ' + activity.location : activity.city + ' · ' + activity.location}}</text></view>
+        <view class="act-meta"><view class="act-meta-icon ic-users"></view><text>组织方：{{activity.organizer}}</text></view>
         <view wx:if="{{!isPast}}" class="act-progress-row">
           <view class="act-progress"><view class="act-progress-fill" style="width: {{pct}}%"></view></view>
           <text class="act-count">已报名 {{activity.signup_count}}/{{activity.capacity}}</text>

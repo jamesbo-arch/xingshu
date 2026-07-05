@@ -132,8 +132,12 @@
 }
 
 .act-meta-icon {
-  font-size: 24rpx;
+  width: 26rpx;
+  height: 26rpx;
   flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .act-progress-row {

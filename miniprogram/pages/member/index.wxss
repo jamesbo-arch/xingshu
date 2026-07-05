@@ -522,10 +522,12 @@
 }
 
 .benefit-check {
-  font-size: 28rpx;
-  color: #5B8F6C;
-  font-weight: 700;
+  width: 32rpx;
+  height: 32rpx;
   flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 /* ===== Order card ===== */
@@ -664,8 +666,12 @@
 }
 
 .avatar-picker-arrow {
-  font-size: 36rpx;
-  color: #D6D0C2;
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .profile-divider {
@@ -846,6 +852,10 @@
 }
 
 .logout-arrow {
-  font-size: 32rpx;
-  color: #D6D0C2;
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
