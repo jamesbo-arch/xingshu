@@ -35,13 +35,11 @@
 }
 
 .tab-icon {
-  font-size: 34rpx;
-  color: #A8A39B;
-  line-height: 1;
-}
-
-.tab-icon.active {
-  color: #2A2723;
+  width: 44rpx;
+  height: 44rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .tab-text {

@@ -1513,3 +1513,21 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `pages/detail` — 底部栏 `bar-action-icon` 同样改线性图标（36rpx 盒）。
 **范围**：本批仅四个 stat 图标（卡片 + 详情，出现最频繁、差异最大）。权限徽标（⊕/★/⊗）、写日记可见范围图标、评论✎、会员会字徽 等暂未动，待确认渲染无误后按需继续。
 **验证**：改动为 wxml/wxss，需开发者工具真机核对 SVG 背景渲染。逻辑无 JS 改动。
+
+---
+
+### 2026-07-06 — 小图标全量对齐原型（第二批：导航/权限/搜索/筛选/新建等）
+
+**类型**：前端
+**模型**：claude-opus-4-8
+**背景**：用户要求把小程序所有小图标改成原型 lucide 描边风格，含底部导航与新建日记。延续第一批的 data-URI SVG 背景方案，统一放 `app.wxss` 的全局 `.ic-*` / `.nav-*` 类（SVG 取自原型 `project/src/icons.jsx`、`app.jsx`）。
+**新增图标类（app.wxss）**：nav-square/act/collect/mine/member 各含 -on 激活色（书/日历/书签/笔/星）；ic-eye/ic-star-gold/ic-lock（权限）、ic-pen/ic-pen-w（笔）、ic-search、ic-filter/ic-filter-w、ic-back、ic-close、ic-check-g；尺寸盒 .perm-ic。
+**改动文件**：
+- `custom-tab-bar` — 5 个 tab 字形图标改线性 SVG（激活拼 -on），加 addGlobalClass，data 用 ic 前缀。
+- `components/diary-card` — 权限徽标 ⊕/★/⊗ 改 眼/星/锁 + 文案。
+- `pages/detail` — 权限徽标同上；写评论 ✎ 改 ic-pen。
+- `pages/compose` — 可见范围 ◎/★/○ 改 眼/星/锁；返回 ← 改 ic-back；选中 ✓ 改 ic-check-g。
+- `pages/square|collections|mine` — 搜索 ⊙→ic-search、清除 ✕→ic-close、筛选 ≡→ic-filter(激活 ic-filter-w)、新建 FAB ✎→ic-pen-w；collections/mine 空状态 ◇/✎ 改书签/笔。
+- `components/filter-sheet` — 关闭 ×→ic-close。
+**未改（第三批待做/装饰性）**：会员中心、活动列表/详情、poster 分隔符 ◆、login-sheet/member-guard、广场空状态 ○。
+**验证**：custom-tab-bar/compose `node --check` 通过；已转换文件无残留旧字形。data-URI SVG 背景渲染需开发者工具核对。

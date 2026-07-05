@@ -44,8 +44,12 @@
 }
 
 .search-icon {
-  font-size: 30rpx;
-  color: #A8A39B;
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .search-input {
@@ -56,9 +60,12 @@
 }
 
 .search-clear {
-  font-size: 26rpx;
-  color: #A8A39B;
-  padding: 4rpx 6rpx;
+  width: 30rpx;
+  height: 30rpx;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .filter-btn {
@@ -78,13 +85,12 @@
   background: #2A2723;
 }
 
-.filter-active .filter-icon {
-  color: #FBF7EE;
-}
-
 .filter-icon {
-  font-size: 32rpx;
-  color: #4A453E;
+  width: 36rpx;
+  height: 36rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .filter-dot {
@@ -119,8 +125,12 @@
 }
 
 .empty-icon {
-  font-size: 80rpx;
-  color: #D6D0C2;
+  width: 96rpx;
+  height: 96rpx;
+  opacity: 0.5;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .empty-text {
@@ -150,6 +160,9 @@
 }
 
 .fab-icon {
-  font-size: 44rpx;
-  color: #FBF7EE;
+  width: 48rpx;
+  height: 48rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }

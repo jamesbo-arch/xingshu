@@ -24,8 +24,11 @@
 }
 
 .nav-back-icon {
-  font-size: 36rpx;
-  color: #2A2723;
+  width: 40rpx;
+  height: 40rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .nav-title {
@@ -193,10 +196,12 @@
 }
 
 .perm-option-icon {
-  font-size: 30rpx;
-  color: #A8A39B;
-  width: 36rpx;
-  text-align: center;
+  width: 40rpx;
+  height: 40rpx;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .perm-option-info {
@@ -217,9 +222,11 @@
 }
 
 .perm-check {
-  font-size: 28rpx;
-  color: #5B8F6C;
-  font-weight: 700;
+  width: 32rpx;
+  height: 32rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .compose-bottom-pad {

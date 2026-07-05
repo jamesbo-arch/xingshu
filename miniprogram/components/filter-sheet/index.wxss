@@ -62,10 +62,11 @@
 }
 
 .sheet-close {
-  font-size: 40rpx;
-  color: #A8A39B;
-  padding: 8rpx;
-  line-height: 1;
+  width: 36rpx;
+  height: 36rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .filter-section {

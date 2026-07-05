@@ -301,8 +301,11 @@
 }
 
 .comment-trigger-icon {
-  font-size: 26rpx;
-  color: #A8A39B;
+  width: 30rpx;
+  height: 30rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
 }
 
 .comment-trigger-text {

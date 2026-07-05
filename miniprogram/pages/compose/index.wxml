@@ -4,7 +4,7 @@
   <!-- Custom nav bar（发布按钮下移到底部固定栏，避免右上角被微信胶囊遮挡） -->
   <view class="compose-nav">
     <view class="nav-back" bindtap="onBack">
-      <text class="nav-back-icon">←</text>
+      <view class="nav-back-icon ic-back"></view>
     </view>
     <text class="nav-title serif">{{isEditing ? '编辑日记' : '新建日记'}}</text>
     <view class="nav-back"></view>
@@ -93,14 +93,12 @@
           data-key="{{item.key}}"
           bindtap="setPermission"
         >
-          <text class="perm-option-icon">{{item.icon}}</text>
+          <view class="perm-option-icon {{item.ic}}"></view>
           <view class="perm-option-info">
             <text class="perm-option-label">{{item.label}}</text>
             <text class="perm-option-desc">{{item.desc}}</text>
           </view>
-          <view wx:if="{{permission === item.key}}" class="perm-check">
-            <text>✓</text>
-          </view>
+          <view wx:if="{{permission === item.key}}" class="perm-check ic-check-g"></view>
         </view>
       </view>
     </view>

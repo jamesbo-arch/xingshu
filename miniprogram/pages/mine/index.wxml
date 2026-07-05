@@ -8,7 +8,7 @@
     </view>
     <view class="search-row">
       <view class="search-bar">
-        <text class="search-icon">⊙</text>
+        <view class="search-icon ic-search"></view>
         <input
           class="search-input"
           placeholder="搜索我的日记"
@@ -18,10 +18,10 @@
           bindconfirm="onSearchConfirm"
           confirm-type="search"
         />
-        <text wx:if="{{search}}" class="search-clear" bindtap="onSearchClear">✕</text>
+        <view wx:if="{{search}}" class="search-clear ic-close" bindtap="onSearchClear"></view>
       </view>
       <view class="filter-btn {{filtersActive ? 'filter-active' : ''}}" bindtap="onOpenFilter">
-        <text class="filter-icon">≡</text>
+        <view class="filter-icon {{filtersActive ? 'ic-filter-w' : 'ic-filter'}}"></view>
         <view wx:if="{{filtersActive}}" class="filter-dot"></view>
       </view>
     </view>
@@ -30,7 +30,7 @@
   <!-- Diary list -->
   <scroll-view class="diary-list" scroll-y enhanced show-scrollbar="{{false}}">
     <view wx:if="{{diaries.length === 0}}" class="empty-state">
-      <text class="empty-icon">✎</text>
+      <view class="empty-icon ic-pen"></view>
       <text class="empty-text">还没有日记</text>
       <text class="empty-hint">点击右下角按钮开始写作</text>
     </view>
@@ -50,7 +50,7 @@
 
   <!-- FAB -->
   <view class="fab" bindtap="onFabTap">
-    <text class="fab-icon">✎</text>
+    <view class="fab-icon ic-pen-w"></view>
   </view>
 
   <!-- Filter sheet -->

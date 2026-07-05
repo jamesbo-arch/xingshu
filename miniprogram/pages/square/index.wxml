@@ -11,7 +11,7 @@
     <!-- Search bar -->
     <view class="search-row">
       <view class="search-bar">
-        <text class="search-icon">⊙</text>
+        <view class="search-icon ic-search"></view>
         <input
           class="search-input"
           placeholder="搜索日记标题或内容"
@@ -21,10 +21,10 @@
           bindconfirm="onSearchConfirm"
           confirm-type="search"
         />
-        <text wx:if="{{search}}" class="search-clear" bindtap="onSearchClear">✕</text>
+        <view wx:if="{{search}}" class="search-clear ic-close" bindtap="onSearchClear"></view>
       </view>
       <view class="filter-btn {{filtersActive ? 'filter-active' : ''}}" bindtap="onOpenFilter">
-        <text class="filter-icon">≡</text>
+        <view class="filter-icon {{filtersActive ? 'ic-filter-w' : 'ic-filter'}}"></view>
         <view wx:if="{{filtersActive}}" class="filter-dot"></view>
       </view>
     </view>
@@ -51,7 +51,7 @@
 
   <!-- FAB -->
   <view class="fab" bindtap="onFabTap">
-    <text class="fab-icon">✎</text>
+    <view class="fab-icon ic-pen-w"></view>
   </view>
 
   <!-- Filter sheet -->

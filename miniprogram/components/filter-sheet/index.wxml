@@ -5,7 +5,7 @@
     <view class="sheet-handle"></view>
     <view class="sheet-header">
       <view class="sheet-title">筛选</view>
-      <view class="sheet-close" bindtap="onMaskTap">×</view>
+      <view class="sheet-close ic-close" bindtap="onMaskTap"></view>
     </view>
 
     <!-- Tags section -->

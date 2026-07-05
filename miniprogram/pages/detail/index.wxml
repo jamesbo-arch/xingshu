@@ -17,10 +17,14 @@
         <text class="author-name">{{diary.author}}</text>
         <text class="author-time">{{diary.timestamp}}</text>
       </view>
-      <view class="perm-badge {{diary.permission === 'public' ? 'perm-public' : ''}} {{diary.permission === 'member' ? 'perm-member' : ''}} {{diary.permission === 'private' ? 'perm-private' : ''}}">
-        <text wx:if="{{diary.permission === 'public'}}">公众</text>
-        <text wx:if="{{diary.permission === 'member'}}">会员</text>
-        <text wx:if="{{diary.permission === 'private'}}">私密</text>
+      <view wx:if="{{diary.permission === 'public'}}" class="perm-badge perm-public">
+        <view class="perm-ic ic-eye"></view><text>公众</text>
+      </view>
+      <view wx:if="{{diary.permission === 'member'}}" class="perm-badge perm-member">
+        <view class="perm-ic ic-star-gold"></view><text>会员</text>
+      </view>
+      <view wx:if="{{diary.permission === 'private'}}" class="perm-badge perm-private">
+        <view class="perm-ic ic-lock"></view><text>私密</text>
       </view>
     </view>
 
@@ -105,7 +109,7 @@
 
   <view class="bottom-bar">
     <view class="comment-trigger" bindtap="onShowCommentInput">
-      <text class="comment-trigger-icon">✎</text>
+      <view class="comment-trigger-icon ic-pen"></view>
       <text class="comment-trigger-text">写评论…</text>
     </view>
     <view class="bar-actions">
