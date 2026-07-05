@@ -256,7 +256,7 @@ Component({
             success: (r) => {
               wx.saveImageToPhotosAlbum({
                 filePath: r.tempFilePath,
-                success: () => toast.success('已保存到相册'),
+                success: () => { toast.success('已保存到相册'); this._recordShare() },
                 fail: (err) => {
                   const denied = err.errMsg && err.errMsg.indexOf('auth deny') >= 0
                   if (denied) {
@@ -321,6 +321,14 @@ Component({
 
     onShareWechat() {
       toast.info('请使用右上角分享', 2000)
+    },
+
+    // 海报成功保存到相册 = 完成一次分享：后端累加 share_count，并把最新数字回抛给列表页更新
+    async _recordShare() {
+      const d = this.data.diary
+      if (!d) return
+      const res = await call('recordShare', { diaryId: d.id }, { showError: false })
+      if (res) this.triggerEvent('shared', { id: d.id, shares: res.shares })
     },
   },
 })

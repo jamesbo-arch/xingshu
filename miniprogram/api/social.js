@@ -16,4 +16,7 @@ module.exports = {
   deleteComment(commentId) {
     return call('deleteComment', { commentId })
   },
+  recordShare(diaryId) {
+    return call('recordShare', { diaryId }, { showError: false })
+  },
 }

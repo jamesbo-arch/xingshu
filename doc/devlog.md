@@ -1430,3 +1430,29 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 **已自带防护、未改**：compose.onPublish(_publishing)、activity-detail.onSubmitSignup(_submitting)、login-sheet.onLogin(_logging)；后台 admin 关键写操作已由 `:disabled` 忙标志（Orders.submit/Diaries.onSave/Login）或阻塞式 `confirm()`（各删除）覆盖。
 **测试**：`test/unit/guard.test.js` 新增 7 条（lock in-flight 去重/完成后可再触发/不同 key 隔离/抛错释放锁；throttle cooldown 去重/超时可再触发/不同 key 隔离）。`npm run test:unit` 38 条全绿；11 个改动 JS 文件 `node --check` 通过。
 **验证**：纯前端交互接线，需微信开发者工具真机核对——快速连点评论发布只产生一条、连点卡片不重复打开详情页、连点点赞不出现点了又取消。
+
+---
+
+### 2026-07-05 — 统计数字修正（ABC）：计数器校准 + 分享计数 + 卡片字段统一
+
+**类型**：数据库 / 云函数 / 前端 / 测试
+**模型**：claude-opus-4-8
+**背景**：用户发现日记卡片/详情的点赞/收藏/评论/分享四个数字与真实数据不符。排查结论：数字取自 diaries 表计数器列（非实时 COUNT），种子数据把计数器灌成虚高值（#12 显示赞216/藏68/评39，实际各仅 1 条）；且 `share_count` 无任何代码路径累加，分享数永远不变。
+
+**A｜校准种子数据**：
+- 给 `interactions.action` 枚举加 `'share'`（`ALTER TABLE interactions MODIFY COLUMN action ENUM('like','favorite','share') NOT NULL`），使分享也有来源表可回算。
+- 新增 `test/recalc-counts.js`（预览/`--apply` 写库）：按 interactions/comments 实际行数回填 like/fav/comment/share 四个计数器（评论口径=未删一级评论；分享口径=去重分享人）。已 `--apply` 校准 7 篇日记（#12 赞216→1 藏68→1 评39→1）。
+
+**B｜补分享计数**：
+- 新增云函数 `miniprogram/cloudfunctions/recordShare`：受 interactions 唯一键约束，采用「去重分享人」口径——首次分享插 `action='share'` 互动行并 `share_count+1`，同一用户重复分享幂等；返回最新 shares。
+- `api/social.js` 加 `recordShare(diaryId)`。
+- `components/poster-sheet`：海报成功保存到相册即视为完成一次分享 → 调 recordShare → `triggerEvent('shared', {id, shares})`。
+- `pages/square`、`pages/collections`：poster-sheet 加 `bind:shared="onShared"`，即时把列表卡片分享数更新为最新值。
+- 新增 `test/fn-share-test.js`（SHARE-A01~A07：初始 0、+1、同用户幂等、另一用户 +1、缺参/日记不存在/未注册用户拒绝），挂入 `npm test`。
+
+**C｜统一卡片字段命名**：
+- `components/diary-card/index.wxml`：评论/分享由蛇形 `diary.comment_count`/`diary.share_count` 改为驼峰 `diary.comments`/`diary.shares`（与点赞/收藏一致，消除依赖 mapper `...item` 透传原始字段的隐患）。onShared 更新时同时写 `shares` 与 `share_count` 兼容。
+
+**待办（部署）**：`recordShare` 是**新云函数**，wxcloud CLI 的 `function:upload` 仅能更新已存在函数、无法创建（报 `ResourceNotFound.Function`）。需在**微信开发者工具**中右键 `cloudfunctions/recordShare` →「上传并部署：云端安装依赖」完成一次性创建，分享计数方在真机生效。其余改动无需部署（getDiaryList/Detail 未改）。
+
+**验证**：`npm test` 全量通过（新增 fn-share 7 条）；`node test/recalc-counts.js` 复核显示全部计数器已与实际一致；11 处改动文件 `node --check` 通过。真机核对：广场/收藏分享保存海报后卡片分享数 +1（同一用户重复分享不再涨）。

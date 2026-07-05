@@ -115,5 +115,12 @@ Page({
     if (diary) { this.setData({ showPosterSheet: true, posterDiary: diary }); this._tabBar(true) }
   },
   onClosePoster() { this.setData({ showPosterSheet: false, posterDiary: null }); this._tabBar(false) },
+  // 分享成功后列表卡片的分享数即时 +1（保留 share_count 兼容旧字段读取）
+  onShared(e) {
+    const { id, shares } = e.detail
+    this.setData({
+      diaries: this.data.diaries.map(d => d.id === id ? { ...d, shares, share_count: shares } : d)
+    })
+  },
   onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
 })

@@ -56,7 +56,7 @@
       </view>
       <view class="stat-item">
         <text class="stat-icon">◎</text>
-        <text class="stat-count">{{diary.comment_count}}</text>
+        <text class="stat-count">{{diary.comments}}</text>
       </view>
     </view>
     <view class="stats-right">
@@ -70,7 +70,7 @@
       </view>
       <view wx:else class="stat-item" bindtap="onShare">
         <text class="stat-icon">↑</text>
-        <text class="stat-count">{{diary.share_count}}</text>
+        <text class="stat-count">{{diary.shares}}</text>
       </view>
     </view>
   </view>
