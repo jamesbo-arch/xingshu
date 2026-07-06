@@ -1591,3 +1591,21 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `cloudfunctions/generateMiniCode` — getUnlimited `width` 280→**430**，提升源码分辨率，抵御微信分享时的图片再压缩；已重新部署。
 **说明**：需**重新打开海报并保存**才会生成放大后的新码；旧的已存图不会变。
 **验证**：poster/generateMiniCode `node --check` 通过；实际扫码待真机核对。
+
+---
+
+### 2026-07-06 — 初始化《醒记故事汇 2026.6》日记集入库（97 篇 / 16 作者）
+
+**类型**：数据库 / 测试
+**计划关联**：内容初始化（用户提供 docx）
+**背景**：用户要求把 `doc/醒记故事汇 2026.6 按作者排序.docx` 的日记集初始化到数据库。
+**处理**：
+1. 解析 docx（unzip word/document.xml → 按 `<w:p>`/`<w:t>` 提取逐段文本）。按「作者名 + 共N篇 + 各篇(标题 末尾带 2026.6.X 日期 + 正文段落)」结构解析出 **97 篇 / 16 作者**；用每位作者声明的「共N篇」交叉校验，声明合计=解析合计=97 ✓。
+2. `test/data/stories-2026-06.json` — 解析结果（`[{author,title,date,content}]`）。
+3. `test/seed-stories.js` — 幂等入库：作者→展示型种子用户（合成 openid `story_author_<i>`、identity=authed、avatar_hue 分散、created_by='seed-stories'），日记 permission=public / status=active / created_at 取自各篇日期（同日按收录顺序加秒保序）/ 计数器全 0；「同作者+同标题」已存在则跳过，可安全重复运行。
+**修改文件**：
+- `test/data/stories-2026-06.json`（新增，解析数据）
+- `test/seed-stories.js`（新增，幂等 seeder）
+- 数据库：新增 16 个 `created_by='seed-stories'` 用户 + 97 篇公开日记
+**验证**：写库后复跑幂等（插入 0 / 跳过 97）；DB 核对 16 作者 / 97 篇全 public+active、diary_count 已回填（王文义/Olia 各 30）、created_at 原始值正确（如《尊重、勤劳与亲情》2026-06-30 12:00:02）。
+**备注**：作者 identity 默认 authed（无会员金标）、日记默认 public（广场可见）——如需改为 member 身份/权限，改脚本常量重跑即可。源 docx 未纳入 Git。
