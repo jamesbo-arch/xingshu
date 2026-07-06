@@ -177,6 +177,8 @@
 | ORDER-A06 | 审计 | 建单写 admin_logs（action=createOrder，target=订单号） |
 | ORDER-A07 | 状态派生 | orderList 据 valid_until 派生 expiring(≤15天)/expired；status 筛选生效 |
 | ORDER-A08 | 归属/详情 | userOrders 仅返回本人订单；orderDetail 返回单笔完整信息 |
+| ORDER-A09 | 显式有效期 | createOrder 传 validFrom/validUntil → 按操作者所填落库（不走自动计算），user.member_from/until 同步 |
+| ORDER-A10 | 有效期校验 | 失效日 ≤ 生效日 → 拒绝 |
 
 #### 人工用例（M2.2 admin Web 回归）
 
@@ -189,6 +191,7 @@
 | ORDER-M05 | 订单详情 | 详情弹窗展示订单头卡（金额/状态印章/有效期）、支付信息、凭证放大、时间线 |
 | ORDER-M06 | 用户详情联动 | 用户详情页「开通/续费会员」跳订单页并预置该用户；「会员订单」区列出其订单 |
 | ORDER-M07 | 状态筛选 | 列表按 生效中/即将到期/已过期 筛选，徽章颜色与状态一致 |
+| ORDER-M08 | 有效期字段 | 填单步显示「生效日期/失效日期」：默认生效日=支付日、失效日=生效日+1年；改支付日联动生效日；改生效日联动失效日；两者可手动改，确认页显示有效期区间 |
 
 ### ADMIN-EDIT · 后台编辑/代发/ID/分页（B/C/D/E 档）
 

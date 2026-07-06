@@ -5,7 +5,7 @@ const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
 async function run() {
-  console.log('=== 会员订单管理测试（ORDER-A01~A08）===\n')
+  console.log('=== 会员订单管理测试（ORDER-A01~A10）===\n')
   let passed = 0, failed = 0
   const conn = await mysql.createConnection(DB)
 
@@ -109,6 +109,27 @@ async function run() {
     if (r.data.list.length < 1) throw new Error('会员用户应至少 1 笔订单')
     const d = await admin('orderDetail', { id: order1Id })
     if (d.code !== 0 || !d.data.order || d.data.order.id !== order1Id) throw new Error('orderDetail 返回异常')
+  })
+
+  await test('ORDER-A09 显式指定有效期 → 按操作者所填 valid_from/until 落库（不走自动计算）', async () => {
+    const explicitId = await mkUser('test_order_explicit', 'authed')
+    const vf = '2026-09-01', vu = '2027-09-01'
+    const r = await admin('createOrder', { userId: explicitId, amount: 365, validFrom: vf, validUntil: vu })
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.validUntil !== vu) throw new Error(`validUntil=${r.data.validUntil}，期望 ${vu}`)
+    const [[o]] = await conn.query(
+      "SELECT DATE_FORMAT(valid_from,'%Y-%m-%d') vf, DATE_FORMAT(valid_until,'%Y-%m-%d') vu FROM orders WHERE id = ?", [r.data.order.id])
+    if (o.vf !== vf || o.vu !== vu) throw new Error(`订单落库 ${o.vf}→${o.vu}，期望 ${vf}→${vu}`)
+    const [[u]] = await conn.query(
+      "SELECT DATE_FORMAT(member_from,'%Y-%m-%d') mf, DATE_FORMAT(member_until,'%Y-%m-%d') mu FROM users WHERE id = ?", [explicitId])
+    if (u.mf !== vf || u.mu !== vu) throw new Error(`用户会员期 ${u.mf}→${u.mu}，期望 ${vf}→${vu}`)
+  })
+
+  await test('ORDER-A10 失效日期不晚于生效日期 → 拒绝', async () => {
+    const r = await admin('createOrder', { userId: authedId, amount: 365, validFrom: '2026-09-01', validUntil: '2026-09-01' })
+    if (r.code === 0) throw new Error('失效日=生效日不应通过')
+    const r2 = await admin('createOrder', { userId: authedId, amount: 365, validFrom: '2026-09-01', validUntil: '2026-08-01' })
+    if (r2.code === 0) throw new Error('失效日早于生效日不应通过')
   })
 
   // 清理：先按测试用户的订单 id 精确清审计，再删订单与用户（orders 对 users 有 ON DELETE CASCADE）

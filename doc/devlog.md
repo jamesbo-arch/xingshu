@@ -1626,3 +1626,20 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 - `test/seed-stories.js`（重写：多月 MONTHS 列表、name-based openid、(user,title,date) 幂等、`--reset`/`--dry` 开关）
 - 数据库：seed-stories 用户 16→**35**，日记 97→**337**（04:134 / 05:106 / 06:97），全 public+active。
 **验证**：`--reset` 重建后幂等复跑（插入 0 / 跳过 337）；DB 核对总量/分月/公开数、Olia 重复标题各留每月一份不同日期、王文义跨月归并为 1 用户（diary_count 86）。
+
+### 2026-07-06 23:50 — 会员订单：建单向导补「会员有效期」字段（生效日/失效日可编辑）
+
+**类型**：[前端 | 云函数 | 测试]
+**计划关联**：会员订单管理模块（v2.4）后续增强——有效期显式可控
+
+**修改文件**：
+- `miniprogram/cloudfunctions/admin/index.js` — `createOrder` 新增 `validFrom`/`validUntil` 入参：传入即按操作者所填落库并同步 `users.member_from/until`（校验格式 + 失效日须晚于生效日）；未传则回退既有自动计算（现会员顺延叠加，否则今日+days）——保证既有测试与 C 端行为不回归。
+- `admin/src/views/Orders.vue` — 填单步（步骤2）增「生效日期 / 失效日期」两枚 date 输入；默认生效日=支付日、失效日=生效日+1年；改支付日联动生效日、改生效日联动失效日（`vfTouched/vuTouched` 标记手动改过后不再被覆盖）；现会员默认从当前到期日顺延；确认步与提交携带有效期；本地 `addYear/fmtDate` 避免 toISOString 的 UTC 日期回退。
+- `test/fn-order-test.js` — 新增 ORDER-A09（显式有效期按所填落库、user 会员期同步）、A10（失效日≤生效日拒绝）；套件 8→10。
+- `test/prd-ch3-test-cases.md` — 补 ORDER-A09/A10 自动化与 ORDER-M08 人工用例。
+
+**变更说明**：
+用户反馈建单向导缺少会员有效期字段。原实现有效期完全由后端自动算（生效日固定=今日、失效日=今日+365 或顺延），操作者无法干预。本次改为默认值自动填好（默认生效=支付日、失效=+1年）、但两者均可手动修改，后端优先采用操作者所填、缺省再回退自动计算。
+
+**验证**：
+`node test/fn-order-test.js` 10/10 通过；`npm test` 全量 116 条（原 114 +2）exit 0；`cd admin && npm run build` 通过。admin 云函数需经 wxcloud CLI / 开发者工具「上传并部署」后线上生效。

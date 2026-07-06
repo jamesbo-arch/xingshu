@@ -500,9 +500,12 @@ const handlers = {
     return { list: rows.map(rowToOrder), total: rows.length }
   },
 
-  // 建单即开通：记录一笔已完成的线下转账，直接 paid 并激活/续期会员（含时长叠加）
+  // 建单即开通：记录一笔已完成的线下转账，直接 paid 并激活/续期会员
+  // 有效期（valid_from/valid_until）：操作者可在建单向导显式指定（默认生效日=支付日、失效日=生效日+1年）；
+  // 未传时回退为自动计算——现会员从原到期日顺延（时长叠加），否则今日起 +memberDays。
   async createOrder({ userId, amount, plan = '年度会员', method = 'offline',
-                      memberDays = 365, paymentTime = null, note = '', proofUrl = null } = {}) {
+                      memberDays = 365, paymentTime = null, note = '', proofUrl = null,
+                      validFrom = null, validUntil = null } = {}) {
     if (!userId) throw new Error('缺少用户 ID')
     const amt = Number(amount)
     if (!amt || isNaN(amt) || amt <= 0) throw new Error('金额无效')
@@ -515,18 +518,27 @@ const handlers = {
     const user = users[0]
     if (user.identity === 'guest') throw new Error('游客不可开通会员，需先登录')
 
-    // 时长叠加：现会员（未过期）从原到期日顺延，否则从今日起算
     const todayStr = new Date().toISOString().slice(0, 10)
-    const [[calc]] = await db.query(
-      `SELECT CURDATE() AS today,
-              CASE WHEN ? = 'member' AND ? IS NOT NULL AND ? >= CURDATE() THEN ? ELSE CURDATE() END AS base`,
-      [user.identity, user.member_until, user.member_until, user.member_until])
-    const validFrom = todayStr
-    const [[dates]] = await db.query(
-      'SELECT DATE_FORMAT(DATE_ADD(?, INTERVAL ? DAY), "%Y-%m-%d") AS validUntil', [calc.base, days])
-    const validUntil = dates.validUntil
-    // 首次开通用今日为 member_from，续期保留原 member_from
-    const memberFrom = (user.identity === 'member' && user.memberFrom) ? user.memberFrom : validFrom
+    let vFrom, vUntil
+    if (validFrom || validUntil) {
+      // 操作者显式指定有效期
+      const dateRe = /^\d{4}-\d{2}-\d{2}$/
+      if (!dateRe.test(validFrom || '') || !dateRe.test(validUntil || '')) throw new Error('有效期日期格式无效')
+      if (validUntil <= validFrom) throw new Error('失效日期须晚于生效日期')
+      vFrom = validFrom
+      vUntil = validUntil
+    } else {
+      // 未指定 → 自动：现会员（未过期）从原到期日顺延，否则今日起 +days
+      const [[calc]] = await db.query(
+        `SELECT CASE WHEN ? = 'member' AND ? IS NOT NULL AND ? >= CURDATE() THEN ? ELSE CURDATE() END AS base`,
+        [user.identity, user.member_until, user.member_until, user.member_until])
+      vFrom = todayStr
+      const [[dates]] = await db.query(
+        'SELECT DATE_FORMAT(DATE_ADD(?, INTERVAL ? DAY), "%Y-%m-%d") AS validUntil', [calc.base, days])
+      vUntil = dates.validUntil
+    }
+    // 首次开通用生效日为 member_from，续期保留原 member_from
+    const memberFrom = (user.identity === 'member' && user.memberFrom) ? user.memberFrom : vFrom
 
     const orderId = 'XS-' + todayStr.replace(/-/g, '') + '-' +
       Math.floor(Math.random() * 10000).toString().padStart(4, '0')
@@ -539,10 +551,10 @@ const handlers = {
         `INSERT INTO orders (id, user_id, amount, plan, method, status, member_days,
            valid_from, valid_until, payment_time, note, proof_url, created_by)
          VALUES (?,?,?,?,?,'paid',?,?,?,?,?,?,'admin-web')`,
-        [orderId, userId, amt, plan, method, days, validFrom, validUntil, payTime, note, proofUrl])
+        [orderId, userId, amt, plan, method, days, vFrom, vUntil, payTime, note, proofUrl])
       await conn.query(
         "UPDATE users SET identity = 'member', member_from = ?, member_until = ? WHERE id = ?",
-        [memberFrom, validUntil, userId])
+        [memberFrom, vUntil, userId])
       await conn.commit()
     } catch (err) {
       await conn.rollback()
@@ -550,9 +562,9 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('createOrder', 'order', orderId, { userId, amount: amt, validUntil, renew: user.identity === 'member' })
+    await auditLog('createOrder', 'order', orderId, { userId, amount: amt, validUntil: vUntil, renew: user.identity === 'member' })
     const [orderRows] = await db.query(`${ORDER_SELECT} WHERE o.id = ?`, [orderId])
-    return { order: rowToOrder(orderRows[0]), validUntil }
+    return { order: rowToOrder(orderRows[0]), validUntil: vUntil }
   },
 }
 
