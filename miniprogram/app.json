@@ -31,5 +31,6 @@
     "backgroundColor": "#FBF7EE"
   },
   "style": "v2",
+  "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json"
 }
