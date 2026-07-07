@@ -695,10 +695,12 @@
 .field-input {
   width: 100%;
   box-sizing: border-box;
+  height: 84rpx;
+  line-height: 48rpx;
   background: #F3ECDB;
   border: 2rpx solid #C9B892;
   border-radius: 10px;
-  padding: 18rpx 24rpx;
+  padding: 0 24rpx;
   font-size: 28rpx;
   color: #2A2723;
 }

@@ -89,8 +89,11 @@ Page({
     })
   },
 
-  onShowPurchaseSheet() { this.setData({ showPurchaseSheet: true }) },
-  onClosePurchaseSheet() { this.setData({ showPurchaseSheet: false }) },
+  // tab 页的底部弹层需隐藏自定义 tab-bar，否则 tab-bar 独立层会盖住弹层底部（保存按钮）
+  _tabBar(hidden) { const tb = this.getTabBar && this.getTabBar(); if (tb) tb.setData({ hidden }) },
+
+  onShowPurchaseSheet() { this.setData({ showPurchaseSheet: true }); this._tabBar(true) },
+  onClosePurchaseSheet() { this.setData({ showPurchaseSheet: false }); this._tabBar(false) },
 
   onShowProfileSheet() {
     const user = this.data.user || {}
@@ -100,8 +103,9 @@ Page({
       editRealName: user.realName || '',
       editAvatarUrl: user.avatarUrl || '',
     })
+    this._tabBar(true)
   },
-  onCloseProfileSheet() { this.setData({ showProfileSheet: false }) },
+  onCloseProfileSheet() { this.setData({ showProfileSheet: false }); this._tabBar(false) },
 
   onChooseAvatar(e) {
     this.setData({ editAvatarUrl: e.detail.avatarUrl })
@@ -139,6 +143,7 @@ Page({
         app.globalData.user = result
         this._loadUser()
         this.setData({ showProfileSheet: false })
+        this._tabBar(false)
         wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 })
       }
     } catch {
