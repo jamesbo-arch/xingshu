@@ -1870,3 +1870,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node test/fn-roundtrip-test.js` 8/8；`npm test` 全量 exit 0。**createDiary/updateDiary 为云函数，需重新部署到新环境后线上生效。**
+
+### 2026-07-07 20:45 — 后台超时自动提示重新登录
+
+**类型**：[前端]
+**修改文件**：
+- `admin/src/api/index.js` — `call` 遇 `-401`（token 过期/失效）时置 sessionStorage 超时标记再跳 /login，并用 `handlingExpiry` 去重（避免 Dashboard 等并发请求重复跳转）；导出 `consumeExpiredNotice()`。
+- `admin/src/views/Login.vue` — onMounted 读取并清除超时标记，命中则 `error` 显示「登录已超时，请重新登录」。
+
+**变更说明**：
+原 -401 静默 logout+跳转，无提示。现改为跳转登录页后自动提示超时需重新登录。admin 云函数本就对过期/无效 token 返回 -401（`verifyToken` 判 `exp<now`），故仅改后台前端，云函数无需部署。
+
+**验证**：
+`cd admin && npm run build` 通过；token 过期后再操作 → 自动回登录页并显示「登录已超时，请重新登录」。

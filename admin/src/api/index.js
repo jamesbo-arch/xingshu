@@ -22,9 +22,18 @@ function ensureSignIn() {
   return signInPromise
 }
 
+const EXPIRED_KEY = 'xs_admin_expired'
+let handlingExpiry = false
+
 export function getToken() { return localStorage.getItem(TOKEN_KEY) || '' }
 export function isLoggedIn() { return !!getToken() }
 export function logout() { localStorage.removeItem(TOKEN_KEY) }
+// 登录页读取并清除"超时"标记（api 的 call 在 -401 时置位）
+export function consumeExpiredNotice() {
+  const v = sessionStorage.getItem(EXPIRED_KEY)
+  if (v) sessionStorage.removeItem(EXPIRED_KEY)
+  return !!v
+}
 
 async function call(action, payload = {}) {
   await ensureSignIn()
@@ -32,7 +41,12 @@ async function call(action, payload = {}) {
   const r = res.result || {}
   if (r.code === -401) {
     logout()
-    window.location.href = '/login'
+    // token 过期/失效：置超时标记并跳登录页。去重避免并发请求（如 Dashboard 同时发多个）重复跳转
+    if (!handlingExpiry) {
+      handlingExpiry = true
+      sessionStorage.setItem(EXPIRED_KEY, '1')
+      window.location.href = '/login'
+    }
     throw new Error(r.msg || '登录已过期')
   }
   if (r.code !== 0) throw new Error(r.msg || '请求失败')

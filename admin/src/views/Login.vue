@@ -20,14 +20,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { login } from '../api'
+import { login, consumeExpiredNotice } from '../api'
 
 const router = useRouter()
 const password = ref('')
 const loading = ref(false)
 const error = ref('')
+
+// 因 token 超时被踢回登录页时，自动提示需重新登录
+onMounted(() => {
+  if (consumeExpiredNotice()) error.value = '登录已超时，请重新登录'
+})
 
 async function onLogin() {
   if (!password.value || loading.value) return
