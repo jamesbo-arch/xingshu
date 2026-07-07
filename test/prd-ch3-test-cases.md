@@ -215,6 +215,7 @@
 | AE-A09 | E | 列表分页参数 | users/diaries 传 page/pageSize → 返回该页切片 + total（若采用服务端分页）；客户端分页则此项转人工 AE-M06 |
 | AE-A10 | B | updateUser 改会员身份 | identity=member + memberFrom/memberUntil → 落库 member_from/until、identity=member |
 | AE-A11 | B | updateUser 会员校验 | member 缺日期 / 失效≤生效 / 非法身份 → 拒绝；改回 authed → 清空会员期 |
+| AE-A12 | B | updateUser 改性别 | gender=male → 落库、USER_SELECT 回传（用户管理性别字段） |
 
 #### 人工用例（M2.2 admin Web 回归）
 

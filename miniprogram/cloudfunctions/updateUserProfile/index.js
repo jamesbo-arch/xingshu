@@ -4,12 +4,13 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { nickname, realName, phone, avatarUrl, authorize, logout } = event
+  const { nickname, realName, phone, gender, avatarUrl, authorize, logout } = event
 
   const fields = [], values = []
   if (nickname !== undefined) { fields.push('nickname = ?'); values.push(nickname) }
   if (realName !== undefined) { fields.push('real_name = ?'); values.push(realName) }
   if (phone !== undefined) { fields.push('phone = ?'); values.push(phone) }
+  if (gender !== undefined) { fields.push('gender = ?'); values.push(gender || null) }
   if (avatarUrl !== undefined) { fields.push('avatar_url = ?'); values.push(avatarUrl) }
 
   if (authorize) {

@@ -13,7 +13,7 @@
     </div>
     <table class="data-table">
       <thead><tr>
-        <th>ID</th><th>用户</th><th>真实姓名</th><th>手机号</th><th>身份</th>
+        <th>ID</th><th>用户</th><th>真实姓名</th><th>性别</th><th>手机号</th><th>身份</th>
         <th>会员有效期</th><th>日记</th><th>互动</th><th>推荐人</th><th>注册</th><th>最后活跃</th><th>操作</th>
       </tr></thead>
       <tbody>
@@ -26,6 +26,7 @@
             </span>
           </td>
           <td>{{ u.realName || '—' }}</td>
+          <td>{{ genderLabel(u.gender) }}</td>
           <td>{{ u.phone || '-' }}</td>
           <td><span class="badge" :class="'badge-'+u.identity">{{ identityLabel(u.identity) }}</span></td>
           <td>
@@ -39,7 +40,7 @@
           <td class="dim">{{ u.lastActive }}</td>
           <td><router-link :to="'/users/'+u.id" class="link">详情</router-link></td>
         </tr>
-        <tr v-if="!list.length"><td colspan="12" class="empty">暂无用户</td></tr>
+        <tr v-if="!list.length"><td colspan="13" class="empty">暂无用户</td></tr>
       </tbody>
     </table>
     <Paginate :page="page" :pageSize="pageSize" :total="total" @change="onPage" />
@@ -65,6 +66,7 @@ function onFilter() { clearTimeout(timer); timer = setTimeout(() => { page.value
 function onPage({ page: p, pageSize: ps }) { page.value = p; pageSize.value = ps; reload() }
 
 function identityLabel(i) { return { guest:'游客', authed:'已授权', member:'会员' }[i] || i }
+function genderLabel(g) { return { male:'男', female:'女', secret:'保密' }[g] || '保密' }
 function hue(h) { return `hsl(${h == null ? 60 : h}, 30%, 45%)` }
 function initial(name) { return name ? name.trim()[0] : '?' }
 async function onExport() {
@@ -72,8 +74,8 @@ async function onExport() {
   const r = await getUsers({ keyword: keyword.value.trim() || undefined, identity: identity.value || undefined, page: 1, pageSize: 100000 })
   exportCsv(
     `醒书用户列表-${new Date().toISOString().slice(0, 10)}.csv`,
-    ['用户ID', '昵称', '真实姓名', '手机号', '身份', '会员到期', '剩余天数', '日记数', '获赞', '收藏', '评论', '转发', '注册时间', '最后活跃'],
-    r.list.map(u => [u.id, u.nickname, u.realName, u.phone, identityLabel(u.identity),
+    ['用户ID', '昵称', '真实姓名', '性别', '手机号', '身份', '会员到期', '剩余天数', '日记数', '获赞', '收藏', '评论', '转发', '注册时间', '最后活跃'],
+    r.list.map(u => [u.id, u.nickname, u.realName, genderLabel(u.gender), u.phone, identityLabel(u.identity),
       u.memberUntil || '', u.daysLeft || 0, u.diaries, u.likes, u.favorites, u.comments, u.shares, u.registeredAt, u.lastActive])
   )
 }

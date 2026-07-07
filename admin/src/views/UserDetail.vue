@@ -16,6 +16,7 @@
         <div><label>ID</label><span>{{ user.id }}</span></div>
         <div><label>手机号</label><span>{{ user.phone || '-' }}</span></div>
         <div><label>真实姓名</label><span>{{ user.realName || '-' }}</span></div>
+        <div><label>性别</label><span>{{ genderLabel(user.gender) }}</span></div>
         <div><label>身份</label><span class="badge" :class="'badge-'+user.identity">{{ identityLabel(user.identity) }}</span></div>
         <div><label>会员生效</label><span>{{ user.memberFrom || '-' }}</span></div>
         <div><label>会员到期</label><span>{{ user.memberUntil || '-' }}<span v-if="user.memberUntil" class="dim"> · 剩 {{ user.daysLeft }} 天</span></span></div>
@@ -33,6 +34,13 @@
           <label>昵称<input v-model="form.nickname" class="input-full" maxlength="16" /></label>
           <label>真实姓名<input v-model="form.realName" class="input-full" maxlength="16" placeholder="线下核对用" /></label>
           <label>手机号<input v-model="form.phone" class="input-full" maxlength="11" placeholder="可手动修正" /></label>
+          <label>性别
+            <select v-model="form.gender" class="input-full">
+              <option value="secret">保密</option>
+              <option value="male">男</option>
+              <option value="female">女</option>
+            </select>
+          </label>
           <label>会员身份
             <select v-model="form.identity" class="input-full" @change="onIdentityChange">
               <option value="guest">游客</option>
@@ -169,6 +177,7 @@ async function load() {
 }
 
 function identityLabel(i) { return { guest:'游客', authed:'已授权', member:'会员' }[i] || i }
+function genderLabel(g) { return { male:'男', female:'女', secret:'保密' }[g] || '保密' }
 function stateLabel(s) { return { active:'生效中', expiring:'即将到期', expired:'已过期', pending:'待生效', refunded:'已退款', cancelled:'已取消' }[s] || s }
 
 // 本地日期工具（避免 toISOString 的 UTC 偏移）
@@ -179,6 +188,7 @@ function addYear(s) { if (!s) return ''; const [y, m, d] = s.split('-').map(Numb
 function startEdit() {
   form.value = {
     nickname: user.value.nickname || '', realName: user.value.realName || '', phone: user.value.phone || '',
+    gender: user.value.gender || 'secret',
     identity: user.value.identity, memberFrom: user.value.memberFrom || '', memberUntil: user.value.memberUntil || '',
   }
   editing.value = true
@@ -201,6 +211,7 @@ async function onSaveProfile() {
   try {
     await updateUser({
       userId: user.value.id, nickname: form.value.nickname.trim(), realName: form.value.realName.trim(), phone: form.value.phone.trim(),
+      gender: form.value.gender,
       identity: form.value.identity,
       memberFrom: isMember ? form.value.memberFrom : null,
       memberUntil: isMember ? form.value.memberUntil : null,

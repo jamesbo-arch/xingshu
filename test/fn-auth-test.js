@@ -1,4 +1,4 @@
-// v2.3 微信登录授权测试 — 对应 test/m15-test-cases.md AUTH-A01 ~ AUTH-A06
+// v2.3 微信登录授权测试 — 对应 test/m15-test-cases.md AUTH-A01 ~ AUTH-A07（A07 性别）
 // 及 test/prd-ch3-test-cases.md MEM-A10（会员过期降级）
 // 覆盖：unionid 落库与补录、authorize 升级、logout 回退、会员身份恢复、过期降级
 // 测试用户以 test_auth_ 前缀创建，结束时硬删
@@ -7,7 +7,7 @@ const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
 async function run() {
-  console.log('=== 微信登录授权测试（AUTH-A01~A06）===\n')
+  console.log('=== 微信登录授权测试（AUTH-A01~A07）===\n')
   let passed = 0, failed = 0
   const conn = await mysql.createConnection(DB)
 
@@ -62,6 +62,14 @@ async function run() {
     const r = await callFn('updateUserProfile', { authorize: true }, 'test_auth_u1')
     if (r.code !== 0) throw new Error(r.msg)
     if (r.data.identity !== 'member') throw new Error(`identity=${r.data.identity}，会员未恢复`)
+  })
+
+  await test('AUTH-A07 updateUserProfile 设置性别 → 落库并回传', async () => {
+    const r = await callFn('updateUserProfile', { gender: 'female' }, 'test_auth_u1')
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.gender !== 'female') throw new Error(`回传 gender=${r.data.gender}`)
+    const [[row]] = await conn.query("SELECT gender FROM users WHERE openid = 'test_auth_u1'")
+    if (row.gender !== 'female') throw new Error(`DB gender=${row.gender}`)
   })
 
   await test('MEM-A10 会员过期：checkMemberStatus → 降级 authed 并清空到期日', async () => {

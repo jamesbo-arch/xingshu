@@ -5,7 +5,7 @@ const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
 async function run() {
-  console.log('=== 后台编辑/代发/ID 测试（AE-A01~A11）===\n')
+  console.log('=== 后台编辑/代发/ID 测试（AE-A01~A12）===\n')
   let passed = 0, failed = 0
   const conn = await mysql.createConnection(DB)
 
@@ -51,6 +51,14 @@ async function run() {
     const [[u]] = await conn.query(
       "SELECT identity, DATE_FORMAT(member_from,'%Y-%m-%d') mf, DATE_FORMAT(member_until,'%Y-%m-%d') mu FROM users WHERE id = ?", [u1.id])
     if (u.identity !== 'member' || u.mf !== '2026-05-19' || u.mu !== '2027-05-19') throw new Error(`落库异常 ${u.identity}/${u.mf}/${u.mu}`)
+  })
+
+  await test('AE-A12 updateUser 设置性别 → 落库、USER_SELECT 回传', async () => {
+    const r = await admin('updateUser', { userId: u1.id, gender: 'male' })
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.user.gender !== 'male') throw new Error(`回传 gender=${r.data.user.gender}`)
+    const [[u]] = await conn.query('SELECT gender FROM users WHERE id = ?', [u1.id])
+    if (u.gender !== 'male') throw new Error(`DB gender=${u.gender}`)
   })
 
   await test('AE-A11 updateUser 会员校验 + 改回 authed 清空会员期', async () => {

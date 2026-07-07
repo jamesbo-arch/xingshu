@@ -19,6 +19,7 @@ function daysUntil(v) {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   return Math.max(0, Math.round((target - today) / 86400000))
 }
+function genderText(g) { return { male: '男', female: '女', secret: '保密' }[g] || '保密' }
 
 Page({
   data: {
@@ -33,7 +34,14 @@ Page({
     editNickname: '',
     editRealName: '',
     editPhone: '',
+    editGender: '',
     editAvatarUrl: '',
+    genderLabel: '保密',
+    genderOptions: [
+      { key: 'male', label: '男' },
+      { key: 'female', label: '女' },
+      { key: 'secret', label: '保密' },
+    ],
     benefits: [
       { title: '查看全部会员权限日记', desc: '解锁优质内容，与志同道合者同行' },
       { title: '会员专属印记', desc: '日记卡片、评论区显示会员标识' },
@@ -70,6 +78,7 @@ Page({
     user.daysLeft = daysUntil(raw.member_until || user.memberUntil)
     this.setData({
       user,
+      genderLabel: genderText(user.gender),
       avatarColor: hueToColor(user.avatarHue || 60),
       avatarInitial: getInitial(user.nickname || '?'),
     })
@@ -122,6 +131,7 @@ Page({
       editNickname: user.nickname || '',
       editRealName: user.realName || '',
       editPhone: user.phone || '',
+      editGender: user.gender || 'secret',
       editAvatarUrl: user.avatarUrl || '',
     })
     this._tabBar(true)
@@ -135,6 +145,7 @@ Page({
   onNicknameInput(e) { this.setData({ editNickname: e.detail.value }) },
   onRealNameInput(e) { this.setData({ editRealName: e.detail.value }) },
   onPhoneInput(e) { this.setData({ editPhone: e.detail.value }) },
+  onGenderSelect(e) { this.setData({ editGender: e.currentTarget.dataset.key }) },
 
   onSaveProfile() {
     const nickname = this.data.editNickname.trim()
@@ -156,7 +167,7 @@ Page({
         avatarUrl = res.fileID
       }
 
-      const patch = { nickname, realName: this.data.editRealName.trim(), phone: this.data.editPhone.trim() }
+      const patch = { nickname, realName: this.data.editRealName.trim(), phone: this.data.editPhone.trim(), gender: this.data.editGender }
       if (avatarUrl !== (user.avatarUrl || '')) patch.avatarUrl = avatarUrl
 
       const result = await userApi.updateProfile(patch)

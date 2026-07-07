@@ -1932,3 +1932,21 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node --check` 通过；会员中心剩余天数与有效至显示正确。
+
+### 2026-07-07 23:00 — 用户性别字段（小程序 + 后台全链路）
+
+**类型**：[数据库 | 云函数 | 前端 | 测试]
+**修改文件**：
+- 数据库：`users` 表加列 `gender VARCHAR(10) DEFAULT NULL`（male/female/secret，空=保密），直接 ALTER。
+- `miniprogram/cloudfunctions/updateUserProfile/index.js` — 接收 `gender`（空转 NULL）。
+- `miniprogram/cloudfunctions/admin/index.js` — `USER_SELECT` 增 `gender`；`updateUser` 接收 gender + 审计。
+- `miniprogram/pages/member/index.{wxml,js,wxss}` — 个人资料查看态加「性别」行；编辑资料弹层加性别三选（男/女/保密）；`_loadUser` 计算 genderLabel、保存进 patch。
+- `admin/src/views/UserDetail.vue` — 查看态显示性别、编辑态下拉；预填/保存带 gender。
+- `admin/src/views/Users.vue` — 列表加「性别」列、导出 CSV 含性别。
+- 测试：`test/fn-auth-test.js` AUTH-A07（updateUserProfile 设性别）、`test/fn-admin-edit-test.js` AE-A12（admin updateUser 设性别）；`test/prd-ch3-test-cases.md` 补 AE-A12。
+
+**变更说明**：
+按需求为用户增加性别字段并双端管理。取值 male/female/secret，NULL/空显示「保密」。mapper.user 透传 gender，前端据此显示/编辑。
+
+**验证**：
+`node test/fn-auth-test.js` 8/8、`node test/fn-admin-edit-test.js` 11/11、`npm test` 全量 exit 0；`admin npm run build` 通过。**updateUserProfile 与 admin 云函数需重新部署到新环境后线上生效。**

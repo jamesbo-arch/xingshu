@@ -705,6 +705,28 @@
   color: #2A2723;
 }
 
+.gender-options {
+  display: flex;
+  gap: 16rpx;
+}
+.gender-option {
+  flex: 1;
+  height: 84rpx;
+  line-height: 84rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #6B6459;
+  background: #FBF7EE;
+  border: 2rpx solid #C9B892;
+  border-radius: 10px;
+}
+.gender-option.selected {
+  color: #B6452F;
+  background: #F4ECD9;
+  border-color: #B6452F;
+  font-weight: 600;
+}
+
 .profile-btns {
   display: flex;
   flex-direction: row;
