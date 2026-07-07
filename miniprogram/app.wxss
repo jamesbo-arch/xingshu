@@ -55,12 +55,9 @@ view, scroll-view, swiper, input, textarea, image, button, text {
 .perm-badge {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
-  font-size: 22rpx;
-  font-weight: 500;
-  padding: 1px 6px;
-  border-radius: 3px;
-  letter-spacing: 0.5px;
+  justify-content: center;
+  padding: 5rpx;
+  border-radius: 4px;
 }
 
 .perm-public {
@@ -304,8 +301,8 @@ view, scroll-view, swiper, input, textarea, image, button, text {
 
 /* 权限徽标内小图标尺寸盒（配 .ic-eye/.ic-star-gold/.ic-lock 使用）*/
 .perm-ic {
-  width: 22rpx;
-  height: 22rpx;
+  width: 28rpx;
+  height: 28rpx;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;

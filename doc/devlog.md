@@ -1817,3 +1817,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node test/fn-permission-test.js` 10/10；`npm test` 全量 exit 0。**getDiaryList 为云函数，需重新部署到新环境后真机生效**；卡片样式为前端，重新编译即可。
+
+### 2026-07-07 18:40 — 权限徽标去文字，仅保留图标
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/components/diary-card/index.wxml`、`miniprogram/pages/detail/index.wxml` — 三处权限徽标去掉「公众/会员/私密」文字，仅留图标（ic-eye/ic-star-gold/ic-lock）。
+- `miniprogram/app.wxss` — `.perm-badge` 改为居中对称 padding 的图标方块（去掉 gap/font-size/letter-spacing）；`.perm-ic` 22rpx→28rpx 略放大。
+
+**变更说明**：
+按需求将权限徽标改为纯图标。图标描边色与原文字色一致（眼睛绿/星金/锁灰），配同色底 pill 仍能色彩区分三种权限。card 组件覆盖广场/收藏/我的日记，detail 覆盖详情页。
+
+**验证**：
+真机编译后，权限徽标显示为紧凑彩色图标块，无文字。

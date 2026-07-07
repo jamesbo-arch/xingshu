@@ -18,13 +18,13 @@
         <text class="author-time">{{diary.timestamp}}</text>
       </view>
       <view wx:if="{{diary.permission === 'public'}}" class="perm-badge perm-public">
-        <view class="perm-ic ic-eye"></view><text>公众</text>
+        <view class="perm-ic ic-eye"></view>
       </view>
       <view wx:if="{{diary.permission === 'member'}}" class="perm-badge perm-member">
-        <view class="perm-ic ic-star-gold"></view><text>会员</text>
+        <view class="perm-ic ic-star-gold"></view>
       </view>
       <view wx:if="{{diary.permission === 'private'}}" class="perm-badge perm-private">
-        <view class="perm-ic ic-lock"></view><text>私密</text>
+        <view class="perm-ic ic-lock"></view>
       </view>
     </view>
 
