@@ -27,15 +27,10 @@ exports.main = async (event, context) => {
       where += ' AND d.id IN (SELECT target_id FROM interactions WHERE user_id = ? AND target_type = ? AND action = ?)'
       params.push(userId, 'diary', 'favorite')
     } else {
-      // square（v2.1 矩阵）：所有身份可见公众+会员日记的卡片，仅排除他人私密；
+      // square：所有身份可见公众+会员日记的卡片，私密日记一律不进广场（含本人私密，仅在「我的日记」可见）；
       // 无完整阅读权的行在返回前截断为摘要（见下方 EXCERPT 处理）
-      if (userId) {
-        where += ' AND (d.permission != ? OR d.user_id = ?)'
-        params.push('private', userId)
-      } else {
-        where += ' AND d.permission != ?'
-        params.push('private')
-      }
+      where += ' AND d.permission != ?'
+      params.push('private')
     }
   }
 

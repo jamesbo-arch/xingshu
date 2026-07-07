@@ -1802,3 +1802,18 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node --check` 四文件语法通过；真机重新编译后，广场/详情/活动详情「…」菜单出现「转发给朋友」「分享到朋友圈」，转发卡片可正常打开对应内容。
+
+### 2026-07-07 18:00 — 卡片金色点缀改给非会员 + 私密日记不上广场
+
+**类型**：[前端 | 云函数 | 测试]
+**修改文件**：
+- `miniprogram/components/diary-card/index.wxml` — 金色卡片条件由 `author_identity === 'member'` 反转为 `!== 'member'`，类名 `card-member`→`card-gold`。
+- `miniprogram/components/diary-card/index.wxss` — `.card-member`→`.card-gold`（样式不变）；金色点缀现作用于非会员作者卡片，会员卡回归米白（仍保留头像「会」徽章）。
+- `miniprogram/cloudfunctions/getDiaryList/index.js` — square 分支取消对登录用户放行「本人私密」，改为对所有人一律 `permission != 'private'`；私密日记只在「我的日记」可见。
+- `test/fn-permission-test.js` — 新增 PERM-A09（本人私密不进广场，8→9→实际 10 条计入 A08b）。
+
+**变更说明**：
+按需求：① 金色点缀反过来给非会员日记卡片；② 私密日记不在广场展示（含本人的）。私密日记仍在 mine 模式（我的日记）全部可见。
+
+**验证**：
+`node test/fn-permission-test.js` 10/10；`npm test` 全量 exit 0。**getDiaryList 为云函数，需重新部署到新环境后真机生效**；卡片样式为前端，重新编译即可。

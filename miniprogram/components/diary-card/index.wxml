@@ -1,5 +1,5 @@
 <view
-  class="diary-card {{diary.author_identity === 'member' ? 'card-member' : ''}} {{diary.permission === 'private' ? 'card-private' : ''}}"
+  class="diary-card {{diary.author_identity !== 'member' ? 'card-gold' : ''}} {{diary.permission === 'private' ? 'card-private' : ''}}"
   bindtap="onTap"
 >
   <!-- Header: avatar + author + time + perm badge -->

@@ -7,7 +7,8 @@
   box-shadow: 0 1px 2px rgba(58, 44, 22, 0.04), 0 2px 8px rgba(58, 44, 22, 0.05);
 }
 
-.card-member {
+/* 金色点缀：作用于非会员作者的日记卡片（会员卡回归普通米白，仅保留头像「会」徽章） */
+.card-gold {
   background: linear-gradient(180deg, #FFFBED, #FFFCF5 70%);
   border: 1px solid #B89968;
   box-shadow: 0 1px 3px rgba(184, 153, 104, 0.18), 0 1px 2px rgba(58, 44, 22, 0.04);

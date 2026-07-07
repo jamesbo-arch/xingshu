@@ -12,7 +12,7 @@ const GUEST = 'test_perm_guest'
 const LONG_CONTENT = Array.from({ length: 20 }, (_, i) => `第${String(i).padStart(2, '0')}段权限矩阵验证文字`).join('；')
 
 async function run() {
-  console.log('=== 日记权限矩阵测试（PERM-A01~A08）===\n')
+  console.log('=== 日记权限矩阵测试（PERM-A01~A09）===\n')
   let passed = 0, failed = 0
   const created = []
   const conn = await mysql.createConnection(DB)
@@ -109,6 +109,11 @@ async function run() {
     const pubRow = l.data.list.find(d => d.id === pubId)
     if (!memRow || !memRow.excerpt) throw new Error('authed 应见会员卡片摘要')
     if (!pubRow || pubRow.excerpt) throw new Error('authed 公众卡片不应截断')
+  })
+
+  await test('PERM-A09 本人私密日记不进广场（仅「我的日记」可见）', async () => {
+    const l = await list(AUTHOR)  // 作者本人看广场，也不应看到自己的私密
+    if (l.data.list.some(d => d.id === priId)) throw new Error('本人私密不应出现在广场')
   })
 
   // 清理
