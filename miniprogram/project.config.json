@@ -44,7 +44,7 @@
     "disableSWC": true
   },
   "compileType": "miniprogram",
-  "libVersion": "2.26.0",
+  "libVersion": "3.16.0",
   "appid": "wx454274f515182d02",
   "cloudfunctionRoot": "cloudfunctions/",
   "projectname": "xingshu-diary",

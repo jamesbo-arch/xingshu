@@ -1691,3 +1691,18 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `grep wx841de0568655b384` 全库 0 命中；project.config.json appid 为新值。
+
+### 2026-07-07 01:10 — 切换到新云开发环境 cloud1-d9gbozhfp4a6c50c0
+
+**类型**：[配置 | 文档]
+**修改文件**：
+- `miniprogram/app.js` — `wx.cloud.init` env → `cloud1-d9gbozhfp4a6c50c0`
+- `cloudbaserc.json` — envId → 新环境（wxcloud CLI 部署据此定位）
+- `admin/src/api/index.js` — ENV_ID → 新环境（管理后台 @cloudbase/js-sdk）
+- `CLAUDE.md` — 环境 ID 更新，旧环境 `cloud1-1gpabyik2db3478f` 与 `awakebook-env-...` 一并列入历史弃用
+
+**变更说明**：
+新小程序 `wx454274f515182d02`「醒书知行社」开通了独立云开发环境 `cloud1-d9gbozhfp4a6c50c0`。前端/管理后台/CLI 三处环境 ID 已切换。MySQL 经 cpolar 隧道连接，与云开发环境解耦，**数据层不变、无需迁移数据**——但 23 个云函数需重新部署到新环境（db.js 由本地随部署带上）。devlog 历史条目中的旧环境 ID 为当时记录，保留不改。
+
+**验证**：
+`grep cloud1-1gpabyik2db3478f` 功能代码 0 命中（仅 CLAUDE.md 历史清单与 devlog 历史条目保留）。**待办：部署云函数到新环境 + 新环境开启匿名登录 + generateMiniCode 授 openapi 权限后端到端验证。**

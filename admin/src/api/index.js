@@ -2,7 +2,7 @@
 // 鉴权：密码登录换取 HMAC token（12h 有效），存 localStorage，随每次请求携带
 import cloudbase from '@cloudbase/js-sdk'
 
-const ENV_ID = 'cloud1-1gpabyik2db3478f'
+const ENV_ID = 'cloud1-d9gbozhfp4a6c50c0'
 const TOKEN_KEY = 'xs_admin_token'
 
 const app = cloudbase.init({ env: ENV_ID })
