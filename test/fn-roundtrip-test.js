@@ -59,10 +59,38 @@ async function run() {
     if (d.code === 0) throw new Error('软删除后仍可查到')
   })
 
-  // 硬删测试数据（deleteDiary 已平衡 diary_count，此处只清残留行）
-  if (diaryId) {
+  await test('非会员发「会员专属」日记 → 服务端拒绝', async () => {
+    const r = await callFn('createDiary', { title: '越权会员日记', content: 'x', tags: [], permission: 'member' }, 'mock_me')
+    if (r.code === 0) throw new Error('authed 非会员不应能发会员专属日记')
+  })
+
+  let memberDiaryId = null
+  await test('会员发「会员专属」日记 → 允许', async () => {
+    const r = await callFn('createDiary', { title: '会员专属回环测试', content: 'x', tags: [], permission: 'member' }, 'mock_yanqiu')
+    if (r.code !== 0) throw new Error(r.msg)
+    memberDiaryId = r.data.id
+  })
+
+  await test('非会员将日记改为「会员专属」→ 服务端拒绝', async () => {
+    // 用一篇 mock_me 名下的活跃公开日记验证（避免用已软删的 diaryId 误判为"不存在"而非"被拦"）
+    const c = await callFn('createDiary', { title: '临时公开日记', content: 'x', tags: [], permission: 'public' }, 'mock_me')
+    if (c.code !== 0) throw new Error('前置创建失败: ' + c.msg)
+    const r = await callFn('updateDiary', { diaryId: c.data.id, permission: 'member' }, 'mock_me')
     const conn = await mysql.createConnection(DB)
-    await conn.execute('DELETE FROM diaries WHERE id = ?', [diaryId])
+    await conn.execute('DELETE FROM diaries WHERE id = ?', [c.data.id])
+    await conn.execute("UPDATE users SET diary_count = GREATEST(diary_count - 1, 0) WHERE openid = 'mock_me'")
+    await conn.end()
+    if (r.code === 0) throw new Error('authed 非会员不应能改为会员专属')
+  })
+
+  // 硬删测试数据（deleteDiary 已平衡 diary_count，此处只清残留行 + 会员测试日记并回退计数）
+  {
+    const conn = await mysql.createConnection(DB)
+    if (diaryId) await conn.execute('DELETE FROM diaries WHERE id = ?', [diaryId])
+    if (memberDiaryId) {
+      await conn.execute('DELETE FROM diaries WHERE id = ?', [memberDiaryId])
+      await conn.execute("UPDATE users SET diary_count = GREATEST(diary_count - 1, 0) WHERE openid = 'mock_yanqiu'")
+    }
     await conn.end()
     console.log('\n  测试数据已清理')
   }

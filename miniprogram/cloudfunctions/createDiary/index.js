@@ -7,9 +7,14 @@ exports.main = async (event, context) => {
   const { title, content, tags, permission, images } = event
   if (!title || !content) return { code: -1, msg: '标题和内容不能为空' }
 
-  const [users] = await db.query('SELECT id FROM users WHERE openid = ?', [OPENID])
+  const [users] = await db.query('SELECT id, identity FROM users WHERE openid = ?', [OPENID])
   if (!users.length) return { code: -1, msg: 'user not found' }
   const userId = users[0].id
+
+  // 服务端兜底：仅会员可发布「会员专属」日记（前端已置灰，防绕过）
+  if (permission === 'member' && users[0].identity !== 'member') {
+    return { code: -1, msg: '仅会员可发布会员专属日记' }
+  }
 
   const conn = await db.getConnection()
   try {

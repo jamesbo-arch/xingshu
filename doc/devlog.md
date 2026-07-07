@@ -1857,3 +1857,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node --check` 通过；真机编译后非会员在写日记页看到「会员」选项置灰带「会员专属」标签，点击弹提示不切换；会员正常可选。
+
+### 2026-07-07 20:20 — 会员专属日记权限：服务端兜底校验
+
+**类型**：[云函数 | 测试]
+**修改文件**：
+- `miniprogram/cloudfunctions/createDiary/index.js`、`updateDiary/index.js` — 用户查询增 `identity`；当 `permission==='member'` 且用户非会员时直接拒绝（`仅会员可发布会员专属日记`），防前端绕过。
+- `test/fn-roundtrip-test.js` — 新增 3 条：非会员发会员日记被拒、会员发会员日记允许、非会员改会员权限被拒（用活跃日记验证，避免软删误判）；5→8。
+
+**变更说明**：
+承接前端置灰，补服务端强校验：createDiary/updateDiary 均在身份校验后、写库前拦截非会员的 member 权限。
+
+**验证**：
+`node test/fn-roundtrip-test.js` 8/8；`npm test` 全量 exit 0。**createDiary/updateDiary 为云函数，需重新部署到新环境后线上生效。**
