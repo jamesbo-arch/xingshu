@@ -695,8 +695,8 @@
 .field-input {
   width: 100%;
   box-sizing: border-box;
-  background: #FBF7EE;
-  border: 1rpx solid rgba(126, 102, 64, 0.28);
+  background: #F3ECDB;
+  border: 2rpx solid #C9B892;
   border-radius: 10px;
   padding: 18rpx 24rpx;
   font-size: 28rpx;
