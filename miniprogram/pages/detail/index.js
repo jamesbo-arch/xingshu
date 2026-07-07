@@ -22,7 +22,12 @@ Page({
   },
 
   onLoad(options) {
-    const id = options.id ? (parseInt(options.id, 10) || options.id) : null
+    let id = options.id ? (parseInt(options.id, 10) || options.id) : null
+    // 扫码/转发以本页为启动页时，id 藏在 scene（"d=12&s=8"）里
+    if (!id && options.scene) {
+      const m = decodeURIComponent(options.scene).match(/(?:^|&)d=(\d+)/)
+      if (m) id = parseInt(m[1], 10)
+    }
     if (id) this._loadDiary(id)
   },
 
@@ -63,7 +68,7 @@ Page({
     }
     if (res.code !== 0 || !res.data) {
       wx.showToast({ title: res.msg || '日记不存在', icon: 'none', duration: 1500 })
-      setTimeout(() => wx.navigateBack(), 1200)
+      setTimeout(() => this._goBack(), 1200)
       return
     }
     const raw = res.data
@@ -182,10 +187,16 @@ Page({
     })
   },
 
+  // 若本页是启动页（转发/扫码直达，栈内仅本页），navigateBack 无上一页会报错 → 改回首页
+  _goBack() {
+    if (getCurrentPages().length > 1) wx.navigateBack()
+    else wx.switchTab({ url: '/pages/square/index' })
+  },
+
   // v2.3 登录弹窗：未登录时不展示内容，取消登录则返回上一页
   onLoginClose() {
     this.setData({ showLoginSheet: false })
-    if (!this.data.diary) wx.navigateBack()
+    if (!this.data.diary) this._goBack()
   },
   onLoginSuccess() {
     this.setData({ showLoginSheet: false })
@@ -195,7 +206,7 @@ Page({
   onShare() { this.setData({ showPosterSheet: true }) },
   onPosterClose() { this.setData({ showPosterSheet: false }) },
   onShareApp() { wx.showToast({ title: '请使用右上角分享', icon: 'none', duration: 2000 }) },
-  onBack() { throttle(this, 'nav', () => wx.navigateBack()) },
+  onBack() { throttle(this, 'nav', () => this._goBack()) },
 
   getCommentAvatarColor(hue) { return hueToColor(hue) },
   getCommentInitial(name) { return getInitial(name) },

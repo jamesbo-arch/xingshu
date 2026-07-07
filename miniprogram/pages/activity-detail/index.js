@@ -21,7 +21,13 @@ Page({
   onLoad(options) {
     const info = wx.getWindowInfo()
     this.setData({ statusBarHeight: info.statusBarHeight || 0 })
-    this._id = parseInt(options.id, 10) || options.id
+    let id = options.id ? (parseInt(options.id, 10) || options.id) : null
+    // 扫码/转发以本页为启动页时，id 藏在 scene（"a=3&s=8"）里
+    if (!id && options.scene) {
+      const m = decodeURIComponent(options.scene).match(/(?:^|&)a=(\d+)/)
+      if (m) id = parseInt(m[1], 10)
+    }
+    this._id = id
     // v2.3：活动详情需微信登录（轻授权），未登录先拉起登录弹窗，取消则返回列表
     if (!ensureLogin(this, () => this._load())) return
     this._load()
@@ -47,7 +53,7 @@ Page({
 
   onLoginClose() {
     this.setData({ showLoginSheet: false })
-    if (!this.data.activity) wx.navigateBack()
+    if (!this.data.activity) this._goBack()
   },
   onLoginSuccess() {
     this.setData({ showLoginSheet: false })
@@ -60,7 +66,7 @@ Page({
     const a = await activityApi.getDetail(this._id)
     if (!a) {
       toast.info('活动不存在')
-      setTimeout(() => wx.navigateBack(), 1200)
+      setTimeout(() => this._goBack(), 1200)
       return
     }
     this.setData({
@@ -71,7 +77,12 @@ Page({
     })
   },
 
-  onBack() { throttle(this, 'nav', () => wx.navigateBack()) },
+  // 若本页是启动页（转发/扫码直达，栈内仅本页），navigateBack 无上一页会报错 → 改回活动列表
+  _goBack() {
+    if (getCurrentPages().length > 1) wx.navigateBack()
+    else wx.switchTab({ url: '/pages/activities/index' })
+  },
+  onBack() { throttle(this, 'nav', () => this._goBack()) },
 
   // 报名弹层（_mounted/_show 双状态动画模式与其他 sheet 一致，此处简化为单状态）
   onOpenSignup() {

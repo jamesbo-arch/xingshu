@@ -26,10 +26,10 @@ App({
     let scene = q.scene ? decodeURIComponent(q.scene) : ''
     // 微信转发卡片直达：path 直接携带 s=<分享人>，无 scene，也作为推荐人来源（与扫码 s 对齐）
     if (!scene && q.s) scene = 's=' + q.s
-    this._initUser(scene)
+    this._initUser(scene, (options && options.path) || '')
   },
 
-  async _initUser(scene) {
+  async _initUser(scene, launchPath) {
     const user = await userApi.login(undefined, scene || undefined)
     if (user) {
       this.globalData.user = user
@@ -37,12 +37,14 @@ App({
       // 验证在互动/查看详情的瞬间触发（utils/auth-guard.js）
     }
     await this.loadTags()
-    // 扫码直达对应详情页
+    // 扫码/转发直达对应详情页。若小程序已直接以目标页为启动页（小程序码 page 即详情页、
+    // 转发 path 即详情页），则页面自身会从 scene/query 加载，这里不再重复 navigateTo，
+    // 否则会压入重复页导致「navigateBack with an invalid tabbar page / webviewId not found」。
     if (scene) {
       const diary = scene.match(/(?:^|&)d=(\d+)/)
       const act = scene.match(/(?:^|&)a=(\d+)/)
-      if (diary) wx.navigateTo({ url: `/pages/detail/index?id=${diary[1]}` })
-      else if (act) wx.navigateTo({ url: `/pages/activity-detail/index?id=${act[1]}` })
+      if (diary && launchPath !== 'pages/detail/index') wx.navigateTo({ url: `/pages/detail/index?id=${diary[1]}` })
+      else if (act && launchPath !== 'pages/activity-detail/index') wx.navigateTo({ url: `/pages/activity-detail/index?id=${act[1]}` })
     }
   },
 

@@ -1830,3 +1830,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 真机编译后，权限徽标显示为紧凑彩色图标块，无文字。
+
+### 2026-07-07 19:30 — 修复扫码/转发直达详情页的导航栈错误
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/app.js` — `_initUser` 增 `launchPath` 入参；scene 含 d=/a= 时，仅当启动页不是目标页才 `navigateTo`。此前无条件跳转，而小程序码 page / 转发 path 本就是详情页，会压入重复页，回退时报「navigateBack with an invalid tabbar page / routeDone webviewId not found」。
+- `miniprogram/pages/detail/index.js`、`activity-detail/index.js` — onLoad 增从 `options.scene`（"d=12&s=8" / "a=3&s=8"）解析 id 的兜底，使本页作为启动页时能自行加载；新增 `_goBack()`：栈内仅本页时用 `switchTab` 回首页/活动列表，避免对启动页 `navigateBack` 报「invalid tabbar page」；onBack、未登录取消、内容不存在等处的 navigateBack 均改走 `_goBack()`。
+
+**变更说明**：
+真机调试出现路由 system error。根因：扫码（小程序码 page=详情页）或转发卡片（path=详情页）直达时，app 已以详情页为启动页，`_initUser` 又 navigateTo 一次 → 重复页 + webviewId 错乱；且启动页直接 navigateBack 无上一页会报「invalid tabbar page」。两处一并修：去重跳转 + 页面自解析 scene + 安全返回。
+
+**验证**：
+`node --check` 三文件通过；真机重新编译后扫码/转发直达详情不再报路由错误、回退正常回首页。
