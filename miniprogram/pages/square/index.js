@@ -147,8 +147,13 @@ Page({
     return lock(this, 'fav' + id, async () => {
       const result = await socialApi.toggleFav(id)
       if (result) {
-        const msg = result.favorited ? '已收藏' : '已取消收藏'
-        wx.showToast({ title: msg, icon: 'none', duration: 1500 })
+        wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
+        // 即时刷新卡片收藏态与数字（与 onCardLike 一致，避免需返回重进才更新）
+        this.setData({
+          diaries: this.data.diaries.map(d => d.id === id
+            ? { ...d, isFavorited: result.favorited, favorites: Math.max(0, (d.favorites || 0) + (result.favorited ? 1 : -1)) }
+            : d)
+        })
       }
     })
   },

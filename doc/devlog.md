@@ -1895,3 +1895,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `npm run build` 通过；localStorage 的 `xs_admin_token` 改为 `1.bad`（时间戳过期）后点任意菜单 → 立即回登录页并提示「登录已超时，请重新登录」。
+
+### 2026-07-07 22:10 — 修复列表卡片收藏后收藏数/星态不刷新
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/square/index.js` — `onCardFav` 原仅弹 toast 未更新卡片；改为即时更新该卡片 `isFavorited` 与 `favorites`（±1，与 onCardLike 一致）。
+- `miniprogram/pages/collections/index.js` — `onCardFav` 取消收藏时即时从「我的收藏」列表移除该卡片（重新收藏则更新态/数字）。
+
+**变更说明**：
+广场点收藏/取消收藏后收藏数与星标不刷新——因 onCardFav 只 toast 未 setData。补上客户端即时更新（toggleFavorite 返回 `{favorited}`，数字本地 ±1）。collections 取消收藏则移除卡片，符合"我的收藏"语义。
+
+**验证**：
+`node --check` 通过；广场点收藏 → 星标点亮、数字 +1；再点 → 熄灭、-1；收藏页取消收藏 → 卡片消失。

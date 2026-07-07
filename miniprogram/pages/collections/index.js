@@ -106,7 +106,17 @@ Page({
     const { id } = e.detail
     return lock(this, 'fav' + id, async () => {
       const result = await socialApi.toggleFav(id)
-      if (result) wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
+      if (!result) return
+      wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
+      if (!result.favorited) {
+        // 「我的收藏」里取消收藏 → 该卡片即时从列表移除
+        this.setData({ diaries: this.data.diaries.filter(d => d.id !== id) })
+      } else {
+        this.setData({
+          diaries: this.data.diaries.map(d => d.id === id
+            ? { ...d, isFavorited: true, favorites: (d.favorites || 0) + 1 } : d)
+        })
+      }
     })
   },
   onCardShare(e) {
