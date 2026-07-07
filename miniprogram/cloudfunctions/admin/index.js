@@ -519,6 +519,8 @@ const handlers = {
     if (user.identity === 'guest') throw new Error('游客不可开通会员，需先登录')
 
     const todayStr = new Date().toISOString().slice(0, 10)
+    const payTime = paymentTime || new Date().toISOString().slice(0, 19).replace('T', ' ')
+    const payDate = payTime.slice(0, 10)  // 支付日（生效日默认取此）
     let vFrom, vUntil
     if (validFrom || validUntil) {
       // 操作者显式指定有效期
@@ -528,11 +530,12 @@ const handlers = {
       vFrom = validFrom
       vUntil = validUntil
     } else {
-      // 未指定 → 自动：现会员（未过期）从原到期日顺延，否则今日起 +days
+      // 未指定 → 生效日默认取支付日；现会员（未过期）仍从原到期日顺延叠加，否则支付日 +days
       const [[calc]] = await db.query(
-        `SELECT CASE WHEN ? = 'member' AND ? IS NOT NULL AND ? >= CURDATE() THEN ? ELSE CURDATE() END AS base`,
-        [user.identity, user.member_until, user.member_until, user.member_until])
-      vFrom = todayStr
+        `SELECT CASE WHEN ? = 'member' AND ? IS NOT NULL AND ? >= CURDATE()
+                     THEN DATE_FORMAT(?, '%Y-%m-%d') ELSE ? END AS base`,
+        [user.identity, user.member_until, user.member_until, user.member_until, payDate])
+      vFrom = payDate
       const [[dates]] = await db.query(
         'SELECT DATE_FORMAT(DATE_ADD(?, INTERVAL ? DAY), "%Y-%m-%d") AS validUntil', [calc.base, days])
       vUntil = dates.validUntil
@@ -542,7 +545,6 @@ const handlers = {
 
     const orderId = 'XS-' + todayStr.replace(/-/g, '') + '-' +
       Math.floor(Math.random() * 10000).toString().padStart(4, '0')
-    const payTime = paymentTime || new Date().toISOString().slice(0, 19).replace('T', ' ')
 
     const conn = await db.getConnection()
     try {

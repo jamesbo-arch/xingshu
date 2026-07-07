@@ -179,6 +179,7 @@
 | ORDER-A08 | 归属/详情 | userOrders 仅返回本人订单；orderDetail 返回单笔完整信息 |
 | ORDER-A09 | 显式有效期 | createOrder 传 validFrom/validUntil → 按操作者所填落库（不走自动计算），user.member_from/until 同步 |
 | ORDER-A10 | 有效期校验 | 失效日 ≤ 生效日 → 拒绝 |
+| ORDER-A11 | 支付日回填 | 未传有效期但 paymentTime 回填过去 → valid_from 默认取支付日（非今日）、valid_until=支付日+365 |
 
 #### 人工用例（M2.2 admin Web 回归）
 

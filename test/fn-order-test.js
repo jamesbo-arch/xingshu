@@ -5,7 +5,7 @@ const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
 async function run() {
-  console.log('=== 会员订单管理测试（ORDER-A01~A10）===\n')
+  console.log('=== 会员订单管理测试（ORDER-A01~A11）===\n')
   let passed = 0, failed = 0
   const conn = await mysql.createConnection(DB)
 
@@ -130,6 +130,16 @@ async function run() {
     if (r.code === 0) throw new Error('失效日=生效日不应通过')
     const r2 = await admin('createOrder', { userId: authedId, amount: 365, validFrom: '2026-09-01', validUntil: '2026-08-01' })
     if (r2.code === 0) throw new Error('失效日早于生效日不应通过')
+  })
+
+  await test('ORDER-A11 未传有效期但支付日回填过去 → 生效日默认取支付日（非今日）', async () => {
+    const backId = await mkUser('test_order_backdate', 'authed')
+    const r = await admin('createOrder', { userId: backId, amount: 365, paymentTime: '2026-05-19 00:00:00' })
+    if (r.code !== 0) throw new Error(r.msg)
+    const [[o]] = await conn.query(
+      "SELECT DATE_FORMAT(valid_from,'%Y-%m-%d') vf, DATE_FORMAT(valid_until,'%Y-%m-%d') vu FROM orders WHERE id = ?", [r.data.order.id])
+    if (o.vf !== '2026-05-19') throw new Error(`valid_from=${o.vf}，期望 2026-05-19（支付日，而非今日）`)
+    if (o.vu !== '2027-05-19') throw new Error(`valid_until=${o.vu}，期望 2027-05-19（支付日+365）`)
   })
 
   // 清理：先按测试用户的订单 id 精确清审计，再删订单与用户（orders 对 users 有 ON DELETE CASCADE）
