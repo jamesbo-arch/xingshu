@@ -173,4 +173,17 @@ Page({
     go()
   },
   onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
+
+  // 微信「…」菜单转发/分享朋友圈：分享醒书日记入口，带分享人 ID（s=）延续推荐人机制
+  onShareAppMessage() {
+    const sharerId = (app.globalData.user || {}).id
+    return {
+      title: '醒书日记 · 认真生活的人都在这里记录',
+      path: `/pages/square/index${sharerId ? '?s=' + sharerId : ''}`,
+    }
+  },
+  onShareTimeline() {
+    const sharerId = (app.globalData.user || {}).id
+    return { title: '醒书日记 · 认真生活的人都在这里记录', query: sharerId ? 's=' + sharerId : '' }
+  },
 })

@@ -22,8 +22,10 @@ App({
       })
     }
     // v2.2 带参小程序码：scene 形如 "d=12&s=8"（日记）/ "a=3&s=8"（活动），s 为分享人 ID
-    const scene = options && options.query && options.query.scene
-      ? decodeURIComponent(options.query.scene) : ''
+    const q = (options && options.query) || {}
+    let scene = q.scene ? decodeURIComponent(q.scene) : ''
+    // 微信转发卡片直达：path 直接携带 s=<分享人>，无 scene，也作为推荐人来源（与扫码 s 对齐）
+    if (!scene && q.s) scene = 's=' + q.s
     this._initUser(scene)
   },
 

@@ -27,6 +27,24 @@ Page({
     this._load()
   },
 
+  // 微信「…」菜单转发/分享朋友圈：分享当前活动，带分享人 ID（s=）延续推荐人机制
+  onShareAppMessage() {
+    const a = this.data.activity || {}
+    const sharerId = (getApp().globalData.user || {}).id
+    return {
+      title: a.title || '醒书活动',
+      path: `/pages/activity-detail/index?id=${this._id}${sharerId ? '&s=' + sharerId : ''}`,
+    }
+  },
+  onShareTimeline() {
+    const a = this.data.activity || {}
+    const sharerId = (getApp().globalData.user || {}).id
+    return {
+      title: a.title || '醒书活动',
+      query: `id=${this._id}${sharerId ? '&s=' + sharerId : ''}`,
+    }
+  },
+
   onLoginClose() {
     this.setData({ showLoginSheet: false })
     if (!this.data.activity) wx.navigateBack()

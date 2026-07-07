@@ -30,6 +30,25 @@ Page({
     if (this.data.diary) this._loadDiary(this.data.diary.id)
   },
 
+  // 微信「…」菜单转发给好友：分享当前日记，带分享人 ID（s=）延续推荐人机制
+  onShareAppMessage() {
+    const d = this.data.diary || {}
+    const sharerId = (app.globalData.user || {}).id
+    return {
+      title: d.title || '醒书日记',
+      path: `/pages/detail/index?id=${d.id}${sharerId ? '&s=' + sharerId : ''}`,
+    }
+  },
+  // 分享到朋友圈
+  onShareTimeline() {
+    const d = this.data.diary || {}
+    const sharerId = (app.globalData.user || {}).id
+    return {
+      title: d.title || '醒书日记',
+      query: `id=${d.id}${sharerId ? '&s=' + sharerId : ''}`,
+    }
+  },
+
   async _loadDiary(id) {
     // 详情与评论并行拉取，避免两次云函数往返串行（首屏打开慢的主因）
     const [res, commentsData] = await Promise.all([

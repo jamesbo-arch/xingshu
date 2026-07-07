@@ -1787,3 +1787,18 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node test/fn-filter-test.js` 8/8；`npm test` 全量 exit 0。**getDiaryList 为云函数，需重新部署到新环境后真机生效。**
+
+### 2026-07-07 17:40 — 开启小程序转发/分享朋友圈
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/square/index.js` — 加 `onShareAppMessage`/`onShareTimeline`（分享醒书日记入口）。
+- `miniprogram/pages/detail/index.js` — 加 `onShareAppMessage`/`onShareTimeline`（分享当前日记，title 取标题、path 带 id）。
+- `miniprogram/pages/activity-detail/index.js` — 加 `onShareAppMessage`/`onShareTimeline`（分享当前活动）。
+- `miniprogram/app.js` — onLaunch 除 scene 外，转发卡片直达时也读 `query.s` 作为推荐人来源（与扫码 s= 对齐）。
+
+**变更说明**：
+真机「…」菜单显示「当前页面不可转发/分享」，因为无页面定义 `onShareAppMessage`。给广场/日记详情/活动详情三页补上转发与分享朋友圈；转发/朋友圈路径均带分享人 `s=<userId>`，被转发者进入并登录后延续既有推荐人机制（app.js 从 query.s 取推荐人）。收藏/我的/会员/写日记等私密或表单页不开放转发。
+
+**验证**：
+`node --check` 四文件语法通过；真机重新编译后，广场/详情/活动详情「…」菜单出现「转发给朋友」「分享到朋友圈」，转发卡片可正常打开对应内容。
