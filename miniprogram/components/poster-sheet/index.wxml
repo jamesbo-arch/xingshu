@@ -46,7 +46,7 @@
           </view>
           <view>
             <text class="poster-author-name">{{diary.author}}</text>
-            <text class="poster-time">{{diary.time}}</text>
+            <text class="poster-time">{{diary.dateText}}</text>
           </view>
         </view>
         <!-- v2.2 带参小程序码（scene 携带日记 ID + 分享人 ID，加载失败回退占位） -->

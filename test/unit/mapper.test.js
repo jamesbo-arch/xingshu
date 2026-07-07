@@ -23,7 +23,14 @@ test('diary：数据库行映射为前端字段', () => {
   assert.strictEqual(d.favorites, 3)
   assert.strictEqual(d.comments, 5)
   assert.strictEqual(d.shares, 1)
-  assert.strictEqual(d.timestamp, '2025-01-15 09:00:00')
+  assert.strictEqual(d.timestamp, '2025-01-15 09:00')  // 详情：年月日 时分
+  assert.strictEqual(d.dateText, '2025-01-15')          // 海报：年月日
+})
+
+test('diary：ISO 时间（含 T/Z）按字符串解析，不发生 UTC→本地偏移', () => {
+  const d = mapper.diary({ created_at: '2026-06-19T12:04:28.000Z' })
+  assert.strictEqual(d.timestamp, '2026-06-19 12:04')  // 保持 12:04，不被 +8 变 20:04
+  assert.strictEqual(d.dateText, '2026-06-19')
 })
 
 test('diary：like_count 为 0 时不回退到 likes 字段', () => {

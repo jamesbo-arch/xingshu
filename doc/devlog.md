@@ -1706,3 +1706,18 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `grep cloud1-1gpabyik2db3478f` 功能代码 0 命中（仅 CLAUDE.md 历史清单与 devlog 历史条目保留）。**待办：部署云函数到新环境 + 新环境开启匿名登录 + generateMiniCode 授 openapi 权限后端到端验证。**
+
+### 2026-07-07 15:45 — 详情/海报时间格式化（绝对时间，防时区偏移）
+
+**类型**：[前端 | 测试]
+**修改文件**：
+- `miniprogram/utils/mapper.js` — 新增 `absTime(t, withTime)`（纯字符串解析，不经 new Date，避免 ISO `...Z` 被 UTC→本地偏移把 12:04 变 20:04）；`diary()` 的 `timestamp` 改为「年月日 时分」，新增 `dateText`「年月日」。
+- `miniprogram/pages/detail/index.wxml` — 作者时间用 `diary.timestamp`（现为年月日时分，此前显示原始 ISO）。（字段名不变，仅 mapper 产出变干净）
+- `miniprogram/components/poster-sheet/index.wxml` + `index.js` — 海报时间改用 `diary.dateText`（年月日），canvas 绘制同步。
+- `test/unit/mapper.test.js` — 更新 timestamp 断言为新格式，新增 dateText 与 ISO 防偏移用例（tests 37→39）。
+
+**变更说明**：
+种子日记的 created_at 经 mysql2 → JSON 序列化为 ISO `2026-06-19T12:04:28.000Z`，详情与海报此前直接透传，显示成带 T/Z 的原始串。改为在 mapper 统一产出绝对时间：详情年月日时分、海报年月日。关键点是用正则字符串解析而非 `new Date`，否则 ISO 的 UTC 会在 UTC+8 下把 12:04 显示成 20:04。
+
+**验证**：
+`npm run test:unit` 39/39（含 ISO 防偏移用例）；`npm test` 全量 exit 0。

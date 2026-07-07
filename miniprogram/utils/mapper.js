@@ -11,7 +11,8 @@ function diary(item) {
     comments: item.comment_count != null ? item.comment_count : item.comments,
     shares: item.share_count != null ? item.share_count : item.shares,
     time: item.created_at || item.time,
-    timestamp: item.created_at || item.timestamp,
+    timestamp: absTime(item.created_at || item.timestamp, true),  // 详情：年月日 时分
+    dateText: absTime(item.created_at || item.time || item.timestamp, false),  // 海报：年月日
     created_at_text: formatTime(item.created_at),
     images: item.images || [],
   }
@@ -39,6 +40,16 @@ function comment(item) {
     time: item.created_at || item.time,
     replies: item.replies ? item.replies.map(comment) : undefined,
   }
+}
+
+// 绝对时间：直接字符串解析，不经 new Date（避免 ISO 的 UTC→本地偏移把 12:04 变 20:04）
+// withTime=true → "YYYY-MM-DD HH:MM"（详情）；false → "YYYY-MM-DD"（海报）
+function absTime(t, withTime) {
+  if (!t) return ''
+  const s = String(t).replace('T', ' ')
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})[ ](\d{2}):(\d{2})/)
+  if (!m) return s.substring(0, withTime ? 16 : 10)
+  return withTime ? `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}` : `${m[1]}-${m[2]}-${m[3]}`
 }
 
 function formatTime(t) {

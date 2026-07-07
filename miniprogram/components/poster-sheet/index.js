@@ -243,7 +243,7 @@ Component({
         ctx.fillText(d.author_name || d.author || '', 128, ty)
         ctx.fillStyle = '#A8A39B'
         ctx.font = '21px sans-serif'
-        ctx.fillText(d.created_at || d.time || '', 128, ty + 30)
+        ctx.fillText(d.dateText || '', 128, ty + 30)
 
         // QR：优先绘制真实带参小程序码（v2.2），失败回退占位块
         // 放大到 130px（此前仅 54px，带 logo 的小程序码过小扫不出）；下方留白足够容纳
