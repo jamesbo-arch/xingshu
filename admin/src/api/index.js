@@ -28,27 +28,37 @@ let handlingExpiry = false
 export function getToken() { return localStorage.getItem(TOKEN_KEY) || '' }
 export function isLoggedIn() { return !!getToken() }
 export function logout() { localStorage.removeItem(TOKEN_KEY) }
-// 登录页读取并清除"超时"标记（api 的 call 在 -401 时置位）
+// 登录页读取并清除"超时"标记（call 在过期/-401 时置位）
 export function consumeExpiredNotice() {
   const v = sessionStorage.getItem(EXPIRED_KEY)
   if (v) sessionStorage.removeItem(EXPIRED_KEY)
   return !!v
 }
 
-async function call(action, payload = {}) {
-  await ensureSignIn()
-  const res = await app.callFunction({ name: 'admin', data: { action, token: getToken(), payload } })
-  const r = res.result || {}
-  if (r.code === -401) {
-    logout()
-    // token 过期/失效：置超时标记并跳登录页。去重避免并发请求（如 Dashboard 同时发多个）重复跳转
-    if (!handlingExpiry) {
-      handlingExpiry = true
-      sessionStorage.setItem(EXPIRED_KEY, '1')
-      window.location.href = '/login'
-    }
-    throw new Error(r.msg || '登录已过期')
+// token 形如 "过期时间戳.签名"；时间戳缺失或已过期即视为失效（本地时钟为准，仅用于提前拦截）
+function tokenExpired(token) {
+  const exp = Number(String(token || '').split('.')[0])
+  return !exp || exp < Date.now()
+}
+// 触发超时：登出 + 置超时标记 + 跳登录页（去重避免并发请求重复跳转），抛错中断当前调用
+function expireSession() {
+  logout()
+  if (!handlingExpiry) {
+    handlingExpiry = true
+    sessionStorage.setItem(EXPIRED_KEY, '1')
+    window.location.href = '/login'
   }
+  throw new Error('登录已超时')
+}
+
+async function call(action, payload = {}) {
+  // 发请求前先本地判过期：真实超时时立即提示、不发无谓请求，也不依赖服务端返回码
+  const token = getToken()
+  if (!token || tokenExpired(token)) return expireSession()
+  await ensureSignIn()
+  const res = await app.callFunction({ name: 'admin', data: { action, token, payload } })
+  const r = res.result || {}
+  if (r.code === -401) return expireSession()  // 服务端判失效（如签名不符）兜底
   if (r.code !== 0) throw new Error(r.msg || '请求失败')
   return r.data
 }
