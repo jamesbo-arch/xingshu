@@ -36,6 +36,7 @@ async function auditLog(action, targetType, targetId, detail) {
 const USER_SELECT = `
   SELECT u.id, u.nickname, COALESCE(u.real_name,'') AS realName, COALESCE(u.phone,'') AS phone,
          u.avatar_hue AS avatarHue, u.identity,
+         DATE_FORMAT(u.member_from, '%Y-%m-%d') AS memberFrom,
          DATE_FORMAT(u.member_until, '%Y-%m-%d') AS memberUntil,
          GREATEST(COALESCE(DATEDIFF(u.member_until, CURDATE()), 0), 0) AS daysLeft,
          u.diary_count AS diaries,
@@ -163,21 +164,36 @@ const handlers = {
     return { user, diaries: diaries.map(rowToDiary), referred }
   },
 
-  // B 档：管理员编辑用户资料（昵称/真实姓名/手机号），身份不动，写审计
-  async updateUser({ userId, nickname, realName, phone } = {}) {
+  // B 档：管理员编辑用户资料（昵称/真实姓名/手机号 + 会员身份/有效期），写审计
+  // identity 传入时同步会员期：改为 member 须带 memberFrom/memberUntil；改为非 member 则清空会员期。
+  async updateUser({ userId, nickname, realName, phone, identity, memberFrom, memberUntil } = {}) {
     if (!userId) throw new Error('缺少用户 ID')
     const [users] = await db.query(
-      'SELECT nickname, real_name AS realName, phone FROM users WHERE id = ?', [userId])
+      `SELECT nickname, real_name AS realName, phone, identity,
+              DATE_FORMAT(member_from,'%Y-%m-%d') AS memberFrom,
+              DATE_FORMAT(member_until,'%Y-%m-%d') AS memberUntil FROM users WHERE id = ?`, [userId])
     if (!users.length) throw new Error('用户不存在')
     const before = users[0]
     const fields = [], values = []
     if (nickname !== undefined) { fields.push('nickname = ?'); values.push(nickname) }
     if (realName !== undefined) { fields.push('real_name = ?'); values.push(realName) }
     if (phone !== undefined) { fields.push('phone = ?'); values.push(phone) }
+    if (identity !== undefined) {
+      if (!['guest', 'authed', 'member'].includes(identity)) throw new Error('身份取值非法')
+      fields.push('identity = ?'); values.push(identity)
+      if (identity === 'member') {
+        const dateRe = /^\d{4}-\d{2}-\d{2}$/
+        if (!dateRe.test(memberFrom || '') || !dateRe.test(memberUntil || '')) throw new Error('会员有效期日期格式无效')
+        if (memberUntil <= memberFrom) throw new Error('会员失效日期须晚于生效日期')
+        fields.push('member_from = ?', 'member_until = ?'); values.push(memberFrom, memberUntil)
+      } else {
+        fields.push('member_from = NULL', 'member_until = NULL')
+      }
+    }
     if (!fields.length) throw new Error('无可更新字段')
     values.push(userId)
     await db.query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values)
-    await auditLog('updateUser', 'user', userId, { before, after: { nickname, realName, phone } })
+    await auditLog('updateUser', 'user', userId, { before, after: { nickname, realName, phone, identity, memberFrom, memberUntil } })
     const [after] = await db.query(`${USER_SELECT} WHERE u.id = ?`, [userId])
     return { user: after[0] }
   },

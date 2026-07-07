@@ -1659,3 +1659,22 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node test/fn-order-test.js` 11/11；`npm test` 全量 exit 0。**注意：仍需重新部署 admin 云函数后线上生效**；此前用旧函数生成的错误订单不会自动回改。
+
+### 2026-07-07 00:40 — 会员订单/用户：详情页开通免选人 + 用户编辑支持会员身份与有效期
+
+**类型**：[前端 | 云函数 | 测试 | 数据]
+**计划关联**：会员订单管理模块（v2.4）后续增强
+
+**修改文件**：
+- `admin/src/views/Orders.vue` — 从用户详情页「开通/续费会员」进入建单时，隐藏「选择用户」步骤：`lockedUser` 标记下 openCreate 直接进入填单，步进器降为 2 步并重编号，填单步顶部显示目标用户，屏蔽「上一步」回选人。
+- `admin/src/views/UserDetail.vue` — 编辑资料表单新增「会员身份」下拉与「会员生效/失效日期」：改为会员须填有效期（失效默认生效日+1年、可改），改为非会员保存即清空会员期；查看态补「会员生效」。
+- `miniprogram/cloudfunctions/admin/index.js` — `USER_SELECT` 增 `memberFrom`；`updateUser` 扩展 `identity/memberFrom/memberUntil`：改 member 校验并写会员期，改非 member 清空会员期，非法枚举拒绝，写审计。
+- `test/fn-admin-edit-test.js` — 新增 AE-A10（改会员身份+有效期落库）、AE-A11（会员校验+改回 authed 清空）；套件 8→10。
+- `test/prd-ch3-test-cases.md` — 补 AE-A10/A11、ORDER-M09/M10。
+
+**数据操作（用户要求，测试前重置）**：
+- 全库 `identity='member'` 用户回滚为 `authed` 并清空 member_from/until（7 个）+ 清空 orders 表（3 条）——一次性事务脚本执行，未入库。
+- 副作用修正：上述回滚误伤了测试 fixture mock 会员（mock_yanqiu/luminyuan/yeqinghe/sujingxing），导致 PERM-A05 失败；已用定向 UPDATE 仅恢复这 4 个 mock fixture 的 identity='member'，不影响真实用户与订单。
+
+**验证**：
+`node test/fn-admin-edit-test.js` 10/10、`node test/fn-order-test.js` 11/11；`npm test` 全量 exit 0；`cd admin && npm run build` 通过。**admin 云函数需重新部署后线上生效。**

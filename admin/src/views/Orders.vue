@@ -46,11 +46,13 @@
       <div class="modal">
         <h2 class="modal-title">创建订单 · 开通会员</h2>
         <div class="stepper">
-          <div class="step" :class="{ active: step===1, done: step>1 }"><span class="n">1</span>选择用户</div>
+          <template v-if="!lockedUser">
+            <div class="step" :class="{ active: step===1, done: step>1 }"><span class="n">1</span>选择用户</div>
+            <div class="bar"></div>
+          </template>
+          <div class="step" :class="{ active: step===2, done: step>2 }"><span class="n">{{ lockedUser ? 1 : 2 }}</span>填写订单</div>
           <div class="bar"></div>
-          <div class="step" :class="{ active: step===2, done: step>2 }"><span class="n">2</span>填写订单</div>
-          <div class="bar"></div>
-          <div class="step" :class="{ active: step===3 }"><span class="n">3</span>确认开通</div>
+          <div class="step" :class="{ active: step===3 }"><span class="n">{{ lockedUser ? 2 : 3 }}</span>确认开通</div>
         </div>
 
         <!-- 步骤1 选用户 -->
@@ -75,6 +77,9 @@
 
         <!-- 步骤2 填单 -->
         <div v-else-if="step===2">
+          <div v-if="lockedUser && picked" class="locked-user">
+            为 <strong>{{ picked.nickname }}</strong>（ID {{ picked.id }}{{ picked.identity==='member' ? ' · 现会员，续期顺延' : '' }}）开通
+          </div>
           <div class="form-grid">
             <label>套餐
               <select v-model="form.plan" class="input-full"><option value="年度会员">年度会员（¥365/年）</option></select>
@@ -124,7 +129,7 @@
 
         <div class="modal-actions">
           <button class="btn btn-ghost" @click="showCreate = false">取消</button>
-          <button v-if="step>1" class="btn btn-ghost" @click="step--">上一步</button>
+          <button v-if="step > (lockedUser ? 2 : 1)" class="btn btn-ghost" @click="step--">上一步</button>
           <button v-if="step===1" class="btn btn-primary" :disabled="!picked" @click="goStep2">下一步</button>
           <button v-else-if="step===2" class="btn btn-primary" :disabled="!form.amount || uploading" @click="step=3">下一步</button>
           <button v-else class="btn btn-primary" :disabled="submitting" @click="submit">
@@ -210,6 +215,7 @@ const orders = ref([]), keyword = ref(''), status = ref('')
 const page = ref(1), pageSize = ref(20), total = ref(0)  // 服务端分页
 
 const showCreate = ref(false), step = ref(1)
+const lockedUser = ref(false)  // 由用户详情页进入：用户已定，隐藏「选择用户」步骤
 const allUsers = ref([]), candidates = ref([]), userKeyword = ref(''), picked = ref(null)
 const form = ref({}), proofPreview = ref(''), uploading = ref(false), submitting = ref(false)
 // 有效期是否被操作者手动改过（改过则不再被支付日期/自动+1年覆盖）
@@ -239,7 +245,8 @@ function stateLabel(s) { return { active:'生效中', expiring:'即将到期', e
 function idLabel(i) { return { guest:'游客', authed:'已授权', member:'会员' }[i] || i }
 
 async function openCreate(presetUser) {
-  step.value = 1; picked.value = presetUser || null; userKeyword.value = ''
+  picked.value = presetUser || null; userKeyword.value = ''
+  lockedUser.value = !!presetUser
   const today = todayStr()
   form.value = { plan: '年度会员', method: '微信转账', amount: 365, paymentDate: today, note: '', proofUrl: null, validFrom: today, validUntil: addYear(today) }
   vfTouched.value = false; vuTouched.value = false
@@ -247,6 +254,8 @@ async function openCreate(presetUser) {
   if (!allUsers.value.length) allUsers.value = (await getUsers({ page: 1, pageSize: 100000 })).list
   filterUsers()
   showCreate.value = true
+  if (presetUser) goStep2()  // 用户已定 → 直接进入填单，跳过选择用户
+  else step.value = 1
 }
 
 // 进入步骤2：据所选用户与支付日期确定有效期默认值（现会员默认从当前到期日顺延）
@@ -321,6 +330,7 @@ function openImg(url) { window.open(url, '_blank') }
 <style scoped>
 .dim { color: #A8A39B; font-size: 12px; }
 .hint-line { margin: 8px 0 0; font-size: 12px; color: #A8A39B; line-height: 1.5; }
+.locked-user { margin-bottom: 14px; padding: 10px 14px; border-radius: 8px; background: var(--bg-content, #F6F1E7); border: 0.5px solid var(--tbl-border, #E5DCC9); font-size: 13px; color: var(--ink-2, #4A453E); }
 .empty { text-align: center; color: #A8A39B; padding: 24px; }
 .section h2 { margin-top: 18px; }
 </style>

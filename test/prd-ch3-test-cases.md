@@ -193,6 +193,8 @@
 | ORDER-M06 | 用户详情联动 | 用户详情页「开通/续费会员」跳订单页并预置该用户；「会员订单」区列出其订单 |
 | ORDER-M07 | 状态筛选 | 列表按 生效中/即将到期/已过期 筛选，徽章颜色与状态一致 |
 | ORDER-M08 | 有效期字段 | 填单步显示「生效日期/失效日期」：默认生效日=支付日、失效日=生效日+1年；改支付日联动生效日；改生效日联动失效日；两者可手动改，确认页显示有效期区间 |
+| ORDER-M09 | 详情页开通免选人 | 用户详情页「开通/续费会员」进入建单 → 跳过「选择用户」步骤（步进器仅 2 步），填单步顶部显示目标用户，无「上一步」回到选人 |
+| ORDER-M10 | 用户编辑会员 | 用户详情「编辑资料」可改会员身份下拉与生效/失效日期；改为会员须填有效期（失效默认+1年可改）；改为非会员保存后会员到期清空；查看态显示会员生效/到期 |
 
 ### ADMIN-EDIT · 后台编辑/代发/ID/分页（B/C/D/E 档）
 
@@ -211,6 +213,8 @@
 | AE-A07 | D | userDetail 返回 openid/unionid | userDetail 响应含 openid、unionid（unionid 可空） |
 | AE-A08 | B | 已编辑标记 | 新建日记 diaries 列表 editedAt 空；updateDiary 后 editedAt 非空 |
 | AE-A09 | E | 列表分页参数 | users/diaries 传 page/pageSize → 返回该页切片 + total（若采用服务端分页）；客户端分页则此项转人工 AE-M06 |
+| AE-A10 | B | updateUser 改会员身份 | identity=member + memberFrom/memberUntil → 落库 member_from/until、identity=member |
+| AE-A11 | B | updateUser 会员校验 | member 缺日期 / 失效≤生效 / 非法身份 → 拒绝；改回 authed → 清空会员期 |
 
 #### 人工用例（M2.2 admin Web 回归）
 

@@ -5,7 +5,7 @@ const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
 async function run() {
-  console.log('=== 后台编辑/代发/ID 测试（AE-A01~A08）===\n')
+  console.log('=== 后台编辑/代发/ID 测试（AE-A01~A11）===\n')
   let passed = 0, failed = 0
   const conn = await mysql.createConnection(DB)
 
@@ -43,6 +43,27 @@ async function run() {
     if (r1.code === 0) throw new Error('缺 userId 不应通过')
     const r2 = await admin('updateUser', { userId: 999999999, nickname: 'x' })
     if (r2.code === 0) throw new Error('不存在用户不应通过')
+  })
+
+  await test('AE-A10 updateUser 改身份为 member + 有效期 → 落库 member_from/until', async () => {
+    const r = await admin('updateUser', { userId: u1.id, identity: 'member', memberFrom: '2026-05-19', memberUntil: '2027-05-19' })
+    if (r.code !== 0) throw new Error(r.msg)
+    const [[u]] = await conn.query(
+      "SELECT identity, DATE_FORMAT(member_from,'%Y-%m-%d') mf, DATE_FORMAT(member_until,'%Y-%m-%d') mu FROM users WHERE id = ?", [u1.id])
+    if (u.identity !== 'member' || u.mf !== '2026-05-19' || u.mu !== '2027-05-19') throw new Error(`落库异常 ${u.identity}/${u.mf}/${u.mu}`)
+  })
+
+  await test('AE-A11 updateUser 会员校验 + 改回 authed 清空会员期', async () => {
+    const bad1 = await admin('updateUser', { userId: u1.id, identity: 'member' })  // 缺日期
+    if (bad1.code === 0) throw new Error('会员缺有效期不应通过')
+    const bad2 = await admin('updateUser', { userId: u1.id, identity: 'member', memberFrom: '2027-05-19', memberUntil: '2026-05-19' })
+    if (bad2.code === 0) throw new Error('失效早于生效不应通过')
+    const bad3 = await admin('updateUser', { userId: u1.id, identity: 'vip' })  // 非法枚举
+    if (bad3.code === 0) throw new Error('非法身份不应通过')
+    const r = await admin('updateUser', { userId: u1.id, identity: 'authed' })
+    if (r.code !== 0) throw new Error(r.msg)
+    const [[u]] = await conn.query('SELECT identity, member_from, member_until FROM users WHERE id = ?', [u1.id])
+    if (u.identity !== 'authed' || u.member_from !== null || u.member_until !== null) throw new Error('改回 authed 未清空会员期')
   })
 
   await test('AE-A03 updateDiary 改标题/正文/权限 → 落库 + content_edited_at 置位 + 审计', async () => {
