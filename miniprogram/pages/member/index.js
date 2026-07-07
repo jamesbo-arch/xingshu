@@ -5,6 +5,21 @@ const mapper = require('../../utils/mapper')
 const { ensureLogin, handleLoginSuccess, toggleTabBar } = require('../../utils/auth-guard')
 const { lock } = require('../../utils/guard')
 
+// 从 member_until（可能是 ISO "2027-07-07T00:00:00.000Z" 或 "YYYY-MM-DD"）取日期段，
+// 用字符串解析避免时区偏移
+function ymd(v) {
+  const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return m ? { y: +m[1], mo: +m[2], d: +m[3], str: `${m[1]}-${m[2]}-${m[3]}` } : null
+}
+function daysUntil(v) {
+  const p = ymd(v)
+  if (!p) return 0
+  const target = new Date(p.y, p.mo - 1, p.d)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.max(0, Math.round((target - today) / 86400000))
+}
+
 Page({
   data: {
     user: null,
@@ -49,6 +64,10 @@ Page({
     const raw = app.globalData.user
     if (!raw) return
     const user = mapper.user(raw)
+    // getUserInfo 未返回 days_left、member_until 为原始 ISO → 前端据 member_until 本地算剩余天数、格式化有效期
+    const p = ymd(raw.member_until || user.memberUntil)
+    user.memberUntil = p ? p.str : ''
+    user.daysLeft = daysUntil(raw.member_until || user.memberUntil)
     this.setData({
       user,
       avatarColor: hueToColor(user.avatarHue || 60),
