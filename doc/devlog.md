@@ -1678,3 +1678,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node test/fn-admin-edit-test.js` 10/10、`node test/fn-order-test.js` 11/11；`npm test` 全量 exit 0；`cd admin && npm run build` 通过。**admin 云函数需重新部署后线上生效。**
+
+### 2026-07-07 00:55 — 更换小程序 appid
+
+**类型**：[配置 | 文档]
+**修改文件**：
+- `miniprogram/project.config.json` — appid `wx841de0568655b384` → `wx454274f515182d02`（功能性，微信开发者工具据此识别小程序）
+- `CLAUDE.md`、`.claude/agents/cicd-agent.md`、`.claude/agents/backend-agent.md` — 文档中的 appid 同步更新
+
+**变更说明**：
+按需求更换小程序 ID。全库搜索 `wx841de0568655b384` 仅 4 处（1 功能配置 + 3 文档），已全部替换。`project.private.config.json`（gitignored）不含 appid，无需改。`app.js` 的 `wx.cloud.init` 用环境 ID 而非 appid，不受影响。
+
+**验证**：
+`grep wx841de0568655b384` 全库 0 命中；project.config.json appid 为新值。

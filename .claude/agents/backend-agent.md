@@ -43,7 +43,7 @@
 
 - `miniprogram/data/mock.js` — 当前数据 schema（迁移基线，导出 `TAGS` / `SEED_DIARIES` / `SEED_COMMENTS` / `CURRENT_USER` / `ADMIN_CONTACT`）
 - `miniprogram/app.js` — globalData 变更方法（API 接入时的修改目标）
-- `miniprogram/project.config.json` — appid `wx841de0568655b384`
+- `miniprogram/project.config.json` — appid `wx454274f515182d02`
 - `CLAUDE.md` — 架构和身份/权限模型文档
 - `plan.md` — 当前进度（会员系统为线下付款模式）
 

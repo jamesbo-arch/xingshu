@@ -30,7 +30,7 @@
 
 ## 关键参考文件
 
-- `miniprogram/project.config.json` — appid `wx841de0568655b384`、libVersion `2.26.0`
+- `miniprogram/project.config.json` — appid `wx454274f515182d02`、libVersion `2.26.0`
 - `miniprogram/app.json` — 页面注册清单
 - `miniprogram/sitemap.json` — 站点地图
 - `plan.md` — 当前版本完成度
