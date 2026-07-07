@@ -5,7 +5,7 @@
   <!-- Custom header -->
   <view class="page-header">
     <view class="header-top">
-      <text class="page-title serif">醒書廣場</text>
+      <text class="page-title serif">醒書日記</text>
     </view>
 
     <!-- Search bar -->

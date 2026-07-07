@@ -1,5 +1,6 @@
 .page-wrap {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -109,9 +110,9 @@
 /* List */
 .diary-list {
   flex: 1;
+  min-height: 0;
   width: 100%;
   padding: 0 24rpx;
-  height: calc(100vh - 280rpx);
 }
 
 .list-bottom-pad {

@@ -1759,3 +1759,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 真机编译后编辑资料弹层显示手机号输入框，预填现有手机号，保存后落库并刷新（个人资料区手机号更新）。
+
+### 2026-07-07 16:55 — 广场页表头固定 + 标题改名「醒書日記」
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/square/index.wxss` — `.page-wrap` 由 `min-height:100vh` 改 `height:100vh` + `overflow:hidden`；`.diary-list` 去掉写死的 `height:calc(100vh-280rpx)`，改用 `flex:1` + `min-height:0`，让列表在固定视口内自适应滚动、表头（标题+搜索+筛选）真正锁定。
+- `miniprogram/pages/square/index.wxml` — 页面标题 `醒書廣場` → `醒書日記`（与分享海报品牌名一致）。
+
+**变更说明**：
+原 `min-height:100vh` 允许整页变高、连表头一起被推着滚；`.diary-list` 写死 280rpx 估算高与实际表头（含动态状态栏高）不符。改为固定视口高 + 列表 flex 撑满，标准锁头写法。FAB 与各弹层均 position:fixed，不受 page-wrap overflow:hidden 影响。底部 tab 标签仍为「醒书广场」（未改，如需一并改可再动 custom-tab-bar）。
+
+**验证**：
+真机编译后：向上滚动列表时标题与搜索栏固定不动；标题显示「醒書日記」。
