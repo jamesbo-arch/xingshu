@@ -68,6 +68,17 @@ async function run() {
     if (ids(r).includes(oldId)) throw new Error('不应含去年（400天前跨年）')
   })
 
+  await test('keyword 匹配作者昵称（非标题/正文）→ 命中该作者日记', async () => {
+    // '筛选' 仅出现在昵称「筛选测试」，不在任何标题(flt…)/正文(…日记)中
+    const r = await list({ keyword: '筛选' })
+    if (!ids(r).includes(newId) || !ids(r).includes(oldId)) throw new Error('应按作者昵称命中两篇')
+  })
+
+  await test('keyword 标题/正文/作者三处均不含 → 空', async () => {
+    const r = await list({ keyword: '绝不存在的词xyz' })
+    if (ids(r).length !== 0) throw new Error('应为空')
+  })
+
   await conn.query('DELETE FROM diaries WHERE id IN (?, ?)', [newId, oldId])
   await conn.query("DELETE FROM users WHERE openid = 'test_flt_u1'")
   await conn.end()

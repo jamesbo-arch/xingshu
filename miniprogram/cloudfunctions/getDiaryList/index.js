@@ -40,8 +40,9 @@ exports.main = async (event, context) => {
   }
 
   if (keyword) {
-    where += ' AND (d.title LIKE ? OR d.content LIKE ?)'
-    params.push(`%${keyword}%`, `%${keyword}%`)
+    // 顶部搜索：标题 / 正文 / 作者昵称 三者任一匹配
+    where += ' AND (d.title LIKE ? OR d.content LIKE ? OR d.user_id IN (SELECT id FROM users WHERE nickname LIKE ?))'
+    params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`)
   }
   if (tag) {
     where += ' AND d.id IN (SELECT dt.diary_id FROM diary_tags dt JOIN tags t ON dt.tag_id = t.id WHERE t.name = ?)'

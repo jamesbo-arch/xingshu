@@ -1772,3 +1772,18 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 真机编译后：向上滚动列表时标题与搜索栏固定不动；标题显示「醒書日記」。
+
+### 2026-07-07 17:20 — 列表页触底翻页 + 顶部搜索支持作者
+
+**类型**：[前端 | 云函数 | 测试]
+**修改文件**：
+- `miniprogram/pages/{square,collections,mine}/index.wxml` — 列表 `<scroll-view>` 加 `bindscrolltolower="onReachBottom" lower-threshold="150"`。原 `onReachBottom` 是 Page 级回调，列表在 scroll-view 内、页面不滚，永不触发 → 三页均无法翻页。改绑 scroll-view 的 scrolltolower 事件。
+- `miniprogram/pages/square/index.wxml` — 搜索占位文案改「搜索标题 / 内容 / 作者」。
+- `miniprogram/cloudfunctions/getDiaryList/index.js` — keyword 由「标题 OR 正文」扩为「标题 OR 正文 OR 作者昵称」（子查询 users.nickname LIKE），顶部搜索框可搜作者。
+- `test/fn-filter-test.js` — 新增两条：keyword 按作者昵称命中（用仅存在于昵称的词）、三处均不含返回空（6→8）。
+
+**变更说明**：
+真机反馈：①列表拉到底不翻页；②搜作者（如王文义）为空。①根因是 Page.onReachBottom 对 scroll-view 内内容不触发；②根因是 keyword 只匹配标题/正文，不含作者。分别以 scrolltolower 绑定与 keyword 扩展作者子查询修复。collections 搜索也走 getDiaryList，自动受益。
+
+**验证**：
+`node test/fn-filter-test.js` 8/8；`npm test` 全量 exit 0。**getDiaryList 为云函数，需重新部署到新环境后真机生效。**
