@@ -19,6 +19,7 @@ Page({
     maxImages: 9,
     selectedTags: [],
     permission: 'public',
+    isMember: false,  // 仅会员可发布「会员专属」日记
     showTagPicker: false,
     allTags: [],
     pickerSelectedTags: [],
@@ -35,7 +36,8 @@ Page({
 
   onLoad(options) {
     const info = wx.getWindowInfo()
-    this.setData({ statusBarHeight: info.statusBarHeight || 0, allTags: app.globalData.tags })
+    const isMember = ((app.globalData.user || {}).identity === 'member')
+    this.setData({ statusBarHeight: info.statusBarHeight || 0, allTags: app.globalData.tags, isMember })
     // 离开前脏检查的基线：新建为默认值，编辑为加载到的原值
     this._original = this._snapshot()
 
@@ -128,7 +130,15 @@ Page({
     }
     return uploaded
   },
-  setPermission(e) { this.setData({ permission: e.currentTarget.dataset.key }) },
+  setPermission(e) {
+    const key = e.currentTarget.dataset.key
+    // 非会员不可发布「会员专属」日记：拦截并提示
+    if (key === 'member' && !this.data.isMember) {
+      wx.showToast({ title: '开通会员后可发布会员专属日记', icon: 'none', duration: 2000 })
+      return
+    }
+    this.setData({ permission: key })
+  },
   removeTag(e) {
     this.setData({ selectedTags: this.data.selectedTags.filter(t => t !== e.currentTarget.dataset.tag) })
   },

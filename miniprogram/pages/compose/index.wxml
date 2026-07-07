@@ -89,16 +89,17 @@
         <view
           wx:for="{{permOptions}}"
           wx:key="key"
-          class="perm-option {{permission === item.key ? 'selected' : ''}}"
+          class="perm-option {{permission === item.key ? 'selected' : ''}} {{item.key === 'member' && !isMember ? 'perm-locked' : ''}}"
           data-key="{{item.key}}"
           bindtap="setPermission"
         >
           <view class="perm-option-icon {{item.ic}}"></view>
           <view class="perm-option-info">
             <text class="perm-option-label">{{item.label}}</text>
-            <text class="perm-option-desc">{{item.desc}}</text>
+            <text class="perm-option-desc">{{item.key === 'member' && !isMember ? '开通会员后可发布' : item.desc}}</text>
           </view>
-          <view wx:if="{{permission === item.key}}" class="perm-check ic-check-g"></view>
+          <view wx:if="{{item.key === 'member' && !isMember}}" class="perm-lock-tag">会员专属</view>
+          <view wx:elif="{{permission === item.key}}" class="perm-check ic-check-g"></view>
         </view>
       </view>
     </view>

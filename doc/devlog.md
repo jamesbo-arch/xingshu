@@ -1843,3 +1843,17 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node --check` 三文件通过；真机重新编译后扫码/转发直达详情不再报路由错误、回退正常回首页。
+
+### 2026-07-07 20:00 — 非会员写日记不可选「会员专属」权限
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/compose/index.js` — data 增 `isMember`（onLoad 据 `app.globalData.user.identity` 计算）；`setPermission` 拦截：非会员点「会员」选项 → toast「开通会员后可发布会员专属日记」，不切换。
+- `miniprogram/pages/compose/index.wxml` — 会员选项对非会员加 `perm-locked` 置灰、desc 改「开通会员后可发布」、右侧显示「会员专属」标签。
+- `miniprogram/pages/compose/index.wxss` — `.perm-locked` 置灰、`.perm-lock-tag` 金色标签样式。
+
+**变更说明**：
+已授权非会员写日记时不能选「会员专属」可见范围（仅会员可发布会员专属内容）。前端置灰+拦截+提示，兼作会员引导。**后端 `createDiary` 暂未强校验 permission 与身份的关系**（前端已限制；如需防绕过可在云函数加校验，属可选增强）。
+
+**验证**：
+`node --check` 通过；真机编译后非会员在写日记页看到「会员」选项置灰带「会员专属」标签，点击弹提示不切换；会员正常可选。

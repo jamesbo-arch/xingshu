@@ -229,6 +229,20 @@
   background-size: contain;
 }
 
+/* 非会员：会员专属选项置灰、不可选，右侧标「会员专属」 */
+.perm-option.perm-locked {
+  opacity: 0.55;
+}
+.perm-lock-tag {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #9A7E4F;
+  background: #F4ECD9;
+  padding: 4rpx 12rpx;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+}
+
 .compose-bottom-pad {
   height: 80rpx;
 }
