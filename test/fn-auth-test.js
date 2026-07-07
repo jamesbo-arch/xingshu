@@ -7,7 +7,7 @@ const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
 async function run() {
-  console.log('=== 微信登录授权测试（AUTH-A01~A07）===\n')
+  console.log('=== 微信登录授权测试（AUTH-A01~A09）===\n')
   let passed = 0, failed = 0
   const conn = await mysql.createConnection(DB)
 
@@ -70,6 +70,21 @@ async function run() {
     if (r.data.gender !== 'female') throw new Error(`回传 gender=${r.data.gender}`)
     const [[row]] = await conn.query("SELECT gender FROM users WHERE openid = 'test_auth_u1'")
     if (row.gender !== 'female') throw new Error(`DB gender=${row.gender}`)
+  })
+
+  await test('AUTH-A08 getUserInfo 过期会员自愈：member_until 已过 → 回落 authed 并清空', async () => {
+    await conn.query("UPDATE users SET identity='member', member_until=DATE_SUB(CURDATE(),INTERVAL 1 DAY) WHERE openid='test_auth_u1'")
+    const r = await callFn('getUserInfo', {}, 'test_auth_u1')
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.identity !== 'authed') throw new Error(`identity=${r.data.identity}，未自愈`)
+    const [[row]] = await conn.query("SELECT identity, member_until FROM users WHERE openid='test_auth_u1'")
+    if (row.identity !== 'authed' || row.member_until !== null) throw new Error('DB 未降级/清空')
+  })
+
+  await test('AUTH-A09 到期当天仍是会员：member_until=今天 → getUserInfo 不降级', async () => {
+    await conn.query("UPDATE users SET identity='member', member_until=CURDATE() WHERE openid='test_auth_u1'")
+    const r = await callFn('getUserInfo', {}, 'test_auth_u1')
+    if (r.data.identity !== 'member') throw new Error(`到期当天被误降级：${r.data.identity}`)
   })
 
   await test('MEM-A10 会员过期：checkMemberStatus → 降级 authed 并清空到期日', async () => {

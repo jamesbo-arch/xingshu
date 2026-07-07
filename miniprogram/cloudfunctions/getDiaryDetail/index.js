@@ -9,7 +9,9 @@ exports.main = async (event, context) => {
 
   // 用户与日记两条查询互相独立，并行执行
   const [[users], [diaries]] = await Promise.all([
-    db.query('SELECT id, identity FROM users WHERE openid = ?', [OPENID]),
+    db.query(
+      "SELECT id, identity, (identity='member' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
+      [OPENID]),
     db.query(
       `SELECT d.*, u.nickname AS author_name, u.avatar_hue AS author_avatar_hue,
               u.identity AS author_identity
@@ -18,7 +20,9 @@ exports.main = async (event, context) => {
     ),
   ])
   const userId = users.length ? users[0].id : null
-  const userIdentity = users.length ? users[0].identity : 'guest'
+  // 会员判断综合身份 + 有效期：过期会员按 authed 处理
+  const userIdentity = !users.length ? 'guest'
+    : (users[0].validMember ? 'member' : (users[0].identity === 'member' ? 'authed' : users[0].identity))
   if (!diaries.length) return { code: -1, msg: '日记不存在' }
 
   const diary = diaries[0]

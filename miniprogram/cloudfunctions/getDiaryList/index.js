@@ -19,9 +19,13 @@ exports.main = async (event, context) => {
     where += ' AND d.user_id = ?'
     params.push(userId)
   } else {
-    const [users] = await db.query('SELECT id, identity FROM users WHERE openid = ?', [OPENID])
-    userIdentity = users.length ? users[0].identity : 'guest'
+    // 会员判断综合身份 + 有效期：过期会员（member_until < 今天）按 authed 处理
+    const [users] = await db.query(
+      "SELECT id, identity, (identity='member' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
+      [OPENID])
     userId = users.length ? users[0].id : null
+    userIdentity = !users.length ? 'guest'
+      : (users[0].validMember ? 'member' : (users[0].identity === 'member' ? 'authed' : users[0].identity))
 
     if (mode === 'collections') {
       where += ' AND d.id IN (SELECT target_id FROM interactions WHERE user_id = ? AND target_type = ? AND action = ?)'

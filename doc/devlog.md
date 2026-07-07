@@ -1950,3 +1950,21 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node test/fn-auth-test.js` 8/8、`node test/fn-admin-edit-test.js` 11/11、`npm test` 全量 exit 0；`admin npm run build` 通过。**updateUserProfile 与 admin 云函数需重新部署到新环境后线上生效。**
+
+### 2026-07-07 23:40 — 会员判断综合身份+有效期（过期即非会员）
+
+**类型**：[云函数 | 数据 | 测试 | 文档]
+**修改文件**：
+- `miniprogram/cloudfunctions/login/index.js`、`getUserInfo/index.js` — 会员到期自愈：`identity='member'` 但 `member_until < CURDATE()`（或 NULL）→ 回落 `authed` 并清 `member_until`，返回修正后的身份。
+- `getDiaryList/index.js`、`getDiaryDetail/index.js` — 有效会员判定 `identity='member' AND member_until >= CURDATE()`，过期会员按 `authed`（读会员日记走会员墙）。
+- `createDiary/index.js`、`updateDiary/index.js` — 会员专属发文守卫改为"有效会员"（过期会员不可发会员日记）。
+- `checkMemberStatus/index.js` — 降级边界由 `days_left <= 0` 改 `< 0`（到期当天仍算会员，过了才降级）。
+- 数据：为 4 个 mock 会员 fixture 补 `member_until`（此前 NULL，新规则下会被判为非会员）；全库已无 `identity='member' 且 member_until IS NULL`。
+- 测试：`fn-auth-test` AUTH-A08（getUserInfo 自愈）、A09（到期当天仍会员）；`fn-permission-test` PERM-A10（过期会员读会员日记被截断）。
+- `CLAUDE.md` — 身份权限矩阵补第 5 条"会员判断综合身份+有效期"。
+
+**变更说明**：
+需求：会员身份判断需综合 `identity` 与 `member_until`；有效期过了即便字段未改也算非会员。统一规则：有效会员 ⟺ 身份 member 且 member_until >= 今天。身份源自愈 + 内容闸/发文守卫双保险。
+
+**验证**：
+`fn-auth-test` 10/10、`fn-permission-test` 11/11、`fn-roundtrip` 8/8、`npm test` 全量 exit 0。**涉及 7 个云函数，需重新部署到新环境后线上生效。**

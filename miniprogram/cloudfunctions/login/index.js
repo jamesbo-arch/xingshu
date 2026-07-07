@@ -13,15 +13,26 @@ function parseSharerId(scene) {
 exports.main = async (event, context) => {
   const { OPENID, UNIONID } = cloud.getWXContext()
 
-  const [rows] = await db.query('SELECT * FROM users WHERE openid = ?', [OPENID])
+  const [rows] = await db.query(
+    "SELECT *, (identity='member' AND (member_until IS NULL OR member_until < CURDATE())) AS memberExpired FROM users WHERE openid = ?",
+    [OPENID])
 
   if (rows.length > 0) {
     // 老用户扫码只跳转，不改变推荐关系；v2.3 顺带补录 unionid（历史用户为空时）
     const user = rows[0]
-    await db.query(
-      'UPDATE users SET last_active = NOW(), unionid = IFNULL(unionid, ?) WHERE id = ?',
-      [UNIONID || null, user.id]
-    )
+    // 会员到期自愈：身份仍为 member 但 member_until 已过（< 今天）→ 回落 authed 并清空到期日
+    if (user.memberExpired) {
+      await db.query(
+        "UPDATE users SET last_active = NOW(), unionid = IFNULL(unionid, ?), identity = 'authed', member_until = NULL WHERE id = ?",
+        [UNIONID || null, user.id])
+      user.identity = 'authed'
+      user.member_until = null
+    } else {
+      await db.query(
+        'UPDATE users SET last_active = NOW(), unionid = IFNULL(unionid, ?) WHERE id = ?',
+        [UNIONID || null, user.id])
+    }
+    delete user.memberExpired
     return { code: 0, data: user }
   }
 

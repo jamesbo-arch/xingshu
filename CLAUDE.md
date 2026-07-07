@@ -98,6 +98,7 @@
 2. `authed → member` 的**唯一实质差异**是能否读**会员专属日记的全文**（非会员看会员日记有 30% 会员墙）；其余互动功能 authed 与 member **完全一致**。
 3. 卡片「金色底 / 会徽章」按**作者身份**渲染（非会员作者金色卡、会员作者「会」徽章），与**浏览者**身份无关，不属于浏览者的功能差异。
 4. 鉴权判定的三处代码来源：详情级 `getDiaryDetail`（guest 返回 `-3`、会员墙截断 30%）、列表级 `getDiaryList` 的 `canReadFull`（guest 全摘要 / authed 公众全文 / member 全文）、前端动作级 `utils/auth-guard.js` `ensureLogin()`。
+5. **会员判断综合身份+有效期**：有效会员 ⟺ `identity='member'` 且 `member_until >= 今天`（到期当天仍算会员，`member_until < 今天` 即过期）。`member_until` 字段过期后不会自动改，故所有会员判定都带此校验——过期会员一律按 `authed` 处理。身份源 `login`/`getUserInfo`/`checkMemberStatus` 会自愈（过期即把 DB 的 `identity` 回落 `authed`、清 `member_until`）；内容闸 `getDiaryList`/`getDiaryDetail` 与发文守卫 `createDiary`/`updateDiary` 均以 `member_until >= CURDATE()` 判定有效会员，防自愈未及时。因此**每个 member 用户都必须有 `member_until`**（管理后台建单/设会员时强制填写）。
 
 ## 开发方式
 

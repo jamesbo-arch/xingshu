@@ -116,6 +116,19 @@ async function run() {
     if (l.data.list.some(d => d.id === priId)) throw new Error('本人私密不应出现在广场')
   })
 
+  await test('PERM-A10 过期会员按非会员：读会员日记被截断（身份+有效期综合判断）', async () => {
+    // 临时用户：identity=member 但 member_until 已过 → 应被当作 authed（会员墙 30%）
+    const EXP = 'test_perm_expmember'
+    await conn.query(
+      "INSERT INTO users (openid, nickname, identity, avatar_hue, member_until, created_by) " +
+      "VALUES (?, '过期会员', 'member', 45, DATE_SUB(CURDATE(),INTERVAL 1 DAY), ?) " +
+      "ON DUPLICATE KEY UPDATE identity='member', member_until=DATE_SUB(CURDATE(),INTERVAL 1 DAY)", [EXP, EXP])
+    const r = await detail(memId, EXP)
+    if (r.code !== 0) throw new Error(r.msg)
+    if (!r.data.truncated) throw new Error('过期会员读会员日记应被截断（按非会员处理）')
+    await conn.query('DELETE FROM users WHERE openid = ?', [EXP])
+  })
+
   // 清理
   if (created.length) {
     await conn.query(`DELETE FROM diaries WHERE id IN (${created.map(() => '?').join(',')})`, created)

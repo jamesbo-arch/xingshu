@@ -7,12 +7,14 @@ exports.main = async (event, context) => {
   const { diaryId, title, content, tags, permission, images } = event
   if (!diaryId) return { code: -1, msg: '缺少日记ID' }
 
-  const [users] = await db.query('SELECT id, identity FROM users WHERE openid = ?', [OPENID])
+  const [users] = await db.query(
+    "SELECT id, (identity='member' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
+    [OPENID])
   if (!users.length) return { code: -1, msg: 'user not found' }
   const userId = users[0].id
 
-  // 服务端兜底：仅会员可将日记设为「会员专属」（前端已置灰，防绕过）
-  if (permission === 'member' && users[0].identity !== 'member') {
+  // 服务端兜底：仅有效会员可将日记设为「会员专属」（前端已置灰，防绕过）
+  if (permission === 'member' && !users[0].validMember) {
     return { code: -1, msg: '仅会员可发布会员专属日记' }
   }
 
