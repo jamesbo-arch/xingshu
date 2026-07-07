@@ -363,6 +363,19 @@
         />
       </view>
 
+      <view class="profile-field">
+        <text class="field-label">手机号</text>
+        <input
+          class="field-input"
+          type="number"
+          placeholder="选填，便于运营联系"
+          placeholder-style="color: #A8A39B;"
+          value="{{editPhone}}"
+          bindinput="onPhoneInput"
+          maxlength="11"
+        />
+      </view>
+
       <view class="profile-btns">
         <view class="btn-ghost profile-btn" bindtap="onCloseProfileSheet">取消</view>
         <view class="btn-primary profile-btn" bindtap="onSaveProfile">保存</view>

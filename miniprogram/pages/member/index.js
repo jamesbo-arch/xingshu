@@ -17,6 +17,7 @@ Page({
     showLoginSheet: false,
     editNickname: '',
     editRealName: '',
+    editPhone: '',
     editAvatarUrl: '',
     benefits: [
       { title: '查看全部会员权限日记', desc: '解锁优质内容，与志同道合者同行' },
@@ -101,6 +102,7 @@ Page({
       showProfileSheet: true,
       editNickname: user.nickname || '',
       editRealName: user.realName || '',
+      editPhone: user.phone || '',
       editAvatarUrl: user.avatarUrl || '',
     })
     this._tabBar(true)
@@ -113,6 +115,7 @@ Page({
 
   onNicknameInput(e) { this.setData({ editNickname: e.detail.value }) },
   onRealNameInput(e) { this.setData({ editRealName: e.detail.value }) },
+  onPhoneInput(e) { this.setData({ editPhone: e.detail.value }) },
 
   onSaveProfile() {
     const nickname = this.data.editNickname.trim()
@@ -134,7 +137,7 @@ Page({
         avatarUrl = res.fileID
       }
 
-      const patch = { nickname, realName: this.data.editRealName.trim() }
+      const patch = { nickname, realName: this.data.editRealName.trim(), phone: this.data.editPhone.trim() }
       if (avatarUrl !== (user.avatarUrl || '')) patch.avatarUrl = avatarUrl
 
       const result = await userApi.updateProfile(patch)

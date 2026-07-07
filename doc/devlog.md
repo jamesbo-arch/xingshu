@@ -1746,3 +1746,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 真机编译后：打开编辑资料弹层时 tab-bar 隐藏、保存/取消按钮完整可见可点；输入框高度充足、文字不裁切。
+
+### 2026-07-07 16:35 — 会员中心编辑资料补「手机号」输入框
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/member/index.wxml` — 编辑资料弹层在「真实姓名」后新增「手机号」输入框（type=number、maxlength 11、选填）。
+- `miniprogram/pages/member/index.js` — data 增 `editPhone`；`onShowProfileSheet` 预填 `user.phone`；新增 `onPhoneInput`；保存 patch 带 `phone`。
+
+**变更说明**：
+编辑资料原只有昵称/真实姓名，缺手机号。后端 `updateUserProfile` 云函数已支持 phone 字段、`user()` mapper 也透传 phone，故仅补前端输入框与数据绑定即可。
+
+**验证**：
+真机编译后编辑资料弹层显示手机号输入框，预填现有手机号，保存后落库并刷新（个人资料区手机号更新）。
