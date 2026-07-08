@@ -306,6 +306,20 @@
   margin: 24rpx 0 12rpx;
 }
 
+/* 完善资料弹层的输入框（明确高度，避免文字被裁切） */
+.signup-input {
+  width: 100%;
+  box-sizing: border-box;
+  height: 84rpx;
+  line-height: 44rpx;
+  background: #F5EFE2;
+  border: 1rpx solid rgba(126, 102, 64, 0.18);
+  border-radius: 20rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #2A2723;
+}
+
 /* 只读展示（自动取自个人资料，不可编辑） */
 .signup-value {
   width: 100%;

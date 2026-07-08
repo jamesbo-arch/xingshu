@@ -1,4 +1,5 @@
 const activityApi = require('../../api/activity')
+const userApi = require('../../api/user')
 const toast = require('../../utils/toast')
 const { call } = require('../../api/request')
 const { ensureLogin } = require('../../utils/auth-guard')
@@ -15,6 +16,10 @@ Page({
     signupName: '',
     signupContact: '',
     _sheetShow: false,
+    showProfileComplete: false,
+    _pcShow: false,
+    pcName: '',
+    pcPhone: '',
     showLoginSheet: false,
   },
 
@@ -84,17 +89,52 @@ Page({
   },
   onBack() { throttle(this, 'nav', () => this._goBack()) },
 
-  // 报名弹层（_mounted/_show 双状态动画模式与其他 sheet 一致，此处简化为单状态）
-  // 自动带出当前用户资料：称呼取真实姓名→昵称，联系方式取手机号；未登录先拉起登录
+  // 报名入口：未登录先登录；缺关键资料（姓名/电话）先弹完善弹窗，齐了才进报名
   onOpenSignup() {
     if (!ensureLogin(this, () => this.onOpenSignup())) return
     const u = getApp().globalData.user || {}
+    const name = (u.real_name || '').trim()
+    const phone = (u.phone || '').trim()
+    if (!name || !phone) {
+      this.setData({ pcName: name, pcPhone: phone, showProfileComplete: true })
+      setTimeout(() => this.setData({ _pcShow: true }), 20)
+      return
+    }
+    this._openSignupSheet(u)
+  },
+  // 打开报名弹窗并从资料自动带出（称呼取真实姓名→昵称，联系方式取手机号）
+  _openSignupSheet(u) {
     this.setData({
       signupName: (u.real_name || u.nickname || '').trim(),
       signupContact: (u.phone || '').trim(),
       showSignup: true,
     })
     setTimeout(() => this.setData({ _sheetShow: true }), 20)
+  },
+
+  // 完善资料弹层（报名前若缺姓名/电话）
+  onPcNameInput(e) { this.setData({ pcName: e.detail.value }) },
+  onPcPhoneInput(e) { this.setData({ pcPhone: e.detail.value }) },
+  onClosePc() {
+    this.setData({ _pcShow: false })
+    setTimeout(() => this.setData({ showProfileComplete: false }), 300)
+  },
+  async onSavePcAndSignup() {
+    if (this._pcSaving) return
+    const name = this.data.pcName.trim()
+    const phone = this.data.pcPhone.trim()
+    if (!name) { toast.info('请填写姓名'); return }
+    if (!/^1\d{10}$/.test(phone)) { toast.info('请填写正确的手机号'); return }
+    this._pcSaving = true
+    try {
+      const result = await userApi.updateProfile({ realName: name, phone })
+      if (result) {
+        getApp().globalData.user = result
+        this.onClosePc()
+        // 完善后自动继续报名
+        setTimeout(() => this._openSignupSheet(result), 320)
+      }
+    } finally { this._pcSaving = false }
   },
   onCloseSignup() {
     this.setData({ _sheetShow: false })
