@@ -61,10 +61,11 @@ Page({
     this.setData({ statusBarHeight: info.statusBarHeight || 0, adminContact: app.globalData.adminContact })
   },
 
-  async onShow() {
-    // 从服务端刷新（getUserInfo 返回实时互动统计 + 会员到期自愈），再渲染
-    if (app.globalData.user) await app.refreshUser()
+  onShow() {
+    // 先用现有数据立即渲染，避免被慢/失败的网络请求阻塞白屏
     this._loadUser()
+    // 后台刷新（getUserInfo 返回实时互动统计 + 会员到期自愈），回来再渲染
+    if (app.globalData.user) app.refreshUser().then(() => this._loadUser())
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 4 })
     }
@@ -78,6 +79,8 @@ Page({
     const p = ymd(raw.member_until || user.memberUntil)
     user.memberUntil = p ? p.str : ''
     user.daysLeft = daysUntil(raw.member_until || user.memberUntil)
+    // 兜底：getUserInfo 未部署/未返回 stats 时也不让统计绑定落到 undefined
+    if (!user.stats) user.stats = { diaries: 0, likes: 0, favorites: 0, comments: 0, shares: 0 }
     this.setData({
       user,
       genderLabel: genderText(user.gender),

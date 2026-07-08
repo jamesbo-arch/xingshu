@@ -322,7 +322,7 @@
 
   <!-- 固定底部：醒书咨询图 -->
   <view class="consulting-banner">
-    <image class="consulting-img" src="/images/consulting-banner.png" mode="widthFix" />
+    <image class="consulting-img" src="/images/consulting-banner.png" mode="aspectFit" />
   </view>
 
   <!-- v2.3 微信登录弹窗 -->

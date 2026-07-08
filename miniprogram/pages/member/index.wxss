@@ -23,6 +23,7 @@
 }
 .consulting-img {
   width: 100%;
+  height: 210rpx;
   display: block;
   border-radius: 10px;
 }
