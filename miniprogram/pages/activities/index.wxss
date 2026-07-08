@@ -11,8 +11,9 @@
 }
 
 .page-title {
-  font-size: 56rpx;
-  letter-spacing: 8rpx;
+  font-size: 52rpx;
+  font-weight: 700;
+  letter-spacing: 2px;
   color: #2A2723;
   display: block;
 }
