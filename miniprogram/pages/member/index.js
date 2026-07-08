@@ -43,10 +43,10 @@ Page({
       { key: 'secret', label: '保密' },
     ],
     benefits: [
-      { title: '查看全部会员权限日记', desc: '解锁优质内容，与志同道合者同行' },
-      { title: '会员专属印记', desc: '日记卡片、评论区显示会员标识' },
-      { title: '海报样式特权', desc: '使用专属海报模板' },
-      { title: '优先收录推荐', desc: '高质量日记有机会进入广场首页推荐' },
+      { title: '查看全部醒书日记' },
+      { title: '日记点赞评论收藏转发' },
+      { title: '报名参加各类醒书活动' },
+      { title: '参加知行社线下沟通交流' },
     ],
     purchaseSteps: [
       { num: '壹', title: '添加微信', desc: '添加运营微信，备注昵称与手机号' },
@@ -61,7 +61,9 @@ Page({
     this.setData({ statusBarHeight: info.statusBarHeight || 0, adminContact: app.globalData.adminContact })
   },
 
-  onShow() {
+  async onShow() {
+    // 从服务端刷新（getUserInfo 返回实时互动统计 + 会员到期自愈），再渲染
+    if (app.globalData.user) await app.refreshUser()
     this._loadUser()
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 4 })

@@ -41,7 +41,7 @@
           <text class="benefit-diamond">✦</text>
           <view class="benefit-body">
             <text class="benefit-title">{{item.title}}</text>
-            <text class="benefit-desc">{{item.desc}}</text>
+            <text wx:if="{{item.desc}}" class="benefit-desc">{{item.desc}}</text>
           </view>
         </view>
       </view>
@@ -151,7 +151,7 @@
           <text class="benefit-diamond">✦</text>
           <view class="benefit-body">
             <text class="benefit-title">{{item.title}}</text>
-            <text class="benefit-desc">{{item.desc}}</text>
+            <text wx:if="{{item.desc}}" class="benefit-desc">{{item.desc}}</text>
           </view>
         </view>
       </view>
@@ -297,7 +297,7 @@
           <text class="benefit-diamond active">✦</text>
           <view class="benefit-body">
             <text class="benefit-title">{{item.title}}</text>
-            <text class="benefit-desc">{{item.desc}}</text>
+            <text wx:if="{{item.desc}}" class="benefit-desc">{{item.desc}}</text>
           </view>
           <view class="benefit-check ic-check-g"></view>
         </view>

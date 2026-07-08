@@ -1978,3 +1978,18 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `node --check` 通过；广场顶部下拉 → 刷新列表、松手回弹。
+
+### 2026-07-08 12:10 — 会员中心互动统计实算 + 会员权益文案
+
+**类型**：[云函数 | 前端]
+**修改文件**：
+- `miniprogram/cloudfunctions/getUserInfo/index.js` — 返回 `stats`（diaries/likes/favorites/comments/shares，按其名下 active 日记 COUNT/SUM 实算；users.*_count 未维护废弃）。
+- `miniprogram/pages/member/index.js` — `onShow` 先 `app.refreshUser()`（拉取实时 stats + 会员自愈）再渲染；`benefits` 改为四条新文案（查看全部醒书日记 / 日记点赞评论收藏转发 / 报名参加各类醒书活动 / 参加知行社线下沟通交流），去 desc。
+- `miniprogram/pages/member/index.wxml` — 权益 `benefit-desc` 改为 `wx:if` 存在才渲染（新权益无 desc）。
+- `test/fn-smoke-test.js` — getUserInfo 用例加 stats 断言。
+
+**变更说明**：
+互动统计原绑定 `user.stats.*` 但从未赋值 → 恒 0。改为 getUserInfo 服务端实算并返回，会员中心 onShow 刷新取用。会员权益文案按需求替换。
+
+**验证**：
+harness 验证陈建波 stats={diaries:2,likes:1,favorites:1}；`npm test` 全量 exit 0。**getUserInfo 为云函数，需重新部署到新环境后线上生效。**

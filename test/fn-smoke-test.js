@@ -38,6 +38,9 @@ async function run() {
     const r = await callFn('getUserInfo', {}, 'mock_me')
     if (r.code !== 0) throw new Error(`code=${r.code}（种子数据缺失？先运行 node test/seed.js）`)
     if (!r.data.nickname) throw new Error('缺少 nickname')
+    // 互动统计对象（按其日记实算，会员中心用）
+    const s = r.data.stats
+    if (!s || typeof s.diaries !== 'number' || typeof s.likes !== 'number') throw new Error('缺少 stats 互动统计')
   })
 
   await test('getUserInfo 未注册 openid 返回 code=-1', async () => {
