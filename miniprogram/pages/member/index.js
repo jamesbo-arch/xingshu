@@ -81,8 +81,17 @@ Page({
     user.daysLeft = daysUntil(raw.member_until || user.memberUntil)
     // 兜底：getUserInfo 未部署/未返回 stats 时也不让统计绑定落到 undefined
     if (!user.stats) user.stats = { diaries: 0, likes: 0, favorites: 0, comments: 0, shares: 0 }
+    // 续费(会员)与开通(非会员)文案区分
+    const isRenew = user.identity === 'member'
     this.setData({
       user,
+      isRenew,
+      purchaseSteps: [
+        { num: '壹', title: '添加微信', desc: '添加运营微信，备注昵称与手机号' },
+        { num: '贰', title: '确认身份', desc: '运营核对您的微信昵称与手机号' },
+        { num: '叁', title: '完成支付', desc: isRenew ? '线下转账，运营确认后续期会员' : '线下转账，运营确认后开通会员' },
+        { num: '肆', title: '即时生效', desc: isRenew ? '续费后刷新页面，有效期立即延长' : '开通后刷新页面，会员权益立即生效' },
+      ],
       genderLabel: genderText(user.gender),
       avatarColor: hueToColor(user.avatarHue || 60),
       avatarInitial: getInitial(user.nickname || '?'),

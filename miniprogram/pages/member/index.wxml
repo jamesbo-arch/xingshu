@@ -414,8 +414,8 @@
     <view class="sheet-mask" bindtap="onClosePurchaseSheet"></view>
     <view class="sheet purchase-sheet" catchtap="">
       <view class="sheet-handle"></view>
-      <text class="sheet-title serif">开通会员</text>
-      <text class="purchase-subtitle">联系运营完成开通，每年 ¥365</text>
+      <text class="sheet-title serif">{{isRenew ? '续费会员' : '开通会员'}}</text>
+      <text class="purchase-subtitle">联系运营完成{{isRenew ? '续费' : '开通'}}，每年 ¥365</text>
 
       <view class="steps-list">
         <view wx:for="{{purchaseSteps}}" wx:key="num" class="step-item">
