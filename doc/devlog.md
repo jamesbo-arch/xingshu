@@ -1993,3 +1993,16 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 harness 验证陈建波 stats={diaries:2,likes:1,favorites:1}；`npm test` 全量 exit 0。**getUserInfo 为云函数，需重新部署到新环境后线上生效。**
+
+### 2026-07-08 12:30 — 会员中心去掉冗余「微信授权名」
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/member/index.wxml` — 两处个人资料卡移除「微信授权名」行（与昵称必然重复）。
+- `miniprogram/utils/mapper.js` — 移除 `wechatName`（仅由 nickname 回退，无独立 wechat_name 列，v2.3 登录不取微信昵称，成死代码）。
+- `test/unit/mapper.test.js` — 移除 wechatName 断言。
+
+**变更说明**：
+用户反馈「微信授权名」与「昵称」重复。根因：mapper 里 wechatName 回退成 nickname、无独立数据源。移除该展示行与死代码。
+
+**验证**：`npm run test:unit` 通过。
