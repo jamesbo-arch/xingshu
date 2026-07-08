@@ -85,8 +85,15 @@ Page({
   onBack() { throttle(this, 'nav', () => this._goBack()) },
 
   // 报名弹层（_mounted/_show 双状态动画模式与其他 sheet 一致，此处简化为单状态）
+  // 自动带出当前用户资料：称呼取真实姓名→昵称，联系方式取手机号；未登录先拉起登录
   onOpenSignup() {
-    this.setData({ showSignup: true })
+    if (!ensureLogin(this, () => this.onOpenSignup())) return
+    const u = getApp().globalData.user || {}
+    this.setData({
+      signupName: (u.real_name || u.nickname || '').trim(),
+      signupContact: (u.phone || '').trim(),
+      showSignup: true,
+    })
     setTimeout(() => this.setData({ _sheetShow: true }), 20)
   },
   onCloseSignup() {
