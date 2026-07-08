@@ -100,8 +100,6 @@ Page({
     this.setData({ _sheetShow: false })
     setTimeout(() => this.setData({ showSignup: false }), 300)
   },
-  onNameInput(e) { this.setData({ signupName: e.detail.value }) },
-  onContactInput(e) { this.setData({ signupContact: e.detail.value }) },
 
   async onSubmitSignup() {
     if (this._submitting) return
