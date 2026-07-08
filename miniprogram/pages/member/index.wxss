@@ -10,10 +10,9 @@
   padding: 16rpx 32rpx 12rpx;
 }
 
-/* 固定顶部：身份卡（会员另含有效期卡） */
+/* 身份卡（随内容一起滚动，横向内边距由 page-scroll 提供） */
 .member-top {
-  flex-shrink: 0;
-  padding: 0 24rpx;
+  padding: 0;
 }
 
 /* 固定底部：醒书咨询图（通栏满宽、无左右白边；下方留出自定义 tab-bar 高度） */

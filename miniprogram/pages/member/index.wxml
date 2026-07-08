@@ -5,7 +5,9 @@
     <text class="page-title serif">会员中心</text>
   </view>
 
-  <!-- 固定顶部：身份卡（会员额外含有效期卡） -->
+  <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="page-scroll">
+
+  <!-- 身份卡（随内容一起滚动） -->
   <view class="member-top">
     <block wx:if="{{user.identity === 'guest'}}">
       <view class="identity-card guest-card">
@@ -72,8 +74,6 @@
       </view>
     </block>
   </view>
-
-  <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="page-scroll">
 
     <!-- ===== GUEST STATE ===== -->
     <block wx:if="{{user.identity === 'guest'}}">
