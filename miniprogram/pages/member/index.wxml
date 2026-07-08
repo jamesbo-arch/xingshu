@@ -70,19 +70,6 @@
           <text class="member-seal-line serif">之印</text>
         </view>
       </view>
-
-      <view class="days-renew-card">
-        <view class="days-content">
-          <view class="days-num-row">
-            <text class="days-num serif">{{user.daysLeft || 0}}</text>
-            <text class="days-unit"> 天</text>
-          </view>
-          <text class="days-desc-label">会员剩余天数</text>
-        </view>
-        <view class="renew-btn" bindtap="onShowPurchaseSheet">
-          <text>如何续费 →</text>
-        </view>
-      </view>
     </block>
   </view>
 
@@ -201,6 +188,19 @@
 
     <!-- ===== MEMBER STATE ===== -->
     <block wx:elif="{{user.identity === 'member'}}">
+
+      <view class="days-renew-card">
+        <view class="days-content">
+          <view class="days-num-row">
+            <text class="days-num serif">{{user.daysLeft || 0}}</text>
+            <text class="days-unit"> 天</text>
+          </view>
+          <text class="days-desc-label">会员剩余天数</text>
+        </view>
+        <view class="renew-btn" bindtap="onShowPurchaseSheet">
+          <text>如何续费 →</text>
+        </view>
+      </view>
 
       <view class="section-header-row">
         <text class="section-label serif">个人资料</text>
