@@ -1968,3 +1968,13 @@ admin 是体系级差异（通用浅蓝 → 原型深墨暖纸），本次整体
 
 **验证**：
 `fn-auth-test` 10/10、`fn-permission-test` 11/11、`fn-roundtrip` 8/8、`npm test` 全量 exit 0。**涉及 7 个云函数，需重新部署到新环境后线上生效。**
+
+### 2026-07-08 09:30 — 广场列表下拉刷新
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/square/index.wxml` — 列表 scroll-view 加 `refresher-enabled`/`refresher-triggered`/`bindrefresherrefresh`（scroll-view 自带下拉刷新，非页面级 onPullDownRefresh，因列表在 scroll-view 内）。
+- `miniprogram/pages/square/index.js` — data 增 `refreshing`；`onRefresh` 重载第一页并在完成后收起刷新态。
+
+**验证**：
+`node --check` 通过；广场顶部下拉 → 刷新列表、松手回弹。

@@ -13,6 +13,7 @@ Page({
     search: '',
     page: 1,
     hasMore: true,
+    refreshing: false,
     showFilterSheet: false,
     showPosterSheet: false,
     posterDiary: null,
@@ -178,6 +179,12 @@ Page({
     go()
   },
   onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
+
+  // 顶部下拉刷新：重载第一页（scroll-view 自带 refresher，非页面级 onPullDownRefresh）
+  async onRefresh() {
+    this.setData({ refreshing: true })
+    try { await this._loadDiaries(true) } finally { this.setData({ refreshing: false }) }
+  },
 
   // 微信「…」菜单转发/分享朋友圈：分享醒书日记入口，带分享人 ID（s=）延续推荐人机制
   onShareAppMessage() {
