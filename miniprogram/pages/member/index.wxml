@@ -88,10 +88,6 @@
       </view>
       <view class="section-card">
         <view class="info-row">
-          <text class="info-label">微信授权名</text>
-          <text class="info-value muted">{{user.wechatName}}</text>
-        </view>
-        <view class="info-row">
           <text class="info-label">昵称</text>
           <text class="info-value">{{user.nickname}}</text>
         </view>
@@ -204,10 +200,6 @@
         <text class="section-action" bindtap="onShowProfileSheet">编辑 →</text>
       </view>
       <view class="section-card">
-        <view class="info-row">
-          <text class="info-label">微信授权名</text>
-          <text class="info-value muted">{{user.wechatName}}</text>
-        </view>
         <view class="info-row">
           <text class="info-label">昵称</text>
           <text class="info-value">{{user.nickname}}</text>

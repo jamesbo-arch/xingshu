@@ -22,7 +22,6 @@ function user(item) {
   if (!item) return item
   return {
     ...item,
-    wechatName: item.nickname || item.wechat_name || item.wechatName,
     realName: item.real_name || item.realName,
     avatarUrl: item.avatar_url || item.avatarUrl || '',
     avatarHue: item.avatar_hue || item.avatarHue,

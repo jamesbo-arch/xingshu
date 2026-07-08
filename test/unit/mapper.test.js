@@ -62,7 +62,6 @@ test('user：数据库行映射为前端字段', () => {
     member_until: '2026-12-31',
     days_left: 180,
   })
-  assert.strictEqual(u.wechatName, '清逸')
   assert.strictEqual(u.realName, '张三')
   assert.strictEqual(u.avatarUrl, 'http://x/a.png')
   assert.strictEqual(u.avatarHue, 60)
