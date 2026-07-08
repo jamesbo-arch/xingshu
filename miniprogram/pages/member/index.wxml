@@ -5,11 +5,9 @@
     <text class="page-title serif">会员中心</text>
   </view>
 
-  <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="page-scroll">
-
-    <!-- ===== GUEST STATE ===== -->
+  <!-- 固定顶部：身份卡（会员额外含有效期卡） -->
+  <view class="member-top">
     <block wx:if="{{user.identity === 'guest'}}">
-
       <view class="identity-card guest-card">
         <view class="guest-avatar">
           <text class="guest-question">?</text>
@@ -25,6 +23,73 @@
           <text class="id-seal-text serif">游客</text>
         </view>
       </view>
+    </block>
+    <block wx:elif="{{user.identity === 'authed'}}">
+      <view class="identity-card authed-card">
+        <view class="avatar-wrap-click" bindtap="onShowProfileSheet">
+          <image wx:if="{{user.avatarUrl}}" src="{{user.avatarUrl}}" class="avatar lg avatar-real" mode="aspectFill" />
+          <view wx:else class="avatar lg" style="background-color: {{avatarColor}};">
+            <text>{{avatarInitial}}</text>
+          </view>
+          <view class="avatar-edit-badge"><text>换</text></view>
+        </view>
+        <view class="identity-info">
+          <view class="identity-name-row">
+            <text class="identity-name">{{user.nickname}}</text>
+            <text class="identity-label-badge authed-badge">用户</text>
+          </view>
+          <text class="identity-phone">{{user.phone}}</text>
+        </view>
+        <view class="id-seal authed-seal">
+          <text class="id-seal-text serif">用户</text>
+        </view>
+      </view>
+    </block>
+    <block wx:elif="{{user.identity === 'member'}}">
+      <view class="identity-card member-card">
+        <view class="avatar-wrap-click" bindtap="onShowProfileSheet">
+          <view class="member-avatar-wrap">
+            <image wx:if="{{user.avatarUrl}}" src="{{user.avatarUrl}}" class="avatar lg avatar-real" mode="aspectFill" />
+            <view wx:else class="avatar lg" style="background-color: {{avatarColor}};">
+              <text>{{avatarInitial}}</text>
+            </view>
+            <view class="member-avatar-badge"><text>会</text></view>
+          </view>
+          <view class="avatar-edit-badge"><text>换</text></view>
+        </view>
+        <view class="identity-info">
+          <view class="identity-name-row">
+            <text class="identity-name member-name">{{user.nickname}}</text>
+            <text class="identity-label-badge member-badge">会员</text>
+          </view>
+          <text class="identity-phone">{{user.phone}}</text>
+          <text class="member-until-text">有效至 {{user.memberUntil}}</text>
+        </view>
+        <view class="id-seal member-seal">
+          <text class="member-seal-line serif">會員</text>
+          <text class="member-seal-line serif">之印</text>
+        </view>
+      </view>
+
+      <view class="days-renew-card">
+        <view class="days-content">
+          <view class="days-num-row">
+            <text class="days-num serif">{{user.daysLeft || 0}}</text>
+            <text class="days-unit"> 天</text>
+          </view>
+          <text class="days-desc-label">会员剩余天数</text>
+        </view>
+        <view class="renew-btn" bindtap="onShowPurchaseSheet">
+          <text>如何续费 →</text>
+        </view>
+      </view>
+    </block>
+  </view>
+
+  <scroll-view scroll-y enhanced show-scrollbar="{{false}}" class="page-scroll">
+
+    <!-- ===== GUEST STATE ===== -->
+    <block wx:if="{{user.identity === 'guest'}}">
 
       <view class="auth-section">
         <view class="btn-primary auth-btn" bindtap="onAuthorize">
@@ -50,26 +115,6 @@
 
     <!-- ===== AUTHED STATE ===== -->
     <block wx:elif="{{user.identity === 'authed'}}">
-
-      <view class="identity-card authed-card">
-        <view class="avatar-wrap-click" bindtap="onShowProfileSheet">
-          <image wx:if="{{user.avatarUrl}}" src="{{user.avatarUrl}}" class="avatar lg avatar-real" mode="aspectFill" />
-          <view wx:else class="avatar lg" style="background-color: {{avatarColor}};">
-            <text>{{avatarInitial}}</text>
-          </view>
-          <view class="avatar-edit-badge"><text>换</text></view>
-        </view>
-        <view class="identity-info">
-          <view class="identity-name-row">
-            <text class="identity-name">{{user.nickname}}</text>
-            <text class="identity-label-badge authed-badge">用户</text>
-          </view>
-          <text class="identity-phone">{{user.phone}}</text>
-        </view>
-        <view class="id-seal authed-seal">
-          <text class="id-seal-text serif">用户</text>
-        </view>
-      </view>
 
       <view class="member-join-card">
         <view class="member-join-header">
@@ -156,44 +201,6 @@
 
     <!-- ===== MEMBER STATE ===== -->
     <block wx:elif="{{user.identity === 'member'}}">
-
-      <view class="identity-card member-card">
-        <view class="avatar-wrap-click" bindtap="onShowProfileSheet">
-          <view class="member-avatar-wrap">
-            <image wx:if="{{user.avatarUrl}}" src="{{user.avatarUrl}}" class="avatar lg avatar-real" mode="aspectFill" />
-            <view wx:else class="avatar lg" style="background-color: {{avatarColor}};">
-              <text>{{avatarInitial}}</text>
-            </view>
-            <view class="member-avatar-badge"><text>会</text></view>
-          </view>
-          <view class="avatar-edit-badge"><text>换</text></view>
-        </view>
-        <view class="identity-info">
-          <view class="identity-name-row">
-            <text class="identity-name member-name">{{user.nickname}}</text>
-            <text class="identity-label-badge member-badge">会员</text>
-          </view>
-          <text class="identity-phone">{{user.phone}}</text>
-          <text class="member-until-text">有效至 {{user.memberUntil}}</text>
-        </view>
-        <view class="id-seal member-seal">
-          <text class="member-seal-line serif">會員</text>
-          <text class="member-seal-line serif">之印</text>
-        </view>
-      </view>
-
-      <view class="days-renew-card">
-        <view class="days-content">
-          <view class="days-num-row">
-            <text class="days-num serif">{{user.daysLeft || 0}}</text>
-            <text class="days-unit"> 天</text>
-          </view>
-          <text class="days-desc-label">会员剩余天数</text>
-        </view>
-        <view class="renew-btn" bindtap="onShowPurchaseSheet">
-          <text>如何续费 →</text>
-        </view>
-      </view>
 
       <view class="section-header-row">
         <text class="section-label serif">个人资料</text>
@@ -312,6 +319,11 @@
 
     <view class="bottom-pad"></view>
   </scroll-view>
+
+  <!-- 固定底部：醒书咨询图 -->
+  <view class="consulting-banner">
+    <image class="consulting-img" src="/images/consulting-banner.png" mode="widthFix" />
+  </view>
 
   <!-- v2.3 微信登录弹窗 -->
   <login-sheet

@@ -1,9 +1,30 @@
 .page-wrap {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .page-header {
+  flex-shrink: 0;
   padding: 16rpx 32rpx 12rpx;
+}
+
+/* 固定顶部：身份卡（会员另含有效期卡） */
+.member-top {
+  flex-shrink: 0;
+  padding: 0 24rpx;
+}
+
+/* 固定底部：醒书咨询图（下方留出自定义 tab-bar 高度，避免被遮挡） */
+.consulting-banner {
+  flex-shrink: 0;
+  padding: 12rpx 24rpx calc(110rpx + env(safe-area-inset-bottom));
+}
+.consulting-img {
+  width: 100%;
+  display: block;
+  border-radius: 10px;
 }
 
 .page-title {
@@ -14,7 +35,8 @@
 }
 
 .page-scroll {
-  height: calc(100vh - 100rpx);
+  flex: 1;
+  min-height: 0;
   padding: 0 24rpx;
 }
 
@@ -861,7 +883,7 @@
 
 /* ===== Bottom padding ===== */
 .bottom-pad {
-  height: calc(100rpx + env(safe-area-inset-bottom) + 20rpx);
+  height: 12rpx;
 }
 
 /* v2.3 设置 · 退出登录 */
