@@ -16,16 +16,14 @@
   padding: 0 24rpx;
 }
 
-/* 固定底部：醒书咨询图（下方留出自定义 tab-bar 高度，避免被遮挡） */
+/* 固定底部：醒书咨询图（通栏满宽、无左右白边；下方留出自定义 tab-bar 高度） */
 .consulting-banner {
   flex-shrink: 0;
-  padding: 12rpx 24rpx calc(110rpx + env(safe-area-inset-bottom));
+  padding: 12rpx 0 calc(110rpx + env(safe-area-inset-bottom));
 }
 .consulting-img {
   width: 100%;
-  height: 210rpx;
   display: block;
-  border-radius: 10px;
 }
 
 .page-title {
