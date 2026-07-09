@@ -1,3 +1,6 @@
+/* 禁用页面级滚动/回弹：仅内部 scroll-view 滚动，锁定顶部标题栏 */
+page { height: 100%; overflow: hidden; }
+
 .page-wrap {
   height: 100vh;
   display: flex;

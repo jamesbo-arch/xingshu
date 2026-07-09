@@ -2149,3 +2149,15 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 `npm run build`/`build:prd` 产物分别注入 dev/prd 环境 ID，确认无误。
+
+### 2026-07-09 21:30 — 修复锁头页面下拉整页回弹（标题被拖动）
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/{square,collections,mine,member,activities}/index.wxss` — 各加 `page { height: 100%; overflow: hidden; }`，禁用页面级原生滚动/回弹，仅内部 scroll-view 滚动，顶部标题栏/搜索栏真正锁定。
+
+**变更说明**：
+真机 iOS 下，我的日记/收藏等页在顶部下拉时整页（含标题+搜索）随橡皮筋回弹被拖动——因为页面级 scroll 未禁用（广场有下拉刷新捕获手势故无此现象）。加 `page{overflow:hidden}` 后页面本身不滚，锁头生效。
+
+**验证**：
+真机编译后，锁头页顶部下拉不再拖动整页，标题固定、仅列表滚动。
