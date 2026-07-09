@@ -92,6 +92,8 @@
   color: #2A2723;
   line-height: 1.9;
   white-space: pre-wrap;
+  word-break: break-all;      /* 长网址/英文串强制断行，避免顶出右边界 */
+  overflow-wrap: anywhere;
 }
 
 /* Seal stamp */

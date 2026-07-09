@@ -2161,3 +2161,16 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 真机编译后，锁头页顶部下拉不再拖动整页，标题固定、仅列表滚动。
+
+### 2026-07-09 21:45 — 修复日记正文含长网址顶出右边界
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/detail/index.wxss` — `.content-text` 加 `word-break: break-all` + `overflow-wrap: anywhere`。
+- `miniprogram/components/diary-card/index.wxss` — `.card-content` 加 `word-break: break-all`。
+
+**变更说明**：
+某篇日记正文含微信文章长链接（67 字符无断点），详情页无 word-break 导致该行超出右边界；其他无网址文章正常。加强制断行后长网址正常换行。
+
+**验证**：
+真机编译后含长网址的日记详情正文不再溢出右边界。
