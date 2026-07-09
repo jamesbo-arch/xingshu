@@ -28,7 +28,7 @@
   </view>
 
   <!-- Diary list -->
-  <scroll-view class="diary-list" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="onReachBottom" lower-threshold="150">
+  <scroll-view class="diary-list" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="onReachBottom" lower-threshold="150" refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
     <view wx:if="{{diaries.length === 0}}" class="empty-state">
       <view class="empty-icon ic-bookmark"></view>
       <text class="empty-text">暂无收藏</text>

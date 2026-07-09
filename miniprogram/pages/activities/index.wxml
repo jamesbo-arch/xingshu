@@ -5,7 +5,7 @@
     <text class="page-subtitle">线上线下，与同路人相见</text>
   </view>
 
-  <scroll-view class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+  <scroll-view class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}" refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
     <block wx:if="{{loaded && !upcoming.length && !past.length}}">
       <view class="act-empty">
         <text class="act-empty-icon serif">期</text>

@@ -3,6 +3,7 @@ const { throttle } = require('../../utils/guard')
 
 Page({
   data: {
+    refreshing: false,
     upcoming: [],
     past: [],
     loaded: false,
@@ -46,7 +47,8 @@ Page({
     throttle(this, 'open', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
   },
 
-  onPullDownRefresh() {
-    this._load().then(() => wx.stopPullDownRefresh())
+  async onRefresh() {
+    this.setData({ refreshing: true })
+    try { await this._load() } finally { this.setData({ refreshing: false }) }
   },
 })

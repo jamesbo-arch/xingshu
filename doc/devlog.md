@@ -2174,3 +2174,16 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 真机编译后含长网址的日记详情正文不再溢出右边界。
+
+### 2026-07-09 22:00 — 收藏/我的日记/活动统一下拉刷新
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/{collections,mine}/index.{wxml,js}` — 列表 scroll-view 加 refresher（refresher-enabled/refresher-triggered/bindrefresherrefresh）；data 增 refreshing；onRefresh 重载首页。
+- `miniprogram/pages/activities/index.{wxml,js}` — act-scroll 加 refresher；删除无效的页面级 onPullDownRefresh（json 未开 enablePullDownRefresh，且已 page{overflow:hidden}），改为 scroll-view 下拉刷新。
+
+**变更说明**：
+按需求给各列表页统一下拉刷新，与广场一致（scroll-view 自带 refresher，非页面级）。也顺带补齐了 page{overflow:hidden} 后页面级下拉失效的问题。
+
+**验证**：
+`node --check` 三页通过；各页顶部下拉触发刷新、松手回弹。

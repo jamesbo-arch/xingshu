@@ -8,6 +8,7 @@ const { lock, throttle } = require('../../utils/guard')
 Page({
   data: {
     diaries: [],
+    refreshing: false,
     search: '',
     page: 1,
     hasMore: true,
@@ -133,4 +134,9 @@ Page({
     })
   },
   onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
+
+  async onRefresh() {
+    this.setData({ refreshing: true })
+    try { await this._loadDiaries(true) } finally { this.setData({ refreshing: false }) }
+  },
 })
