@@ -30,6 +30,7 @@ Page({
     statusBarHeight: 0,
     showProfileSheet: false,
     showPurchaseSheet: false,
+    showSettingsSheet: false,
     showLoginSheet: false,
     editNickname: '',
     editRealName: '',
@@ -126,6 +127,8 @@ Page({
       const result = await userApi.updateProfile({ logout: true })
       if (result) {
         app.globalData.user = result
+        this.setData({ showSettingsSheet: false })
+        this._tabBar(false)
         this._loadUser()
         wx.showToast({ title: '已退出登录', icon: 'none', duration: 1500 })
       }
@@ -137,6 +140,12 @@ Page({
 
   onShowPurchaseSheet() { this.setData({ showPurchaseSheet: true }); this._tabBar(true) },
   onClosePurchaseSheet() { this.setData({ showPurchaseSheet: false }); this._tabBar(false) },
+
+  // 设置弹层（卡片右上角齿轮）：协议链接 + 退出登录
+  onOpenSettings() { this.setData({ showSettingsSheet: true }); this._tabBar(true) },
+  onCloseSettings() { this.setData({ showSettingsSheet: false }); this._tabBar(false) },
+  onOpenAgreement() { wx.navigateTo({ url: '/pages/doc/index?type=agreement' }) },
+  onOpenPrivacy() { wx.navigateTo({ url: '/pages/doc/index?type=privacy' }) },
 
   onShowProfileSheet() {
     const user = this.data.user || {}

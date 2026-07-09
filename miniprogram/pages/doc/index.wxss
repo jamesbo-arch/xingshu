@@ -1,0 +1,20 @@
+.doc-wrap {
+  min-height: 100vh;
+  padding: 40rpx 32rpx calc(env(safe-area-inset-bottom) + 40rpx);
+  background: #FBF7EE;
+  box-sizing: border-box;
+}
+.doc-title {
+  font-size: 44rpx;
+  font-weight: 700;
+  color: #2A2723;
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 28rpx;
+}
+.doc-body {
+  font-size: 28rpx;
+  color: #4A453E;
+  line-height: 1.9;
+  white-space: pre-wrap;
+}

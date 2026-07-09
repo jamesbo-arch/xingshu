@@ -2093,3 +2093,19 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译后顶部两卡固定、其余含底图滚动。
+
+### 2026-07-09 02:40 — 会员卡右上角设置齿轮 + 设置弹层（协议/退出）+ 协议页
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/pages/member/index.wxml` — 会员卡/授权卡右上角印章换成设置齿轮按钮（`onOpenSettings`，catchtap）；移除滚动区内的「设置/退出登录」小节；新增设置弹层（用户协议 / 隐私协议 行 + 退出登录按钮）。
+- `miniprogram/pages/member/index.js` — data 增 `showSettingsSheet`；`onOpenSettings/onCloseSettings`（含 tab-bar 隐藏/恢复）、`onOpenAgreement/onOpenPrivacy`（跳协议页）；`onLogout` 成功后关设置弹层并恢复 tab-bar。
+- `miniprogram/pages/member/index.wxss` — 齿轮按钮/图标（lucide 齿轮 SVG）、设置弹层行/退出按钮样式。
+- `miniprogram/pages/doc/{index.js,json,wxml,wxss}`（新建）— 协议查看页，据 `?type=agreement|privacy` 显示用户协议/隐私协议（正文占位，待填入正式文本）。
+- `miniprogram/app.json` — 注册 `pages/doc/index`。
+
+**变更说明**：
+按需求去掉会员之印，卡片右上角改为常规设置齿轮；点击弹出设置弹层，内含用户协议、隐私协议查看链接与退出登录按钮。协议页正文为占位，需填入正式协议文本。
+
+**验证**：
+`node --check` 通过、app.json 合法、member wxml 标签平衡（view 133/133、block 7/7）。**协议正文为占位，上线前需补充正式《用户协议》《隐私政策》文本。**

@@ -40,8 +40,8 @@
           </view>
           <text class="identity-phone">{{user.phone}}</text>
         </view>
-        <view class="id-seal authed-seal">
-          <text class="id-seal-text serif">用户</text>
+        <view class="card-settings-btn" catchtap="onOpenSettings">
+          <view class="card-settings-icon"></view>
         </view>
       </view>
     </block>
@@ -65,9 +65,8 @@
           <text class="identity-phone">{{user.phone}}</text>
           <text class="member-until-text">有效至 {{user.memberUntil}}</text>
         </view>
-        <view class="id-seal member-seal">
-          <text class="member-seal-line serif">會員</text>
-          <text class="member-seal-line serif">之印</text>
+        <view class="card-settings-btn" catchtap="onOpenSettings">
+          <view class="card-settings-icon"></view>
         </view>
       </view>
 
@@ -304,19 +303,6 @@
 
     </block>
 
-    <!-- v2.3 设置：退出登录（仅登录后展示） -->
-    <block wx:if="{{user.identity !== 'guest'}}">
-      <view class="section-header-row">
-        <text class="section-label serif">设置</text>
-      </view>
-      <view class="section-card">
-        <view class="info-row no-border logout-row" bindtap="onLogout">
-          <text class="logout-text">退出登录</text>
-          <view class="logout-arrow ic-chevron"></view>
-        </view>
-      </view>
-    </block>
-
     <!-- 醒书咨询图（随内容滚动） -->
     <view class="consulting-banner">
       <image class="consulting-img" src="/images/consulting-banner.png" mode="widthFix" />
@@ -448,6 +434,27 @@
         <text class="admin-note">{{adminContact.note}}</text>
       </view>
 
+      <view class="safe-bottom"></view>
+    </view>
+  </view>
+
+  <!-- 设置弹层：协议链接 + 退出登录 -->
+  <view wx:if="{{showSettingsSheet}}">
+    <view class="sheet-mask" bindtap="onCloseSettings"></view>
+    <view class="sheet settings-sheet" catchtap="">
+      <view class="sheet-handle"></view>
+      <text class="sheet-title serif">设置</text>
+      <view class="section-card settings-links">
+        <view class="settings-row" bindtap="onOpenAgreement">
+          <text class="settings-row-text">用户协议</text>
+          <view class="settings-row-arrow ic-chevron"></view>
+        </view>
+        <view class="settings-row no-border" bindtap="onOpenPrivacy">
+          <text class="settings-row-text">隐私协议</text>
+          <view class="settings-row-arrow ic-chevron"></view>
+        </view>
+      </view>
+      <view class="settings-logout" bindtap="onLogout">退出登录</view>
       <view class="safe-bottom"></view>
     </view>
   </view>
