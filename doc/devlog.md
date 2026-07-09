@@ -2122,3 +2122,15 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 组件 js/json 合法、6 页均挂载。真机需先在微信后台配置《用户隐私保护指引》，方可触发弹窗。
+
+### 2026-07-09 04:00 — app.js 按小程序版本切换云环境（体验/正式分库预留）
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/app.js` — `wx.cloud.init` 的 env 改为 `this._pickCloudEnv()`：据 `wx.getAccountInfoSync().miniProgram.envVersion`，`release`→生产环境、`develop/trial`→测试环境。当前 prod/dev 两个 env ID 均填现环境（不影响现状），建好独立测试环境后只改 dev 的 ID。
+
+**变更说明**：
+为将来"一套云函数代码、体验/正式连不同库"的环境隔离做前端预留。配合两个云环境（各自部署+各自 DB），即可实现体验版走测试库、正式版走生产库。admin Web 的 ENV_ID 独立（指向生产），不受影响。
+
+**验证**：
+`node --check` 通过；两 env ID 相同故行为与现状一致。

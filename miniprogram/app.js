@@ -17,7 +17,7 @@ App({
   onLaunch(options) {
     if (wx.cloud) {
       wx.cloud.init({
-        env: 'cloud1-d9gbozhfp4a6c50c0',
+        env: this._pickCloudEnv(),
         traceUser: true,
       })
     }
@@ -27,6 +27,18 @@ App({
     // 微信转发卡片直达：path 直接携带 s=<分享人>，无 scene，也作为推荐人来源（与扫码 s 对齐）
     if (!scene && q.s) scene = 's=' + q.s
     this._initUser(scene, (options && options.path) || '')
+  },
+
+  // 云环境按小程序版本切换：正式版(release)→生产环境；开发/体验版(develop/trial)→测试环境。
+  // 建好独立测试环境前，两者都填当前环境即可（不影响现状）；建好后只改 dev 的 env ID。
+  _pickCloudEnv() {
+    const ENVS = {
+      prod: 'cloud1-d9gbozhfp4a6c50c0', // 正式环境
+      dev: 'cloud1-d9gbozhfp4a6c50c0',  // 测试环境（建好后改这里）
+    }
+    let version = 'release'
+    try { version = wx.getAccountInfoSync().miniProgram.envVersion } catch (e) { /* 兜底按正式 */ }
+    return version === 'release' ? ENVS.prod : ENVS.dev
   },
 
   async _initUser(scene, launchPath) {
