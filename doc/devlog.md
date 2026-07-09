@@ -2109,3 +2109,16 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 `node --check` 通过、app.json 合法、member wxml 标签平衡（view 133/133、block 7/7）。**协议正文为占位，上线前需补充正式《用户协议》《隐私政策》文本。**
+
+### 2026-07-09 03:20 — 隐私授权弹窗（敏感接口合规）
+
+**类型**：[前端]
+**修改文件**：
+- `miniprogram/components/privacy-popup/*`（新建）— 隐私授权弹窗组件：`pageLifetimes.show` 注册 `wx.onNeedPrivacyAuthorization`，敏感接口触发时弹窗；「同意并继续」按钮 `open-type="agreePrivacyAuthorization"`，同意后 `resolve({buttonId:'agree-btn',event:'agree'})` 放行，不同意则 disagree；弹层内含《用户协议》《隐私政策》链接（跳 doc 页）。
+- 6 个触发敏感接口的页面（square/collections/detail/activity-detail/member/compose）的 `index.json` 加 `privacy-popup` 组件、`index.wxml` 挂 `<privacy-popup>`。
+
+**变更说明**：
+配置微信《用户隐私保护指引》后，基础库会在首次调用 chooseAvatar/chooseMedia/saveImageToPhotosAlbum 等敏感接口时要求隐私授权。加通用弹窗处理，同意后放行。**弹窗仅在后台已配置并提交隐私指引后才会触发**（未配置时 onNeedPrivacyAuthorization 不触发）。
+
+**验证**：
+组件 js/json 合法、6 页均挂载。真机需先在微信后台配置《用户隐私保护指引》，方可触发弹窗。

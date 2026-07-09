@@ -2,6 +2,7 @@
   "navigationBarTitleText": "",
   "navigationStyle": "custom",
   "usingComponents": {
-    "login-sheet": "/components/login-sheet/index"
+    "login-sheet": "/components/login-sheet/index",
+    "privacy-popup": "/components/privacy-popup/index"
   }
 }

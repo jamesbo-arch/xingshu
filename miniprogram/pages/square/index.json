@@ -6,6 +6,7 @@
     "filter-sheet": "/components/filter-sheet/index",
     "poster-sheet": "/components/poster-sheet/index",
     "member-guard": "/components/member-guard/index",
-    "login-sheet": "/components/login-sheet/index"
+    "login-sheet": "/components/login-sheet/index",
+    "privacy-popup": "/components/privacy-popup/index"
   }
 }

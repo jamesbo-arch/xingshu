@@ -1,0 +1,16 @@
+<view wx:if="{{visible}}" class="pp-mask">
+  <view class="pp-box">
+    <text class="pp-title serif">隐私保护提示</text>
+    <view class="pp-body">
+      <text>为向你提供登录、发布日记、活动报名等服务，我们需要按</text>
+      <text class="pp-link" data-type="agreement" catchtap="onOpenDoc">《用户协议》</text>
+      <text>与</text>
+      <text class="pp-link" data-type="privacy" catchtap="onOpenDoc">《隐私政策》</text>
+      <text>收集与使用你的相册、头像、昵称、姓名、手机号等信息。请阅读并同意后继续。</text>
+    </view>
+    <view class="pp-btns">
+      <view class="pp-btn pp-disagree" catchtap="onDisagree">不同意</view>
+      <button id="agree-btn" class="pp-btn pp-agree" open-type="agreePrivacyAuthorization" bindagreeprivacyauthorization="onAgree">同意并继续</button>
+    </view>
+  </view>
+</view>

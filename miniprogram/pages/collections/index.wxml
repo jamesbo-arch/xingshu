@@ -73,3 +73,6 @@
     bind:joinMember="onGuardJoinMember"
   ></member-guard>
 </view>
+
+<!-- 隐私授权弹窗（敏感接口首次调用时触发） -->
+<privacy-popup></privacy-popup>
