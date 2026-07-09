@@ -1,4 +1,3 @@
 <view class="doc-wrap">
-  <text class="doc-title serif">{{title}}</text>
   <text class="doc-body">{{body}}</text>
 </view>
