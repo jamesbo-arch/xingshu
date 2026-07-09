@@ -2,7 +2,10 @@
 // 鉴权：密码登录换取 HMAC token（12h 有效），存 localStorage，随每次请求携带
 import cloudbase from '@cloudbase/js-sdk'
 
-const ENV_ID = 'cloud1-d9gbozhfp4a6c50c0'
+// 云环境按 Vite mode 注入（.env.dev / .env.prd）；缺省回退 dev 环境
+export const ENV_ID = import.meta.env.VITE_TCB_ENV || 'cloud1-d9gbozhfp4a6c50c0'
+export const ENV_LABEL = import.meta.env.VITE_ENV_LABEL || '开发'
+export const IS_PROD = /prd|prod/i.test(ENV_ID)
 const TOKEN_KEY = 'xs_admin_token'
 
 const app = cloudbase.init({ env: ENV_ID })

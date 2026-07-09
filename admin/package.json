@@ -4,8 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --mode dev --port 5173",
+    "dev:prd": "vite --mode prd --port 5174",
+    "build": "vite build --mode dev",
+    "build:prd": "vite build --mode prd",
     "preview": "vite preview"
   },
   "dependencies": {

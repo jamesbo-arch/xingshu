@@ -2134,3 +2134,18 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 `node --check` 通过；两 env ID 相同故行为与现状一致。
+
+### 2026-07-09 04:40 — 管理后台 dev/prd 双环境双端口
+
+**类型**：[前端 | 配置]
+**修改文件**：
+- `admin/src/api/index.js` — `ENV_ID` 改为 `import.meta.env.VITE_TCB_ENV`（缺省回退 dev）；导出 `ENV_LABEL`/`IS_PROD`。
+- `admin/src/App.vue` — 全局固定「环境角标」（dev 蓝、prd 红警示），登录/主应用均可见。
+- `admin/.env.dev`（dev 环境 ID）、`admin/.env.prd`（prd 环境 ID）。
+- `admin/package.json` — `dev`(mode dev, :5173)、`dev:prd`(mode prd, :5174)、`build`/`build:prd`。
+
+**变更说明**：
+管理后台按 Vite mode 分 dev/prd：`npm run dev` 连 dev 环境跑 5173，`npm run dev:prd` 连 prd 环境跑 5174；两端口 origin 不同，localStorage token 天然隔离。界面角标标出当前环境，避免误操作正式数据。
+
+**验证**：
+`npm run build`/`build:prd` 产物分别注入 dev/prd 环境 ID，确认无误。

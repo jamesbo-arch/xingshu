@@ -1,4 +1,5 @@
 <template>
+  <div class="env-badge" :class="IS_PROD ? 'env-prod' : 'env-dev'">{{ ENV_LABEL }}环境</div>
   <router-view v-if="$route.path === '/login'" />
   <div v-else class="app-layout">
     <aside class="sidebar">
@@ -30,7 +31,7 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { logout } from './api'
+import { logout, ENV_LABEL, IS_PROD } from './api'
 
 const router = useRouter()
 function onLogout() {
@@ -38,3 +39,20 @@ function onLogout() {
   router.replace('/login')
 }
 </script>
+
+<style scoped>
+.env-badge {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  z-index: 9999;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  pointer-events: none;
+}
+.env-dev { background: #E6EEF6; color: #3578F6; }
+.env-prod { background: #FBE3DE; color: #B6452F; box-shadow: 0 0 0 2px rgba(182, 69, 47, 0.25); }
+</style>
