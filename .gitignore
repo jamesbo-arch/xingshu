@@ -4,6 +4,7 @@ package-lock.json
 
 # 数据库连接凭据 — 唯一来源为 .env，各云函数 db.js/secret.js 由 scripts/sync-db-config.js 生成
 .env
+.env.prod
 miniprogram/cloudfunctions/*/db.js
 miniprogram/cloudfunctions/*/secret.js
 

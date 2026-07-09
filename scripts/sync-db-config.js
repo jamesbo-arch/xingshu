@@ -3,6 +3,8 @@
 // 仅覆盖已存在 db.js 的云函数目录，不涉及数据库的云函数不受影响。
 const fs = require('fs')
 const path = require('path')
+// 可传入 env 文件名（如 .env.prod）以生成对应环境的 db.js
+if (process.argv[2]) process.env.XINGSHU_ENV_FILE = process.argv[2]
 const DB = require('../config/db')
 
 const fnRoot = path.join(__dirname, '..', 'miniprogram', 'cloudfunctions')

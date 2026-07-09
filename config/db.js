@@ -3,7 +3,7 @@
 const fs = require('fs')
 const path = require('path')
 
-const envFile = path.join(__dirname, '..', '.env')
+const envFile = path.join(__dirname, '..', process.env.XINGSHU_ENV_FILE || '.env')
 
 if (!fs.existsSync(envFile)) {
   console.error('缺少 .env 文件：请复制 .env.example 为 .env 并填入数据库连接信息')

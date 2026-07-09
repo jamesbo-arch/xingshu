@@ -4,7 +4,8 @@
     "test:unit": "node --test \"test/unit/*.test.js\"",
     "test:e2e": "node test/ping-db.js && node test/e2e-flow-test.js",
     "sync-db": "node scripts/sync-db-config.js",
-    "backup": "node scripts/backup-db.js"
+    "backup": "node scripts/backup-db.js",
+    "sync-db:prod": "node scripts/sync-db-config.js .env.prod"
   },
   "dependencies": {
     "mysql2": "^3.22.3"
