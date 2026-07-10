@@ -1,6 +1,6 @@
 const app = getApp()
 const diaryApi = require('../../api/diary')
-const socialApi = require('../../api/social')
+const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const filterUtil = require('../../utils/filter')
 const { lock, throttle } = require('../../utils/guard')
@@ -94,31 +94,13 @@ Page({
 
   onCardLike(e) {
     const { id } = e.detail
-    return lock(this, 'like' + id, async () => {
-      const result = await socialApi.toggleLike(id, 'diary')
-      if (result) {
-        this.setData({
-          diaries: this.data.diaries.map(d => d.id === id ? { ...d, isLiked: result.liked, likes: d.likes + (result.liked ? 1 : -1) } : d)
-        })
-      }
-    })
+    // 乐观更新：立即翻转 UI，后台失败自动回滚
+    return lock(this, 'like' + id, () => optimisticLike(this, id))
   },
   onCardFav(e) {
     const { id } = e.detail
-    return lock(this, 'fav' + id, async () => {
-      const result = await socialApi.toggleFav(id)
-      if (!result) return
-      wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
-      if (!result.favorited) {
-        // 「我的收藏」里取消收藏 → 该卡片即时从列表移除
-        this.setData({ diaries: this.data.diaries.filter(d => d.id !== id) })
-      } else {
-        this.setData({
-          diaries: this.data.diaries.map(d => d.id === id
-            ? { ...d, isFavorited: true, favorites: (d.favorites || 0) + 1 } : d)
-        })
-      }
-    })
+    // 「我的收藏」里取消收藏 → 卡片立即移除，后台失败原位恢复
+    return lock(this, 'fav' + id, () => optimisticFav(this, id, { removeOnUnfav: true }))
   },
   onCardShare(e) {
     const { id } = e.detail

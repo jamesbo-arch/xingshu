@@ -2392,3 +2392,17 @@ harness 走 login→isValidMember(James) = true；mapper 单测 12/12；sync-db 
 
 **验证**：
 mapper 单测 12/12。真机：详情页评论/回复时间显示为相对时间；刚发的评论显示「刚刚」。
+
+### 2026-07-11 — 列表点赞/收藏改乐观更新（点击秒响应）
+
+**类型**：前端 + 测试
+**修改文件**：
+- `miniprogram/utils/optimistic.js`（新建）— `optimisticLike`/`optimisticFav`：点击立即翻转卡片状态与计数 → 调后台 → 失败回滚（错误 toast 由 request 层已有）→ 服务端实际态与预期不同（并发）以服务端为准。`setLiked`/`setFaved` 纯函数幂等（已是目标态不重复加减、计数不为负）。`optimisticFav` 支持 `removeOnUnfav`（收藏页取消收藏卡片立即移除，失败原位恢复）。
+- `miniprogram/pages/square/index.js`、`collections/index.js`、`mine/index.js` — 六处 like/fav 处理器统一改调 optimistic 工具（原先各自 await 后台成功才 setData）；收藏 toast 也提前到点击即时。
+- `test/unit/optimistic.test.js`（新建）— setLiked/setFaved 纯函数单测 5 条（翻转/幂等/计数不为负/缺省起算）。
+
+**变更说明**：
+原实现点赞/收藏要等云函数返回（冷启动+cpolar 可达 1~3s）UI 才变化，体感卡顿。改乐观更新后点击即时反馈；lock 防连点保留。详情页底栏的点赞/收藏仍为等待后台（本次范围仅列表，如需可同样处理）。
+
+**验证**：
+全部 unit 单测 44/44（新增 5 条）。真机：弱网/冷启动下点 ♡ 图标即刻变红计数+1；断网点赞应在 toast「网络异常」后自动回退。

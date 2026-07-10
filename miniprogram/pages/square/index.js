@@ -1,6 +1,6 @@
 const app = getApp()
 const diaryApi = require('../../api/diary')
-const socialApi = require('../../api/social')
+const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const cache = require('../../utils/cache')
 const filterUtil = require('../../utils/filter')
@@ -128,35 +128,14 @@ Page({
   onCardLike(e) {
     if (!ensureLogin(this, () => this.onCardLike(e))) return
     const { id } = e.detail
-    return lock(this, 'like' + id, async () => {
-      const result = await socialApi.toggleLike(id, 'diary')
-      if (result) {
-        const diaries = this.data.diaries.map(d => {
-          if (d.id === id) {
-            return { ...d, isLiked: result.liked, likes: d.likes + (result.liked ? 1 : -1) }
-          }
-          return d
-        })
-        this.setData({ diaries })
-      }
-    })
+    // 乐观更新：立即翻转 UI，后台失败自动回滚
+    return lock(this, 'like' + id, () => optimisticLike(this, id))
   },
 
   onCardFav(e) {
     if (!ensureLogin(this, () => this.onCardFav(e))) return
     const { id } = e.detail
-    return lock(this, 'fav' + id, async () => {
-      const result = await socialApi.toggleFav(id)
-      if (result) {
-        wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
-        // 即时刷新卡片收藏态与数字（与 onCardLike 一致，避免需返回重进才更新）
-        this.setData({
-          diaries: this.data.diaries.map(d => d.id === id
-            ? { ...d, isFavorited: result.favorited, favorites: Math.max(0, (d.favorites || 0) + (result.favorited ? 1 : -1)) }
-            : d)
-        })
-      }
-    })
+    return lock(this, 'fav' + id, () => optimisticFav(this, id))
   },
 
   onCardShare(e) {
