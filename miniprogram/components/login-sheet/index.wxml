@@ -6,6 +6,17 @@
     <text class="login-title serif">成为醒书的一员</text>
     <text class="login-subtitle">{{subtitle}}</text>
 
+    <!-- 头像（选填，默认微信图标）+ 昵称（必填，点击可拉起微信昵称） -->
+    <view class="profile-fields">
+      <button class="avatar-btn" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
+        <image class="avatar-img" src="{{avatarUrl || defaultAvatar}}" mode="aspectFill"></image>
+        <view class="avatar-cam"><text class="avatar-cam-plus">＋</text></view>
+      </button>
+      <view class="nickname-row">
+        <input class="nickname-input" type="nickname" placeholder="点击填写昵称" placeholder-style="color:#A8A39B" value="{{nickname}}" bind:input="onNicknameInput" bind:blur="onNicknameInput" maxlength="20" />
+      </view>
+    </view>
+
     <!-- 协议勾选 -->
     <view class="agree-row" bindtap="onToggleAgree">
       <view class="agree-check {{agreed ? 'checked' : ''}}">
@@ -29,7 +40,7 @@
       </view>
     </view>
 
-    <text class="login-footnote">仅获取你的微信身份标识（openid/unionid），不涉及手机号。</text>
+    <text class="login-footnote">获取你的微信身份标识与昵称头像，不涉及手机号。</text>
 
     <view class="safe-bottom"></view>
   </view>

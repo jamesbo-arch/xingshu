@@ -2187,3 +2187,17 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 `node --check` 三页通过；各页顶部下拉触发刷新、松手回弹。
+
+### 2026-07-10 — 授权登录弹窗增加昵称输入 + 头像选择
+
+**类型**：前端
+**修改文件**：
+- `miniprogram/components/login-sheet/index.wxml` — 标题下方新增「头像 + 昵称」区：头像用 `<button open-type="chooseAvatar">`（带相机 ＋ 角标、默认灰底人像），昵称用 `<input type="nickname">`（点击可拉起微信昵称，居中下划线样式）；footnote 文案改为「获取你的微信身份标识与昵称头像，不涉及手机号」。
+- `miniprogram/components/login-sheet/index.js` — data 增 `nickname/avatarUrl/defaultAvatar`；新增 `onNicknameInput`（input+blur 均回填，兼容 type=nickname 仅在 blur 回填微信昵称）、`onChooseAvatar`（取临时路径）；`onLogin` 增昵称必填校验，登录时把本地临时头像 `wx.cloud.uploadFile` 传云存储换 fileID（失败则忽略头像不阻断），连同 nickname 一起走 `updateProfile({ authorize:true, nickname, avatarUrl })`。
+- `miniprogram/components/login-sheet/index.wxss` — 新增 `.profile-fields/.avatar-btn/.avatar-img/.avatar-cam/.nickname-row/.nickname-input` 样式；subtitle 下边距 36→20rpx 收紧。
+
+**变更说明**：
+授权登录（guest→authed）时同步采集昵称（必填）与头像（选填）。昵称走微信官方 `type="nickname"` 输入框，用户点击即可选用微信昵称且可编辑；头像走 `chooseAvatar` 授权，未选时展示默认灰底人像。后端 `updateUserProfile` 原就支持 nickname/avatarUrl 与 authorize 同批写入，无需改动。
+
+**验证**：
+`node --check` 通过。真机走查：任意触发登录弹窗 → 点头像可拉起微信头像授权、点昵称框可选微信昵称并可改 → 未填昵称点登录提示「请填写昵称」→ 勾协议+填昵称登录成功后会员中心显示所填昵称/头像。

@@ -13,6 +13,10 @@ Component({
     _mounted: false,
     _show: false,
     agreed: false,
+    nickname: '',
+    avatarUrl: '',
+    // 默认头像（灰底人像）——用户未选头像时展示
+    defaultAvatar: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23EFE7D4%22/%3E%3Ccircle cx=%2250%22 cy=%2240%22 r=%2216%22 fill=%22%23C4BBA6%22/%3E%3Cpath d=%22M20 84c0-17 13-26 30-26s30 9 30 26z%22 fill=%22%23C4BBA6%22/%3E%3C/svg%3E',
   },
 
   observers: {
@@ -36,20 +40,51 @@ Component({
       this.setData({ agreed: !this.data.agreed })
     },
 
+    // 昵称：输入或从微信昵称回填时均更新（type="nickname" 在 blur 时才回填微信昵称）
+    onNicknameInput(e) {
+      this.setData({ nickname: e.detail.value || '' })
+    },
+
+    // 头像：拉起微信头像授权，取临时路径，登录时再上传云存储
+    onChooseAvatar(e) {
+      this.setData({ avatarUrl: e.detail.avatarUrl })
+    },
+
     async onLogin() {
       if (!this.data.agreed) {
         wx.showToast({ title: '请先勾选同意协议', icon: 'none', duration: 1500 })
         return
       }
+      const nickname = (this.data.nickname || '').trim()
+      if (!nickname) {
+        wx.showToast({ title: '请填写昵称', icon: 'none', duration: 1500 })
+        return
+      }
       if (this._logging) return
       this._logging = true
+      wx.showLoading({ title: '登录中', mask: true })
       try {
-        const user = await userApi.updateProfile({ authorize: true })
+        let avatarUrl = this.data.avatarUrl
+        // 本地临时头像（非 cloud://、非 http）先上传云存储换 fileID
+        if (avatarUrl && !/^(cloud:\/\/|https?:\/\/)/.test(avatarUrl)) {
+          try {
+            const ext = (avatarUrl.match(/\.(\w+)(?:\?|$)/) || [, 'png'])[1]
+            const cloudPath = `avatars/${Date.now()}-${Math.floor(Math.random() * 1e6)}.${ext}`
+            const up = await wx.cloud.uploadFile({ cloudPath, filePath: avatarUrl })
+            avatarUrl = up.fileID
+          } catch (err) {
+            avatarUrl = '' // 头像上传失败不阻断登录，仅忽略头像
+          }
+        }
+        const patch = { authorize: true, nickname }
+        if (avatarUrl) patch.avatarUrl = avatarUrl
+        const user = await userApi.updateProfile(patch)
         if (user) {
           getApp().globalData.user = user
           this.triggerEvent('success', { user })
         }
       } finally {
+        wx.hideLoading()
         this._logging = false
       }
     },
