@@ -40,6 +40,14 @@ Component({
       this.setData({ agreed: !this.data.agreed })
     },
 
+    onOpenAgreement() {
+      wx.navigateTo({ url: '/pages/doc/index?type=agreement' })
+    },
+
+    onOpenPrivacy() {
+      wx.navigateTo({ url: '/pages/doc/index?type=privacy' })
+    },
+
     // 昵称：输入或从微信昵称回填时均更新（type="nickname" 在 blur 时才回填微信昵称）
     onNicknameInput(e) {
       this.setData({ nickname: e.detail.value || '' })

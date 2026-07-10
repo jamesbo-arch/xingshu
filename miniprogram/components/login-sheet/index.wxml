@@ -22,7 +22,7 @@
       <view class="agree-check {{agreed ? 'checked' : ''}}">
         <text wx:if="{{agreed}}" class="agree-tick">✓</text>
       </view>
-      <text class="agree-text">已阅读并同意<text class="agree-link">《服务协议》</text><text class="agree-link">《隐私协议》</text></text>
+      <text class="agree-text">已阅读并同意<text class="agree-link" catch:tap="onOpenAgreement">《服务协议》</text><text class="agree-link" catch:tap="onOpenPrivacy">《隐私协议》</text></text>
     </view>
 
     <!-- 登录按钮 -->
