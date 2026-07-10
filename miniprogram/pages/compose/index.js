@@ -25,9 +25,9 @@ Page({
     pickerSelectedTags: [],
     pickerTagSet: {},
     permOptions: [
-      { key: 'public', label: '公众', desc: '所有人可见', ic: 'ic-eye' },
-      { key: 'member', label: '会员', desc: '仅会员可见', ic: 'ic-star-gold' },
-      { key: 'private', label: '私密', desc: '仅自己可见', ic: 'ic-lock' },
+      { key: 'public', label: '公众可读', desc: '所有人可见', ic: 'ic-eye' },
+      { key: 'member', label: '会员可读', desc: '仅会员可见', ic: 'ic-star-gold' },
+      { key: 'private', label: '个人草稿', desc: '仅自己可见', ic: 'ic-draft' },
     ],
     maxTitle: 30,
     maxContent: 3000,

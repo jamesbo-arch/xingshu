@@ -53,9 +53,9 @@ Component({
     },
 
     getPermLabel(perm) {
-      if (perm === 'public') return '公众'
-      if (perm === 'member') return '会员'
-      if (perm === 'private') return '私密'
+      if (perm === 'public') return '公众可读'
+      if (perm === 'member') return '会员可读'
+      if (perm === 'private') return '个人草稿'
       return ''
     },
 

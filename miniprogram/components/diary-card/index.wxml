@@ -23,7 +23,7 @@
       <view class="perm-ic ic-star-gold"></view>
     </view>
     <view wx:if="{{diary.permission === 'private'}}" class="perm-badge perm-private">
-      <view class="perm-ic ic-lock"></view>
+      <view class="perm-ic ic-draft"></view>
     </view>
   </view>
 
