@@ -5,7 +5,7 @@
   <!-- Custom header -->
   <view class="page-header">
     <view class="header-top">
-      <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書日記</text><kefu-fab mode="inline" /></view>
+      <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書日記</text><kefu-fab /></view>
     </view>
 
     <!-- Search bar -->

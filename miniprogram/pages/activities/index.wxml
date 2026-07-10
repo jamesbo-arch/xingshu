@@ -1,7 +1,7 @@
 <view class="page-wrap paper-bg">
   <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
   <view class="page-header">
-    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書活動</text><kefu-fab mode="inline" /></view>
+    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書活動</text><kefu-fab /></view>
     <text class="page-subtitle">线上线下，与同路人相见</text>
   </view>
 

@@ -4,11 +4,6 @@ const CORP_ID = 'ww6e6791e71177150a'
 const KF_URL = '' // TODO: 填入客服链接后生效
 
 Component({
-  properties: {
-    // inline = 页面标题后的小圆钮；float = 右缘浮标（原生导航栏页面用，如 detail/doc）
-    mode: { type: String, value: 'float' },
-  },
-
   methods: {
     onTap() {
       if (!KF_URL) {

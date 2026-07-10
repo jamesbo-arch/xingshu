@@ -4,7 +4,7 @@
   <!-- Header -->
   <view class="page-header">
     <view class="header-top">
-      <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">我的收藏</text><kefu-fab mode="inline" /></view>
+      <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">我的收藏</text><kefu-fab /></view>
     </view>
     <view class="search-row">
       <view class="search-bar">

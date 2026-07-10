@@ -6,7 +6,7 @@
     <view class="nav-back" bindtap="onBack">
       <view class="nav-back-icon ic-back"></view>
     </view>
-    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="nav-title serif">{{isEditing ? '编辑日记' : '新建日记'}}</text><kefu-fab mode="inline" /></view>
+    <text class="nav-title serif">{{isEditing ? '编辑日记' : '新建日记'}}</text>
     <view class="nav-back"></view>
   </view>
 

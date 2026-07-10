@@ -2,7 +2,7 @@
   <view style="height: {{statusBarHeight}}px;"></view>
 
   <view class="page-header">
-    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">会员中心</text><kefu-fab mode="inline" /></view>
+    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">会员中心</text><kefu-fab /></view>
   </view>
 
   <!-- 固定顶部：身份卡（会员额外含有效期卡） -->
