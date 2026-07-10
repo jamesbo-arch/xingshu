@@ -39,9 +39,9 @@ Page({
     maxContent: 3000,
     statusBarHeight: 0,
     // 富文本工具条：编辑正文时常驻；fmt* 高亮选区已有格式；barBottom 为工具条距底像素（键盘高度+拖拽偏移）
-    // barCollapsed：缩小成右侧小把手（默认），点击展开/收起，缩小态仍可拖拽
+    // barCollapsed：展开/缩小（默认展开），点击把手缩为右侧小把手，缩小态仍可拖拽
     showFormatBar: false,
-    barCollapsed: true,
+    barCollapsed: false,
     barBottom: 0,
     fmtBold: false,
     fmtItalic: false,
