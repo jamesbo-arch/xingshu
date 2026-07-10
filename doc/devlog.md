@@ -2339,3 +2339,14 @@ harness 走 login→isValidMember(James) = true；mapper 单测 12/12；sync-db 
 
 **验证**：
 `node --check` 通过。真机：工具条 5 色点+B/I/U+列表×2+居中共 11 键单行不换行；点列表/居中生效且高亮，再点取消；保存后详情页列表序号/圆点与居中生效。
+
+### 2026-07-10 — 富文本工具条增加拖拽把手，可上下移动
+
+**类型**：前端
+**修改文件**：
+- `miniprogram/pages/compose/index.wxml` — 工具条最右加把手（竖向双列圆点图标），`catch:touchstart/touchmove/touchend` 拖拽；bottom 改绑 JS 计算的 `barBottom`。
+- `miniprogram/pages/compose/index.js` — 定位改 JS 统一算：`barBottom = (键盘高度 || 默认底距) + 拖拽偏移`；默认底距 onLoad 按屏宽换算 130rpx+safe-area；拖拽偏移 clamp 在 [0, 屏高-基线-120]，防拖出屏幕；键盘弹收时保留偏移。
+- `miniprogram/pages/compose/index.wxss` — `.fmt-grip`/`.ic-fmt-grip` 样式（点击区 44×52rpx 大于图标便于按住）。
+
+**验证**：
+`node --check` 通过。真机：点住最右把手上下拖，工具条随手指移动且不超出屏幕；键盘弹起/收起后偏移保留；拖动时页面不跟随滚动（catch 阻止）；其余按钮点击不受影响。

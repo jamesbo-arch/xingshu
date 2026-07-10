@@ -38,9 +38,9 @@ Page({
     maxTitle: 30,
     maxContent: 3000,
     statusBarHeight: 0,
-    // 富文本工具条：选中文字时出现；fmt* 高亮选区已有格式
+    // 富文本工具条：编辑正文时常驻；fmt* 高亮选区已有格式；barBottom 为工具条距底像素（键盘高度+拖拽偏移）
     showFormatBar: false,
-    kbHeight: 0,
+    barBottom: 0,
     fmtBold: false,
     fmtItalic: false,
     fmtUnderline: false,
@@ -61,8 +61,14 @@ Page({
     const info = wx.getWindowInfo()
     const isMember = ((app.globalData.user || {}).identity === 'member')
     this.setData({ statusBarHeight: info.statusBarHeight || 0, allTags: app.globalData.tags, isMember })
-    // 工具条跟随键盘（editor 不自动避让键盘，官方 editor demo 同款做法）
-    this._onKb = res => this.setData({ kbHeight: res.height || 0 })
+    // 工具条跟随键盘（editor 不自动避让键盘，官方 editor demo 同款做法）+ 可拖拽上下移
+    const safeBottom = info.safeArea ? Math.max(0, (info.screenHeight || 0) - info.safeArea.bottom) : 0
+    this._winHeight = info.windowHeight || 667
+    this._barBase = Math.round(130 * (info.windowWidth || 375) / 750) + safeBottom // 键盘收起时的默认底距（≈底部操作栏上方）
+    this._kb = 0
+    this._barOffset = 0 // 用户拖拽的额外抬升量
+    this._updateBar()
+    this._onKb = res => { this._kb = res.height || 0; this._updateBar() }
     wx.onKeyboardHeightChange(this._onKb)
     // 离开前脏检查的基线：新建为默认值，编辑为加载到的原值
     this._html = ''
@@ -135,6 +141,26 @@ Page({
       activeColor: match ? match.value : '',
     })
   },
+
+  // 工具条底距 = 键盘高度（收起时用默认底距）+ 拖拽偏移
+  _updateBar() {
+    const base = this._kb > 0 ? this._kb : this._barBase
+    this.setData({ barBottom: base + this._barOffset })
+  },
+
+  // 拖拽把手：点住上下移动工具条（catch 阻止页面滚动）
+  onBarDragStart(e) {
+    this._dragY = e.touches[0].clientY
+    this._dragStartOffset = this._barOffset
+  },
+  onBarDragMove(e) {
+    const delta = this._dragY - e.touches[0].clientY // 上移为正
+    const base = this._kb > 0 ? this._kb : this._barBase
+    const max = this._winHeight - base - 120 // 顶部留余量，防拖出屏幕
+    this._barOffset = Math.min(max, Math.max(0, this._dragStartOffset + delta))
+    this._updateBar()
+  },
+  onBarDragEnd() {},
 
   // 编辑正文时工具条常驻键盘上方；失焦（键盘收起）隐藏
   onEditorFocus() {

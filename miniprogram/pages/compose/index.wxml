@@ -111,7 +111,7 @@
   <view
     wx:if="{{showFormatBar}}"
     class="format-bar"
-    style="bottom: {{kbHeight > 0 ? kbHeight + 'px' : 'calc(130rpx + env(safe-area-inset-bottom))'}}"
+    style="bottom: {{barBottom}}px"
   >
     <view
       wx:for="{{formatColors}}"
@@ -135,6 +135,15 @@
     </view>
     <view class="fmt-btn {{fmtCenter ? 'fmt-on' : ''}}" data-name="align" data-value="center" catch:touchend="onFormat">
       <view class="fmt-ic {{fmtCenter ? 'ic-fmt-ac-w' : 'ic-fmt-ac'}}"></view>
+    </view>
+    <!-- 拖拽把手：点住上下移动工具条 -->
+    <view
+      class="fmt-grip"
+      catch:touchstart="onBarDragStart"
+      catch:touchmove="onBarDragMove"
+      catch:touchend="onBarDragEnd"
+    >
+      <view class="fmt-ic ic-fmt-grip"></view>
     </view>
   </view>
 
