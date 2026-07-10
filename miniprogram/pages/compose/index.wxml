@@ -107,9 +107,21 @@
     <view class="compose-bottom-pad"></view>
   </scroll-view>
 
-  <!-- 富文本工具条：选中正文文字时出现（catch:touchend 防编辑器失焦丢选区），跟随键盘高度 -->
+  <!-- 富文本工具条（缩小态）：右侧小把手，点击展开，可拖拽上下 -->
   <view
-    wx:if="{{showFormatBar}}"
+    wx:if="{{showFormatBar && barCollapsed}}"
+    class="fmt-tab"
+    style="bottom: {{barBottom}}px"
+    catch:touchstart="onBarDragStart"
+    catch:touchmove="onBarDragMove"
+    catch:touchend="onBarTabEnd"
+  >
+    <view class="fmt-ic ic-fmt-expand"></view>
+  </view>
+
+  <!-- 富文本工具条（展开态）：catch:touchend 防编辑器失焦丢选区，跟随键盘高度 -->
+  <view
+    wx:if="{{showFormatBar && !barCollapsed}}"
     class="format-bar"
     style="bottom: {{barBottom}}px"
   >

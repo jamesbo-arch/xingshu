@@ -2368,3 +2368,17 @@ harness 走 login→isValidMember(James) = true；mapper 单测 12/12；sync-db 
 
 **验证**：
 `node --check` 通过。真机：把手可把工具条拖到屏幕最底/接近屏顶任意位置；拖到底后收起/弹出键盘，工具条仍在屏内。
+
+### 2026-07-11 — 工具条可缩小到右侧小把手，默认缩小
+
+**类型**：前端
+**修改文件**：
+- `miniprogram/pages/compose/index.js` — data 增 `barCollapsed: true`（默认缩小）；拖拽 start/move 记录 `_dragMoved`（位移>8px 算拖拽）；展开态把手 touchend 未拖动→缩回，缩小态小把手 touchend 未拖动→展开（`onBarTabEnd`）。
+- `miniprogram/pages/compose/index.wxml` — 两态渲染：缩小态为右侧贴边半药丸 `fmt-tab`（‹ 图标，catch 三事件共用拖拽处理器）；展开态为原 format-bar。
+- `miniprogram/pages/compose/index.wxss` — `.fmt-tab`（64×96rpx 右贴边、左圆角）与 `.ic-fmt-expand` 图标。
+
+**变更说明**：
+编辑正文时默认只出现右侧小把手不遮内容；点它展开完整工具条，点展开态最右的圆点把手缩回；两种状态下都可点住上下拖动（同一 barBottom，位置互通）。点击与拖拽用 8px 位移阈值区分。
+
+**验证**：
+`node --check` 通过。真机：聚焦正文出现右侧小把手（默认缩小）→ 点击展开 11 键工具条 → 点最右圆点把手缩回 → 两态均可拖拽上下且位置保持一致；缩小态拖动松手不误触展开。

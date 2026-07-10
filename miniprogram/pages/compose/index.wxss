@@ -227,6 +227,27 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FBF7EE' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18M7 12h10M5 18h14'/%3E%3C/svg%3E");
 }
 
+/* 缩小态：右侧半药丸小把手（点击展开，可拖拽上下） */
+.fmt-tab {
+  position: fixed;
+  right: 0;
+  z-index: 40;
+  width: 64rpx;
+  height: 96rpx;
+  background: #FFFCF5;
+  border: 1px solid rgba(126, 102, 64, 0.18);
+  border-right: none;
+  border-radius: 16rpx 0 0 16rpx;
+  box-shadow: 0 8rpx 24rpx rgba(42, 39, 35, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ic-fmt-expand {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%237A746A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M15 18l-6-6 6-6'/%3E%3C/svg%3E");
+}
+
 /* 拖拽把手：竖向双列圆点 */
 .fmt-grip {
   width: 44rpx;

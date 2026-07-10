@@ -39,7 +39,9 @@ Page({
     maxContent: 3000,
     statusBarHeight: 0,
     // 富文本工具条：编辑正文时常驻；fmt* 高亮选区已有格式；barBottom 为工具条距底像素（键盘高度+拖拽偏移）
+    // barCollapsed：缩小成右侧小把手（默认），点击展开/收起，缩小态仍可拖拽
     showFormatBar: false,
+    barCollapsed: true,
     barBottom: 0,
     fmtBold: false,
     fmtItalic: false,
@@ -149,20 +151,30 @@ Page({
     this.setData({ barBottom: bottom })
   },
 
-  // 拖拽把手：点住上下移动工具条（catch 阻止页面滚动），范围开放全屏（屏底 ~ 屏顶留自身高度）
+  // 拖拽把手：点住上下移动工具条（catch 阻止页面滚动），范围开放全屏（屏底 ~ 屏顶留自身高度）。
+  // 移动未超阈值视为「点击」：缩小态点击展开、展开态点把手缩回右侧。
   onBarDragStart(e) {
     this._dragY = e.touches[0].clientY
     this._dragStartOffset = this._barOffset
+    this._dragMoved = false
   },
   onBarDragMove(e) {
     const delta = this._dragY - e.touches[0].clientY // 上移为正
+    if (Math.abs(delta) > 8) this._dragMoved = true
     const base = this._kb > 0 ? this._kb : this._barBase
     const min = -base                            // 最低：贴屏幕底边
     const max = this._winHeight - base - 60      // 最高：屏顶留工具条自身高度
     this._barOffset = Math.min(max, Math.max(min, this._dragStartOffset + delta))
     this._updateBar()
   },
-  onBarDragEnd() {},
+  // 展开态把手：拖=移动，点=缩回
+  onBarDragEnd() {
+    if (!this._dragMoved) this.setData({ barCollapsed: true })
+  },
+  // 缩小态小把手：拖=移动，点=展开
+  onBarTabEnd() {
+    if (!this._dragMoved) this.setData({ barCollapsed: false })
+  },
 
   // 编辑正文时工具条常驻键盘上方；失焦（键盘收起）隐藏
   onEditorFocus() {
