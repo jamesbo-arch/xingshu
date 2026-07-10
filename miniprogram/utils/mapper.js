@@ -42,8 +42,8 @@ function comment(item) {
   }
 }
 
-// 绝对时间：直接字符串解析，不经 new Date（避免 ISO 的 UTC→本地偏移把 12:04 变 20:04）
-// withTime=true → "YYYY-MM-DD HH:MM"（详情）；false → "YYYY-MM-DD"（海报）
+// DB 存的即北京时间（连接会话时区 +08:00，dateStrings 返回原始字面串），故直接
+// 字符串解析显示，不做时区换算。withTime=true → "YYYY-MM-DD HH:MM"（详情）；false → "YYYY-MM-DD"（海报）
 function absTime(t, withTime) {
   if (!t) return ''
   const s = String(t).replace('T', ' ')

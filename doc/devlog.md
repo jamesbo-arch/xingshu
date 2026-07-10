@@ -2222,6 +2222,38 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 **验证**：
 `node test/ping-db.js` 通过；受影响的 6 个云函数测试（roundtrip/comment/share/tag/admin/permission）全绿（8/5/7/3/13/11 passed, 0 failed）。前端 `node --check` 全通过。
 
+### 2026-07-10 — 修复日记时间晚 8 小时（UTC→北京时间）
+
+**类型**：前端 + 测试
+**修改文件**：
+- `miniprogram/utils/mapper.js` — `absTime`/`formatTime` 重写：新增 `parseUTCms(t)` 把 DB 时间（"YYYY-MM-DD HH:MM:SS" 或 ISO "…T…Z"）当 UTC 解析为毫秒瞬间；`absTime` +8 转北京时间后用 `getUTC*` 取字段（详情 timestamp / 海报 dateText）；`formatTime` 用真实瞬间算 diff（时区无关），昨天/更早显示北京时分。
+- `test/unit/mapper.test.js` — 断言由旧「字面不 +8」改为「UTC→北京 +8」：09:00→17:00、12:04Z→20:04、14:30→22:30。
+
+**变更说明**：
+根因：新 NAS 数据库服务器会话时区为 UTC（`NOW()==UTC_TIMESTAMP()`），`created_at datetime DEFAULT CURRENT_TIMESTAMP` 存的是 UTC；原 `absTime` 字面显示 UTC 数字，导致比北京时间晚 8 小时。生产截图（显示 10:26、实为 18:26）证实前端收到的即 UTC 数字。修法为显示端统一把 DB 时间当 UTC、+8 转北京，用 `getUTC*` 读取，与设备时区无关，覆盖新旧全部数据，无需改数据库连接、无需重新部署云函数。
+
+**验证**：
+`node --test test/unit/mapper.test.js` 12/12 通过。真机日记详情时间应显示为正确北京时间（较原显示 +8h）。
+
+**遗留**：评论时间 `comment.time` 仍透传 raw created_at（detail 直接渲染），与本次日记时间无关，未纳入本次修改。
+
+### 2026-07-10 — 改为数据库存北京时间（替代显示端 +8）
+
+**类型**：数据库 + 云函数配置 + 前端 + 测试
+**修改文件**：
+- `scripts/sync-db-config.js` — db.js 模板：createPool 加 `dateStrings: true`（日期列返回原始字面串，跨运行时确定性），并 `pool.on('connection', c => c.query("SET time_zone='+08:00'"))`（会话时区北京，使 NOW()/CURRENT_TIMESTAMP 写北京时间）。`npm run sync-db` 已重生成 23 个云函数 db.js。
+- `config/db.js` — 同加 `dateStrings: true`，令测试脚本读取与云函数一致。
+- `miniprogram/utils/mapper.js` — `absTime`/`formatTime` 撤销上一版的 UTC→+8 换算，改回字符串字面显示（DB 已存北京时间）。
+- `test/unit/mapper.test.js` — 断言改回字面（09:00/12:04/14:30）。
+- 数据迁移（dev 库 xingshu_dev）：`UPDATE diaries/comments SET created_at = created_at + INTERVAL 8 HOUR`，把历史 UTC 行补 +8 为北京时间（diaries 354 行、comments 21 行）。
+
+**变更说明**：
+上一版在显示端 +8 只修了小程序，管理后台/直接查库仍是 UTC。改为**数据库层存北京时间**：连接会话时区 +08:00 使写入即北京；`dateStrings` 使读取在任何运行时都返回相同的北京字面串（消除 mysql2 驱动跨运行时的时区解释差异）；前端 mapper 回归字面显示。验证：harness 新建日记存储值=真实北京时间；截图那条 id=852「今天感悟」10:26→18:26；全量测试与 mapper 单测全绿。
+
+**部署要求（重要）**：
+1. **必须重新部署全部云函数**（新 db.js 含会话时区+dateStrings），并同步上传更新后的小程序——两者要一起生效，否则会出现 8 小时错位。
+2. 正式环境：`npm run sync-db:prod` 重生成 prod db.js 后部署；xingshu_prod 当前无历史数据，无需迁移。
+
 ### 2026-07-10 — 日记正文富文本：颜色/粗斜体/下划线 + 选中浮出工具条
 
 **类型**：前端 + 数据库 + 云函数 + 测试
@@ -2240,3 +2272,20 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 `npm test` 全量全绿（roundtrip 11、permission 11 含新增断言）；mapper 单测 12/12。**待真机验证**：editor `height:auto` 自增高、选中浮条出现/收起、格式应用后选区保持、旧日记编辑回填。
 
 **部署要求**：重新部署 createDiary / updateDiary / getDiaryDetail / getDiaryList / admin 共 5 个云函数 + 上传小程序；prod 库执行 content_rich ALTER。
+
+### 2026-07-10 — 修复：编辑器旧缓冲覆盖导致 6 文件回退被误提交（会员再次被拦根因）
+
+**类型**：前端 + 配置 + 文档
+**修改文件**：
+- `miniprogram/utils/auth-guard.js` — 恢复 9ac422b 修复版 `isValidMember`（读 snake `member_until` + 正则取日期段）。回退版读 camel `memberUntil` 恒 undefined，导致会员点写日记再次弹「会员专享」。
+- `config/db.js`、`scripts/sync-db-config.js` — 恢复 d819fdc 的 `dateStrings: true` 与会话时区 `SET time_zone='+08:00'`（模板丢失的话，下次 sync-db 会把 23 个云函数的时区配置全部冲掉）。已重跑 `npm run sync-db`。
+- `doc/devlog.md` — 恢复 d819fdc 全量（找回被覆盖的「时间晚8小时」与「存北京时间」两条）+ 拼回富文本条目。
+- `miniprogram/utils/mapper.js`、`test/unit/mapper.test.js` — 注释/用例标题恢复为「DB 已存北京时间」的准确表述（行为本就一致，仅注释误导）。
+
+**变更说明**：
+根因：富文本提交（21bdd2a）前，工作区有 6 个文件被回退到时区改造前的旧内容（迹象符合编辑器旧缓冲区覆盖保存——恰好是当天动过的文件），`git add -A` 把回退一并扫进了提交。其中 auth-guard 回退直接复现「会员被误判非会员」；sync-db 模板回退是隐患（尚未触发，因生成物在盘上仍是新版）。已逐文件从 git 历史恢复。
+
+**教训**：提交前应 `git diff --stat` 核对文件清单，出现「本次未改动的文件」时先查明再提交；微信开发者工具/VSCode 同开时留意外部修改提示。
+
+**验证**：
+harness 走 login→isValidMember(James) = true；mapper 单测 12/12；sync-db 重生成 23 个 db.js 含时区+dateStrings。**真机需重新编译**后会员写日记恢复正常。

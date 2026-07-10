@@ -28,6 +28,7 @@ module.exports = {
   user: env.MYSQL_USER,
   password: env.MYSQL_PASSWORD,
   database: env.MYSQL_DATABASE,
+  dateStrings: true, // 日期列返回原始字面串，与云函数一致（跨运行时确定性）
 }
 
 // 不可枚举：避免被展开进 mysql2 连接参数

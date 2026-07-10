@@ -27,9 +27,9 @@ test('diary：数据库行映射为前端字段', () => {
   assert.strictEqual(d.dateText, '2025-01-15')          // 海报：年月日
 })
 
-test('diary：ISO 时间（含 T/Z）按字符串解析，不发生 UTC→本地偏移', () => {
+test('diary：时间按字符串字面解析（DB 已存北京时间，不做时区换算）', () => {
   const d = mapper.diary({ created_at: '2026-06-19T12:04:28.000Z' })
-  assert.strictEqual(d.timestamp, '2026-06-19 12:04')  // 保持 12:04，不被 +8 变 20:04
+  assert.strictEqual(d.timestamp, '2026-06-19 12:04')  // 字面 12:04，不偏移
   assert.strictEqual(d.dateText, '2026-06-19')
 })
 
