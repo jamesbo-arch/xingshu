@@ -446,7 +446,7 @@
       <text class="sheet-title serif">设置</text>
       <view class="section-card settings-links">
         <view class="settings-row" bindtap="onOpenAgreement">
-          <text class="settings-row-text">用户协议</text>
+          <text class="settings-row-text">用户服务协议</text>
           <view class="settings-row-arrow ic-chevron"></view>
         </view>
         <view class="settings-row no-border" bindtap="onOpenPrivacy">

@@ -1,6 +1,6 @@
 // 协议查看页：据 type 显示用户协议 / 隐私协议
 // 注：以下为基础模板，正式发布前请由运营/法务核对，并补全运营主体全称与联系方式。
-const AGREEMENT = `《醒书日记用户协议》
+const AGREEMENT = `《醒书日记用户服务协议》
 
 生效日期：2026-07-09
 
@@ -79,7 +79,7 @@ const PRIVACY = `《醒书日记隐私政策》
 如对本政策或你的个人信息有任何疑问，可通过会员中心提供的运营联系方式与我们联系。`
 
 const DOCS = {
-  agreement: { title: '用户协议', body: AGREEMENT },
+  agreement: { title: '用户服务协议', body: AGREEMENT },
   privacy: { title: '隐私协议', body: PRIVACY },
 }
 
