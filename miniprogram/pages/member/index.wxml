@@ -2,7 +2,7 @@
   <view style="height: {{statusBarHeight}}px;"></view>
 
   <view class="page-header">
-    <text class="page-title serif">会员中心</text>
+    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">会员中心</text><kefu-fab mode="inline" /></view>
   </view>
 
   <!-- 固定顶部：身份卡（会员额外含有效期卡） -->
@@ -462,6 +462,3 @@
 
 <!-- 隐私授权弹窗（敏感接口首次调用时触发） -->
 <privacy-popup></privacy-popup>
-
-<!-- 客服浮标（全局） -->
-<kefu-fab />

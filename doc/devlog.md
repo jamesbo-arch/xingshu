@@ -2420,3 +2420,14 @@ mapper 单测 12/12。真机：详情页评论/回复时间显示为相对时间
 
 **验证**：
 app.json 解析正常、组件 js 语法通过。真机：各页右缘见金棕耳麦浮标；填入 KF_URL 前点按提示「客服暂未开通」，填入后应拉起微信客服会话（需真机，开发者工具不支持该 API）。
+
+### 2026-07-11 — 客服图标移到页面标题后面
+
+**类型**：前端
+**修改文件**：
+- `miniprogram/components/kefu-fab/*` — 组件加 `mode` 属性：`inline`（56rpx 小圆钮，随文档流）/ `float`（原右缘浮标，默认）。
+- 7 个有页内标题的页面（square/activities/collections/mine/member/compose/activity-detail）— 标题包行内 flex，`<kefu-fab mode="inline"/>` 紧跟标题文字后；页尾浮标挂载移除。
+- `detail`/`doc` — 原生导航栏无页内标题，保留右缘浮标。
+
+**验证**：
+grep 复查：7 页仅 inline 版、2 页仅 float 版。真机：各 tab 页/写日记/活动详情标题右侧见金棕小圆钮，点击行为不变（KF_URL 未填时 toast）。

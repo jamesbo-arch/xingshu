@@ -2,7 +2,7 @@
   <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
   <view class="detail-nav">
     <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
-    <text class="nav-title serif">{{isPast ? '活動回顧' : '活動詳情'}}</text>
+    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="nav-title serif">{{isPast ? '活動回顧' : '活動詳情'}}</text><kefu-fab mode="inline" /></view>
     <view class="nav-right" bindtap="onOpenPoster"><view class="nav-share-icon ic-share"></view></view>
   </view>
 
@@ -149,6 +149,3 @@
 
 <!-- 隐私授权弹窗（敏感接口首次调用时触发） -->
 <privacy-popup></privacy-popup>
-
-<!-- 客服浮标（全局） -->
-<kefu-fab />
