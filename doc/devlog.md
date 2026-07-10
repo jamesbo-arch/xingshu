@@ -2201,3 +2201,23 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 `node --check` 通过。真机走查：任意触发登录弹窗 → 点头像可拉起微信头像授权、点昵称框可选微信昵称并可改 → 未填昵称点登录提示「请填写昵称」→ 勾协议+填昵称登录成功后会员中心显示所填昵称/头像。
+
+### 2026-07-10 — 写日记权限收紧为会员专享
+
+**类型**：前端 + 云函数 + 测试
+**修改文件**：
+- `miniprogram/utils/auth-guard.js` — 新增 `isValidMember(user)`（identity=member 且 memberUntil>=今天）与 `ensureMember(page, action)`（非有效会员弹窗「会员专享」引导至会员中心，有效会员执行 action），并 export。
+- `miniprogram/pages/square/index.js` — 写日记 FAB 由 `ensureLogin` 改 `ensureMember`。
+- `miniprogram/pages/mine/index.js` — 引入 `ensureMember`，FAB 写日记与卡片编辑均加会员守卫。
+- `miniprogram/cloudfunctions/createDiary/index.js`、`updateDiary/index.js` — 服务端兜底由「仅会员可发会员专属日记」升级为「写/编辑日记本身即需有效会员」（`!validMember` 直接拒绝）。
+- `test/fn-roundtrip-test.js` — 主 CRUD 路径改用会员 mock_yanqiu；负向用例改为「非会员写日记/编辑 → 拒绝」。
+- `test/fn-comment-test.js`、`fn-share-test.js` — 建日记前将测试用户升为有效会员（结束随用户硬删）。
+- `test/fn-tag-test.js` — 建关联日记身份由 mock_me 改会员 mock_yanqiu。
+- `test/fn-admin-test.js` — 删除/批量删除用例的建日记作者由 mock_me 改会员 mock_yanqiu（互动方改 mock_me 避免自互动）。
+- `CLAUDE.md` — 身份权限矩阵「写日记/编辑」行改为「会员专享」；要点 1/2/4/5 同步（authed→member 差异新增写作、新增 ensureMember 判定来源）。
+
+**变更说明**：
+原「已授权即可写日记」改为「仅有效会员可写/编辑日记」。前端在写入口（广场/我的日记 FAB、我的日记编辑）用 `ensureMember` 拦截：非会员（含 guest）弹窗引导至会员中心开通（会员中心自带登录+开通，故无需给 mine 页加登录弹窗）。后端 createDiary/updateDiary 权威兜底，防绕过。有效会员判定与后端一致（含有效期，过期按非会员）。
+
+**验证**：
+`node test/ping-db.js` 通过；受影响的 6 个云函数测试（roundtrip/comment/share/tag/admin/permission）全绿（8/5/7/3/13/11 passed, 0 failed）。前端 `node --check` 全通过。

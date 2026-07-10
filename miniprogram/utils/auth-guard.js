@@ -20,6 +20,39 @@ function ensureLogin(page, action) {
   return false
 }
 
+// 有效会员判定：identity=member 且 memberUntil>=今天（与后端一致，过期按非会员）
+function isValidMember(user) {
+  if (!user || user.identity !== 'member') return false
+  const mu = user.memberUntil
+  if (!mu) return false
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const until = new Date(String(mu).slice(0, 10).replace(/-/g, '/'))
+  return !isNaN(until.getTime()) && until >= today
+}
+
+// 会员专享操作守卫（如写日记）：非有效会员弹窗引导至会员中心；有效会员执行 action
+// 返回 true = 有效会员已放行；false = 已弹窗拦截
+function ensureMember(page, action) {
+  const user = getApp().globalData.user || {}
+  if (isValidMember(user)) {
+    if (typeof action === 'function') action()
+    return true
+  }
+  const isGuest = (user.identity || 'guest') === 'guest'
+  wx.showModal({
+    title: '会员专享',
+    content: isGuest
+      ? '写日记是会员专享功能，请登录并开通会员后使用。'
+      : '写日记是会员专享功能，开通会员后即可记录你的醒书日记。',
+    confirmText: '去开通',
+    cancelText: '再想想',
+    success: (res) => {
+      if (res.confirm) wx.switchTab({ url: '/pages/member/index' })
+    },
+  })
+  return false
+}
+
 // 登录成功：收起弹窗并自动继续触发前的原操作
 function handleLoginSuccess(page) {
   page.setData({ showLoginSheet: false })
@@ -29,4 +62,4 @@ function handleLoginSuccess(page) {
   if (typeof action === 'function') action()
 }
 
-module.exports = { ensureLogin, handleLoginSuccess, toggleTabBar }
+module.exports = { ensureLogin, ensureMember, isValidMember, handleLoginSuccess, toggleTabBar }

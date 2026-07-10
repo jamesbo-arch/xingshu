@@ -13,9 +13,9 @@ exports.main = async (event, context) => {
   if (!users.length) return { code: -1, msg: 'user not found' }
   const userId = users[0].id
 
-  // 服务端兜底：仅有效会员（身份 member 且未过期）可发布「会员专属」日记（前端已置灰，防绕过）
-  if (permission === 'member' && !users[0].validMember) {
-    return { code: -1, msg: '仅会员可发布会员专属日记' }
+  // 服务端兜底：写日记为会员专享（身份 member 且未过期），前端已拦截，防绕过
+  if (!users[0].validMember) {
+    return { code: -1, msg: '写日记是会员专享功能，请先开通会员' }
   }
 
   const conn = await db.getConnection()

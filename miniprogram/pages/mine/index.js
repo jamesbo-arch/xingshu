@@ -2,6 +2,7 @@ const app = getApp()
 const diaryApi = require('../../api/diary')
 const mapper = require('../../utils/mapper')
 const { lock, throttle } = require('../../utils/guard')
+const { ensureMember } = require('../../utils/auth-guard')
 
 Page({
   data: {
@@ -61,7 +62,7 @@ Page({
   onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
 
   onCardOpen(e) { throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + e.detail.id })) },
-  onCardEdit(e) { throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/compose/index?diaryId=' + e.detail.id })) },
+  onCardEdit(e) { ensureMember(this, () => throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/compose/index?diaryId=' + e.detail.id }))) },
   onCardDelete(e) {
     const { id } = e.detail
     return lock(this, 'del' + id, async () => {
@@ -74,7 +75,7 @@ Page({
     })
   },
 
-  onFabTap() { throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/compose/index' })) },
+  onFabTap() { ensureMember(this, () => throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/compose/index' }))) },
   onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
 
   async onRefresh() {

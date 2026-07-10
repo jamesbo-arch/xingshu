@@ -24,6 +24,8 @@ async function run() {
 
   // 准备：登录建用户 → 建私密日记（初始 share_count=0）
   await callFn('login', {}, OPENID)
+  // 写日记为会员专享，将测试用户升为有效会员后再建日记（结束时随用户硬删）
+  await conn.query("UPDATE users SET identity='member', member_until=DATE_ADD(CURDATE(),INTERVAL 1 YEAR) WHERE openid=?", [OPENID])
   const diary = await callFn('createDiary', {
     title: '分享计数测试日记', content: '本条由 fn-share-test 创建，若残留请删除',
     tags: [], permission: 'private',

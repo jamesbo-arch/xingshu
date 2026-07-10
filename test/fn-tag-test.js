@@ -4,7 +4,7 @@ const mysql = require('mysql2/promise')
 const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
-const OPENID = 'mock_me' // 种子 authed 用户，仅用于建关联日记
+const OPENID = 'mock_yanqiu' // 种子会员用户，仅用于建关联日记（写日记为会员专享）
 
 async function run() {
   console.log('=== 标签维护测试（TAG-A01~A03）===\n')

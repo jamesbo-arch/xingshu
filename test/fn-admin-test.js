@@ -105,10 +105,10 @@ async function run() {
   await test('deleteDiary 删除日记并联动清理互动数据', async () => {
     const created = await callFn('createDiary', {
       title: 'admin测试日记', content: '待删除', tags: [], permission: 'private',
-    }, 'mock_me')
+    }, 'mock_yanqiu')
     diaryId = created.data.id
-    await callFn('toggleLike', { diaryId }, 'mock_yanqiu')
-    await callFn('createComment', { diaryId, content: '测试评论' }, 'mock_yanqiu')
+    await callFn('toggleLike', { diaryId }, 'mock_me')
+    await callFn('createComment', { diaryId, content: '测试评论' }, 'mock_me')
 
     const r = await admin('deleteDiary', { id: diaryId })
     if (r.code !== 0) throw new Error(r.msg)
@@ -131,7 +131,7 @@ async function run() {
     for (let i = 0; i < 2; i++) {
       const c = await callFn('createDiary', {
         title: `admin批量测试${i}`, content: '待批量删除', tags: [], permission: 'private',
-      }, 'mock_me')
+      }, 'mock_yanqiu')
       batchIds.push(c.data.id)
     }
     const r = await admin('deleteDiaries', { ids: [...batchIds, 99999999] })

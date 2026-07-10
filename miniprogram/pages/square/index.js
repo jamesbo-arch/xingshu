@@ -4,7 +4,7 @@ const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
 const cache = require('../../utils/cache')
 const filterUtil = require('../../utils/filter')
-const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
+const { ensureLogin, ensureMember, handleLoginSuccess } = require('../../utils/auth-guard')
 const { lock, throttle } = require('../../utils/guard')
 
 Page({
@@ -174,9 +174,8 @@ Page({
   },
 
   onFabTap() {
-    const go = () => throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/compose/index' }))
-    if (!ensureLogin(this, go)) return
-    go()
+    // 写日记为会员专享：非有效会员弹窗引导开通
+    ensureMember(this, () => throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/compose/index' })))
   },
   onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
 

@@ -1,10 +1,10 @@
 // 云函数写入回环测试 — 通过本地 harness 验证日记 CRUD 全链路（含 images 字段）
-// 以 mock_me 身份 create → detail → update → delete，结束后硬删测试数据
+// 写日记为会员专享，故以会员 mock_yanqiu 身份 create → detail → update → delete，结束后硬删测试数据
 const mysql = require('mysql2/promise')
 const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
-const OPENID = 'mock_me'
+const OPENID = 'mock_yanqiu'
 
 async function run() {
   console.log('=== 云函数写入回环测试 ===\n')
@@ -59,9 +59,9 @@ async function run() {
     if (d.code === 0) throw new Error('软删除后仍可查到')
   })
 
-  await test('非会员发「会员专属」日记 → 服务端拒绝', async () => {
-    const r = await callFn('createDiary', { title: '越权会员日记', content: 'x', tags: [], permission: 'member' }, 'mock_me')
-    if (r.code === 0) throw new Error('authed 非会员不应能发会员专属日记')
+  await test('非会员写日记 → 服务端拒绝', async () => {
+    const r = await callFn('createDiary', { title: '越权写日记', content: 'x', tags: [], permission: 'public' }, 'mock_me')
+    if (r.code === 0) throw new Error('非会员不应能写日记')
   })
 
   let memberDiaryId = null
@@ -71,16 +71,10 @@ async function run() {
     memberDiaryId = r.data.id
   })
 
-  await test('非会员将日记改为「会员专属」→ 服务端拒绝', async () => {
-    // 用一篇 mock_me 名下的活跃公开日记验证（避免用已软删的 diaryId 误判为"不存在"而非"被拦"）
-    const c = await callFn('createDiary', { title: '临时公开日记', content: 'x', tags: [], permission: 'public' }, 'mock_me')
-    if (c.code !== 0) throw new Error('前置创建失败: ' + c.msg)
-    const r = await callFn('updateDiary', { diaryId: c.data.id, permission: 'member' }, 'mock_me')
-    const conn = await mysql.createConnection(DB)
-    await conn.execute('DELETE FROM diaries WHERE id = ?', [c.data.id])
-    await conn.execute("UPDATE users SET diary_count = GREATEST(diary_count - 1, 0) WHERE openid = 'mock_me'")
-    await conn.end()
-    if (r.code === 0) throw new Error('authed 非会员不应能改为会员专属')
+  await test('非会员编辑日记 → 服务端拒绝', async () => {
+    // 非会员在会员归属的日记上尝试编辑，会员闸先于归属校验，应被拦截
+    const r = await callFn('updateDiary', { diaryId: memberDiaryId, title: '越权编辑' }, 'mock_me')
+    if (r.code === 0) throw new Error('非会员不应能编辑日记')
   })
 
   // 硬删测试数据（deleteDiary 已平衡 diary_count，此处只清残留行 + 会员测试日记并回退计数）
