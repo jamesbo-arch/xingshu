@@ -41,6 +41,7 @@ exports.main = async (event, context) => {
     diary.content = full.slice(0, Math.max(1, Math.floor(full.length * 0.3)))
     diary.truncated = true
     diary.fullLength = full.length
+    delete diary.content_rich // 样式版为全文，截断响应中必须剔除防泄露
   }
 
   // 标签必取；点赞/收藏态仅登录用户需要——三条并行（未登录用空结果占位）

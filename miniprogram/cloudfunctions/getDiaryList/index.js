@@ -119,6 +119,8 @@ exports.main = async (event, context) => {
     const tags = d.tags_csv ? d.tags_csv.split(',') : []
     delete d.tags_csv
     const row = { ...d, tags, isLiked: d.isLiked === 1, isFavorited: d.isFavorited === 1 }
+    delete row.content_rich // 列表卡片只用纯文本；样式版为全文，留在列表会绕过摘要截断泄露内容
+
     if (!canReadFull(d)) {
       row.content = (d.content || '').slice(0, EXCERPT_LEN)
       row.excerpt = true

@@ -20,17 +20,14 @@ function ensureLogin(page, action) {
   return false
 }
 
-// 有效会员判定：identity=member 且 member_until>=今天（与后端一致，过期按非会员）
-// globalData.user 为 login/getUserInfo 返回的原始行（snake_case），故读 member_until；
-// member_until 可能是 ISO "YYYY-MM-DDT..." 或 "YYYY-MM-DD"，用正则取日期段避免时区偏移（同 member 页 ymd）
+// 有效会员判定：identity=member 且 memberUntil>=今天（与后端一致，过期按非会员）
 function isValidMember(user) {
   if (!user || user.identity !== 'member') return false
-  const m = String(user.member_until || user.memberUntil || '').match(/^(\d{4})-(\d{2})-(\d{2})/)
-  if (!m) return false
-  const until = new Date(+m[1], +m[2] - 1, +m[3])
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  return until >= today
+  const mu = user.memberUntil
+  if (!mu) return false
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const until = new Date(String(mu).slice(0, 10).replace(/-/g, '/'))
+  return !isNaN(until.getTime()) && until >= today
 }
 
 // 会员专享操作守卫（如写日记）：非有效会员弹窗引导至会员中心；有效会员执行 action

@@ -28,7 +28,8 @@ async function run() {
     [GUEST, GUEST])
   async function makeDiary(permission) {
     const r = await callFn('createDiary', {
-      title: `test_perm_${permission}`, content: LONG_CONTENT, tags: [], permission,
+      title: `test_perm_${permission}`, content: LONG_CONTENT,
+      contentRich: `<p>${LONG_CONTENT}</p>`, tags: [], permission,
     }, AUTHOR)
     created.push(r.data.id)
     return r.data.id
@@ -100,6 +101,7 @@ async function run() {
     const memRow = l.data.list.find(d => d.id === memId)
     if (!memRow.excerpt || memRow.content.length > 80) throw new Error(`未截断为摘要：len=${memRow.content.length}`)
     if (memRow.content.length >= LONG_CONTENT.length) throw new Error('列表泄露全文')
+    if (memRow.content_rich !== undefined) throw new Error('列表泄露样式版全文 content_rich')
   })
 
   // 补充：authed 列表也能看到会员卡片（摘要），公众卡片为全文

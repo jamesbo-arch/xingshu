@@ -15,16 +15,23 @@ async function run() {
     catch (e) { console.log(`  FAIL  ${name}: ${e.message}`); failed++ }
   }
 
-  await test('createDiary 携带 2 张配图创建成功', async () => {
+  const RICH = '<p>本条由 fn-roundtrip-test 创建，<strong>粗体</strong><span style="color: #b6452f">深红</span></p>'
+  await test('createDiary 携带 2 张配图 + 样式版正文创建成功', async () => {
     const r = await callFn('createDiary', {
       title: '回环测试日记',
       content: '本条由 fn-roundtrip-test 创建，若残留请删除',
+      contentRich: RICH,
       tags: [],
       permission: 'private',
       images: ['cloud://fake/img1.jpg', 'cloud://fake/img2.jpg'],
     }, OPENID)
     if (r.code !== 0) throw new Error(r.msg)
     diaryId = r.data.id
+  })
+
+  await test('getDiaryDetail 返回样式版 content_rich', async () => {
+    const r = await callFn('getDiaryDetail', { diaryId }, OPENID)
+    if (r.data.content_rich !== RICH) throw new Error(`样式版不符: ${r.data.content_rich}`)
   })
 
   await test('getDiaryDetail 返回 images 数组（JSON 列自动解析）', async () => {
@@ -41,6 +48,18 @@ async function run() {
     if (d.data.images.length !== 1 || d.data.images[0] !== 'cloud://fake/img3.jpg') {
       throw new Error(`更新未生效: ${JSON.stringify(d.data.images)}`)
     }
+  })
+
+  await test('updateDiary 只改 content 不带样式版 → content_rich 清空防陈旧', async () => {
+    const r = await callFn('updateDiary', { diaryId, content: '纯文本更新' }, OPENID)
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.content_rich !== null) throw new Error(`应清空，实际: ${r.data.content_rich}`)
+  })
+
+  await test('updateDiary 带 contentRich → 样式版更新', async () => {
+    const r = await callFn('updateDiary', { diaryId, content: '再更新', contentRich: '<p>再更新<u>下划线</u></p>' }, OPENID)
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.content_rich !== '<p>再更新<u>下划线</u></p>') throw new Error('样式版未更新')
   })
 
   await test('updateDiary 传空数组清除配图', async () => {

@@ -14,6 +14,7 @@ function diary(item) {
     timestamp: absTime(item.created_at || item.timestamp, true),  // 详情：年月日 时分
     dateText: absTime(item.created_at || item.time || item.timestamp, false),  // 海报：年月日
     created_at_text: formatTime(item.created_at),
+    contentRich: item.content_rich || item.contentRich || '',
     images: item.images || [],
   }
 }
@@ -41,8 +42,8 @@ function comment(item) {
   }
 }
 
-// DB 存的即北京时间（连接会话时区 +08:00，dateStrings 返回原始字面串），故直接
-// 字符串解析显示，不做时区换算。withTime=true → "YYYY-MM-DD HH:MM"（详情）；false → "YYYY-MM-DD"（海报）
+// 绝对时间：直接字符串解析，不经 new Date（避免 ISO 的 UTC→本地偏移把 12:04 变 20:04）
+// withTime=true → "YYYY-MM-DD HH:MM"（详情）；false → "YYYY-MM-DD"（海报）
 function absTime(t, withTime) {
   if (!t) return ''
   const s = String(t).replace('T', ' ')

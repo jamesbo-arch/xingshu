@@ -26,19 +26,18 @@
 
     <view class="compose-divider"></view>
 
-    <!-- Content textarea -->
+    <!-- Content editor（富文本：选中文字浮出底部工具条设置颜色/粗斜体/下划线） -->
     <view class="content-wrap">
-      <textarea
+      <editor
+        id="content-editor"
         class="content-input"
         placeholder="写下今日所思所感…"
-        placeholder-style="color: #D6D0C2; font-size: 30rpx;"
-        value="{{content}}"
-        bindinput="onContentInput"
-        maxlength="{{maxContent}}"
-        auto-height
-        show-confirm-bar="{{false}}"
-      />
-      <text class="content-counter">{{content.length}}/{{maxContent}}</text>
+        bindready="onEditorReady"
+        bindinput="onEditorInput"
+        bindstatuschange="onEditorStatus"
+        bindblur="onEditorBlur"
+      ></editor>
+      <text class="content-counter {{content.length > maxContent ? 'counter-over' : ''}}">{{content.length}}/{{maxContent}}</text>
     </view>
 
     <!-- Images section -->
@@ -106,6 +105,27 @@
 
     <view class="compose-bottom-pad"></view>
   </scroll-view>
+
+  <!-- 富文本工具条：选中正文文字时出现（catch:touchend 防编辑器失焦丢选区），跟随键盘高度 -->
+  <view
+    wx:if="{{showFormatBar}}"
+    class="format-bar"
+    style="bottom: {{kbHeight > 0 ? kbHeight + 'px' : 'calc(130rpx + env(safe-area-inset-bottom))'}}"
+  >
+    <view
+      wx:for="{{formatColors}}"
+      wx:key="value"
+      class="fmt-color {{activeColor === item.value ? 'fmt-color-on' : ''}}"
+      style="background: {{item.value}}"
+      data-name="color"
+      data-value="{{item.value}}"
+      catch:touchend="onFormat"
+    ></view>
+    <view class="fmt-divider"></view>
+    <view class="fmt-btn fmt-b {{fmtBold ? 'fmt-on' : ''}}" data-name="bold" catch:touchend="onFormat">B</view>
+    <view class="fmt-btn fmt-i {{fmtItalic ? 'fmt-on' : ''}}" data-name="italic" catch:touchend="onFormat">I</view>
+    <view class="fmt-btn fmt-u {{fmtUnderline ? 'fmt-on' : ''}}" data-name="underline" catch:touchend="onFormat">U</view>
+  </view>
 
   <!-- Bottom action bar（固定：取消 / 发布） -->
   <view class="compose-actionbar">

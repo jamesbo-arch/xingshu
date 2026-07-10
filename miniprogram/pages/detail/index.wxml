@@ -33,7 +33,9 @@
     </view>
 
     <view class="detail-content {{diary.truncated ? 'is-truncated' : ''}}">
-      <text class="content-text" user-select>{{diary.content}}</text>
+      <!-- 有样式版（富文本）用 rich-text 渲染；截断（会员墙）或旧纯文本日记回退 text -->
+      <rich-text wx:if="{{diary.contentRich && !diary.truncated}}" class="content-text" nodes="{{diary.contentRich}}" user-select></rich-text>
+      <text wx:else class="content-text" user-select>{{diary.content}}</text>
       <view wx:if="{{diary.truncated}}" class="content-fade"></view>
     </view>
 

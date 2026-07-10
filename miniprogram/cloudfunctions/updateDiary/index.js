@@ -4,7 +4,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { diaryId, title, content, tags, permission, images } = event
+  const { diaryId, title, content, contentRich, tags, permission, images } = event
   if (!diaryId) return { code: -1, msg: '缺少日记ID' }
 
   const [users] = await db.query(
@@ -28,6 +28,9 @@ exports.main = async (event, context) => {
     const fields = [], values = []
     if (title !== undefined) { fields.push('title = ?'); values.push(title) }
     if (content !== undefined) { fields.push('content = ?'); values.push(content) }
+    // 样式版与纯文本同步更新；只改 content 未带 contentRich 时清掉旧样式版，防陈旧样式盖新文
+    if (contentRich !== undefined) { fields.push('content_rich = ?'); values.push(contentRich || null) }
+    else if (content !== undefined) { fields.push('content_rich = NULL') }
     if (permission !== undefined) { fields.push('permission = ?'); values.push(permission) }
     if (images !== undefined) { fields.push('images = ?'); values.push(images && images.length ? JSON.stringify(images) : null) }
     // 内容类变更（标题/正文/标签/权限）置"已编辑"时间（与点赞/评论等互动 UPDATE 无关）

@@ -210,7 +210,8 @@ const handlers = {
       await conn.beginTransaction()
       const fields = [], values = []
       if (title !== undefined) { fields.push('title = ?'); values.push(title) }
-      if (content !== undefined) { fields.push('content = ?'); values.push(content) }
+      // 后台改的是纯文本，同时清掉样式版，防旧样式盖新文
+      if (content !== undefined) { fields.push('content = ?'); values.push(content); fields.push('content_rich = NULL') }
       if (permission !== undefined) { fields.push('permission = ?'); values.push(permission) }
       if (title !== undefined || content !== undefined || permission !== undefined || tags !== undefined) {
         fields.push('content_edited_at = NOW()')

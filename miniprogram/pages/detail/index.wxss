@@ -96,6 +96,12 @@
   overflow-wrap: anywhere;
 }
 
+/* 富文本版正文：换行由 HTML 标签表达，pre-wrap 会把标签间空白也渲染出来 */
+rich-text.content-text {
+  display: block;
+  white-space: normal;
+}
+
 /* Seal stamp */
 .seal-stamp-wrap {
   display: flex;

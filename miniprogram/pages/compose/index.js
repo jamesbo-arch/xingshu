@@ -9,6 +9,12 @@ function toTagSet(arr) {
   return o
 }
 
+// 旧日记只有纯文本：转义后按换行转 <br>，供 editor.setContents({html}) 回填
+function plainToHtml(s) {
+  const esc = String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return '<p>' + esc.replace(/\n/g, '<br>') + '</p>'
+}
+
 Page({
   data: {
     diaryId: null,
@@ -32,13 +38,31 @@ Page({
     maxTitle: 30,
     maxContent: 3000,
     statusBarHeight: 0,
+    // 富文本工具条：选中文字时出现；fmt* 高亮选区已有格式
+    showFormatBar: false,
+    kbHeight: 0,
+    fmtBold: false,
+    fmtItalic: false,
+    fmtUnderline: false,
+    activeColor: '',
+    formatColors: [
+      { name: '黑', value: '#2A2723' },
+      { name: '深红', value: '#B6452F' },
+      { name: '黄', value: '#C29013' },
+      { name: '蓝', value: '#3A6B9E' },
+      { name: '绿', value: '#5B8F6C' },
+    ],
   },
 
   onLoad(options) {
     const info = wx.getWindowInfo()
     const isMember = ((app.globalData.user || {}).identity === 'member')
     this.setData({ statusBarHeight: info.statusBarHeight || 0, allTags: app.globalData.tags, isMember })
+    // 工具条跟随键盘（editor 不自动避让键盘，官方 editor demo 同款做法）
+    this._onKb = res => this.setData({ kbHeight: res.height || 0 })
+    wx.onKeyboardHeightChange(this._onKb)
     // 离开前脏检查的基线：新建为默认值，编辑为加载到的原值
+    this._html = ''
     this._original = this._snapshot()
 
     if (options.diaryId) {
@@ -50,10 +74,74 @@ Page({
             title: diary.title || '', content: diary.content || '',
             images: diary.images || [],
             selectedTags: diary.tags || [], permission: diary.permission || 'public',
-          }, () => { this._original = this._snapshot() })
+          })
+          // 正文回填编辑器：有样式版用样式版，旧纯文本日记转义回填；editor 可能尚未 ready，暂存待用
+          this._pendingHtml = diary.contentRich || plainToHtml(diary.content || '')
+          if (this.editorCtx) this._applyHtml(this._pendingHtml)
         }
       })
     }
+  },
+
+  onUnload() {
+    if (this._onKb) wx.offKeyboardHeightChange(this._onKb)
+  },
+
+  // ===== 富文本编辑器 =====
+  onEditorReady() {
+    wx.createSelectorQuery().in(this).select('#content-editor').context(res => {
+      this.editorCtx = res.context
+      if (this._pendingHtml) this._applyHtml(this._pendingHtml)
+    }).exec()
+  },
+
+  // 回填 html 并以回填后的实际内容为脏检查基线
+  _applyHtml(html) {
+    this._pendingHtml = null
+    this.editorCtx.setContents({
+      html,
+      success: () => {
+        this.editorCtx.getContents({
+          success: r => {
+            this._html = r.html
+            this.setData({ content: (r.text || '').replace(/\n$/, '') })
+            this._original = this._snapshot()
+          },
+        })
+      },
+    })
+  },
+
+  // 输入：text 供计数/必填校验，html 存实例变量（避免每键 setData 大字符串）
+  onEditorInput(e) {
+    this._html = e.detail.html
+    this.setData({ content: (e.detail.text || '').replace(/\n$/, '') })
+  },
+
+  // 选区/光标变化：有选中文字才浮出工具条，并按选区已有格式高亮按钮
+  onEditorStatus(e) {
+    const f = e.detail || {}
+    const color = (f.color || '').toLowerCase()
+    const match = this.data.formatColors.find(c => c.value.toLowerCase() === color)
+    this.setData({
+      fmtBold: !!f.bold, fmtItalic: !!f.italic, fmtUnderline: !!f.underline,
+      activeColor: match ? match.value : '',
+    })
+    if (!this.editorCtx) return
+    this.editorCtx.getSelectionText({
+      success: r => this.setData({ showFormatBar: (r.text || '').length > 0 }),
+    })
+  },
+
+  onEditorBlur() {
+    this.setData({ showFormatBar: false })
+  },
+
+  // 应用格式（catch:touchend 触发，保持编辑器焦点与选区）
+  onFormat(e) {
+    if (!this.editorCtx) return
+    const { name, value } = e.currentTarget.dataset
+    this.editorCtx.format(name, value)
   },
 
   // 当前表单快照，用于对比是否有未保存改动
@@ -62,6 +150,7 @@ Page({
     return {
       title: (title || '').trim(),
       content: (content || '').trim(),
+      rich: this._html || '',  // 纯格式调整（文字未变）也算改动
       images: (images || []).join(','),
       tags: (selectedTags || []).join(','),
       permission,
@@ -70,7 +159,7 @@ Page({
   _isDirty() {
     const a = this._snapshot()
     const b = this._original || {}
-    return a.title !== b.title || a.content !== b.content ||
+    return a.title !== b.title || a.content !== b.content || a.rich !== b.rich ||
       a.images !== b.images || a.tags !== b.tags || a.permission !== b.permission
   },
   // 有未保存内容时二次确认，确认后才返回；无改动直接返回
@@ -91,7 +180,6 @@ Page({
   onCancel() { this._confirmLeave() },
 
   onTitleInput(e) { this.setData({ title: e.detail.value }) },
-  onContentInput(e) { this.setData({ content: e.detail.value }) },
 
   onAddImage() {
     const remaining = this.data.maxImages - this.data.images.length
@@ -158,18 +246,32 @@ Page({
   onClearPickerTags() { this.setData({ pickerSelectedTags: [], pickerTagSet: {} }) },
   onConfirmTags() { this.setData({ selectedTags: [...this.data.pickerSelectedTags], showTagPicker: false }) },
 
-  canPublish() {
-    return this.data.title.trim().length > 0 && this.data.content.trim().length > 0
-  },
   onBack() { this._confirmLeave() },
+
+  // 发布前从编辑器取权威内容（text 纯文本 + html 样式版），编辑器未就绪时回退 data
+  _getContents() {
+    return new Promise(resolve => {
+      if (!this.editorCtx) return resolve(null)
+      this.editorCtx.getContents({ success: r => resolve(r), fail: () => resolve(null) })
+    })
+  },
 
   async onPublish() {
     // 防双击：图片上传拉长发布耗时，重复点击会创建重复日记
     if (this._publishing) return
     this._publishing = true
-    const { title, content, selectedTags, permission, isEditing, diaryId } = this.data
-    if (!this.canPublish()) {
+    const { title, selectedTags, permission, isEditing, diaryId } = this.data
+    const c = await this._getContents()
+    const content = ((c ? c.text : this.data.content) || '').replace(/\n$/, '')
+    const contentRich = c ? c.html : this._html
+    if (!title.trim() || !content.trim()) {
       wx.showToast({ title: '标题和内容不能为空', icon: 'none', duration: 1500 })
+      this._publishing = false
+      return
+    }
+    // editor 无 maxlength，超长在发布时拦截
+    if (content.length > this.data.maxContent) {
+      wx.showToast({ title: `正文超出 ${this.data.maxContent} 字上限`, icon: 'none', duration: 2000 })
       this._publishing = false
       return
     }
@@ -184,7 +286,7 @@ Page({
         return
       }
       if (this.data.images.length) wx.hideLoading()
-      const data = { title: title.trim(), content: content.trim(), images, tags: selectedTags, permission }
+      const data = { title: title.trim(), content: content.trim(), contentRich, images, tags: selectedTags, permission }
       if (isEditing && diaryId) {
         const result = await diaryApi.update(diaryId, data)
         if (result) { wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 }); wx.navigateBack() }
