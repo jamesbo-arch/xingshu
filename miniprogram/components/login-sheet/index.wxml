@@ -10,7 +10,6 @@
     <view class="profile-fields">
       <button class="avatar-btn" open-type="chooseAvatar" bind:chooseavatar="onChooseAvatar">
         <image class="avatar-img" src="{{avatarUrl || defaultAvatar}}" mode="aspectFill"></image>
-        <view class="avatar-cam"><text class="avatar-cam-plus">＋</text></view>
       </button>
       <text class="avatar-hint">更换头像</text>
       <view class="nickname-row">

@@ -101,26 +101,6 @@
   box-sizing: border-box;
 }
 
-.avatar-cam {
-  position: absolute;
-  right: -4rpx;
-  bottom: -4rpx;
-  width: 46rpx;
-  height: 46rpx;
-  border-radius: 50%;
-  background: #8B7A4A;
-  border: 3rpx solid #FFFCF5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.avatar-cam-plus {
-  color: #fff;
-  font-size: 30rpx;
-  line-height: 1;
-}
-
 .avatar-hint {
   margin-top: 14rpx;
   font-size: 24rpx;
