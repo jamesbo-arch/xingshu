@@ -2236,3 +2236,20 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 `node --test test/unit/mapper.test.js` 12/12 通过。真机日记详情时间应显示为正确北京时间（较原显示 +8h）。
 
 **遗留**：评论时间 `comment.time` 仍透传 raw created_at（detail 直接渲染），与本次日记时间无关，未纳入本次修改。
+
+### 2026-07-10 — 改为数据库存北京时间（替代显示端 +8）
+
+**类型**：数据库 + 云函数配置 + 前端 + 测试
+**修改文件**：
+- `scripts/sync-db-config.js` — db.js 模板：createPool 加 `dateStrings: true`（日期列返回原始字面串，跨运行时确定性），并 `pool.on('connection', c => c.query("SET time_zone='+08:00'"))`（会话时区北京，使 NOW()/CURRENT_TIMESTAMP 写北京时间）。`npm run sync-db` 已重生成 23 个云函数 db.js。
+- `config/db.js` — 同加 `dateStrings: true`，令测试脚本读取与云函数一致。
+- `miniprogram/utils/mapper.js` — `absTime`/`formatTime` 撤销上一版的 UTC→+8 换算，改回字符串字面显示（DB 已存北京时间）。
+- `test/unit/mapper.test.js` — 断言改回字面（09:00/12:04/14:30）。
+- 数据迁移（dev 库 xingshu_dev）：`UPDATE diaries/comments SET created_at = created_at + INTERVAL 8 HOUR`，把历史 UTC 行补 +8 为北京时间（diaries 354 行、comments 21 行）。
+
+**变更说明**：
+上一版在显示端 +8 只修了小程序，管理后台/直接查库仍是 UTC。改为**数据库层存北京时间**：连接会话时区 +08:00 使写入即北京；`dateStrings` 使读取在任何运行时都返回相同的北京字面串（消除 mysql2 驱动跨运行时的时区解释差异）；前端 mapper 回归字面显示。验证：harness 新建日记存储值=真实北京时间；截图那条 id=852「今天感悟」10:26→18:26；全量测试与 mapper 单测全绿。
+
+**部署要求（重要）**：
+1. **必须重新部署全部云函数**（新 db.js 含会话时区+dateStrings），并同步上传更新后的小程序——两者要一起生效，否则会出现 8 小时错位。
+2. 正式环境：`npm run sync-db:prod` 重生成 prod db.js 后部署；xingshu_prod 当前无历史数据，无需迁移。

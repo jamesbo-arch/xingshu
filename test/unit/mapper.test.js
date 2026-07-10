@@ -23,13 +23,13 @@ test('diary：数据库行映射为前端字段', () => {
   assert.strictEqual(d.favorites, 3)
   assert.strictEqual(d.comments, 5)
   assert.strictEqual(d.shares, 1)
-  assert.strictEqual(d.timestamp, '2025-01-15 17:00')  // 详情：DB 存 UTC 09:00 → 北京 17:00
-  assert.strictEqual(d.dateText, '2025-01-15')          // 海报：年月日（同日）
+  assert.strictEqual(d.timestamp, '2025-01-15 09:00')  // 详情：DB 存北京时间，字面显示
+  assert.strictEqual(d.dateText, '2025-01-15')          // 海报：年月日
 })
 
-test('diary：DB 时间当 UTC 解析并 +8 转北京时间（含 T/Z 与裸格式一致）', () => {
+test('diary：时间按字符串字面解析（DB 已存北京时间，不做时区换算）', () => {
   const d = mapper.diary({ created_at: '2026-06-19T12:04:28.000Z' })
-  assert.strictEqual(d.timestamp, '2026-06-19 20:04')  // UTC 12:04 → 北京 20:04
+  assert.strictEqual(d.timestamp, '2026-06-19 12:04')  // 字面 12:04，不偏移
   assert.strictEqual(d.dateText, '2026-06-19')
 })
 
@@ -90,9 +90,9 @@ test('comment：嵌套 replies 递归映射', () => {
   assert.strictEqual(c.replies[0].time, '2025-06-01 09:00:00')
 })
 
-test('diary：created_at_text 对久远日期输出 MM-DD HH:MM（UTC→北京 +8）', () => {
+test('diary：created_at_text 对久远日期输出 MM-DD HH:MM', () => {
   const d = mapper.diary({ created_at: '2020-03-05 14:30:00' })
-  assert.strictEqual(d.created_at_text, '03-05 22:30')  // UTC 14:30 → 北京 22:30
+  assert.strictEqual(d.created_at_text, '03-05 14:30')
 })
 
 test('diary：created_at 为空时 created_at_text 为空字符串', () => {

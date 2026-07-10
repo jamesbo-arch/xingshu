@@ -22,7 +22,11 @@ const pool = mysql.createPool({
   connectionLimit: 5,
   queueLimit: 0,
   charset: 'utf8mb4',
+  dateStrings: true, // 日期列返回原始字面串，不做驱动时区转换（跨运行时确定性）
 })
+
+// 会话时区设为北京（+08:00），使 NOW()/CURRENT_TIMESTAMP 按北京时间写入
+pool.on('connection', (conn) => { conn.query("SET time_zone = '+08:00'") })
 
 module.exports = pool
 `
