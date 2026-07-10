@@ -184,73 +184,30 @@
   color: #8B7A4A;
 }
 
-/* 微信登录按钮（文字在图标上方） */
+/* 登录按钮（实心药丸） */
 .login-btn-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16rpx;
-  margin-bottom: 32rpx;
-}
-
-.login-btn-label {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #2A2723;
-  letter-spacing: 2px;
-}
-
-.wx-icon {
-  width: 112rpx;
-  height: 112rpx;
-  border-radius: 50%;
-  background: #07C160;
-  position: relative;
-  box-shadow: 0 8rpx 20rpx rgba(7, 193, 96, 0.28);
-  transition: opacity 0.2s ease;
-}
-
-.wx-icon-dim {
-  opacity: 0.45;
-  box-shadow: none;
-}
-
-.wx-bubble {
-  position: absolute;
-  background: #FFFFFF;
+  margin: 8rpx auto 32rpx;
+  width: 64%;
+  height: 88rpx;
+  border-radius: 999rpx;
+  background: #2A2723;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8rpx;
+  box-shadow: 0 8rpx 20rpx rgba(42, 39, 35, 0.22);
+  transition: opacity 0.2s ease;
 }
 
-.wx-bubble-main {
-  width: 54rpx;
-  height: 42rpx;
-  border-radius: 22rpx 22rpx 6rpx 22rpx;
-  top: 26rpx;
-  left: 20rpx;
+.login-btn-dim {
+  opacity: 0.4;
+  box-shadow: none;
 }
 
-.wx-bubble-sub {
-  width: 40rpx;
-  height: 32rpx;
-  border-radius: 16rpx 16rpx 16rpx 4rpx;
-  bottom: 24rpx;
-  right: 18rpx;
-  gap: 6rpx;
-}
-
-.wx-eye {
-  width: 8rpx;
-  height: 8rpx;
-  border-radius: 50%;
-  background: #07C160;
-}
-
-.wx-eye.sm {
-  width: 6rpx;
-  height: 6rpx;
+.login-btn-label {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #FFFCF5;
+  letter-spacing: 4rpx;
 }
 
 .safe-bottom {

@@ -15,8 +15,8 @@ Component({
     agreed: false,
     nickname: '',
     avatarUrl: '',
-    // 默认头像（灰底人像）——用户未选头像时展示
-    defaultAvatar: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%23EFE7D4%22/%3E%3Ccircle cx=%2250%22 cy=%2240%22 r=%2216%22 fill=%22%23C4BBA6%22/%3E%3Cpath d=%22M20 84c0-17 13-26 30-26s30 9 30 26z%22 fill=%22%23C4BBA6%22/%3E%3C/svg%3E',
+    // 默认头像（微信图标：绿底白气泡）——用户未选头像时展示
+    defaultAvatar: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%2307C160%22/%3E%3Cellipse cx=%2242%22 cy=%2243%22 rx=%2222%22 ry=%2217%22 fill=%22%23fff%22/%3E%3Cellipse cx=%2266%22 cy=%2262%22 rx=%2215%22 ry=%2212%22 fill=%22%23fff%22/%3E%3Ccircle cx=%2235%22 cy=%2241%22 r=%223%22 fill=%22%2307C160%22/%3E%3Ccircle cx=%2249%22 cy=%2241%22 r=%223%22 fill=%22%2307C160%22/%3E%3Ccircle cx=%2261%22 cy=%2260%22 r=%222.5%22 fill=%22%2307C160%22/%3E%3Ccircle cx=%2271%22 cy=%2260%22 r=%222.5%22 fill=%22%2307C160%22/%3E%3C/svg%3E',
   },
 
   observers: {

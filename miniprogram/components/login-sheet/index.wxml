@@ -26,19 +26,9 @@
       <text class="agree-text">已阅读并同意<text class="agree-link">《服务协议》</text><text class="agree-link">《隐私协议》</text></text>
     </view>
 
-    <!-- 微信登录：文字在图标上方 -->
-    <view class="login-btn-area" bindtap="onLogin">
+    <!-- 登录按钮 -->
+    <view class="login-btn-area {{agreed ? '' : 'login-btn-dim'}}" bindtap="onLogin">
       <text class="login-btn-label">点击登录</text>
-      <view class="wx-icon {{agreed ? '' : 'wx-icon-dim'}}">
-        <view class="wx-bubble wx-bubble-main">
-          <view class="wx-eye"></view>
-          <view class="wx-eye"></view>
-        </view>
-        <view class="wx-bubble wx-bubble-sub">
-          <view class="wx-eye sm"></view>
-          <view class="wx-eye sm"></view>
-        </view>
-      </view>
     </view>
 
     <view class="safe-bottom"></view>
