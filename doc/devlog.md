@@ -2451,3 +2451,12 @@ grep 复查仅 square/activities/collections/mine/member 5 页挂载。
 
 **验证**：
 `node --check` 通过。真机：点正文聚焦 → 直接出现完整 11 键工具条。
+
+### 2026-07-11 — 工具条自动贴键盘顶端
+
+**类型**：前端
+**修改文件**：
+- `miniprogram/pages/compose/index.js` — `onKeyboardHeightChange` 中键盘高度>0 时清空拖拽偏移 `_barOffset`：键盘每次弹出（或高度变化，如候选词栏出现）工具条自动归位贴住键盘顶；之后仍可手动拖走，收起键盘回默认底距。
+
+**验证**：
+`node --check` 通过。真机：点正文弹键盘 → 工具条紧贴键盘顶；拖走后收起再弹键盘 → 重新贴回键盘顶。

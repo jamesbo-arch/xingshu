@@ -70,7 +70,12 @@ Page({
     this._kb = 0
     this._barOffset = 0 // 用户拖拽的额外抬升量
     this._updateBar()
-    this._onKb = res => { this._kb = res.height || 0; this._updateBar() }
+    this._onKb = res => {
+      this._kb = res.height || 0
+      // 键盘弹出/高度变化（如候选词栏）时清空拖拽偏移，自动贴键盘顶端；之后仍可手动拖走
+      if (this._kb > 0) this._barOffset = 0
+      this._updateBar()
+    }
     wx.onKeyboardHeightChange(this._onKb)
     // 离开前脏检查的基线：新建为默认值，编辑为加载到的原值
     this._html = ''
