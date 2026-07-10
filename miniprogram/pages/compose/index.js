@@ -142,13 +142,14 @@ Page({
     })
   },
 
-  // 工具条底距 = 键盘高度（收起时用默认底距）+ 拖拽偏移
+  // 工具条底距 = 键盘高度（收起时用默认底距）+ 拖拽偏移；全屏夹取防出界
   _updateBar() {
     const base = this._kb > 0 ? this._kb : this._barBase
-    this.setData({ barBottom: base + this._barOffset })
+    const bottom = Math.min(this._winHeight - 60, Math.max(0, base + this._barOffset))
+    this.setData({ barBottom: bottom })
   },
 
-  // 拖拽把手：点住上下移动工具条（catch 阻止页面滚动）
+  // 拖拽把手：点住上下移动工具条（catch 阻止页面滚动），范围开放全屏（屏底 ~ 屏顶留自身高度）
   onBarDragStart(e) {
     this._dragY = e.touches[0].clientY
     this._dragStartOffset = this._barOffset
@@ -156,8 +157,9 @@ Page({
   onBarDragMove(e) {
     const delta = this._dragY - e.touches[0].clientY // 上移为正
     const base = this._kb > 0 ? this._kb : this._barBase
-    const max = this._winHeight - base - 120 // 顶部留余量，防拖出屏幕
-    this._barOffset = Math.min(max, Math.max(0, this._dragStartOffset + delta))
+    const min = -base                            // 最低：贴屏幕底边
+    const max = this._winHeight - base - 60      // 最高：屏顶留工具条自身高度
+    this._barOffset = Math.min(max, Math.max(min, this._dragStartOffset + delta))
     this._updateBar()
   },
   onBarDragEnd() {},
