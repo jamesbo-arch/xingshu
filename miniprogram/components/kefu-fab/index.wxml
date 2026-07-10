@@ -1,0 +1,3 @@
+<view class="kefu-fab" catch:tap="onTap">
+  <view class="kefu-icon"></view>
+</view>

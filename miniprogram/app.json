@@ -17,11 +17,26 @@
     "backgroundColor": "#FBF7EE",
     "borderStyle": "white",
     "list": [
-      { "pagePath": "pages/square/index", "text": "醒书广场" },
-      { "pagePath": "pages/activities/index", "text": "醒书活动" },
-      { "pagePath": "pages/collections/index", "text": "我的收藏" },
-      { "pagePath": "pages/mine/index", "text": "我的日记" },
-      { "pagePath": "pages/member/index", "text": "会员中心" }
+      {
+        "pagePath": "pages/square/index",
+        "text": "醒书广场"
+      },
+      {
+        "pagePath": "pages/activities/index",
+        "text": "醒书活动"
+      },
+      {
+        "pagePath": "pages/collections/index",
+        "text": "我的收藏"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的日记"
+      },
+      {
+        "pagePath": "pages/member/index",
+        "text": "会员中心"
+      }
     ]
   },
   "window": {
@@ -33,5 +48,8 @@
   },
   "style": "v2",
   "lazyCodeLoading": "requiredComponents",
-  "sitemapLocation": "sitemap.json"
+  "sitemapLocation": "sitemap.json",
+  "usingComponents": {
+    "kefu-fab": "/components/kefu-fab/index"
+  }
 }

@@ -76,3 +76,6 @@
 
 <!-- 隐私授权弹窗（敏感接口首次调用时触发） -->
 <privacy-popup></privacy-popup>
+
+<!-- 客服浮标（全局） -->
+<kefu-fab />

@@ -1,3 +1,6 @@
 <view class="doc-wrap">
   <text class="doc-body">{{body}}</text>
 </view>
+
+<!-- 客服浮标（全局） -->
+<kefu-fab />

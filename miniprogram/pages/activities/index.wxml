@@ -67,3 +67,6 @@
     <view class="act-bottom-pad"></view>
   </scroll-view>
 </view>
+
+<!-- 客服浮标（全局） -->
+<kefu-fab />

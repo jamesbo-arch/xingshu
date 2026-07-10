@@ -62,3 +62,6 @@
     bind:apply="onApplyFilter"
   ></filter-sheet>
 </view>
+
+<!-- 客服浮标（全局） -->
+<kefu-fab />

@@ -2406,3 +2406,17 @@ mapper 单测 12/12。真机：详情页评论/回复时间显示为相对时间
 
 **验证**：
 全部 unit 单测 44/44（新增 5 条）。真机：弱网/冷启动下点 ♡ 图标即刻变红计数+1；断网点赞应在 toast「网络异常」后自动回退。
+
+### 2026-07-11 — 全站客服浮标（微信客服/企业微信）
+
+**类型**：前端
+**修改文件**：
+- `miniprogram/components/kefu-fab/*`（新建）— 客服浮动图标组件：右缘 32% 高度、耳麦图标金棕圆钮；点击 `wx.openCustomerServiceChat({ extInfo:{url: KF_URL}, corpId: 'ww6e6791e71177150a' })` 打开微信客服会话。**KF_URL 待填**（企业微信后台 → 微信客服 → 客服账号 → 复制链接 kfc...），未填时点按 toast「客服暂未开通」。
+- `miniprogram/app.json` — 全局 `usingComponents` 注册 `kefu-fab`。
+- 9 个页面 `index.wxml`（square/activities/collections/mine/member/detail/compose/activity-detail/doc）— 末尾挂载 `<kefu-fab />`。
+
+**变更说明**：
+所有页面右缘固定客服浮标，点击拉起微信客服（小程序后台已绑定企业 ww6e6791e71177150a，见「客服→微信客服」）。z-index 30 低于 compose 富文本工具条（40）。`wx.openCustomerServiceChat` 要求基础库 ≥2.19.0（项目 3.16.0）且用户点击触发，均满足。
+
+**验证**：
+app.json 解析正常、组件 js 语法通过。真机：各页右缘见金棕耳麦浮标；填入 KF_URL 前点按提示「客服暂未开通」，填入后应拉起微信客服会话（需真机，开发者工具不支持该 API）。
