@@ -37,7 +37,8 @@ function comment(item) {
     ...item,
     user: item.user_name || item.user,
     avatarHue: item.user_avatar_hue || item.avatarHue,
-    time: item.created_at || item.time,
+    // 相对时间展示（刚刚/x分钟前/昨天 HH:MM/MM-DD HH:MM），与列表卡片一致
+    time: formatTime(item.created_at) || item.time,
     replies: item.replies ? item.replies.map(comment) : undefined,
   }
 }

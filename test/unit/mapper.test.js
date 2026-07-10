@@ -77,7 +77,7 @@ test('user：avatar_url 缺失时兜底为空字符串', () => {
   assert.strictEqual(mapper.user({}).avatarUrl, '')
 })
 
-test('comment：嵌套 replies 递归映射', () => {
+test('comment：嵌套 replies 递归映射，time 格式化为相对时间样式', () => {
   const c = mapper.comment({
     user_name: '甲',
     user_avatar_hue: 10,
@@ -87,7 +87,7 @@ test('comment：嵌套 replies 递归映射', () => {
   assert.strictEqual(c.user, '甲')
   assert.strictEqual(c.avatarHue, 10)
   assert.strictEqual(c.replies[0].user, '乙')
-  assert.strictEqual(c.replies[0].time, '2025-06-01 09:00:00')
+  assert.strictEqual(c.replies[0].time, '06-01 09:00')  // 久远日期 → MM-DD HH:MM
 })
 
 test('diary：created_at_text 对久远日期输出 MM-DD HH:MM', () => {

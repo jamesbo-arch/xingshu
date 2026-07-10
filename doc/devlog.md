@@ -2382,3 +2382,13 @@ harness 走 login→isValidMember(James) = true；mapper 单测 12/12；sync-db 
 
 **验证**：
 `node --check` 通过。真机：聚焦正文出现右侧小把手（默认缩小）→ 点击展开 11 键工具条 → 点最右圆点把手缩回 → 两态均可拖拽上下且位置保持一致；缩小态拖动松手不误触展开。
+
+### 2026-07-11 — 修复：评论时间显示原始 ISO 串
+
+**类型**：前端 + 测试
+**修改文件**：
+- `miniprogram/utils/mapper.js` — `comment()` 的 `time` 由透传 `created_at` 改为 `formatTime()` 相对时间（刚刚/x分钟前/昨天 HH:MM/MM-DD HH:MM），与列表卡片一致；replies 递归同样生效。
+- `test/unit/mapper.test.js` — comment 用例断言更新（久远日期 → MM-DD HH:MM）。
+
+**验证**：
+mapper 单测 12/12。真机：详情页评论/回复时间显示为相对时间；刚发的评论显示「刚刚」。
