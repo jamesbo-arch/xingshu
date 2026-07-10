@@ -44,6 +44,9 @@ Page({
     fmtBold: false,
     fmtItalic: false,
     fmtUnderline: false,
+    fmtOl: false,
+    fmtUl: false,
+    fmtCenter: false,
     activeColor: '',
     formatColors: [
       { name: '黑', value: '#2A2723' },
@@ -128,6 +131,7 @@ Page({
     const match = this.data.formatColors.find(c => c.value.toLowerCase() === color)
     this.setData({
       fmtBold: !!f.bold, fmtItalic: !!f.italic, fmtUnderline: !!f.underline,
+      fmtOl: f.list === 'ordered', fmtUl: f.list === 'bullet', fmtCenter: f.align === 'center',
       activeColor: match ? match.value : '',
     })
   },
@@ -138,7 +142,11 @@ Page({
   },
 
   onEditorBlur() {
-    this.setData({ showFormatBar: false, fmtBold: false, fmtItalic: false, fmtUnderline: false, activeColor: '' })
+    this.setData({
+      showFormatBar: false,
+      fmtBold: false, fmtItalic: false, fmtUnderline: false,
+      fmtOl: false, fmtUl: false, fmtCenter: false, activeColor: '',
+    })
   },
 
   // 应用格式（catch:touchend 触发，保持编辑器焦点与选区）

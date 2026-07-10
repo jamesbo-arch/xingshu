@@ -2327,3 +2327,15 @@ harness 走 login→isValidMember(James) = true；mapper 单测 12/12；sync-db 
 
 **验证**：
 `node --check` 通过。真机：写一篇带颜色/粗体的日记 → 保存 → 再进编辑，格式应完整回显；再保存后详情页格式仍在。
+
+### 2026-07-10 — 富文本工具条增加有序/无序列表、居中，单行排布
+
+**类型**：前端
+**修改文件**：
+- `miniprogram/pages/compose/index.wxml` — 工具条右侧新增三键：有序列表（`format('list','ordered')`）、无序列表（`format('list','bullet')`）、居中（`format('align','center')`），SVG 图标常态/高亮双色。
+- `miniprogram/pages/compose/index.js` — data 增 `fmtOl/fmtUl/fmtCenter`；statuschange 按 `f.list`/`f.align` 高亮；blur 复位。
+- `miniprogram/pages/compose/index.wxss` — 整条压缩单行：色点 44→36rpx、按钮 56→52rpx、间距改 `justify-content: space-between`、左右边距 24→16rpx、`flex-wrap: nowrap`；新增 `.fmt-ic` 与 6 个图标类。
+- `miniprogram/pages/detail/index.wxss` — 新增 `.ql-align-center { text-align: center }`（editor 居中输出为 class，rich-text 透传 class 由页面样式生效；列表 ol/ul/li 为 rich-text 信任节点，默认渲染）。
+
+**验证**：
+`node --check` 通过。真机：工具条 5 色点+B/I/U+列表×2+居中共 11 键单行不换行；点列表/居中生效且高亮，再点取消；保存后详情页列表序号/圆点与居中生效。

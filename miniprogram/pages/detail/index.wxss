@@ -102,6 +102,11 @@ rich-text.content-text {
   white-space: normal;
 }
 
+/* editor 的居中段落输出 class="ql-align-center"，rich-text 透传 class 由页面样式生效 */
+.ql-align-center {
+  text-align: center;
+}
+
 /* Seal stamp */
 .seal-stamp-wrap {
   display: flex;

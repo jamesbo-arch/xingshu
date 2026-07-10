@@ -126,6 +126,16 @@
     <view class="fmt-btn fmt-b {{fmtBold ? 'fmt-on' : ''}}" data-name="bold" catch:touchend="onFormat">B</view>
     <view class="fmt-btn fmt-i {{fmtItalic ? 'fmt-on' : ''}}" data-name="italic" catch:touchend="onFormat">I</view>
     <view class="fmt-btn fmt-u {{fmtUnderline ? 'fmt-on' : ''}}" data-name="underline" catch:touchend="onFormat">U</view>
+    <view class="fmt-divider"></view>
+    <view class="fmt-btn {{fmtOl ? 'fmt-on' : ''}}" data-name="list" data-value="ordered" catch:touchend="onFormat">
+      <view class="fmt-ic {{fmtOl ? 'ic-fmt-ol-w' : 'ic-fmt-ol'}}"></view>
+    </view>
+    <view class="fmt-btn {{fmtUl ? 'fmt-on' : ''}}" data-name="list" data-value="bullet" catch:touchend="onFormat">
+      <view class="fmt-ic {{fmtUl ? 'ic-fmt-ul-w' : 'ic-fmt-ul'}}"></view>
+    </view>
+    <view class="fmt-btn {{fmtCenter ? 'fmt-on' : ''}}" data-name="align" data-value="center" catch:touchend="onFormat">
+      <view class="fmt-ic {{fmtCenter ? 'ic-fmt-ac-w' : 'ic-fmt-ac'}}"></view>
+    </view>
   </view>
 
   <!-- Bottom action bar（固定：取消 / 发布） -->
