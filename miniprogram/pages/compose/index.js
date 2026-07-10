@@ -76,7 +76,8 @@ Page({
             selectedTags: diary.tags || [], permission: diary.permission || 'public',
           })
           // 正文回填编辑器：有样式版用样式版，旧纯文本日记转义回填；editor 可能尚未 ready，暂存待用
-          this._pendingHtml = diary.contentRich || plainToHtml(diary.content || '')
+          // 注意 getDetail 返回云函数原始行（snake_case，未过 mapper），样式版字段是 content_rich
+          this._pendingHtml = diary.content_rich || plainToHtml(diary.content || '')
           if (this.editorCtx) this._applyHtml(this._pendingHtml)
         }
       })

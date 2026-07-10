@@ -2315,3 +2315,15 @@ harness 走 login→isValidMember(James) = true；mapper 单测 12/12；sync-db 
 
 **验证**：
 `node --check` 通过。真机：点正文聚焦 → 工具条随键盘浮出常驻 → 选中文字点色点/BIU 生效且不丢选区 → 收键盘工具条消失。
+
+### 2026-07-10 — 修复：带格式日记再编辑变纯文本（回填读错字段名）
+
+**类型**：前端
+**修改文件**：
+- `miniprogram/pages/compose/index.js` — 编辑回填改读 `diary.content_rich`（snake）。原读 `diary.contentRich` 恒 undefined——`diaryApi.getDetail` 返回云函数原始行未过 mapper（detail 页自己过了 mapper 所以显示正常）。
+
+**变更说明**：
+首次编辑所见即所得正常，保存后再进编辑变纯文字。根因是回填字段名用了 camelCase 而数据是 snake_case，恒回退到 `plainToHtml(content)`。连带风险：再编辑保存一次会把纯文本 HTML 存回 content_rich，格式**永久丢失**——本修复同时消除该风险。
+
+**验证**：
+`node --check` 通过。真机：写一篇带颜色/粗体的日记 → 保存 → 再进编辑，格式应完整回显；再保存后详情页格式仍在。
