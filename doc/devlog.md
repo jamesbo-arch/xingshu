@@ -2289,3 +2289,16 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 harness 走 login→isValidMember(James) = true；mapper 单测 12/12；sync-db 重生成 23 个 db.js 含时区+dateStrings。**真机需重新编译**后会员写日记恢复正常。
+
+### 2026-07-10 — 更正：时区根治方案为 MySQL 服务器时区，撤销代码层补丁
+
+**类型**：配置 + 文档
+**修改文件**：
+- `config/db.js`、`scripts/sync-db-config.js` — 撤销 `dateStrings: true` 与 `SET time_zone='+08:00'`（回到原版），`npm run sync-db` 重生成 23 个云函数 db.js。
+- `miniprogram/utils/mapper.js` — 时间函数注释更正为「MySQL 服务器时区已设为北京」。
+
+**变更说明**：
+时间晚 8 小时的**最终方案**：用户直接把 NAS 上 MySQL 服务器时区设为北京（`NOW()` 已验证=真实北京时间），服务器层根治后，代码层的会话时区+dateStrings 补丁（d819fdc）成为多余，用户以 /rewind 有意回退。上一条 devlog 把该回退误判为「编辑器旧缓冲覆盖事故」并恢复了补丁——本条更正：撤销恢复，回到干净原版。**保留**同批被 /rewind 连带回退、又被恢复的 `auth-guard.js` 修复（isValidMember 读 snake `member_until`）——该修复与时区无关，是会员被误判的真实 bug。已迁移的 +8 数据（diaries 354/comments 21）与服务器时区自洽，不需再动。
+
+**验证**：
+`SELECT NOW()` = 真实北京时间；最新日记 created_at=18:26:37（迁移数据正确）；mapper 单测 12/12；roundtrip 11/11（干净配置下）。云函数下次部署即带干净 db.js（已部署的含 SET time_zone='+08:00' 版本与服务器时区一致，无害，无需紧急重部）。

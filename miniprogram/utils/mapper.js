@@ -42,8 +42,8 @@ function comment(item) {
   }
 }
 
-// DB 存的即北京时间（连接会话时区 +08:00，dateStrings 返回原始字面串），故直接
-// 字符串解析显示，不做时区换算。withTime=true → "YYYY-MM-DD HH:MM"（详情）；false → "YYYY-MM-DD"（海报）
+// DB 存的即北京时间（MySQL 服务器时区已设为北京），故直接字符串解析显示，
+// 不做时区换算。withTime=true → "YYYY-MM-DD HH:MM"（详情）；false → "YYYY-MM-DD"（海报）
 function absTime(t, withTime) {
   if (!t) return ''
   const s = String(t).replace('T', ' ')
