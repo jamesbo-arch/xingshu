@@ -2221,3 +2221,18 @@ wxml 标签平衡（view 124/124、scroll-view 1/1、block 8/8）；真机编译
 
 **验证**：
 `node test/ping-db.js` 通过；受影响的 6 个云函数测试（roundtrip/comment/share/tag/admin/permission）全绿（8/5/7/3/13/11 passed, 0 failed）。前端 `node --check` 全通过。
+
+### 2026-07-10 — 修复日记时间晚 8 小时（UTC→北京时间）
+
+**类型**：前端 + 测试
+**修改文件**：
+- `miniprogram/utils/mapper.js` — `absTime`/`formatTime` 重写：新增 `parseUTCms(t)` 把 DB 时间（"YYYY-MM-DD HH:MM:SS" 或 ISO "…T…Z"）当 UTC 解析为毫秒瞬间；`absTime` +8 转北京时间后用 `getUTC*` 取字段（详情 timestamp / 海报 dateText）；`formatTime` 用真实瞬间算 diff（时区无关），昨天/更早显示北京时分。
+- `test/unit/mapper.test.js` — 断言由旧「字面不 +8」改为「UTC→北京 +8」：09:00→17:00、12:04Z→20:04、14:30→22:30。
+
+**变更说明**：
+根因：新 NAS 数据库服务器会话时区为 UTC（`NOW()==UTC_TIMESTAMP()`），`created_at datetime DEFAULT CURRENT_TIMESTAMP` 存的是 UTC；原 `absTime` 字面显示 UTC 数字，导致比北京时间晚 8 小时。生产截图（显示 10:26、实为 18:26）证实前端收到的即 UTC 数字。修法为显示端统一把 DB 时间当 UTC、+8 转北京，用 `getUTC*` 读取，与设备时区无关，覆盖新旧全部数据，无需改数据库连接、无需重新部署云函数。
+
+**验证**：
+`node --test test/unit/mapper.test.js` 12/12 通过。真机日记详情时间应显示为正确北京时间（较原显示 +8h）。
+
+**遗留**：评论时间 `comment.time` 仍透传 raw created_at（detail 直接渲染），与本次日记时间无关，未纳入本次修改。
