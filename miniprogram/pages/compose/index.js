@@ -118,7 +118,9 @@ Page({
     this.setData({ content: (e.detail.text || '').replace(/\n$/, '') })
   },
 
-  // 选区/光标变化：有选中文字才浮出工具条，并按选区已有格式高亮按钮
+  // 选区样式变化：按选区已有格式高亮按钮。
+  // 注意：statuschange 在选中「无格式纯文本」时不触发（真机验证），不能用它控制工具条显隐，
+  // 故工具条改为聚焦常驻（官方 editor demo 同款），仅用本事件做高亮。
   onEditorStatus(e) {
     const f = e.detail || {}
     const color = (f.color || '').toLowerCase()
@@ -127,14 +129,15 @@ Page({
       fmtBold: !!f.bold, fmtItalic: !!f.italic, fmtUnderline: !!f.underline,
       activeColor: match ? match.value : '',
     })
-    if (!this.editorCtx) return
-    this.editorCtx.getSelectionText({
-      success: r => this.setData({ showFormatBar: (r.text || '').length > 0 }),
-    })
+  },
+
+  // 编辑正文时工具条常驻键盘上方；失焦（键盘收起）隐藏
+  onEditorFocus() {
+    this.setData({ showFormatBar: true })
   },
 
   onEditorBlur() {
-    this.setData({ showFormatBar: false })
+    this.setData({ showFormatBar: false, fmtBold: false, fmtItalic: false, fmtUnderline: false, activeColor: '' })
   },
 
   // 应用格式（catch:touchend 触发，保持编辑器焦点与选区）

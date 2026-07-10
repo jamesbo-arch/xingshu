@@ -2302,3 +2302,16 @@ harness 走 login→isValidMember(James) = true；mapper 单测 12/12；sync-db 
 
 **验证**：
 `SELECT NOW()` = 真实北京时间；最新日记 created_at=18:26:37（迁移数据正确）；mapper 单测 12/12；roundtrip 11/11（干净配置下）。云函数下次部署即带干净 db.js（已部署的含 SET time_zone='+08:00' 版本与服务器时区一致，无害，无需紧急重部）。
+
+### 2026-07-10 — 富文本工具条改为聚焦常驻（真机选中不触发 statuschange）
+
+**类型**：前端
+**修改文件**：
+- `miniprogram/pages/compose/index.wxml` — editor 加 `bindfocus`。
+- `miniprogram/pages/compose/index.js` — 新增 `onEditorFocus`（聚焦即显示工具条）；`onEditorStatus` 去掉 getSelectionText 显隐控制，仅保留格式高亮；blur 时一并复位高亮态。
+
+**变更说明**：
+真机验证「选中即现」方案失效：`statuschange` 本质是选区**样式**变化事件，选中无格式纯文本时不触发（官方文档语义如此），导致选中文字后工具条不出现。改为方案 B「聚焦常驻」——编辑正文期间工具条常驻键盘上方（官方 editor demo 同款、真机可靠），选中已格式化文字时按钮仍会高亮。
+
+**验证**：
+`node --check` 通过。真机：点正文聚焦 → 工具条随键盘浮出常驻 → 选中文字点色点/BIU 生效且不丢选区 → 收键盘工具条消失。

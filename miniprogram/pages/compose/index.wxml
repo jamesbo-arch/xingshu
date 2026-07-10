@@ -35,6 +35,7 @@
         bindready="onEditorReady"
         bindinput="onEditorInput"
         bindstatuschange="onEditorStatus"
+        bindfocus="onEditorFocus"
         bindblur="onEditorBlur"
       ></editor>
       <text class="content-counter {{content.length > maxContent ? 'counter-over' : ''}}">{{content.length}}/{{maxContent}}</text>
