@@ -1,5 +1,6 @@
 const app = getApp()
 const diaryApi = require('../../api/diary')
+const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
 const { lock, throttle } = require('../../utils/guard')
 const { ensureMember } = require('../../utils/auth-guard')
@@ -62,6 +63,29 @@ Page({
   onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
 
   onCardOpen(e) { throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + e.detail.id })) },
+  onCardLike(e) {
+    const { id } = e.detail
+    return lock(this, 'like' + id, async () => {
+      const result = await socialApi.toggleLike(id, 'diary')
+      if (result) {
+        this.setData({
+          diaries: this.data.diaries.map(d => d.id === id ? { ...d, isLiked: result.liked, likes: d.likes + (result.liked ? 1 : -1) } : d)
+        })
+      }
+    })
+  },
+  onCardFav(e) {
+    const { id } = e.detail
+    return lock(this, 'fav' + id, async () => {
+      const result = await socialApi.toggleFav(id)
+      if (!result) return
+      wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
+      this.setData({
+        diaries: this.data.diaries.map(d => d.id === id
+          ? { ...d, isFavorited: result.favorited, favorites: Math.max(0, (d.favorites || 0) + (result.favorited ? 1 : -1)) } : d)
+      })
+    })
+  },
   onCardEdit(e) { ensureMember(this, () => throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/compose/index?diaryId=' + e.detail.id }))) },
   onCardDelete(e) {
     const { id } = e.detail

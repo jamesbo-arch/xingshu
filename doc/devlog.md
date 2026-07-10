@@ -2350,3 +2350,12 @@ harness 走 login→isValidMember(James) = true；mapper 单测 12/12；sync-db 
 
 **验证**：
 `node --check` 通过。真机：点住最右把手上下拖，工具条随手指移动且不超出屏幕；键盘弹起/收起后偏移保留；拖动时页面不跟随滚动（catch 阻止）；其余按钮点击不受影响。
+
+### 2026-07-11 — 修复：我的日记列表点赞/收藏无响应（处理器缺失）
+
+**类型**：前端
+**修改文件**：
+- `miniprogram/pages/mine/index.js` — 补 `onCardLike`/`onCardFav`（wxml 早已绑定 `bind:like`/`bind:fav`，但 Page 未定义处理器，点击静默无效）；引入 `api/social`。参照 collections 实现：lock 防连点、toggleLike/toggleFav 后就地更新该卡片的点赞/收藏态与计数；与收藏页不同，取消收藏不移除卡片（这是"我的日记"）。
+
+**验证**：
+`node --check` 通过。真机：我的日记列表点 ♡/书签，图标即时变色、计数 ±1，收藏出 toast；进详情页核对状态一致。
