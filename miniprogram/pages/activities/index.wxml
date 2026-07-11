@@ -5,6 +5,18 @@
     <text class="page-subtitle">线上线下，与同路人相见</text>
   </view>
 
+  <!-- 类型筛选 chips -->
+  <scroll-view wx:if="{{types.length}}" class="type-chips" scroll-x enhanced show-scrollbar="{{false}}">
+    <view class="type-chip {{activeTypeId === 0 ? 'chip-on' : ''}}" data-id="0" bindtap="onTypeTap">全部</view>
+    <view
+      wx:for="{{types}}"
+      wx:key="id"
+      class="type-chip {{activeTypeId === item.id ? 'chip-on' : ''}}"
+      data-id="{{item.id}}"
+      bindtap="onTypeTap"
+    >{{item.name}}</view>
+  </scroll-view>
+
   <scroll-view class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}" refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
     <block wx:if="{{loaded && !upcoming.length && !past.length}}">
       <view class="act-empty">

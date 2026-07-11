@@ -2486,3 +2486,19 @@ grep 复查仅 square/activities/collections/mine/member 5 页挂载。
 TYPE 9/9、POST 12/12 全绿；`npm test` 全量 17 个文件全绿（含订单午夜 bug 修复后 11/11）；`cd admin && npm run build` 通过。
 
 **待办**：小程序前端（活动页 chips+角标/广场横幅/详情分享区）等 v1.1.2 上传确认后实施；部署需重推 activity+admin 云函数。
+
+### 2026-07-12 — 活动分类体系 + 现场分享（小程序前端）
+
+**类型**：前端
+**计划关联**：活动分类体系 + 活动现场分享（步骤 6）
+**修改文件**：
+- `miniprogram/api/activity.js` — 新增 getTypes/getPosts/createPost/deletePost；getList 支持 typeId。
+- `miniprogram/pages/activities/index.js/.wxml/.wxss` — 页头下类型筛选 chips（「全部」+启用类型，横向滚动，等值比较选中态），tap 带 typeId 重查；`_decorate` 增「即将开始」角标（48h 内，`replace(/-/g,'/')` iOS 安全解析），优先级 回顾>已满>即将开始>报名中；新样式 `.type-chips/.type-chip/.chip-on/.act-badge-soon`。
+- `miniprogram/pages/square/index.js/.wxml/.wxss` — diary-list 首元素近期活动横幅（「近期活動」印章标签+标题+时间+类型名，tap 进详情，空则不渲染），`square:actbanner` 缓存 10 分钟。
+- `miniprogram/pages/activity-detail/index.js/.wxml/.wxss` — 「現場分享」区（activity.canPost 或有分享时显示）：发布入口（canPost）、分享卡片（头像 hueToColor/getInitial + 相对时间 formatTime + 文字 + 九宫图预览 + isMine 删除确认）、scroll 触底/「加载更多」分页；发布弹层（_mounted 双状态动画、textarea≤1000、chooseMedia≤9、lock 防重入、上传 `activity-posts/` 前缀换 fileID 后 createPost）。
+- `miniprogram/utils/mapper.js` — 导出 `formatTime`（分享时间相对显示复用）。
+
+**验证**：
+`node --check` 全过；mapper 单测 12/12。开发者工具/真机走查清单：活动页筛类型、48h 角标、广场横幅跳详情、报名+开始后见发布入口并发文字/图、未报名可看不可发、删自己的分享、分页。
+
+**部署**：需重部署 activity + admin 云函数（本批后端改动）；admin 已 build。prod 上线时补三段 DDL+种子。

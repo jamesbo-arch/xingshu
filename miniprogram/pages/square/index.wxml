@@ -34,6 +34,15 @@
   <scroll-view class="diary-list" scroll-y enhanced show-scrollbar="{{false}}"
     bindscrolltolower="onReachBottom" lower-threshold="150"
     refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
+    <!-- 近期活动横幅：最近一场可报名活动，点击进详情 -->
+    <view wx:if="{{actBanner}}" class="act-banner" bindtap="onActBannerTap">
+      <text class="act-banner-tag serif">近期活動</text>
+      <view class="act-banner-info">
+        <text class="act-banner-title">{{actBanner.title}}</text>
+        <text class="act-banner-time">{{actBanner.start_time}}{{actBanner.type_name ? ' · ' + actBanner.type_name : ''}}</text>
+      </view>
+      <text class="act-banner-arrow">›</text>
+    </view>
     <view wx:if="{{diaries.length === 0}}" class="empty-state">
       <text class="empty-icon">○</text>
       <text class="empty-text">暂无日记</text>

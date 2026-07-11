@@ -70,4 +70,4 @@ function formatTime(t) {
   return s.substring(0, 16)
 }
 
-module.exports = { diary, user, comment }
+module.exports = { diary, user, comment, formatTime }

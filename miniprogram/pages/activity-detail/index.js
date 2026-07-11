@@ -4,6 +4,8 @@ const toast = require('../../utils/toast')
 const { call } = require('../../api/request')
 const { ensureLogin } = require('../../utils/auth-guard')
 const { lock, throttle } = require('../../utils/guard')
+const { formatTime } = require('../../utils/mapper')
+const { hueToColor, getInitial } = require('../../utils/color')
 
 Page({
   data: {
@@ -21,6 +23,15 @@ Page({
     pcName: '',
     pcPhone: '',
     showLoginSheet: false,
+    // 现场分享
+    posts: [],
+    postsTotal: 0,
+    postsPage: 1,
+    postsHasMore: false,
+    showPostSheet: false,
+    _postShow: false,
+    postContent: '',
+    postImages: [],
   },
 
   onLoad(options) {
@@ -79,6 +90,122 @@ Page({
       isPast: a.status === 'finished',
       isFull: a.capacity > 0 && a.signup_count >= a.capacity && !a.isSignedUp,
       pct: a.capacity > 0 ? Math.min(100, Math.round(a.signup_count / a.capacity * 100)) : 0,
+    })
+    this._loadPosts(true)
+  },
+
+  // ── 现场分享 ──
+  async _loadPosts(reset) {
+    if (this._postsLoading) return
+    this._postsLoading = true
+    try {
+      const page = reset ? 1 : this.data.postsPage
+      const data = await activityApi.getPosts(this._id, page)
+      if (!data) return
+      const mapped = data.list.map(p => ({
+        ...p,
+        timeText: formatTime(p.created_at) || p.created_at,
+        avatarColor: hueToColor(p.avatar_hue),
+        initial: getInitial(p.nickname),
+      }))
+      this.setData({
+        posts: reset ? mapped : [...this.data.posts, ...mapped],
+        postsTotal: data.total,
+        postsPage: page + 1,
+        postsHasMore: page * data.pageSize < data.total,
+      })
+    } finally {
+      this._postsLoading = false
+    }
+  },
+
+  onPostsMore() {
+    if (this.data.postsHasMore) this._loadPosts(false)
+  },
+
+  onPreviewPostImage(e) {
+    const { pidx, idx } = e.currentTarget.dataset
+    const images = (this.data.posts[Number(pidx)] || {}).images || []
+    wx.previewImage({ current: images[Number(idx)], urls: images })
+  },
+
+  onDeletePost(e) {
+    const id = Number(e.currentTarget.dataset.id)
+    return lock(this, 'delpost' + id, async () => {
+      const res = await new Promise(resolve => wx.showModal({
+        title: '删除这条分享？', content: '删除后不可恢复',
+        confirmText: '删除', confirmColor: '#B23B3B', cancelText: '再想想', success: resolve,
+      }))
+      if (!res.confirm) return
+      const r = await activityApi.deletePost(id)
+      if (r) { toast.info('已删除'); this._loadPosts(true) }
+    })
+  },
+
+  // 发布弹层
+  onOpenPostSheet() {
+    this.setData({ showPostSheet: true })
+    setTimeout(() => this.setData({ _postShow: true }), 20)
+  },
+  onClosePostSheet() {
+    this.setData({ _postShow: false })
+    setTimeout(() => this.setData({ showPostSheet: false }), 300)
+  },
+  onPostInput(e) { this.setData({ postContent: e.detail.value }) },
+  onAddPostImage() {
+    const remaining = 9 - this.data.postImages.length
+    if (remaining <= 0) return
+    wx.chooseMedia({
+      count: remaining,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: res => {
+        const paths = res.tempFiles.map(f => f.tempFilePath)
+        this.setData({ postImages: [...this.data.postImages, ...paths] })
+      },
+    })
+  },
+  onRemovePostImage(e) {
+    const images = [...this.data.postImages]
+    images.splice(Number(e.currentTarget.dataset.index), 1)
+    this.setData({ postImages: images })
+  },
+  onPreviewPickImage(e) {
+    wx.previewImage({
+      current: this.data.postImages[Number(e.currentTarget.dataset.index)],
+      urls: this.data.postImages,
+    })
+  },
+
+  async onSubmitPost() {
+    return lock(this, 'submitPost', async () => {
+      const content = this.data.postContent.trim()
+      if (!content && !this.data.postImages.length) { toast.info('写点文字或选张照片吧'); return }
+      // 本地图上传云存储换 fileID（同 compose 模式，前缀 activity-posts/）
+      let images = []
+      try {
+        if (this.data.postImages.length) wx.showLoading({ title: '上传照片中…', mask: true })
+        for (const img of this.data.postImages) {
+          if (img.indexOf('cloud://') === 0) { images.push(img); continue }
+          const extMatch = img.match(/\.(\w+)$/)
+          const ext = extMatch ? extMatch[1] : 'jpg'
+          const cloudPath = `activity-posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+          const res = await wx.cloud.uploadFile({ cloudPath, filePath: img })
+          images.push(res.fileID)
+        }
+      } catch (err) {
+        wx.hideLoading()
+        toast.error('照片上传失败，请重试')
+        return
+      }
+      if (this.data.postImages.length) wx.hideLoading()
+      const r = await activityApi.createPost(this._id, { content, images })
+      if (r) {
+        toast.success('已分享')
+        this.setData({ postContent: '', postImages: [] })
+        this.onClosePostSheet()
+        this._loadPosts(true)
+      }
     })
   },
 

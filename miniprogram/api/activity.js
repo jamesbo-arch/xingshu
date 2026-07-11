@@ -1,8 +1,11 @@
 const { call } = require('./request')
 
 module.exports = {
-  getList() {
-    return call('activity', { action: 'list' })
+  getTypes() {
+    return call('activity', { action: 'typeList' })
+  },
+  getList(typeId) {
+    return call('activity', { action: 'list', payload: typeId ? { typeId } : {} })
   },
   getDetail(id) {
     return call('activity', { action: 'detail', payload: { id } })
@@ -12,5 +15,15 @@ module.exports = {
   },
   cancelSignup(id) {
     return call('activity', { action: 'cancelSignup', payload: { id } })
+  },
+  // 现场分享
+  getPosts(id, page) {
+    return call('activity', { action: 'postList', payload: { id, page, pageSize: 10 } })
+  },
+  createPost(id, { content, images }) {
+    return call('activity', { action: 'postCreate', payload: { id, content, images } })
+  },
+  deletePost(id) {
+    return call('activity', { action: 'postDelete', payload: { id } })
   },
 }

@@ -1,5 +1,6 @@
 const app = getApp()
 const diaryApi = require('../../api/diary')
+const activityApi = require('../../api/activity')
 const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const cache = require('../../utils/cache')
@@ -33,6 +34,7 @@ Page({
     filtersActive: false,
     allTags: [],
     statusBarHeight: 0,
+    actBanner: null, // 近期活动横幅（最近一场 upcoming，空则不渲染）
   },
 
   onLoad() {
@@ -45,10 +47,27 @@ Page({
 
   onShow() {
     this._loadDiaries(true)
+    this._loadActBanner()
     this.setData({ userIdentity: (app.globalData.user || {}).identity || 'guest' })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 0 })
     }
+  },
+
+  // 近期活动横幅：取最近一场 upcoming；10 分钟缓存避免每次 onShow 打接口
+  async _loadActBanner() {
+    const cached = cache.get('square:actbanner')
+    if (cached !== null) { this.setData({ actBanner: cached || null }); return }
+    const data = await activityApi.getList()
+    if (!data) return
+    const first = data.upcoming && data.upcoming.length ? data.upcoming[0] : ''
+    cache.set('square:actbanner', first, 10)
+    this.setData({ actBanner: first || null })
+  },
+
+  onActBannerTap() {
+    const b = this.data.actBanner
+    if (b) throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${b.id}` }))
   },
 
   async _loadDiaries(reset) {
