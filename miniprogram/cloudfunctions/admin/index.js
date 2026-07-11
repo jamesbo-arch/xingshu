@@ -65,6 +65,11 @@ const DIARY_SELECT = `
 const DIARY_LIST_SELECT = DIARY_SELECT.replace('d.content,', 'LEFT(d.content, 80) AS content,')
 
 // 分页参数规整：page≥1，pageSize 限 1..100
+// 北京时间的"现在"（云函数运行时为 UTC，+8 后用 toISOString/getUTC* 读取，避免午夜 0~8 点日期差一天）
+function bjNow(offsetMs = 0) {
+  return new Date(Date.now() + 8 * 3600 * 1000 + offsetMs)
+}
+
 function pageArgs({ page = 1, pageSize = 20 } = {}) {
   const ps = Math.min(Math.max(Number(pageSize) || 20, 1), 100)
   const p = Math.max(Number(page) || 1, 1)
@@ -396,10 +401,10 @@ const handlers = {
     const i = await daily('interactions')
     const out = []
     for (let n = 29; n >= 0; n--) {
-      const dt = new Date(Date.now() - n * 86400000)
+      const dt = bjNow(-n * 86400000)
       const key = dt.toISOString().slice(0, 10)
       out.push({
-        date: `${dt.getMonth() + 1}/${dt.getDate()}`,
+        date: `${dt.getUTCMonth() + 1}/${dt.getUTCDate()}`,
         newUsers: u[key] || 0,
         newDiaries: d[key] || 0,
         interactions: i[key] || 0,
@@ -426,38 +431,74 @@ const handlers = {
     return { deleted, failed }
   },
 
+  // ── 活动分类（typeSave 同时承担启停 is_active）──
+  async typeList() {
+    const [rows] = await db.query(
+      'SELECT id, name, channel, schedule_hint, sort, is_active FROM activity_types ORDER BY sort, id')
+    return rows
+  },
+
+  async typeSave({ id, name, channel, schedule_hint = '', sort = 0, is_active = 1 } = {}) {
+    if (!name || !String(name).trim()) throw new Error('类型名称必填')
+    if (!['online', 'offline'].includes(channel)) throw new Error('渠道须为 online/offline')
+    if (id) {
+      await db.query(
+        'UPDATE activity_types SET name=?, channel=?, schedule_hint=?, sort=?, is_active=? WHERE id=?',
+        [String(name).trim(), channel, schedule_hint, sort, is_active ? 1 : 0, id])
+      await auditLog('typeUpdate', 'activityType', id, { name, channel, is_active })
+      return { id }
+    }
+    const [r] = await db.query(
+      'INSERT INTO activity_types (name, channel, schedule_hint, sort, is_active, created_by) VALUES (?,?,?,?,?,\'admin-web\')',
+      [String(name).trim(), channel, schedule_hint, sort, is_active ? 1 : 0])
+    await auditLog('typeCreate', 'activityType', r.insertId, { name, channel })
+    return { id: r.insertId }
+  },
+
   // ── 活动管理（M1.5.1 MVP）──
   async activityList() {
     const [rows] = await db.query(
-      `SELECT id, title, type, city, capacity, signup_count AS signedUp, status,
-              DATE_FORMAT(start_time, '%Y-%m-%d %H:%i') AS startTime,
-              DATE_FORMAT(signup_deadline, '%Y-%m-%d %H:%i') AS deadline
-       FROM activities ORDER BY created_at DESC`)
+      `SELECT a.id, a.title, a.type, a.type_id, t.name AS typeName,
+              a.city, a.location, a.organizer, a.capacity, a.signup_count AS signedUp, a.status,
+              a.content, a.cover_url, a.review_content,
+              DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') AS startTime,
+              DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') AS endTime,
+              DATE_FORMAT(a.signup_deadline, '%Y-%m-%d %H:%i') AS deadline
+       FROM activities a LEFT JOIN activity_types t ON a.type_id = t.id
+       ORDER BY a.created_at DESC`)
     return { list: rows, total: rows.length }
   },
 
   async activitySave({ id, title, cover_url = '', content = '', images = [], start_time, end_time = null,
-                       type = 'offline', city = '', location = '', organizer = '醒书运营组',
+                       type = 'offline', type_id = null, city = '', location = '', organizer = '醒书运营组',
                        capacity = 0, signup_deadline = null, status = 'draft',
                        review_content = null, review_images = null } = {}) {
     if (!title || !start_time) throw new Error('标题与开始时间必填')
+    // 关联分类时以分类的渠道覆写 type（冗余同步的唯一写点）；不关联则沿用提交值（兼容历史）
+    if (type_id) {
+      const [t] = await db.query('SELECT channel FROM activity_types WHERE id = ?', [type_id])
+      if (!t.length) throw new Error('活动类型不存在')
+      type = t[0].channel
+    } else {
+      type_id = null
+    }
     const imagesJson = images && images.length ? JSON.stringify(images) : null
     const reviewImagesJson = review_images && review_images.length ? JSON.stringify(review_images) : null
     if (id) {
       await db.query(
         `UPDATE activities SET title=?, cover_url=?, content=?, images=?, start_time=?, end_time=?,
-         type=?, city=?, location=?, organizer=?, capacity=?, signup_deadline=?, status=?,
+         type=?, type_id=?, city=?, location=?, organizer=?, capacity=?, signup_deadline=?, status=?,
          review_content=?, review_images=?, updated_by='admin-web' WHERE id=?`,
-        [title, cover_url, content, imagesJson, start_time, end_time, type, city, location,
+        [title, cover_url, content, imagesJson, start_time, end_time, type, type_id, city, location,
          organizer, capacity, signup_deadline, status, review_content, reviewImagesJson, id])
       await auditLog('activityUpdate', 'activity', id, { title, status })
       return { id }
     }
     const [r] = await db.query(
-      `INSERT INTO activities (title, cover_url, content, images, start_time, end_time, type, city,
+      `INSERT INTO activities (title, cover_url, content, images, start_time, end_time, type, type_id, city,
         location, organizer, capacity, signup_deadline, status, review_content, review_images, created_by)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'admin-web')`,
-      [title, cover_url, content, imagesJson, start_time, end_time, type, city, location,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'admin-web')`,
+      [title, cover_url, content, imagesJson, start_time, end_time, type, type_id, city, location,
        organizer, capacity, signup_deadline, status, review_content, reviewImagesJson])
     await auditLog('activityCreate', 'activity', r.insertId, { title, status })
     return { id: r.insertId }
@@ -470,6 +511,30 @@ const handlers = {
        FROM activity_signups s JOIN users u ON s.user_id = u.id
        WHERE s.activity_id = ? ORDER BY s.created_at ASC`, [id])
     return { list: rows, total: rows.length }
+  },
+
+  // ── 活动现场分享（管理端全量含已删行，利于审计追溯）──
+  async postListAdmin({ activityId, page = 1, pageSize = 20 } = {}) {
+    if (!activityId) throw new Error('缺少活动 ID')
+    page = Math.max(1, parseInt(page, 10) || 1)
+    pageSize = Math.min(100, Math.max(1, parseInt(pageSize, 10) || 20))
+    const [[{ total }]] = await db.query(
+      'SELECT COUNT(*) AS total FROM activity_posts WHERE activity_id = ?', [activityId])
+    const [rows] = await db.query(
+      `SELECT p.id, p.content, p.images, p.status, u.nickname,
+              DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS createdAt
+       FROM activity_posts p JOIN users u ON p.user_id = u.id
+       WHERE p.activity_id = ? ORDER BY p.id DESC LIMIT ? OFFSET ?`,
+      [activityId, pageSize, (page - 1) * pageSize])
+    return { list: rows.map(p => ({ ...p, images: p.images || [] })), total, page, pageSize }
+  },
+
+  async postDeleteAdmin({ id } = {}) {
+    const [rows] = await db.query("SELECT activity_id FROM activity_posts WHERE id = ? AND status = 'active'", [id])
+    if (!rows.length) throw new Error('分享不存在或已删除')
+    await db.query("UPDATE activity_posts SET status = 'deleted' WHERE id = ?", [id])
+    await auditLog('deletePost', 'activityPost', id, { activityId: rows[0].activity_id })
+    return true
   },
 
   async deleteComment({ id } = {}) {
@@ -537,8 +602,8 @@ const handlers = {
     const user = users[0]
     if (user.identity === 'guest') throw new Error('游客不可开通会员，需先登录')
 
-    const todayStr = new Date().toISOString().slice(0, 10)
-    const payTime = paymentTime || new Date().toISOString().slice(0, 19).replace('T', ' ')
+    const todayStr = bjNow().toISOString().slice(0, 10)
+    const payTime = paymentTime || bjNow().toISOString().slice(0, 19).replace('T', ' ')
     const payDate = payTime.slice(0, 10)  // 支付日（生效日默认取此）
     let vFrom, vUntil
     if (validFrom || validUntil) {

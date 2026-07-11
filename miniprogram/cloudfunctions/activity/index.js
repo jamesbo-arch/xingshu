@@ -5,12 +5,12 @@ const db = require('./db')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const LIST_SELECT = `
-  SELECT id, title, cover_url, type, city, location, organizer,
-         capacity, signup_count, status,
-         DATE_FORMAT(start_time, '%Y-%m-%d %H:%i') AS start_time,
-         DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') AS end_time,
-         DATE_FORMAT(signup_deadline, '%Y-%m-%d %H:%i') AS signup_deadline
-  FROM activities`
+  SELECT a.id, a.title, a.cover_url, a.type, a.city, a.location, a.organizer,
+         a.capacity, a.signup_count, a.status, a.type_id, t.name AS type_name,
+         DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') AS start_time,
+         DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') AS end_time,
+         DATE_FORMAT(a.signup_deadline, '%Y-%m-%d %H:%i') AS signup_deadline
+  FROM activities a LEFT JOIN activity_types t ON a.type_id = t.id`
 
 async function findUser(openid) {
   const [rows] = await db.query('SELECT id FROM users WHERE openid = ?', [openid])
@@ -18,11 +18,19 @@ async function findUser(openid) {
 }
 
 const handlers = {
-  // 列表：仅 online（近期）与 finished（往期回顾），draft 不可见
-  async list() {
+  // 活动类型（分类）：小程序筛选用，仅启用项
+  async typeList() {
     const [rows] = await db.query(
-      `${LIST_SELECT} WHERE status IN ('online', 'finished')
-       ORDER BY FIELD(status, 'online', 'finished'), start_time ${''}`)
+      'SELECT id, name, channel, schedule_hint FROM activity_types WHERE is_active = 1 ORDER BY sort, id')
+    return rows
+  },
+
+  // 列表：仅 online（近期）与 finished（往期回顾），draft 不可见；可按类型筛选
+  async list({ typeId } = {}) {
+    const params = []
+    let where = "WHERE a.status IN ('online', 'finished')"
+    if (typeId) { where += ' AND a.type_id = ?'; params.push(typeId) }
+    const [rows] = await db.query(`${LIST_SELECT} ${where}`, params)
     // online 按开始时间正序（最近的活动在前），finished 按开始时间倒序
     const upcoming = rows.filter(a => a.status === 'online')
       .sort((a, b) => a.start_time.localeCompare(b.start_time))
@@ -33,11 +41,13 @@ const handlers = {
 
   async detail({ id } = {}, openid) {
     const [rows] = await db.query(
-      `SELECT *,
-              DATE_FORMAT(start_time, '%Y-%m-%d %H:%i') AS start_time,
-              DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') AS end_time,
-              DATE_FORMAT(signup_deadline, '%Y-%m-%d %H:%i') AS signup_deadline
-       FROM activities WHERE id = ? AND status != 'draft'`, [id])
+      `SELECT a.*, t.name AS type_name, t.schedule_hint,
+              DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') AS start_time,
+              DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') AS end_time,
+              DATE_FORMAT(a.signup_deadline, '%Y-%m-%d %H:%i') AS signup_deadline,
+              (a.start_time <= NOW()) AS started
+       FROM activities a LEFT JOIN activity_types t ON a.type_id = t.id
+       WHERE a.id = ? AND a.status != 'draft'`, [id])
     if (!rows.length) throw new Error('活动不存在')
     const a = rows[0]
     a.isSignedUp = false
@@ -47,6 +57,9 @@ const handlers = {
         'SELECT id FROM activity_signups WHERE activity_id = ? AND user_id = ?', [id, user.id])
       a.isSignedUp = s.length > 0
     }
+    // 现场分享发布权：已报名 + 活动已开始（服务端 NOW() 判定，避免设备时钟/时区问题）
+    a.canPost = a.isSignedUp && !!a.started
+    delete a.started
     return a
   },
 
@@ -86,6 +99,53 @@ const handlers = {
       'DELETE FROM activity_signups WHERE activity_id = ? AND user_id = ?', [id, user.id])
     if (!r.affectedRows) throw new Error('未报名该活动')
     await db.query('UPDATE activities SET signup_count = GREATEST(signup_count - 1, 0) WHERE id = ?', [id])
+    return true
+  },
+
+  // ── 现场分享：仅已报名用户可发，活动开始后开放（含结束后补发）；先发后删 ──
+  async postCreate({ id, content = '', images = [] } = {}, openid) {
+    const user = await findUser(openid)
+    if (!user) throw new Error('user not found')
+    content = String(content || '').trim()
+    if (!content && (!images || !images.length)) throw new Error('写点文字或选张照片吧')
+    if (content.length > 1000) throw new Error('分享内容不超过 1000 字')
+    if (images && images.length > 9) throw new Error('最多 9 张照片')
+    const [acts] = await db.query(
+      "SELECT id FROM activities WHERE id = ? AND status IN ('online','finished') AND start_time <= NOW()", [id])
+    if (!acts.length) throw new Error('活动尚未开始，开始后即可分享')
+    const [signed] = await db.query(
+      'SELECT id FROM activity_signups WHERE activity_id = ? AND user_id = ?', [id, user.id])
+    if (!signed.length) throw new Error('报名参加后才能分享现场')
+    const [r] = await db.query(
+      'INSERT INTO activity_posts (activity_id, user_id, content, images, created_by) VALUES (?,?,?,?,?)',
+      [id, user.id, content, images && images.length ? JSON.stringify(images) : null, openid])
+    return { id: r.insertId }
+  },
+
+  // 分享列表：所有登录用户可看（详情页本身有登录门槛），分页同 getDiaryList 形状
+  async postList({ id, page = 1, pageSize = 10 } = {}, openid) {
+    page = Math.max(1, parseInt(page, 10) || 1)
+    pageSize = Math.min(50, Math.max(1, parseInt(pageSize, 10) || 10))
+    const [[{ total }]] = await db.query(
+      "SELECT COUNT(*) AS total FROM activity_posts WHERE activity_id = ? AND status = 'active'", [id])
+    const [rows] = await db.query(
+      `SELECT p.id, p.user_id, p.content, p.images, u.nickname, u.avatar_hue, u.avatar_url,
+              DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS created_at
+       FROM activity_posts p JOIN users u ON p.user_id = u.id
+       WHERE p.activity_id = ? AND p.status = 'active'
+       ORDER BY p.id DESC LIMIT ? OFFSET ?`, [id, pageSize, (page - 1) * pageSize])
+    const user = await findUser(openid)
+    const list = rows.map(p => ({ ...p, images: p.images || [], isMine: !!user && p.user_id === user.id }))
+    return { list, total, page, pageSize }
+  },
+
+  async postDelete({ id } = {}, openid) {
+    const user = await findUser(openid)
+    if (!user) throw new Error('user not found')
+    const [r] = await db.query(
+      "UPDATE activity_posts SET status = 'deleted' WHERE id = ? AND user_id = ? AND status = 'active'",
+      [id, user.id])
+    if (!r.affectedRows) throw new Error('无权删除或已删除')
     return true
   },
 }

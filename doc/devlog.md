@@ -2469,3 +2469,20 @@ grep 复查仅 square/activities/collections/mine/member 5 页挂载。
 
 **验证**：
 真机（开发者工具不支持 openCustomerServiceChat）：5 个 tab 页标题旁点客服钮 → 应拉起微信客服会话，消息在企业微信回复。
+
+### 2026-07-12 — 活动分类体系 + 现场分享（后端 + 管理端）
+
+**类型**：数据库 + 云函数 + 测试 + 前端(admin)
+**计划关联**：活动分类体系 + 活动现场分享（.claude/plans/starry-enchanting-lighthouse.md）
+**修改文件**：
+- 数据库（xingshu_dev，手动 DDL）：新建 `activity_types`（name uk/channel/schedule_hint/sort/is_active）+ 种子 6 类（月度故事会、醒书咖啡=online；观影会/线下故事会/巧克力工坊/醒书厨房=offline）；`activities` 加 `type_id INT NULL` + idx；新建 `activity_posts`（activity_id/user_id/content 1000/images JSON/status 软删/复合索引/FK，INT 与主表对齐）。**prod 上线需同步三段 DDL+种子。**
+- `miniprogram/cloudfunctions/activity/index.js` — 新增 typeList（仅启用按 sort）、postCreate（已报名+活动已开始 NOW() 判定+内容校验）、postList（分页 {list,total,page,pageSize}+isMine）、postDelete（本人软删）；list 加 LEFT JOIN 类型与 typeId 筛选；detail 带 type_name/schedule_hint + 服务端派生 canPost。
+- `miniprogram/cloudfunctions/admin/index.js` — 新增 typeList/typeSave（含启停+审计 typeCreate/typeUpdate）、postListAdmin（含已删行）、postDeleteAdmin（审计 deletePost）；activitySave 支持 type_id（按类型 channel 覆写 type，冗余同步唯一写点；不存在报错；不传兼容历史）；activityList join 类型并补返 location/organizer/content/end_time/review_content/cover_url（**伴生修复**：原编辑弹窗这些字段被置空、保存即清库的数据丢失 bug）；新增 `bjNow()` 修 createOrder/trend 的 UTC 日期午夜差一天 bug（0~8 点窗口 toISOString 取到前一天）。
+- `admin/src/api/index.js` — getActivityTypes/saveActivityType/getActivityPosts/deleteActivityPost + resolveFileUrls（getTempFileURL 批量换临时 URL 展示 cloud:// 图）。
+- `admin/src/views/Activities.vue` — 表单加类型下拉（选类型后形式随类型自动并禁用；停用类型编辑回显可见）；列表加类型列与「分享」入口；新增「类型管理」弹窗（增改/启停）与「现场分享」弹窗（含已删标灰、图片缩略预览、删除+审计、分页）；openForm 预填修复。
+- 测试：`test/fn-activity-type-test.js`（TYPE-A01~A09）、`test/fn-activity-post-test.js`（POST-A01~A12）新建并挂入 npm test 链；`fn-activity-test.js` ACT-A01 断言适配新增表。
+
+**验证**：
+TYPE 9/9、POST 12/12 全绿；`npm test` 全量 17 个文件全绿（含订单午夜 bug 修复后 11/11）；`cd admin && npm run build` 通过。
+
+**待办**：小程序前端（活动页 chips+角标/广场横幅/详情分享区）等 v1.1.2 上传确认后实施；部署需重推 activity+admin 云函数。

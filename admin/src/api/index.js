@@ -96,6 +96,22 @@ export async function getActivities() { return call('activityList') }
 export async function saveActivity(data) { return call('activitySave', data) }
 export async function getActivitySignups(id) { return call('activitySignups', { id }) }
 
+// 活动分类与现场分享
+export async function getActivityTypes() { return call('typeList') }
+export async function saveActivityType(data) { return call('typeSave', data) }
+export async function getActivityPosts(activityId, page = 1) { return call('postListAdmin', { activityId, page, pageSize: 20 }) }
+export async function deleteActivityPost(id) { return call('postDeleteAdmin', { id }) }
+
+// cloud:// fileID 批量换临时 URL（展示小程序上传的现场分享图片）
+export async function resolveFileUrls(fileIDs) {
+  if (!fileIDs || !fileIDs.length) return {}
+  await ensureSignIn()
+  const res = await app.getTempFileURL({ fileList: fileIDs })
+  const map = {}
+  for (const f of res.fileList || []) map[f.fileID] = f.tempFileURL || ''
+  return map
+}
+
 // v2.4 会员订单管理
 export async function getOrders(params = {}) { return call('orderList', params) }
 export async function getOrderDetail(id) { return call('orderDetail', { id }) }

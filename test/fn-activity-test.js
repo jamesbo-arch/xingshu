@@ -39,8 +39,10 @@ async function run() {
   }
 
   await test('ACT-A01 表结构与唯一约束', async () => {
+    // activit% 现有 4 张表（+types/+posts），此处只断言活动/报名两张必需表存在
     const [t] = await conn.query("SHOW TABLES LIKE 'activit%'")
-    if (t.length !== 2) throw new Error('activities/activity_signups 表缺失')
+    const names = t.map(r => Object.values(r)[0])
+    if (!names.includes('activities') || !names.includes('activity_signups')) throw new Error('activities/activity_signups 表缺失')
     const [idx] = await conn.query("SHOW INDEX FROM activity_signups WHERE Key_name='uk_activity_user'")
     if (idx.length !== 2) throw new Error('(activity_id, user_id) 唯一约束缺失')
   })

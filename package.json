@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "node test/ping-db.js && node --test \"test/unit/*.test.js\" && node test/api-test.js && node test/fn-smoke-test.js && node test/fn-roundtrip-test.js && node test/fn-admin-test.js && node test/fn-activity-test.js && node test/fn-permission-test.js && node test/fn-referral-test.js && node test/fn-auth-test.js && node test/fn-comment-test.js && node test/fn-tag-test.js && node test/fn-order-test.js && node test/fn-admin-edit-test.js && node test/fn-filter-test.js && node test/fn-share-test.js",
+    "test": "node test/ping-db.js && node --test \"test/unit/*.test.js\" && node test/api-test.js && node test/fn-smoke-test.js && node test/fn-roundtrip-test.js && node test/fn-admin-test.js && node test/fn-activity-test.js && node test/fn-activity-type-test.js && node test/fn-activity-post-test.js && node test/fn-permission-test.js && node test/fn-referral-test.js && node test/fn-auth-test.js && node test/fn-comment-test.js && node test/fn-tag-test.js && node test/fn-order-test.js && node test/fn-admin-edit-test.js && node test/fn-filter-test.js && node test/fn-share-test.js",
     "test:unit": "node --test \"test/unit/*.test.js\"",
     "test:e2e": "node test/ping-db.js && node test/e2e-flow-test.js",
     "sync-db": "node scripts/sync-db-config.js",
