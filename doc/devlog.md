@@ -2460,3 +2460,12 @@ grep 复查仅 square/activities/collections/mine/member 5 页挂载。
 
 **验证**：
 `node --check` 通过。真机：点正文弹键盘 → 工具条紧贴键盘顶；拖走后收起再弹键盘 → 重新贴回键盘顶。
+
+### 2026-07-11 — 填入微信客服链接，客服入口生效
+
+**类型**：前端 + 配置
+**修改文件**：
+- `miniprogram/components/kefu-fab/index.js` — `KF_URL` 填入企业微信客服链接 `https://work.weixin.qq.com/kfid/kfc51bfe8ae35d714ae`（corpId ww6e6791e71177150a 此前已配）。
+
+**验证**：
+真机（开发者工具不支持 openCustomerServiceChat）：5 个 tab 页标题旁点客服钮 → 应拉起微信客服会话，消息在企业微信回复。
