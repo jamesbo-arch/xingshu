@@ -54,33 +54,34 @@ Page({
     }
   },
 
-  // 近期活动轮播：取全部 upcoming（已发布），前端按开始时间过滤未开始的场次；10 分钟缓存避免每次 onShow 打接口
+  // 近期活动轮播：取全部 upcoming（已发布）；缓存只存原始最小字段，10 分钟避免每次 onShow 打接口
   async _loadActBanner() {
     const cached = cache.get('square:actbanners2')
-    if (cached !== null) { this.setData({ actBanners: this._futureOnly(cached) }); return }
+    if (cached !== null) { this.setData({ actBanners: this._decorateBanners(cached) }); return }
     const data = await activityApi.getList()
     if (!data) return
-    const list = (data.upcoming || []).map(a => ({
-      id: a.id,
-      title: a.title,
-      start_time: a.start_time,
-      week: this._weekOf(a.start_time),
-      channelText: a.type === 'online' ? '线上' : '线下',
-    }))
+    const list = (data.upcoming || []).map(a => ({ id: a.id, title: a.title, start_time: a.start_time, type: a.type }))
     cache.set('square:actbanners2', list, 10)
-    this.setData({ actBanners: this._futureOnly(list) })
+    this.setData({ actBanners: this._decorateBanners(list) })
+  },
+
+  // 未开始过滤 + 展示字段派生统一放读取侧：无论数据来自网络还是缓存，周几/线上线下都现算，
+  // 不依赖缓存里的历史形状（否则旧缓存缺字段会渲染成空）。后端 upcoming 含已开始未结束的，需按时间过滤
+  _decorateBanners(list) {
+    const now = Date.now()
+    return (list || [])
+      .filter(a => new Date(String(a.start_time).replace(/-/g, '/')).getTime() > now)
+      .map(a => ({
+        ...a,
+        week: this._weekOf(a.start_time),
+        channelText: a.type === 'online' ? '线上' : '线下',
+      }))
   },
 
   // 「周几」文案：start_time 为 "YYYY-MM-DD HH:mm" 北京时间字面量，iOS 解析需 '/'
   _weekOf(t) {
     const d = new Date(String(t).replace(/-/g, '/'))
     return isNaN(d.getTime()) ? '' : '周' + '日一二三四五六'[d.getDay()]
-  },
-
-  // 只留未开始的场次（后端 upcoming 含已开始未结束的）；读缓存时也过滤，避免缓存期内活动开场后仍展示。iOS 日期解析需 '/'
-  _futureOnly(list) {
-    const now = Date.now()
-    return (list || []).filter(a => new Date(String(a.start_time).replace(/-/g, '/')).getTime() > now)
   },
 
   onActBannerTap(e) {

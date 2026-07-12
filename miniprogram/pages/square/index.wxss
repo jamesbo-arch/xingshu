@@ -203,9 +203,9 @@ page { height: 100%; overflow: hidden; }
   height: 100%;
   box-sizing: border-box;
   padding: 0 32rpx 10rpx;
-  background: linear-gradient(135deg, #A73D28, #C2563F);
+  background: linear-gradient(135deg, #877052, #A08A63);
   border-radius: 24rpx 24rpx 0 0;
-  box-shadow: 0 -6rpx 24rpx rgba(42, 39, 35, 0.10);
+  box-shadow: 0 -6rpx 24rpx rgba(42, 39, 35, 0.08);
 }
 
 .act-banner-tag {
