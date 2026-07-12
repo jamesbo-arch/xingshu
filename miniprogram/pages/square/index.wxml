@@ -34,15 +34,6 @@
   <scroll-view class="diary-list" scroll-y enhanced show-scrollbar="{{false}}"
     bindscrolltolower="onReachBottom" lower-threshold="150"
     refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
-    <!-- 近期活动横幅：最近一场可报名活动，点击进详情 -->
-    <view wx:if="{{actBanner}}" class="act-banner" bindtap="onActBannerTap">
-      <text class="act-banner-tag serif">近期活動</text>
-      <view class="act-banner-info">
-        <text class="act-banner-title">{{actBanner.title}}</text>
-        <text class="act-banner-time">{{actBanner.start_time}}{{actBanner.type_name ? ' · ' + actBanner.type_name : ''}}</text>
-      </view>
-      <text class="act-banner-arrow">›</text>
-    </view>
     <view wx:if="{{diaries.length === 0}}" class="empty-state">
       <text class="empty-icon">○</text>
       <text class="empty-text">暂无日记</text>
@@ -57,11 +48,29 @@
       bind:fav="onCardFav"
       bind:share="onCardShare"
     ></diary-card>
-    <view class="list-bottom-pad"></view>
+    <view class="list-bottom-pad {{actBanners.length ? 'pad-banner' : ''}}"></view>
   </scroll-view>
 
+  <!-- 近期活动轮播：固定在 tab-bar 之上，多场自动轮播切换；无未开始活动不渲染 -->
+  <view wx:if="{{actBanners.length}}" class="act-banner-bar">
+    <swiper class="act-banner-swiper" circular="{{actBanners.length > 1}}" autoplay="{{actBanners.length > 1}}"
+      interval="4000" duration="400" indicator-dots="{{actBanners.length > 1}}"
+      indicator-color="rgba(126, 102, 64, 0.18)" indicator-active-color="#B6452F">
+      <swiper-item wx:for="{{actBanners}}" wx:key="id">
+        <view class="act-banner" data-id="{{item.id}}" bindtap="onActBannerTap">
+          <text class="act-banner-tag serif">近期活動</text>
+          <view class="act-banner-info">
+            <text class="act-banner-title">{{item.title}}</text>
+            <text class="act-banner-time">{{item.start_time}}{{item.type_name ? ' · ' + item.type_name : ''}}</text>
+          </view>
+          <text class="act-banner-arrow">›</text>
+        </view>
+      </swiper-item>
+    </swiper>
+  </view>
+
   <!-- FAB -->
-  <view class="fab" bindtap="onFabTap">
+  <view class="fab {{actBanners.length ? 'fab-raised' : ''}}" bindtap="onFabTap">
     <view class="fab-icon ic-pen-w"></view>
   </view>
 

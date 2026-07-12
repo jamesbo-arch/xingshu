@@ -34,7 +34,7 @@ Page({
     filtersActive: false,
     allTags: [],
     statusBarHeight: 0,
-    actBanner: null, // 近期活动横幅（最近一场 upcoming，空则不渲染）
+    actBanners: [], // 近期活动轮播（全部已发布且未开始的场次，固定于 tab-bar 上方，空则不渲染）
   },
 
   onLoad() {
@@ -54,20 +54,26 @@ Page({
     }
   },
 
-  // 近期活动横幅：取最近一场 upcoming；10 分钟缓存避免每次 onShow 打接口
+  // 近期活动轮播：取全部 upcoming（已发布），前端按开始时间过滤未开始的场次；10 分钟缓存避免每次 onShow 打接口
   async _loadActBanner() {
-    const cached = cache.get('square:actbanner')
-    if (cached !== null) { this.setData({ actBanner: cached || null }); return }
+    const cached = cache.get('square:actbanners')
+    if (cached !== null) { this.setData({ actBanners: this._futureOnly(cached) }); return }
     const data = await activityApi.getList()
     if (!data) return
-    const first = data.upcoming && data.upcoming.length ? data.upcoming[0] : ''
-    cache.set('square:actbanner', first, 10)
-    this.setData({ actBanner: first || null })
+    const list = (data.upcoming || []).map(a => ({ id: a.id, title: a.title, start_time: a.start_time, type_name: a.type_name }))
+    cache.set('square:actbanners', list, 10)
+    this.setData({ actBanners: this._futureOnly(list) })
   },
 
-  onActBannerTap() {
-    const b = this.data.actBanner
-    if (b) throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${b.id}` }))
+  // 只留未开始的场次（后端 upcoming 含已开始未结束的）；读缓存时也过滤，避免缓存期内活动开场后仍展示。iOS 日期解析需 '/'
+  _futureOnly(list) {
+    const now = Date.now()
+    return (list || []).filter(a => new Date(String(a.start_time).replace(/-/g, '/')).getTime() > now)
+  },
+
+  onActBannerTap(e) {
+    const id = Number(e.currentTarget.dataset.id)
+    if (id) throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
   },
 
   async _loadDiaries(reset) {
