@@ -9,12 +9,27 @@ function toggleTabBar(page, hidden) {
   if (tb) tb.setData({ hidden })
 }
 
-// 返回 true = 已登录可继续；false = 已拉起弹窗并暂存 action，登录成功后自动续做
+// 返回 true = 已登录可继续；false = 已拉起弹窗（或正等冷启动登录落地）并暂存 action，登录成功后自动续做
 function ensureLogin(page, action) {
   const app = getApp()
   const identity = (app.globalData.user || {}).identity || 'guest'
   if (identity !== 'guest') return true
   page._pendingLoginAction = action || null
+  // 冷启动登录请求在途时先等它落地再判定，避免已登录用户在首屏被误弹登录窗
+  if (app._loginPromise) {
+    app._loginPromise.then(() => {
+      const settled = (app.globalData.user || {}).identity || 'guest'
+      if (settled !== 'guest') {
+        const pending = page._pendingLoginAction
+        page._pendingLoginAction = null
+        if (typeof pending === 'function') pending()
+      } else {
+        page.setData({ showLoginSheet: true })
+        toggleTabBar(page, true)
+      }
+    })
+    return false
+  }
   page.setData({ showLoginSheet: true })
   toggleTabBar(page, true)
   return false

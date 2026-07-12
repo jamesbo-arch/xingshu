@@ -11,7 +11,7 @@ module.exports = {
     return call('createComment', { diaryId, content, parentId })
   },
   getComments(diaryId, page = 1) {
-    return call('getComments', { diaryId, page })
+    return call('getComments', { diaryId, page }, { retry: 1 })
   },
   deleteComment(commentId) {
     return call('deleteComment', { commentId })

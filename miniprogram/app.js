@@ -42,12 +42,19 @@ App({
   },
 
   async _initUser(scene, launchPath) {
-    const user = await userApi.login(undefined, scene || undefined)
-    if (user) {
-      this.globalData.user = user
+    // 冷启动先用本地缓存恢复身份（登录返回前页面即有身份，避免会员被误判 guest 弹登录窗），
+    // 网络返回后由 setUser 覆盖刷新。会员有效性由 isValidMember 按 member_until 判定，缓存过期身份不越权。
+    const cached = cache.get('user')
+    if (cached) this.globalData.user = cached
+    // 登录在途标记：auth-guard 的 ensureLogin 据此等待落地再判定，而非直接按 guest 弹窗
+    this._loginPromise = userApi.login(undefined, scene || undefined).then((user) => {
+      if (user) this.setUser(user)
+      this._loginPromise = null
       // v2.1 克制原则：不再强制 guest 跳验证页——游客可自由浏览列表，
       // 验证在互动/查看详情的瞬间触发（utils/auth-guard.js）
-    }
+      return user
+    })
+    await this._loginPromise
     await this.loadTags()
     // 扫码/转发直达对应详情页。若小程序已直接以目标页为启动页（小程序码 page 即详情页、
     // 转发 path 即详情页），则页面自身会从 scene/query 加载，这里不再重复 navigateTo，
@@ -76,12 +83,19 @@ App({
   async refreshUser() {
     const user = await userApi.getUserInfo()
     if (user) {
-      this.globalData.user = user
+      this.setUser(user)
     }
     return user
   },
 
+  // 用户身份统一写入口：更新全局并落本地缓存（7 天），登录/退出/改资料都走这里
+  setUser(user) {
+    this.globalData.user = user
+    cache.set('user', user, 7 * 24 * 60)
+  },
+
   updateUser(patch) {
     Object.assign(this.globalData.user, patch)
+    cache.set('user', this.globalData.user, 7 * 24 * 60)
   },
 })

@@ -256,7 +256,7 @@ Page({
     try {
       const result = await userApi.updateProfile({ realName: name, phone })
       if (result) {
-        getApp().globalData.user = result
+        getApp().setUser(result)
         this.onClosePc()
         // 完善后自动继续报名
         setTimeout(() => this._openSignupSheet(result), 320)

@@ -88,7 +88,7 @@ Component({
         if (avatarUrl) patch.avatarUrl = avatarUrl
         const user = await userApi.updateProfile(patch)
         if (user) {
-          getApp().globalData.user = user
+          getApp().setUser(user)
           this.triggerEvent('success', { user })
         }
       } finally {

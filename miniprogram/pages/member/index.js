@@ -126,7 +126,7 @@ Page({
       if (!res.confirm) return
       const result = await userApi.updateProfile({ logout: true })
       if (result) {
-        app.globalData.user = result
+        app.setUser(result)
         this.setData({ showSettingsSheet: false })
         this._tabBar(false)
         this._loadUser()
@@ -196,7 +196,7 @@ Page({
       const result = await userApi.updateProfile(patch)
       wx.hideLoading()
       if (result) {
-        app.globalData.user = result
+        app.setUser(result)
         this._loadUser()
         this.setData({ showProfileSheet: false })
         this._tabBar(false)
