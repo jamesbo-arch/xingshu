@@ -56,13 +56,25 @@ Page({
 
   // 近期活动轮播：取全部 upcoming（已发布），前端按开始时间过滤未开始的场次；10 分钟缓存避免每次 onShow 打接口
   async _loadActBanner() {
-    const cached = cache.get('square:actbanners')
+    const cached = cache.get('square:actbanners2')
     if (cached !== null) { this.setData({ actBanners: this._futureOnly(cached) }); return }
     const data = await activityApi.getList()
     if (!data) return
-    const list = (data.upcoming || []).map(a => ({ id: a.id, title: a.title, start_time: a.start_time, type_name: a.type_name }))
-    cache.set('square:actbanners', list, 10)
+    const list = (data.upcoming || []).map(a => ({
+      id: a.id,
+      title: a.title,
+      start_time: a.start_time,
+      week: this._weekOf(a.start_time),
+      channelText: a.type === 'online' ? '线上' : '线下',
+    }))
+    cache.set('square:actbanners2', list, 10)
     this.setData({ actBanners: this._futureOnly(list) })
+  },
+
+  // 「周几」文案：start_time 为 "YYYY-MM-DD HH:mm" 北京时间字面量，iOS 解析需 '/'
+  _weekOf(t) {
+    const d = new Date(String(t).replace(/-/g, '/'))
+    return isNaN(d.getTime()) ? '' : '周' + '日一二三四五六'[d.getDay()]
   },
 
   // 只留未开始的场次（后端 upcoming 含已开始未结束的）；读缓存时也过滤，避免缓存期内活动开场后仍展示。iOS 日期解析需 '/'

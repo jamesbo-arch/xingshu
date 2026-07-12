@@ -54,14 +54,14 @@
   <!-- 近期活动轮播：固定在 tab-bar 之上，多场自动轮播切换；无未开始活动不渲染 -->
   <view wx:if="{{actBanners.length}}" class="act-banner-bar">
     <swiper class="act-banner-swiper" circular="{{actBanners.length > 1}}" autoplay="{{actBanners.length > 1}}"
-      interval="4000" duration="400" indicator-dots="{{actBanners.length > 1}}"
-      indicator-color="rgba(126, 102, 64, 0.18)" indicator-active-color="#B6452F">
+      interval="10000" duration="400" indicator-dots="{{actBanners.length > 1}}"
+      indicator-color="rgba(255, 255, 255, 0.35)" indicator-active-color="#FFFFFF">
       <swiper-item wx:for="{{actBanners}}" wx:key="id">
         <view class="act-banner" data-id="{{item.id}}" bindtap="onActBannerTap">
           <text class="act-banner-tag serif">近期活動</text>
           <view class="act-banner-info">
             <text class="act-banner-title">{{item.title}}</text>
-            <text class="act-banner-time">{{item.start_time}}{{item.type_name ? ' · ' + item.type_name : ''}}</text>
+            <text class="act-banner-time">{{item.start_time}}（{{item.week}}）· {{item.channelText}}</text>
           </view>
           <text class="act-banner-arrow">›</text>
         </view>
