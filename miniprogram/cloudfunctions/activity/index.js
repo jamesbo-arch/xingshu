@@ -104,6 +104,20 @@ const handlers = {
     return true
   },
 
+  // 报名名单：仅已报名用户可查看（含本人）；只返回称呼与头像，不外泄联系方式
+  async signupList({ id } = {}, openid) {
+    const user = await findUser(openid)
+    if (!user) throw new Error('user not found')
+    const [mine] = await db.query(
+      'SELECT id FROM activity_signups WHERE activity_id = ? AND user_id = ?', [id, user.id])
+    if (!mine.length) throw new Error('报名后即可查看名单')
+    const [rows] = await db.query(
+      `SELECT s.name, u.avatar_hue, u.avatar_url
+       FROM activity_signups s JOIN users u ON s.user_id = u.id
+       WHERE s.activity_id = ? ORDER BY s.id`, [id])
+    return rows
+  },
+
   async cancelSignup({ id } = {}, openid) {
     const user = await findUser(openid)
     if (!user) throw new Error('user not found')

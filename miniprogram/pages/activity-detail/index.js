@@ -33,6 +33,10 @@ Page({
     postContent: '',
     postImages: [],
     scrollInto: '', // 定位锚点（feed 跳入时滚到現場分享区）
+    // 报名名单弹层
+    showSignups: false,
+    _suShow: false,
+    signups: [],
   },
 
   onLoad(options) {
@@ -148,6 +152,23 @@ Page({
       const r = await activityApi.deletePost(id)
       if (r) { toast.info('已删除'); this._loadPosts(true) }
     })
+  },
+
+  // 报名名单：点「已报名」徽章打开（仅已报名可见入口，后端二次校验）
+  onShowSignups() {
+    return lock(this, 'signups', async () => {
+      const list = await activityApi.getSignups(this._id)
+      if (!list) return
+      this.setData({
+        signups: list.map(s => ({ ...s, avatarColor: hueToColor(s.avatar_hue), initial: getInitial(s.name) })),
+        showSignups: true,
+      })
+      setTimeout(() => this.setData({ _suShow: true }), 20)
+    })
+  },
+  onCloseSignups() {
+    this.setData({ _suShow: false })
+    setTimeout(() => this.setData({ showSignups: false }), 300)
   },
 
   // 发布弹层

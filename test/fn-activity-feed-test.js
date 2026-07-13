@@ -112,6 +112,15 @@ async function run() {
       if (!ghostRow || ghostRow.isSignedUp) throw new Error('游客视角应 isSignedUp=0')
     })
 
+    await test('FEED-08 报名名单：已报名可看（含称呼无联系方式），未报名被拒', async () => {
+      const r = await act('signupList', { id: actA })
+      if (r.code !== 0) throw new Error(r.msg)
+      if (!r.data.length || r.data[0].name !== '砚秋') throw new Error('名单应含报名称呼')
+      if ('contact' in r.data[0]) throw new Error('联系方式不应外泄')
+      const other = await act('signupList', { id: actA }, 'mock_me')
+      if (other.code === 0) throw new Error('未报名不应可看名单')
+    })
+
     await test('FEED-06 list mode:all + typeId 筛选', async () => {
       const [[t]] = await conn.query("SELECT id FROM activity_types WHERE is_active = 1 ORDER BY id LIMIT 1")
       const typedId = await makeActivity({ type_id: t.id })

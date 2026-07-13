@@ -21,6 +21,10 @@ module.exports = {
   signup(id, form) {
     return call('activity', { action: 'signup', payload: { id, ...form } })
   },
+  // 报名名单（仅已报名用户可看，后端校验）
+  getSignups(id) {
+    return call('activity', { action: 'signupList', payload: { id } }, { retry: 1 })
+  },
   cancelSignup(id) {
     return call('activity', { action: 'cancelSignup', payload: { id } })
   },
