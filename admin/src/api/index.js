@@ -3,9 +3,10 @@
 import cloudbase from '@cloudbase/js-sdk'
 
 // 云环境按 Vite mode 注入（.env.dev / .env.prd）；缺省回退 dev 环境
-export const ENV_ID = import.meta.env.VITE_TCB_ENV || 'cloud1-d9gbozhfp4a6c50c0'
+export const ENV_ID = import.meta.env.VITE_TCB_ENV || 'cloud1-xingshu-prd-d1cev0fcca864'
 export const ENV_LABEL = import.meta.env.VITE_ENV_LABEL || '开发'
-export const IS_PROD = /prd|prod/i.test(ENV_ID)
+// 环境徽章按标签判定（环境 ID 含 prd 字样但已与槽位对调，不能再按 ID 判）
+export const IS_PROD = ENV_LABEL === '正式'
 const TOKEN_KEY = 'xs_admin_token'
 
 const app = cloudbase.init({ env: ENV_ID })
