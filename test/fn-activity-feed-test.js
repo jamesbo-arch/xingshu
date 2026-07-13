@@ -142,6 +142,25 @@ async function run() {
       if (!('latitude' in r.data) || !('longitude' in r.data)) throw new Error('缺经纬度字段')
     })
 
+    await test('FEED-11 实际参与勾选：覆盖式保存、限本活动报名者、写审计', async () => {
+      const s = await admin('activitySignups', { id: actA })
+      if (s.code !== 0) throw new Error(s.msg)
+      const row = s.data.list.find(x => x.name === '砚秋')
+      if (!row || !('attended' in row)) throw new Error('名单应含 attended 字段')
+      // 勾选保存（带一个不属于本活动的假 id，应被 activity_id 约束忽略）
+      const r = await admin('attendanceSave', { activityId: actA, attendedIds: [row.id, 99999999] })
+      if (r.code !== 0) throw new Error(r.msg)
+      if (r.data.attended !== 1) throw new Error(`应 1 人参与，实际 ${r.data.attended}`)
+      const [[db1]] = await conn.query('SELECT attended FROM activity_signups WHERE id = ?', [row.id])
+      if (db1.attended !== 1) throw new Error('落库失败')
+      // 清空重置
+      const r2 = await admin('attendanceSave', { activityId: actA, attendedIds: [] })
+      if (r2.data.attended !== 0) throw new Error('清空未生效')
+      const [logs] = await conn.query(
+        "SELECT id FROM admin_logs WHERE action = 'attendanceSave' AND target_id = ?", [String(actA)])
+      if (!logs.length) throw new Error('无审计记录')
+    })
+
     await test('FEED-06 list mode:all + typeId 筛选', async () => {
       const [[t]] = await conn.query("SELECT id FROM activity_types WHERE is_active = 1 ORDER BY id LIMIT 1")
       const typedId = await makeActivity({ type_id: t.id })
@@ -158,6 +177,11 @@ async function run() {
       await conn.query(`DELETE FROM activities WHERE id IN (${ph})`, createdActs)
     }
     await conn.query("DELETE FROM admin_logs WHERE detail LIKE '%test_feed%'")
+    if (createdActs.length) {
+      await conn.query(
+        "DELETE FROM admin_logs WHERE action = 'attendanceSave' AND target_id IN (?)",
+        [createdActs.map(String)])
+    }
     await conn.end()
   }
 

@@ -119,11 +119,12 @@
     <!-- 报名名单弹窗 -->
     <div v-if="showSignups" class="modal-mask" @click.self="showSignups = false">
       <div class="modal">
-        <h2 class="modal-title">报名名单 · {{ signupsActivity.title }}（{{ signups.length }} 人）</h2>
+        <h2 class="modal-title">报名名单 · {{ signupsActivity.title }}（{{ signups.length }} 人 · 实际参与 {{ attendCount }} 人）</h2>
         <table class="data-table">
-          <thead><tr><th>称呼</th><th>联系方式</th><th>昵称</th><th>手机号</th><th>报名时间</th></tr></thead>
+          <thead><tr><th>实际参与</th><th>称呼</th><th>联系方式</th><th>昵称</th><th>手机号</th><th>报名时间</th></tr></thead>
           <tbody>
             <tr v-for="s in signups" :key="s.id">
+              <td><input type="checkbox" class="attend-check" v-model="attendSet[s.id]" /></td>
               <td>{{ s.name }}</td><td>{{ s.contact || '-' }}</td>
               <td>{{ s.nickname }}</td><td>{{ s.phone || '-' }}</td><td>{{ s.signedAt }}</td>
             </tr>
@@ -131,6 +132,9 @@
         </table>
         <div class="modal-actions">
           <button class="btn btn-ghost" @click="showSignups = false">关闭</button>
+          <button class="btn btn-primary" :disabled="attendSaving" @click="onSaveAttendance">
+            {{ attendSaving ? '保存中…' : '保存参与名单' }}
+          </button>
         </div>
       </div>
     </div>
@@ -210,7 +214,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import {
-  getActivities, saveActivity, getActivitySignups,
+  getActivities, saveActivity, getActivitySignups, saveAttendance,
   getActivityTypes, saveActivityType, getActivityPosts, deleteActivityPost, resolveFileUrls,
 } from '../api/index.js'
 
@@ -314,6 +318,8 @@ function closeMap() {
   if (tmap) { tmap.destroy(); tmap = null }
 }
 const showSignups = ref(false), signups = ref([]), signupsActivity = ref({})
+const attendSet = ref({}), attendSaving = ref(false)
+const attendCount = computed(() => Object.values(attendSet.value).filter(Boolean).length)
 const showTypes = ref(false), typeForm = ref({ channel: 'offline', sort: 0 })
 const showPosts = ref(false), posts = ref([]), postsActivity = ref({}), postsTotal = ref(0), postsPage = ref(1)
 const imgUrls = ref({})
@@ -452,7 +458,26 @@ async function onSave() {
 async function openSignups(a) {
   signupsActivity.value = a
   signups.value = (await getActivitySignups(a.id)).list
+  // 勾选态从库内 attended 回显
+  const set = {}
+  for (const s of signups.value) set[s.id] = !!s.attended
+  attendSet.value = set
   showSignups.value = true
+}
+
+// 实际参与名单：勾选后整场覆盖式保存
+async function onSaveAttendance() {
+  if (attendSaving.value) return
+  attendSaving.value = true
+  try {
+    const ids = signups.value.filter(s => attendSet.value[s.id]).map(s => s.id)
+    const r = await saveAttendance(signupsActivity.value.id, ids)
+    alert(`已保存：实际参与 ${r.attended} 人`)
+  } catch (e) {
+    alert('保存失败：' + e.message)
+  } finally {
+    attendSaving.value = false
+  }
 }
 
 // ── 类型管理 ──

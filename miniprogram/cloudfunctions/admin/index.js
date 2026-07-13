@@ -554,7 +554,7 @@ const handlers = {
 
   async activitySignups({ id } = {}) {
     const [rows] = await db.query(
-      `SELECT s.id, s.name, s.contact, u.nickname, u.phone,
+      `SELECT s.id, s.name, s.contact, s.attended, u.nickname, u.phone,
               DATE_FORMAT(s.created_at, '%Y-%m-%d %H:%i') AS signedAt
        FROM activity_signups s JOIN users u ON s.user_id = u.id
        WHERE s.activity_id = ? ORDER BY s.created_at ASC`, [id])
@@ -562,6 +562,34 @@ const handlers = {
   },
 
   // ── 活动现场分享（管理端全量含已删行，利于审计追溯）──
+  // 实际参与名单：整场覆盖式保存勾选结果；ID 按 activity_id 约束，只能勾本活动的报名者
+  async attendanceSave({ activityId, attendedIds = [] } = {}) {
+    if (!activityId) throw new Error('缺少活动 ID')
+    const [act] = await db.query('SELECT id FROM activities WHERE id = ?', [activityId])
+    if (!act.length) throw new Error('活动不存在')
+    const conn = await db.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('UPDATE activity_signups SET attended = 0 WHERE activity_id = ?', [activityId])
+      if (attendedIds.length) {
+        const ph = attendedIds.map(() => '?').join(',')
+        await conn.query(
+          `UPDATE activity_signups SET attended = 1 WHERE activity_id = ? AND id IN (${ph})`,
+          [activityId, ...attendedIds])
+      }
+      await conn.commit()
+    } catch (err) {
+      await conn.rollback()
+      throw err
+    } finally {
+      conn.release()
+    }
+    await auditLog('attendanceSave', 'activity', activityId, { attendedCount: attendedIds.length })
+    const [[{ c }]] = await db.query(
+      'SELECT COUNT(*) c FROM activity_signups WHERE activity_id = ? AND attended = 1', [activityId])
+    return { attended: c }
+  },
+
   async postListAdmin({ activityId, page = 1, pageSize = 20 } = {}) {
     if (!activityId) throw new Error('缺少活动 ID')
     page = Math.max(1, parseInt(page, 10) || 1)

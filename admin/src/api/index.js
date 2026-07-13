@@ -101,6 +101,8 @@ export async function getActivityTypes() { return call('typeList') }
 export async function saveActivityType(data) { return call('typeSave', data) }
 export async function getActivityPosts(activityId, page = 1) { return call('postListAdmin', { activityId, page, pageSize: 20 }) }
 export async function deleteActivityPost(id) { return call('postDeleteAdmin', { id }) }
+// 实际参与名单：整场覆盖式保存勾选的报名 ID
+export async function saveAttendance(activityId, attendedIds) { return call('attendanceSave', { activityId, attendedIds }) }
 
 // cloud:// fileID 批量换临时 URL（展示小程序上传的现场分享图片）
 export async function resolveFileUrls(fileIDs) {

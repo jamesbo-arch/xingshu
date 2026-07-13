@@ -2717,3 +2717,21 @@ fn-activity-feed-test 10/10、fn-activity-test 11/11、fn-activity-type-test 9/9
 用户提供腾讯位置服务 key，已写入 `admin/.env.local` 的 `VITE_TMAP_KEY`（`*.local` 已被 gitignore，key 不入库；前端 key 随构建产物公开属正常，建议在 lbs.qq.com 控制台为该 key 配置域名白名单加固）。admin 重新 build 通过，发布活动表单的「地图选点」按钮已可用。
 
 **验证**：build 成功；发布产物后在活动表单选线下 → 点「地图选点」→ 选址确认 → 地址与坐标自动回填。
+
+### 2026-07-13 — 管理后台活动实际参与人员勾选
+
+**类型**：后端 | 数据库 | 前端（admin Web）| 测试
+**修改文件**：
+- 数据库（xingshu_dev，DDL 手动执行）：`ALTER TABLE activity_signups ADD COLUMN attended TINYINT(1) NOT NULL DEFAULT 0 AFTER contact` — 实际参与标记。**prod 上线时需同步执行**
+- `miniprogram/cloudfunctions/admin/index.js` — activitySignups 返回 attended；新增 `attendanceSave`（整场覆盖式保存，UPDATE 按 activity_id 约束只能勾本活动报名者，事务 + 审计）
+- `admin/src/api/index.js` — saveAttendance 封装
+- `admin/src/views/Activities.vue` — 报名名单弹窗加「实际参与」勾选列（从库内回显）、标题显示参与人数、「保存参与名单」按钮
+- `test/fn-activity-feed-test.js` — FEED-11（覆盖式保存/假 ID 被约束忽略/清空重置/审计）+ 清理
+
+**变更说明**：
+实际参与是报名记录的属性（须先报名才可被勾选，天然由数据模型保证），存 activity_signups.attended。
+
+**验证**：
+fn-activity-feed-test 11/11 绿；admin build 通过。走查：报名名单弹窗勾选若干 → 保存 → 重开弹窗勾选态保留、标题计数正确。
+
+**部署（用户操作）**：重部署 admin 云函数；admin Web 发布；prod 上线补 DDL。
