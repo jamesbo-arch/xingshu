@@ -207,9 +207,8 @@ const showForm = ref(false), form = ref({}), saving = ref(false)
 const TMAP_KEY = import.meta.env.VITE_TMAP_KEY || ''
 const mapEnabled = !!TMAP_KEY
 const showMap = ref(false)
-// coord 给默认中心（广州），浏览器拒绝定位时选点组件也能正常出附近地点列表
 const mapSrc = computed(() =>
-  `https://apis.map.qq.com/tools/locpicker?search=1&type=1&coord=23.105,113.325&key=${TMAP_KEY}&referer=xingshu-admin`)
+  `https://apis.map.qq.com/tools/locpicker?search=1&type=1&key=${TMAP_KEY}&referer=xingshu-admin`)
 const showSignups = ref(false), signups = ref([]), signupsActivity = ref({})
 const showTypes = ref(false), typeForm = ref({ channel: 'offline', sort: 0 })
 const showPosts = ref(false), posts = ref([]), postsActivity = ref({}), postsTotal = ref(0), postsPage = ref(1)
