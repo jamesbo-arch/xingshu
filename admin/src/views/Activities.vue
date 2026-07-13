@@ -91,13 +91,27 @@
       </div>
     </div>
 
-    <!-- 腾讯地图选点（需 VITE_TMAP_KEY，选点后自动回填地址与坐标） -->
-    <div v-if="showMap" class="modal-mask" @click.self="showMap = false">
+    <!-- 腾讯地图选点（JS API 自建：拖动地图取中心点 / 搜索定位，逆地址解析回填；需 VITE_TMAP_KEY） -->
+    <div v-if="showMap" class="modal-mask" @click.self="closeMap">
       <div class="modal map-modal">
-        <h2 class="modal-title">地图选点 · 在地图上选择后点「确认」自动回填</h2>
-        <iframe class="map-frame" :src="mapSrc" frameborder="0" allow="geolocation"></iframe>
+        <h2 class="modal-title">地图选点 · 拖动地图对准图钉，或搜索地点</h2>
+        <div class="map-search">
+          <input v-model="mapKeyword" class="input-full" placeholder="搜索地点，回车检索" @keyup.enter="onMapSearch" />
+          <button class="btn btn-ghost" @click="onMapSearch">搜索</button>
+        </div>
+        <div v-if="mapSuggests.length" class="map-suggests">
+          <div v-for="s in mapSuggests" :key="s.id" class="map-suggest" @click="onPickSuggest(s)">
+            {{ s.title }}<span class="map-suggest-addr">{{ s.address }}</span>
+          </div>
+        </div>
+        <div class="map-wrap">
+          <div id="tmapPicker" class="map-canvas"></div>
+          <div class="map-pin"></div>
+        </div>
+        <div class="map-addr">{{ mapAddr || '定位中…拖动地图后自动解析地址' }}</div>
         <div class="modal-actions">
-          <button class="btn btn-ghost" @click="showMap = false">关闭</button>
+          <button class="btn btn-ghost" @click="closeMap">取消</button>
+          <button class="btn btn-primary" :disabled="!mapAddr" @click="onConfirmMap">使用该位置</button>
         </div>
       </div>
     </div>
@@ -194,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
 import {
   getActivities, saveActivity, getActivitySignups,
   getActivityTypes, saveActivityType, getActivityPosts, deleteActivityPost, resolveFileUrls,
@@ -207,20 +221,98 @@ const showForm = ref(false), form = ref({}), saving = ref(false)
 const TMAP_KEY = import.meta.env.VITE_TMAP_KEY || ''
 const mapEnabled = !!TMAP_KEY
 const showMap = ref(false)
-// 初始中心坐标：打开前先在父页面取浏览器定位（组件内置定位 iframe 常被 Permissions Policy 拦，
-// 导致附近列表加载失败）；拒绝/超时兜底广州中心。coordtype=1 表示 WGS84（浏览器定位坐标系）
-const mapCoord = ref('23.105000,113.325000')
-function openMapPicker() {
-  const open = () => { showMap.value = true }
-  if (!navigator.geolocation) { open(); return }
-  navigator.geolocation.getCurrentPosition(
-    p => { mapCoord.value = `${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`; open() },
-    open,
-    { timeout: 3000, maximumAge: 600000 }
-  )
+// ── JS API 自建选点：官方 locpicker 组件的内置定位 iframe 被 Permissions Policy 拦、coord 参数校验又拒收，
+// 弃用之。改为：GL 地图 + 中心图钉，拖动后逆地址解析回填；搜索走地点建议接口（两接口均已验证本 key 可用）
+const mapKeyword = ref(''), mapSuggests = ref([]), mapAddr = ref(''), mapCenter = ref(null)
+let tmap = null
+
+function loadTMapScript() {
+  return new Promise((resolve, reject) => {
+    if (window.TMap) return resolve()
+    const s = document.createElement('script')
+    s.src = `https://map.qq.com/api/gljs?v=1.exp&key=${TMAP_KEY}`
+    s.onload = resolve
+    s.onerror = () => reject(new Error('地图脚本加载失败，请检查网络'))
+    document.head.appendChild(s)
+  })
 }
-const mapSrc = computed(() =>
-  `https://apis.map.qq.com/tools/locpicker?search=1&type=1&coord=${mapCoord.value}&coordtype=1&key=${TMAP_KEY}&referer=xingshu-admin`)
+
+// WebService JSONP（浏览器端需 JSONP，域名白名单已放开）
+function jsonp(url) {
+  return new Promise((resolve, reject) => {
+    const cb = '_tmap_cb_' + Date.now() + '_' + Math.floor(Math.random() * 1e4)
+    const s = document.createElement('script')
+    window[cb] = (data) => { delete window[cb]; s.remove(); resolve(data) }
+    s.src = `${url}&output=jsonp&callback=${cb}`
+    s.onerror = () => { delete window[cb]; s.remove(); reject(new Error('请求失败')) }
+    document.head.appendChild(s)
+  })
+}
+
+async function openMapPicker() {
+  showMap.value = true
+  mapAddr.value = ''; mapSuggests.value = []; mapKeyword.value = ''; mapCenter.value = null
+  try { await loadTMapScript() } catch (e) { alert(e.message); showMap.value = false; return }
+  await nextTick()
+  // 编辑已有坐标则回显该点，否则广州中心
+  const center = new window.TMap.LatLng(form.value.latitude || 23.129163, form.value.longitude || 113.264435)
+  tmap = new window.TMap.Map(document.getElementById('tmapPicker'), { center, zoom: 15 })
+  tmap.on('idle', onMapIdle)
+  resolveCenter()
+}
+
+let idleTimer = null
+function onMapIdle() { clearTimeout(idleTimer); idleTimer = setTimeout(resolveCenter, 300) }
+
+// 取地图中心 → 逆地址解析出可读地址
+async function resolveCenter() {
+  if (!tmap) return
+  const c = tmap.getCenter()
+  mapCenter.value = { lat: c.getLat(), lng: c.getLng() }
+  try {
+    const r = await jsonp(`https://apis.map.qq.com/ws/geocoder/v1/?location=${c.getLat()},${c.getLng()}&key=${TMAP_KEY}`)
+    if (r.status === 0) {
+      const rec = r.result.formatted_addresses && r.result.formatted_addresses.recommend
+      mapAddr.value = rec ? `${r.result.address}（${rec}）` : r.result.address
+    } else {
+      mapAddr.value = ''
+      alert('地址解析失败：' + r.message)
+    }
+  } catch { mapAddr.value = '' }
+}
+
+async function onMapSearch() {
+  const kw = mapKeyword.value.trim()
+  if (!kw) return
+  try {
+    const region = encodeURIComponent(form.value.city || '')
+    const r = await jsonp(`https://apis.map.qq.com/ws/place/v1/suggestion?keyword=${encodeURIComponent(kw)}&region=${region}&key=${TMAP_KEY}`)
+    if (r.status === 0) mapSuggests.value = (r.data || []).slice(0, 8)
+    else alert('搜索失败：' + r.message)
+  } catch { alert('搜索失败，请重试') }
+}
+
+function onPickSuggest(s) {
+  mapSuggests.value = []
+  mapKeyword.value = s.title
+  mapCenter.value = { lat: s.location.lat, lng: s.location.lng }
+  mapAddr.value = `${s.address}（${s.title}）`
+  if (tmap) tmap.setCenter(new window.TMap.LatLng(s.location.lat, s.location.lng))
+}
+
+function onConfirmMap() {
+  if (!mapCenter.value || !mapAddr.value) return
+  form.value.location = mapAddr.value
+  form.value.latitude = Number(mapCenter.value.lat.toFixed(6))
+  form.value.longitude = Number(mapCenter.value.lng.toFixed(6))
+  closeMap()
+}
+
+function closeMap() {
+  showMap.value = false
+  clearTimeout(idleTimer)
+  if (tmap) { tmap.destroy(); tmap = null }
+}
 const showSignups = ref(false), signups = ref([]), signupsActivity = ref({})
 const showTypes = ref(false), typeForm = ref({ channel: 'offline', sort: 0 })
 const showPosts = ref(false), posts = ref([]), postsActivity = ref({}), postsTotal = ref(0), postsPage = ref(1)
@@ -350,21 +442,6 @@ async function onSave() {
   } catch (e) { alert(e.message) } finally { saving.value = false }
 }
 
-// 腾讯地图选点回传（locpicker 组件 postMessage）
-function onMapMessage(e) {
-  const d = e.data
-  if (!d || d.module !== 'locationPicker') return
-  form.value.location = d.poiname && d.poiaddress
-    ? `${d.poiaddress}（${d.poiname}）`
-    : (d.poiaddress || d.poiname || form.value.location)
-  if (d.latlng) {
-    form.value.latitude = Number(d.latlng.lat.toFixed(6))
-    form.value.longitude = Number(d.latlng.lng.toFixed(6))
-  }
-  showMap.value = false
-}
-onMounted(() => window.addEventListener('message', onMapMessage))
-onUnmounted(() => window.removeEventListener('message', onMapMessage))
 async function openSignups(a) {
   signupsActivity.value = a
   signups.value = (await getActivitySignups(a.id)).list
@@ -424,5 +501,17 @@ async function onDeletePost(p) {
 .addr-coord { font-size: 11px; color: var(--ink-4); margin-top: 4px; }
 .repeat-hint { font-size: 12px; color: #B6452F; margin: 8px 0 0; }
 .map-modal { width: 720px; max-width: 92vw; }
-.map-frame { width: 100%; height: 480px; border: 0; border-radius: 8px; }
+.map-search { display: flex; gap: 8px; margin-bottom: 8px; }
+.map-search .input-full { flex: 1; }
+.map-suggests { border: 0.5px solid var(--tbl-border); border-radius: 8px; margin-bottom: 8px; max-height: 200px; overflow-y: auto; background: var(--bg-content); }
+.map-suggest { padding: 8px 12px; font-size: 13px; cursor: pointer; border-bottom: 0.5px solid var(--tbl-border); }
+.map-suggest:last-child { border-bottom: none; }
+.map-suggest:hover { background: rgba(53, 120, 246, 0.06); }
+.map-suggest-addr { margin-left: 8px; font-size: 11px; color: var(--ink-4); }
+.map-wrap { position: relative; }
+.map-canvas { width: 100%; height: 400px; border-radius: 8px; overflow: hidden; }
+/* 中心固定图钉：取图钉尖端所指即所选坐标 */
+.map-pin { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -100%); pointer-events: none; z-index: 5; }
+.map-pin::before { content: ''; position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 16px; height: 16px; background: #E5574A; border: 2px solid #fff; border-radius: 50% 50% 50% 0; rotate: -45deg; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+.map-addr { font-size: 13px; color: var(--ink-2); padding: 10px 2px 0; min-height: 20px; }
 </style>
