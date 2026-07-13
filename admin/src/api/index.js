@@ -118,6 +118,10 @@ export async function getOrderDetail(id) { return call('orderDetail', { id }) }
 export async function getUserOrders(userId) { return call('userOrders', { userId }) }
 export async function createOrder(data) { return call('createOrder', data) }
 
+// 会员退费：preview 试算（最近缴费单 + 规则 + 应退金额），refund 执行（服务端重算，退费后会员即时失效）
+export async function getRefundPreview(userId) { return call('refundPreview', { userId }) }
+export async function refundOrder(userId) { return call('refundOrder', { userId }) }
+
 // 支付凭证：客户端等比缩放到 ≤1280px 并转 JPEG dataURL，随建单经鉴权云函数写入 DB。
 // 不走云存储（匿名登录无写权限，且会绕过密码鉴权），dataURL 直接可 <img src> 展示。
 export function fileToProofDataUrl(file, maxSide = 1280, quality = 0.82) {

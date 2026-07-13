@@ -87,7 +87,8 @@ const COMMENT_SELECT = `
 const ORDER_SELECT = `
   SELECT o.id, o.user_id AS userId, u.nickname AS userName, COALESCE(u.phone,'') AS userPhone,
          u.avatar_hue AS avatarHue, o.amount, o.plan, o.method, o.status,
-         o.member_days AS memberDays, o.note, o.created_by AS createdBy,
+         o.member_days AS memberDays, o.related_order_id AS relatedOrderId,
+         o.note, o.created_by AS createdBy,
          DATE_FORMAT(o.valid_from, '%Y-%m-%d') AS validFrom,
          DATE_FORMAT(o.valid_until, '%Y-%m-%d') AS validUntil,
          DATE_FORMAT(o.payment_time, '%Y-%m-%d %H:%i') AS paymentTime,
@@ -108,6 +109,49 @@ function rowToOrder(r) {
   const state = orderState(r)
   delete r.daysToExpiry
   return { ...r, state }
+}
+
+// 会员退费试算：定位该会员最近一张缴费单并按规则计算可退金额（refundPreview 展示、refundOrder 落库共用）
+// 规则：支付日起 7 天内全额退款；过 7 天按剩余天数折算（金额 × 剩余天数 ÷ 订单总天数），已过期不可退
+async function refundCalc(userId) {
+  if (!userId) throw new Error('缺少用户 ID')
+  const [users] = await db.query('SELECT id, identity FROM users WHERE id = ?', [userId])
+  if (!users.length) throw new Error('用户不存在')
+  if (users[0].identity !== 'member') throw new Error('该用户当前不是会员，无可退订单')
+  const [orders] = await db.query(
+    `SELECT o.id, o.amount, o.plan, o.method,
+            DATE_FORMAT(o.valid_from,'%Y-%m-%d') AS validFrom,
+            DATE_FORMAT(o.valid_until,'%Y-%m-%d') AS validUntil,
+            DATE_FORMAT(o.payment_time,'%Y-%m-%d %H:%i') AS paymentTime,
+            DATEDIFF(CURDATE(), DATE(o.payment_time)) AS daysSincePay,
+            DATEDIFF(o.valid_until, CURDATE()) AS remainingDays,
+            DATEDIFF(o.valid_until, o.valid_from) AS totalDays
+     FROM orders o WHERE o.user_id = ? AND o.status = 'paid'
+     ORDER BY o.created_at DESC, o.id DESC LIMIT 1`, [userId])
+  if (!orders.length) throw new Error('未找到该用户的缴费订单')
+  const order = orders[0]
+  const [refunded] = await db.query(
+    "SELECT id FROM orders WHERE related_order_id = ? AND status = 'refunded'", [order.id])
+  if (refunded.length) throw new Error(`该缴费单已退费（退款单 ${refunded[0].id}）`)
+  if (order.remainingDays == null || order.remainingDays <= 0) throw new Error('会员已过期，无剩余天数可退')
+  const amount = Number(order.amount)
+  let rule, refundAmount
+  if (order.daysSincePay != null && order.daysSincePay <= 7) {
+    rule = 'full'
+    refundAmount = amount
+  } else {
+    rule = 'prorated'
+    const total = order.totalDays > 0 ? order.totalDays : 1
+    refundAmount = Math.min(amount, Math.round(amount * order.remainingDays / total * 100) / 100)
+  }
+  return {
+    order,
+    daysSincePay: order.daysSincePay,
+    remainingDays: order.remainingDays,
+    totalDays: order.totalDays,
+    rule,
+    refundAmount,
+  }
 }
 
 function rowToDiary(r) {
@@ -630,14 +674,20 @@ const handlers = {
     const orderId = 'XS-' + todayStr.replace(/-/g, '') + '-' +
       Math.floor(Math.random() * 10000).toString().padStart(4, '0')
 
+    // 续费/重开自动关联该用户上一张缴费单（首单为 NULL）
+    const [prevPaid] = await db.query(
+      "SELECT id FROM orders WHERE user_id = ? AND status = 'paid' ORDER BY created_at DESC, id DESC LIMIT 1",
+      [userId])
+    const relatedOrderId = prevPaid.length ? prevPaid[0].id : null
+
     const conn = await db.getConnection()
     try {
       await conn.beginTransaction()
       await conn.query(
         `INSERT INTO orders (id, user_id, amount, plan, method, status, member_days,
-           valid_from, valid_until, payment_time, note, proof_url, created_by)
-         VALUES (?,?,?,?,?,'paid',?,?,?,?,?,?,'admin-web')`,
-        [orderId, userId, amt, plan, method, days, vFrom, vUntil, payTime, note, proofUrl])
+           related_order_id, valid_from, valid_until, payment_time, note, proof_url, created_by)
+         VALUES (?,?,?,?,?,'paid',?,?,?,?,?,?,?,'admin-web')`,
+        [orderId, userId, amt, plan, method, days, relatedOrderId, vFrom, vUntil, payTime, note, proofUrl])
       await conn.query(
         "UPDATE users SET identity = 'member', member_from = ?, member_until = ? WHERE id = ?",
         [memberFrom, vUntil, userId])
@@ -651,6 +701,48 @@ const handlers = {
     await auditLog('createOrder', 'order', orderId, { userId, amount: amt, validUntil: vUntil, renew: user.identity === 'member' })
     const [orderRows] = await db.query(`${ORDER_SELECT} WHERE o.id = ?`, [orderId])
     return { order: rowToOrder(orderRows[0]), validUntil: vUntil }
+  },
+
+  // 会员退费试算（只读）：返回最近缴费单、规则口径与应退金额，供确认弹窗展示
+  async refundPreview({ userId } = {}) {
+    return refundCalc(userId)
+  },
+
+  // 会员退费：服务端重算金额（不信任前端传值），事务内建退款单（关联原缴费单）+ 会员即时失效。
+  // 小程序权限同步依赖既有机制：内容闸/发文守卫实时读 DB（member_until 已清即拒），前端缓存下次启动 login 自愈。
+  async refundOrder({ userId } = {}) {
+    const calc = await refundCalc(userId)
+    const todayStr = bjNow().toISOString().slice(0, 10)
+    const now = bjNow().toISOString().slice(0, 19).replace('T', ' ')
+    const refundId = 'XS-' + todayStr.replace(/-/g, '') + '-' +
+      Math.floor(Math.random() * 10000).toString().padStart(4, '0')
+    const note = calc.rule === 'full'
+      ? `退费：入会 7 天内全额退款，原单 ${calc.order.id}`
+      : `退费：按剩余 ${calc.remainingDays}/${calc.totalDays} 天折算，原单 ${calc.order.id}`
+
+    const conn = await db.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query(
+        `INSERT INTO orders (id, user_id, amount, plan, method, status, member_days,
+           related_order_id, payment_time, note, created_by)
+         VALUES (?,?,?,?,?,'refunded',0,?,?,?,'admin-web')`,
+        [refundId, userId, calc.refundAmount, calc.order.plan, calc.order.method,
+         calc.order.id, now, note])
+      await conn.query(
+        "UPDATE users SET identity = 'authed', member_from = NULL, member_until = NULL WHERE id = ?",
+        [userId])
+      await conn.commit()
+    } catch (err) {
+      await conn.rollback()
+      throw err
+    } finally {
+      conn.release()
+    }
+    await auditLog('refundOrder', 'order', refundId,
+      { userId, relatedOrderId: calc.order.id, refundAmount: calc.refundAmount, rule: calc.rule })
+    const [rows] = await db.query(`${ORDER_SELECT} WHERE o.id = ?`, [refundId])
+    return { order: rowToOrder(rows[0]), refundAmount: calc.refundAmount, rule: calc.rule }
   },
 }
 

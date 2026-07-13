@@ -58,11 +58,12 @@
         <p class="edit-hint">改为「会员」须填生效/失效日期（失效默认生效日 +1 年，可改）；改为非会员将清空会员有效期。</p>
       </div>
 
-      <!-- v2.4 开通/续费会员入口（游客不可开通） -->
+      <!-- v2.4 开通/续费会员入口（游客不可开通）；会员另有退费入口 -->
       <div v-if="!editing && user.identity !== 'guest'" style="margin-top:16px">
         <router-link :to="'/orders?create='+user.id" class="btn btn-danger">
           {{ user.identity === 'member' ? '续费会员' : '开通会员' }}
         </router-link>
+        <button v-if="user.identity === 'member'" class="btn btn-ghost refund-btn" @click="openRefund">会员退费</button>
       </div>
     </div>
 
@@ -105,13 +106,40 @@
     <div v-if="orders.length" class="section">
       <h2>会员订单 ({{ orders.length }})</h2>
       <table class="data-table">
-        <thead><tr><th>订单号</th><th>金额</th><th>支付方式</th><th>支付时间</th><th>有效期</th><th>状态</th></tr></thead>
+        <thead><tr><th>订单号</th><th>金额</th><th>支付方式</th><th>支付时间</th><th>有效期</th><th>状态</th><th>关联订单</th></tr></thead>
         <tbody><tr v-for="o in orders" :key="o.id">
           <td class="mono">{{ o.id }}</td><td>¥{{ o.amount }}</td><td>{{ o.method }}</td>
-          <td>{{ o.paymentTime || '-' }}</td><td>{{ o.validFrom }} → {{ o.validUntil }}</td>
+          <td>{{ o.paymentTime || '-' }}</td><td>{{ o.validFrom ? o.validFrom + ' → ' + o.validUntil : '-' }}</td>
           <td><span class="badge" :class="'badge-'+o.state">{{ stateLabel(o.state) }}</span></td>
+          <td class="mono">{{ o.relatedOrderId || '-' }}</td>
         </tr></tbody>
       </table>
+    </div>
+
+    <!-- 会员退费弹窗：展示试算结果，确认后执行（金额由服务端计算） -->
+    <div v-if="showRefund" class="modal-mask" @click.self="closeRefund">
+      <div class="modal">
+        <h2 class="modal-title">会员退费 · {{ user.nickname }}</h2>
+        <div v-if="refundError" class="refund-error">{{ refundError }}</div>
+        <template v-else-if="refund">
+          <div class="refund-grid">
+            <div><label>原缴费单</label><span class="mono">{{ refund.order.id }}</span></div>
+            <div><label>缴费金额</label><span>¥{{ refund.order.amount }}</span></div>
+            <div><label>支付时间</label><span>{{ refund.order.paymentTime || '-' }}（已入会 {{ refund.daysSincePay }} 天）</span></div>
+            <div><label>会员有效期</label><span>{{ refund.order.validFrom }} → {{ refund.order.validUntil }}（剩 {{ refund.remainingDays }} 天）</span></div>
+            <div><label>退款规则</label><span>{{ refund.rule === 'full' ? '入会 7 天内 · 全额退款' : `按剩余天数折算（${refund.remainingDays}/${refund.totalDays} 天）` }}</span></div>
+            <div class="refund-amount"><label>应退金额</label><span>¥{{ refund.refundAmount }}</span></div>
+          </div>
+          <p class="refund-hint">确认后将生成关联原单的退款订单，该用户会员资格<b>立即失效</b>（小程序端同步失去会员权限）。线下退款请按应退金额另行转账。</p>
+        </template>
+        <div v-else class="refund-loading">试算中…</div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" @click="closeRefund">取消</button>
+          <button class="btn btn-danger" :disabled="!refund || refundError || refunding" @click="onConfirmRefund">
+            {{ refunding ? '处理中…' : '确认退费' }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- v2.2 修改推荐人弹窗 -->
@@ -161,13 +189,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getUserDetail, getUsers, updateReferrer, getUserOrders, updateUser } from '../api/index.js'
+import { getUserDetail, getUsers, updateReferrer, getUserOrders, updateUser, getRefundPreview, refundOrder } from '../api/index.js'
 
 const route = useRoute()
 const user = ref(null), diaries = ref([]), referred = ref([]), orders = ref([])
 const showRefEdit = ref(false), refKeyword = ref(''), refSelected = ref(null)
 const allUsers = ref([]), candidates = ref([])
 const editing = ref(false), form = ref({})
+const showRefund = ref(false), refund = ref(null), refundError = ref(''), refunding = ref(false)
 
 onMounted(load)
 async function load() {
@@ -223,6 +252,33 @@ async function onSaveProfile() {
 async function copy(text) {
   if (!text) return
   try { await navigator.clipboard.writeText(text) } catch { /* 忽略 */ }
+}
+
+// 会员退费：打开即试算（服务端定位最近缴费单并按规则计算），确认后执行
+async function openRefund() {
+  showRefund.value = true
+  refund.value = null
+  refundError.value = ''
+  try {
+    refund.value = await getRefundPreview(user.value.id)
+  } catch (e) {
+    refundError.value = e.message
+  }
+}
+function closeRefund() { showRefund.value = false }
+async function onConfirmRefund() {
+  if (refunding.value) return
+  refunding.value = true
+  try {
+    const r = await refundOrder(user.value.id)
+    showRefund.value = false
+    alert(`退费完成：退款单 ${r.order.id}，应退 ¥${r.refundAmount}，该用户会员资格已失效`)
+    await load()
+  } catch (e) {
+    alert('退费失败：' + e.message)
+  } finally {
+    refunding.value = false
+  }
 }
 
 async function openReferrerEdit() {
@@ -284,4 +340,13 @@ async function onClearReferrer() {
 .id-v.empty { color: var(--ink-4); }
 .id-copy { flex-shrink: 0; }
 .id-note { font-size: 11px; color: var(--ink-4); line-height: 1.7; padding: 12px 0 4px; margin: 0; }
+
+.refund-btn { margin-left: 8px; }
+.refund-grid { display: flex; flex-direction: column; gap: 10px; margin: 8px 0; }
+.refund-grid > div { display: flex; align-items: baseline; gap: 12px; font-size: 13px; }
+.refund-grid label { width: 92px; flex-shrink: 0; color: var(--ink-3); font-size: 12px; }
+.refund-amount span { font-family: var(--font-serif); font-size: 20px; font-weight: 700; color: #B23B3B; }
+.refund-hint { font-size: 12px; color: var(--ink-4); line-height: 1.7; margin: 12px 0 0; }
+.refund-error { color: #B23B3B; font-size: 13px; padding: 12px 0; }
+.refund-loading { color: var(--ink-4); font-size: 13px; padding: 12px 0; }
 </style>
