@@ -1,20 +1,22 @@
-// 云存储跨环境迁移（一次性）：cloud1-d9gbozhfp4a6c50c0 → cloud1-xingshu-prd-d1cev0fcca864
-// 1) 整目录下载旧环境文件 → 原路径上传新环境；2) 重写数据库中的 fileID 前缀
-// 用法：在 .env 追加 TENCENT_SECRET_ID / TENCENT_SECRET_KEY（腾讯云 API 密钥，用后可删），
-//       然后 node scripts/migrate-storage.js [--dry]（--dry 只统计不执行）
+// 云存储跨环境迁移（可复用）：OLD_ENV → NEW_ENV，迁移文件并重写数据库 fileID 前缀。
+// ⚠ manager-node 的环境配置是模块级单例：同一进程内创建两个环境实例会串桶配置
+//   （上传/列表会打到错误的桶）。因此下载、上传、取桶名一律在单环境子进程中执行。
+//   —— 2026-07-13 首次迁移在此翻车两次（DB 前缀写错 + 文件传回旧桶），均已人工修正。
+// 用法：.env 配 TENCENT_SECRET_ID / TENCENT_SECRET_KEY（腾讯云 API 密钥，用后删除），
+//       node scripts/migrate-storage.js [--dry]
 const fs = require('fs')
 const path = require('path')
-const CloudBase = require('@cloudbase/manager-node')
+const { execFileSync } = require('child_process')
 const mysql = require('mysql2/promise')
 const DB = require('../config/db')
 
 const OLD_ENV = 'cloud1-d9gbozhfp4a6c50c0'
 const NEW_ENV = 'cloud1-xingshu-prd-d1cev0fcca864'
-const FOLDERS = ['activity-posts', 'avatars', 'diary-images', 'posters']
+// posters/ 为海报/小程序码生成缓存（DB 无引用、可再生、量大易挂），不迁移
+const FOLDERS = ['activity-posts', 'avatars', 'diary-images']
 const TMP = path.join(__dirname, '..', '.storage-migrate-tmp')
 const DRY = process.argv.includes('--dry')
 
-// 从根目录 .env 读腾讯云 API 密钥（config/db.js 只导出数据库字段，这里自行解析）
 const envText = fs.readFileSync(path.join(__dirname, '..', '.env'), 'utf8')
 const pick = (k) => (envText.match(new RegExp(`^\\s*${k}\\s*=\\s*(.*?)\\s*$`, 'm')) || [])[1]
 const secretId = pick('TENCENT_SECRET_ID')
@@ -24,74 +26,64 @@ if (!secretId || !secretKey) {
   process.exit(1)
 }
 
-// 独立子进程取指定环境的存储桶名（规避 manager-node 环境配置单例串扰）
-function bucketOf(envId) {
-  const { execFileSync } = require('child_process')
+// 在单环境子进程中执行一段针对 app 的异步代码（body 内可用 app/fs/path，末尾自行 console.log 输出）
+function inEnv(envId, body) {
   const code = `
+    const fs = require('fs'), path = require('path')
     const CloudBase = require('@cloudbase/manager-node')
     const app = CloudBase.init({ secretId: ${JSON.stringify(secretId)}, secretKey: ${JSON.stringify(secretKey)}, envId: ${JSON.stringify(envId)} })
-    app.storage.listDirectoryFiles('${FOLDERS[0]}/').then(() => { console.log(app.storage.getStorageConfig().bucket); process.exit(0) })
-      .catch(e => { console.error(e.message); process.exit(1) })
+    ;(async () => { ${body}; process.exit(0) })().catch(e => { console.error(e.message); process.exit(1) })
   `
-  return execFileSync(process.execPath, ['-e', code], { cwd: path.join(__dirname, '..') }).toString().trim()
+  return execFileSync(process.execPath, ['-e', code], {
+    cwd: path.join(__dirname, '..'),
+    stdio: ['ignore', 'pipe', 'inherit'],
+  }).toString().trim()
 }
 
-async function listAll(storage, dir) {
-  const files = await storage.listDirectoryFiles(dir + '/')
-  return (files || []).filter(f => f.Key && !f.Key.endsWith('/'))
-}
+const countBody = (dir) => `
+  const files = await app.storage.listDirectoryFiles('${dir}/')
+  console.log(files.filter(f => f.Key && !f.Key.endsWith('/')).length)
+`
 
 async function run() {
-  const oldApp = CloudBase.init({ secretId, secretKey, envId: OLD_ENV })
-  const newApp = CloudBase.init({ secretId, secretKey, envId: NEW_ENV })
-
-  // ── 1. 盘点旧环境文件 ──
+  // ── 1. 盘点旧环境 ──
+  const counts = {}
   let total = 0
-  const inventory = {}
   for (const dir of FOLDERS) {
-    const files = await listAll(oldApp.storage, dir)
-    inventory[dir] = files.length
-    total += files.length
-    console.log(`旧环境 ${dir}/：${files.length} 个文件`)
+    counts[dir] = Number(inEnv(OLD_ENV, countBody(dir)))
+    total += counts[dir]
+    console.log(`旧环境 ${dir}/：${counts[dir]} 个文件`)
   }
   console.log(`合计 ${total} 个文件${DRY ? '（--dry 模式，仅统计）' : ''}`)
   if (DRY) process.exit(0)
 
-  // ── 2. 下载 → 上传（保持原路径） ──
+  // ── 2. 下载（旧环境子进程）──
   fs.rmSync(TMP, { recursive: true, force: true })
-  fs.mkdirSync(TMP, { recursive: true })
   for (const dir of FOLDERS) {
-    if (!inventory[dir]) continue
-    const local = path.join(TMP, dir)
-    fs.mkdirSync(local, { recursive: true }) // SDK 要求本地目录已存在
+    fs.mkdirSync(path.join(TMP, dir), { recursive: true })
     console.log(`下载 ${dir}/ …`)
-    await oldApp.storage.downloadDirectory({ cloudPath: dir, localPath: local })
-    console.log(`上传 ${dir}/ → 新环境 …`)
-    await newApp.storage.uploadDirectory({ localPath: local, cloudPath: dir })
+    inEnv(OLD_ENV, `await app.storage.downloadDirectory({ cloudPath: '${dir}', localPath: ${JSON.stringify(path.join(TMP, dir))} })`)
   }
 
-  // ── 3. 校验新环境文件数并取新桶前缀 ──
+  // ── 3. 上传 + 校验（新环境子进程）──
   let newTotal = 0
-  let sampleKey = null
   for (const dir of FOLDERS) {
-    const files = await listAll(newApp.storage, dir)
-    if (files.length && !sampleKey) sampleKey = files[0].Key
-    console.log(`新环境 ${dir}/：${files.length} 个文件（旧 ${inventory[dir]}）`)
-    newTotal += files.length
+    console.log(`上传 ${dir}/ → 新环境 …`)
+    inEnv(NEW_ENV, `await app.storage.uploadDirectory({ localPath: ${JSON.stringify(path.join(TMP, dir))}, cloudPath: '${dir}' })`)
+    const n = Number(inEnv(NEW_ENV, countBody(dir)).split('\n').pop())
+    console.log(`新环境 ${dir}/：${n} 个文件（旧 ${counts[dir]}）`)
+    newTotal += n
   }
   if (newTotal < total) throw new Error(`新环境文件数 ${newTotal} < 旧环境 ${total}，请检查后重跑`)
 
-  // fileID 前缀：cloud://<env>.<bucket>/ 。
-  // ⚠ manager-node 的环境配置是模块级单例，同进程建两个环境实例会串（后加载者覆盖前者的桶名），
-  //   桶名必须在独立子进程中逐环境获取（2026-07-13 首次执行时踩坑，DB 前缀写错后人工修正）
-  const oldBucket = bucketOf(OLD_ENV)
-  const newBucket = bucketOf(NEW_ENV)
-  if (!newBucket || !oldBucket) throw new Error('取存储桶名失败')
+  // ── 4. 取两环境桶名（各自子进程），重写数据库 fileID 前缀 ──
+  const bucketBody = `await app.storage.listDirectoryFiles('${FOLDERS[0]}/'); console.log(app.storage.getStorageConfig().bucket)`
+  const oldBucket = inEnv(OLD_ENV, bucketBody).split('\n').pop()
+  const newBucket = inEnv(NEW_ENV, bucketBody).split('\n').pop()
   const oldPrefix = `cloud://${OLD_ENV}.${oldBucket}/`
   const newPrefix = `cloud://${NEW_ENV}.${newBucket}/`
   console.log(`\nfileID 前缀替换：\n  ${oldPrefix}\n→ ${newPrefix}\n`)
 
-  // ── 4. 重写数据库引用 ──
   const conn = await mysql.createConnection(DB)
   const updates = [
     ['users', 'avatar_url'],
@@ -107,7 +99,6 @@ async function run() {
       [oldPrefix, newPrefix, `%${oldPrefix}%`])
     console.log(`${table}.${col}：更新 ${r.affectedRows} 行`)
   }
-  // 残留检查
   for (const [table, col] of updates) {
     const [[{ c }]] = await conn.query(
       `SELECT COUNT(*) c FROM ${table} WHERE ${col} LIKE ?`, [`%${OLD_ENV}%`])
