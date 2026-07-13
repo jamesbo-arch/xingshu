@@ -26,8 +26,8 @@
       </tbody>
     </table>
 
-    <!-- 活动编辑弹窗 -->
-    <div v-if="showForm" class="modal-mask" @click.self="showForm = false">
+    <!-- 活动编辑弹窗（不做点击遮罩关闭：表单内容多，防误点丢失编辑） -->
+    <div v-if="showForm" class="modal-mask">
       <div class="modal">
         <h2 class="modal-title">{{ form.id ? '编辑活动' : '发布活动' }}</h2>
         <div class="form-grid">
