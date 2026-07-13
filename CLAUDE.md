@@ -191,8 +191,8 @@
 | 页面 | 路由 | Tab | 用途 |
 |------|-------|-----|---------|
 | square | `pages/square/index` | 是 (0) | 醒书广场——公开+会员日记流，搜索、筛选 |
-| activities | `pages/activities/index` | 是 (1) | 醒书活动——活动列表（近期预告/往期回顾，M1.5 新增） |
-| collections | `pages/collections/index` | 是 (2) | 我的收藏——用户收藏的日记，支持搜索+筛选 |
+| collections | `pages/collections/index` | 是 (1) | 我的收藏——用户收藏的日记，支持搜索+筛选 |
+| activities | `pages/activities/index` | 是 (2) | 醒书活动——活动列表（近期预告/往期回顾，M1.5 新增） |
 | mine | `pages/mine/index` | 是 (3) | 我的日记——用户自己的日记，支持编辑/删除 |
 | member | `pages/member/index` | 是 (4) | 会员中心——会员信息、购买流程、个人资料编辑、设置（退出登录） |
 | detail | `pages/detail/index` | 否 | 日记详情——查看单篇日记及评论，点赞/收藏/分享 |
