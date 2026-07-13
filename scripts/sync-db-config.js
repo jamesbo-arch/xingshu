@@ -22,6 +22,10 @@ const pool = mysql.createPool({
   connectionLimit: 5,
   queueLimit: 0,
   charset: 'utf8mb4',
+  // 隧道链路冷透时握手可能挂死，mysql2 默认 connectTimeout 10s 会吃光云函数超时预算——
+  // 5s 快速失败，把机会留给前端重试；keepalive 减少热容器里连接被隧道静默断掉
+  connectTimeout: 5000,
+  enableKeepAlive: true,
 })
 
 module.exports = pool
