@@ -121,6 +121,27 @@ async function run() {
       if (other.code === 0) throw new Error('未报名不应可看名单')
     })
 
+    await test('FEED-09 线上会议号仅报名可见：detail 未报名掩码/已报名返回，list 不外泄', async () => {
+      const actOnline = await makeActivity({ type: 'online', city: '', location: '123-456-789' })
+      const other = await act('detail', { id: actOnline }, 'mock_me')
+      if (other.code !== 0) throw new Error(other.msg)
+      if (other.data.location) throw new Error('未报名不应见会议号')
+      if (!other.data.locationLocked) throw new Error('应带 locationLocked 标记')
+      await act('signup', { id: actOnline, name: '砚秋' })
+      const mine = await act('detail', { id: actOnline })
+      if (mine.data.location !== '123-456-789') throw new Error('已报名应见会议号')
+      if (mine.data.locationLocked) throw new Error('已报名不应带锁标记')
+      const l = await act('list', { mode: 'all' }, 'test_ghost_' + Date.now())
+      const row = l.data.list.find(a => a.id === actOnline)
+      if (row.location) throw new Error('列表不应外泄会议号')
+    })
+
+    await test('FEED-10 线下活动 detail 返回经纬度字段（地图导航用）', async () => {
+      const r = await act('detail', { id: actA })
+      if (r.code !== 0) throw new Error(r.msg)
+      if (!('latitude' in r.data) || !('longitude' in r.data)) throw new Error('缺经纬度字段')
+    })
+
     await test('FEED-06 list mode:all + typeId 筛选', async () => {
       const [[t]] = await conn.query("SELECT id FROM activity_types WHERE is_active = 1 ORDER BY id LIMIT 1")
       const typedId = await makeActivity({ type_id: t.id })

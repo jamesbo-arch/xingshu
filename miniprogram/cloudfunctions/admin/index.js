@@ -503,7 +503,8 @@ const handlers = {
   async activityList() {
     const [rows] = await db.query(
       `SELECT a.id, a.title, a.type, a.type_id, t.name AS typeName,
-              a.city, a.location, a.organizer, a.capacity, a.signup_count AS signedUp, a.status,
+              a.city, a.location, a.latitude, a.longitude,
+              a.organizer, a.capacity, a.signup_count AS signedUp, a.status,
               a.content, a.cover_url, a.review_content,
               DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') AS startTime,
               DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') AS endTime,
@@ -515,6 +516,7 @@ const handlers = {
 
   async activitySave({ id, title, cover_url = '', content = '', images = [], start_time, end_time = null,
                        type = 'offline', type_id = null, city = '', location = '', organizer = '醒书运营组',
+                       latitude = null, longitude = null,
                        capacity = 0, signup_deadline = null, status = 'draft',
                        review_content = null, review_images = null } = {}) {
     if (!title || !start_time) throw new Error('标题与开始时间必填')
@@ -531,19 +533,21 @@ const handlers = {
     if (id) {
       await db.query(
         `UPDATE activities SET title=?, cover_url=?, content=?, images=?, start_time=?, end_time=?,
-         type=?, type_id=?, city=?, location=?, organizer=?, capacity=?, signup_deadline=?, status=?,
+         type=?, type_id=?, city=?, location=?, latitude=?, longitude=?, organizer=?, capacity=?,
+         signup_deadline=?, status=?,
          review_content=?, review_images=?, updated_by='admin-web' WHERE id=?`,
         [title, cover_url, content, imagesJson, start_time, end_time, type, type_id, city, location,
-         organizer, capacity, signup_deadline, status, review_content, reviewImagesJson, id])
+         latitude, longitude, organizer, capacity, signup_deadline, status, review_content, reviewImagesJson, id])
       await auditLog('activityUpdate', 'activity', id, { title, status })
       return { id }
     }
     const [r] = await db.query(
       `INSERT INTO activities (title, cover_url, content, images, start_time, end_time, type, type_id, city,
-        location, organizer, capacity, signup_deadline, status, review_content, review_images, created_by)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'admin-web')`,
+        location, latitude, longitude, organizer, capacity, signup_deadline, status,
+        review_content, review_images, created_by)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'admin-web')`,
       [title, cover_url, content, imagesJson, start_time, end_time, type, type_id, city, location,
-       organizer, capacity, signup_deadline, status, review_content, reviewImagesJson])
+       latitude, longitude, organizer, capacity, signup_deadline, status, review_content, reviewImagesJson])
     await auditLog('activityCreate', 'activity', r.insertId, { title, status })
     return { id: r.insertId }
   },

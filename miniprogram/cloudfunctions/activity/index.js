@@ -39,7 +39,11 @@ const handlers = {
       const [signed] = await db.query('SELECT activity_id FROM activity_signups WHERE user_id = ?', [user.id])
       signedSet = new Set(signed.map(s => s.activity_id))
     }
-    rows.forEach(a => { a.isSignedUp = signedSet.has(a.id) ? 1 : 0 })
+    rows.forEach(a => {
+      a.isSignedUp = signedSet.has(a.id) ? 1 : 0
+      // 线上活动的 location 存腾讯会议号，仅报名用户在详情可见——列表一律不外泄
+      if (a.type === 'online') a.location = ''
+    })
     if (mode === 'all') {
       return { list: rows.sort((a, b) => b.start_time.localeCompare(a.start_time)) }
     }
@@ -72,6 +76,11 @@ const handlers = {
     // 现场分享发布权：已报名 + 活动已开始（服务端 NOW() 判定，避免设备时钟/时区问题）
     a.canPost = a.isSignedUp && !!a.started
     delete a.started
+    // 线上活动 location 存腾讯会议号：仅报名用户可见，未报名掩码并标记（前端展示「报名后可见」）
+    if (a.type === 'online' && !a.isSignedUp) {
+      a.location = ''
+      a.locationLocked = 1
+    }
     return a
   },
 

@@ -123,6 +123,11 @@
   letter-spacing: 2rpx;
 }
 
+/* 线下地址可点开地图时的链接样式 */
+.act-addr-link {
+  color: #3A6B9E;
+}
+
 /* 报名名单弹层 */
 .su-list {
   max-height: 50vh;

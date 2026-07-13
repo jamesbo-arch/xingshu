@@ -19,7 +19,11 @@
 
       <view class="act-info-card">
         <view class="act-meta"><view class="act-meta-icon ic-calendar"></view><text>{{activity.start_time}}{{activity.end_time ? ' – ' + activity.end_time : ''}}</text></view>
-        <view class="act-meta"><view class="act-meta-icon ic-pin"></view><text>{{activity.type === 'online' ? '线上 · ' + activity.location : activity.city + ' · ' + activity.location}}</text></view>
+        <view class="act-meta"><view class="act-meta-icon ic-pin"></view>
+          <!-- 线上：会议号仅报名可见（后端掩码 + locationLocked 标记）；线下：有坐标时点击打开地图 -->
+          <text wx:if="{{activity.type === 'online'}}">线上{{activity.locationLocked ? ' · 会议号报名后可见' : (activity.location ? ' · 腾讯会议 ' + activity.location : '')}}</text>
+          <text wx:else class="{{activity.latitude ? 'act-addr-link' : ''}}" bindtap="onOpenMap">{{activity.city}} · {{activity.location}}{{activity.latitude ? ' ›' : ''}}</text>
+        </view>
         <view class="act-meta"><view class="act-meta-icon ic-users"></view><text>组织方：{{activity.organizer}}</text></view>
         <view wx:if="{{!isPast}}" class="act-progress-row">
           <view class="act-progress"><view class="act-progress-fill" style="width: {{pct}}%"></view></view>

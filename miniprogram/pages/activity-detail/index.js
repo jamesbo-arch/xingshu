@@ -332,6 +332,18 @@ Page({
     })
   },
 
+  // 线下活动地址：后台经地图选点存了坐标时，点击打开地图（导航/查看位置）
+  onOpenMap() {
+    const a = this.data.activity
+    if (!a || !a.latitude) return
+    wx.openLocation({
+      latitude: Number(a.latitude),
+      longitude: Number(a.longitude),
+      name: a.title,
+      address: (a.city ? a.city + ' · ' : '') + (a.location || ''),
+    })
+  },
+
   onPreviewImage(e) {
     const images = this.data.activity.images || []
     wx.previewImage({ current: images[e.currentTarget.dataset.index], urls: images })
