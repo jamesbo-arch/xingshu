@@ -2709,3 +2709,11 @@ fn-activity-feed-test 8/8 绿；`node --check` 过。走查：详情无大图、
 fn-activity-feed-test 10/10、fn-activity-test 11/11、fn-activity-type-test 9/9 全绿；admin build 通过；改动 JS 语法过。走查：新建线上活动填会议号 → 未报名小程序详情见「报名后可见」，报名后见会议号；线下活动地图选点 → 详情地址可点开地图；每周循环 + 截止日期 → 预览与生成场次一致。
 
 **部署（用户操作）**：重部署 activity + admin 云函数；admin Web 发布；地图选点需到腾讯位置服务（lbs.qq.com）申请 key 填入 `admin/.env.local` 的 `VITE_TMAP_KEY` 后重新 build；prod 上线补执行经纬度 DDL。
+
+### 2026-07-13 — 配置腾讯位置服务 key，地图选点生效
+
+**类型**：配置
+**变更说明**：
+用户提供腾讯位置服务 key，已写入 `admin/.env.local` 的 `VITE_TMAP_KEY`（`*.local` 已被 gitignore，key 不入库；前端 key 随构建产物公开属正常，建议在 lbs.qq.com 控制台为该 key 配置域名白名单加固）。admin 重新 build 通过，发布活动表单的「地图选点」按钮已可用。
+
+**验证**：build 成功；发布产物后在活动表单选线下 → 点「地图选点」→ 选址确认 → 地址与坐标自动回填。
