@@ -20,7 +20,7 @@
           <td><span class="act-st" :class="'st-' + actState(a).cls">{{ actState(a).label }}</span></td>
           <td>
             <button class="btn btn-ghost" @click="openForm(a)">编辑</button>
-            <a class="link" @click="openPosts(a)">分享</a>
+            <a class="link" @click="openPosts(a)">现场分享</a>
           </td>
         </tr>
       </tbody>

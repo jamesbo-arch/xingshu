@@ -104,14 +104,11 @@ export async function deleteActivityPost(id) { return call('postDeleteAdmin', { 
 // 实际参与名单：整场覆盖式保存勾选的报名 ID
 export async function saveAttendance(activityId, attendedIds) { return call('attendanceSave', { activityId, attendedIds }) }
 
-// cloud:// fileID 批量换临时 URL（展示小程序上传的现场分享图片）
+// cloud:// fileID 批量换临时 URL（展示小程序上传的现场分享图片）。
+// 走 admin 云函数服务端换链——Web 端匿名登录对云存储常无读权限，客户端 getTempFileURL 会拿到空链接
 export async function resolveFileUrls(fileIDs) {
   if (!fileIDs || !fileIDs.length) return {}
-  await ensureSignIn()
-  const res = await app.getTempFileURL({ fileList: fileIDs })
-  const map = {}
-  for (const f of res.fileList || []) map[f.fileID] = f.tempFileURL || ''
-  return map
+  return call('fileUrls', { fileIDs })
 }
 
 // v2.4 会员订单管理

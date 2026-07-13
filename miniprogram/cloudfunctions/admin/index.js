@@ -562,6 +562,18 @@ const handlers = {
   },
 
   // ── 活动现场分享（管理端全量含已删行，利于审计追溯）──
+  // 云存储 fileID 批量换临时 URL：服务端权限换链，规避 Web 端匿名登录读不到存储的 ACL 限制
+  // （wx-server-sdk 惰性加载，仅此 action 使用，不影响其余 action 与本地测试 harness）
+  async fileUrls({ fileIDs = [] } = {}) {
+    if (!Array.isArray(fileIDs) || !fileIDs.length) return {}
+    const cloud = require('wx-server-sdk')
+    cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+    const res = await cloud.getTempFileURL({ fileList: fileIDs.slice(0, 50) })
+    const map = {}
+    for (const f of res.fileList || []) map[f.fileID] = f.tempFileURL || ''
+    return map
+  },
+
   // 实际参与名单：整场覆盖式保存勾选结果；ID 按 activity_id 约束，只能勾本活动的报名者
   async attendanceSave({ activityId, attendedIds = [] } = {}) {
     if (!activityId) throw new Error('缺少活动 ID')
