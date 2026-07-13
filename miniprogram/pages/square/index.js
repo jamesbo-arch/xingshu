@@ -54,9 +54,10 @@ Page({
     }
   },
 
-  // 近期活动轮播：取全部 upcoming（已发布）；缓存只存原始最小字段，10 分钟避免每次 onShow 打接口
-  async _loadActBanner() {
-    const cached = cache.get('square:actbanners2')
+  // 近期活动轮播：取全部 upcoming（已发布）；缓存只存原始最小字段，10 分钟避免每次 onShow 打接口。
+  // force=true 绕过缓存强制重取（下拉刷新时与日记列表一并刷新，新发活动立即可见）
+  async _loadActBanner(force) {
+    const cached = force ? null : cache.get('square:actbanners2')
     if (cached !== null) { this.setData({ actBanners: this._decorateBanners(cached) }); return }
     const data = await activityApi.getList()
     if (!data) return
@@ -196,10 +197,14 @@ Page({
   },
   onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
 
-  // 顶部下拉刷新：重载第一页（scroll-view 自带 refresher，非页面级 onPullDownRefresh）
+  // 顶部下拉刷新：重载第一页 + 强刷活动预告（scroll-view 自带 refresher，非页面级 onPullDownRefresh）
   async onRefresh() {
     this.setData({ refreshing: true })
-    try { await this._loadDiaries(true) } finally { this.setData({ refreshing: false }) }
+    try {
+      await Promise.all([this._loadDiaries(true), this._loadActBanner(true)])
+    } finally {
+      this.setData({ refreshing: false })
+    }
   },
 
   // 微信「…」菜单转发/分享朋友圈：分享醒书日记入口，带分享人 ID（s=）延续推荐人机制
