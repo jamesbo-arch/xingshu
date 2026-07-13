@@ -102,6 +102,16 @@ async function run() {
       }
     })
 
+    await test('FEED-07 list 标注 isSignedUp（本人 1 / 游客 0）', async () => {
+      const r = await act('list', { mode: 'all' })
+      if (r.code !== 0) throw new Error(r.msg)
+      const mine = r.data.list.find(a => a.id === actA)
+      if (!mine || !mine.isSignedUp) throw new Error('已报名活动应标 isSignedUp=1')
+      const g = await act('list', { mode: 'all' }, 'test_ghost_' + Date.now())
+      const ghostRow = g.data.list.find(a => a.id === actA)
+      if (!ghostRow || ghostRow.isSignedUp) throw new Error('游客视角应 isSignedUp=0')
+    })
+
     await test('FEED-06 list mode:all + typeId 筛选', async () => {
       const [[t]] = await conn.query("SELECT id FROM activity_types WHERE is_active = 1 ORDER BY id LIMIT 1")
       const typedId = await makeActivity({ type_id: t.id })

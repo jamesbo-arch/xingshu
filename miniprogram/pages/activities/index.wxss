@@ -296,6 +296,7 @@ page { height: 100%; overflow: hidden; }
 }
 
 .act-st-open { color: #fff; background: #B6452F; }
+.act-st-signed { color: #B6452F; background: #FFFCF5; border: 1rpx solid #B6452F; }
 .act-st-live { color: #fff; background: #5B8F6C; }
 .act-st-done { color: #A8A39B; border: 1rpx solid rgba(126, 102, 64, 0.18); }
 

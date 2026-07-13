@@ -161,7 +161,7 @@ Page({
     this.setData({ actItems: items, allLoaded: true })
   },
 
-  // 状态三分：报名中（未开始）/ 进行中（已开始未结束，无 end_time 按开始后 24h 内）/ 已结束
+  // 状态：已报名（未开始且本人已报）> 报名中（未开始）/ 进行中（已开始未结束，无 end_time 按开始后 24h 内）/ 已结束
   _decorateAct(a, now) {
     const start = new Date(String(a.start_time).replace(/-/g, '/')).getTime()
     const end = a.end_time
@@ -169,7 +169,10 @@ Page({
       : start + 24 * 3600 * 1000
     let st = 'done', stLabel = '已结束'
     if (a.status !== 'finished') {
-      if (now < start) { st = 'open'; stLabel = '报名中' }
+      if (now < start) {
+        if (a.isSignedUp) { st = 'signed'; stLabel = '已报名' }
+        else { st = 'open'; stLabel = '报名中' }
+      }
       else if (now <= end) { st = 'live'; stLabel = '进行中' }
     }
     const full = st === 'open' && a.capacity > 0 && a.signup_count >= a.capacity

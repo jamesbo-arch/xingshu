@@ -26,12 +26,20 @@ const handlers = {
   },
 
   // 列表：仅 online（近期）与 finished（往期回顾），draft 不可见；可按类型筛选。
-  // mode:'all' → 平铺全部按开始时间倒序（活动页「全部活动」页签）；默认仍返回 upcoming/past 两组（广场预告等）
-  async list({ typeId, mode } = {}) {
+  // mode:'all' → 平铺全部按开始时间倒序（活动页「全部活动」页签）；默认仍返回 upcoming/past 两组（广场预告等）。
+  // 每行标注 isSignedUp（当前用户是否已报名，游客/未注册恒 0），供列表「已报名」状态展示
+  async list({ typeId, mode } = {}, openid) {
     const params = []
     let where = "WHERE a.status IN ('online', 'finished')"
     if (typeId) { where += ' AND a.type_id = ?'; params.push(typeId) }
     const [rows] = await db.query(`${LIST_SELECT} ${where}`, params)
+    let signedSet = new Set()
+    const user = await findUser(openid)
+    if (user) {
+      const [signed] = await db.query('SELECT activity_id FROM activity_signups WHERE user_id = ?', [user.id])
+      signedSet = new Set(signed.map(s => s.activity_id))
+    }
+    rows.forEach(a => { a.isSignedUp = signedSet.has(a.id) ? 1 : 0 })
     if (mode === 'all') {
       return { list: rows.sort((a, b) => b.start_time.localeCompare(a.start_time)) }
     }
