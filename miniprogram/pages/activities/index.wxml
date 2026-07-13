@@ -2,80 +2,103 @@
   <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
   <view class="page-header">
     <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書活動</text><kefu-fab /></view>
-    <text class="page-subtitle">线上线下，与同路人相见</text>
   </view>
 
-  <!-- 类型筛选 chips -->
-  <scroll-view wx:if="{{types.length}}" class="type-chips" scroll-x enhanced show-scrollbar="{{false}}">
-    <view class="type-chip {{activeTypeId === 0 ? 'chip-on' : ''}}" data-id="0" bindtap="onTypeTap">全部</view>
-    <view
-      wx:for="{{types}}"
-      wx:key="id"
-      class="type-chip {{activeTypeId === item.id ? 'chip-on' : ''}}"
-      data-id="{{item.id}}"
-      bindtap="onTypeTap"
-    >{{item.name}}</view>
+  <!-- 双页签：活动分享（默认）/ 全部活动 -->
+  <view class="act-tabs">
+    <view class="act-tab serif {{tab === 'share' ? 'act-tab-on' : ''}}" data-tab="share" bindtap="onTabTap">活动分享</view>
+    <view class="act-tab serif {{tab === 'all' ? 'act-tab-on' : ''}}" data-tab="all" bindtap="onTabTap">全部活动</view>
+  </view>
+
+  <!-- ── 页签一：活动分享 双列瀑布流 ── -->
+  <scroll-view wx:if="{{tab === 'share'}}" class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}"
+    bindscrolltolower="onFeedMore" lower-threshold="200"
+    refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
+    <view wx:if="{{feedLoaded && !colL.length && !colR.length}}" class="act-empty">
+      <text class="act-empty-icon serif">享</text>
+      <text class="act-empty-title">还没有现场分享</text>
+      <text class="act-empty-hint act-empty-link" bindtap="onGoAll">去看看近期活动 →</text>
+    </view>
+    <view class="feed-cols">
+      <view class="feed-col">
+        <block wx:for="{{colL}}" wx:key="id">
+          <view class="m-card" data-aid="{{item.activityId}}" bindtap="onOpenPost">
+            <view wx:if="{{item.image}}" class="m-cover" style="height: {{item.imgH}}rpx;">
+              <image class="m-img" src="{{item.image}}" mode="aspectFill" lazy-load />
+              <text wx:if="{{item.imgCount > 1}}" class="m-imgcount">{{item.imgCount}} 图</text>
+            </view>
+            <text wx:if="{{item.text}}" class="m-text {{item.image ? '' : 'm-text-solo'}}">{{item.text}}</text>
+            <view class="m-foot">
+              <image wx:if="{{item.avatarUrl}}" class="m-ava-img" src="{{item.avatarUrl}}" mode="aspectFill" />
+              <view wx:else class="m-ava" style="background-color: {{item.avatarColor}};"><text>{{item.initial}}</text></view>
+              <text class="m-nick">{{item.nickname}}</text>
+              <text class="m-act">{{item.actLabel}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+      <view class="feed-col">
+        <block wx:for="{{colR}}" wx:key="id">
+          <view class="m-card" data-aid="{{item.activityId}}" bindtap="onOpenPost">
+            <view wx:if="{{item.image}}" class="m-cover" style="height: {{item.imgH}}rpx;">
+              <image class="m-img" src="{{item.image}}" mode="aspectFill" lazy-load />
+              <text wx:if="{{item.imgCount > 1}}" class="m-imgcount">{{item.imgCount}} 图</text>
+            </view>
+            <text wx:if="{{item.text}}" class="m-text {{item.image ? '' : 'm-text-solo'}}">{{item.text}}</text>
+            <view class="m-foot">
+              <image wx:if="{{item.avatarUrl}}" class="m-ava-img" src="{{item.avatarUrl}}" mode="aspectFill" />
+              <view wx:else class="m-ava" style="background-color: {{item.avatarColor}};"><text>{{item.initial}}</text></view>
+              <text class="m-nick">{{item.nickname}}</text>
+              <text class="m-act">{{item.actLabel}}</text>
+            </view>
+          </view>
+        </block>
+      </view>
+    </view>
+    <view class="act-bottom-pad {{actBannerCount ? 'pad-banner' : ''}}"></view>
   </scroll-view>
 
-  <scroll-view class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}" refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
-    <block wx:if="{{loaded && !upcoming.length && !past.length}}">
-      <view class="act-empty">
-        <text class="act-empty-icon serif">期</text>
-        <text class="act-empty-title">活动筹备中</text>
-        <text class="act-empty-hint">敬请期待</text>
-      </view>
-    </block>
-
-    <block wx:if="{{upcoming.length}}">
-      <view class="act-section-title serif">近期活動</view>
+  <!-- ── 页签二：全部活动 简洁列表（时间倒序） ── -->
+  <scroll-view wx:else class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}"
+    refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
+    <scroll-view wx:if="{{types.length}}" class="type-chips" scroll-x enhanced show-scrollbar="{{false}}">
+      <view class="type-chip {{activeTypeId === 0 ? 'chip-on' : ''}}" data-id="0" bindtap="onTypeTap">全部</view>
       <view
-        wx:for="{{upcoming}}"
+        wx:for="{{types}}"
         wx:key="id"
-        class="activity-card"
+        class="type-chip {{activeTypeId === item.id ? 'chip-on' : ''}}"
         data-id="{{item.id}}"
-        bindtap="onOpen"
-      >
-        <view class="act-cover">
-          <image wx:if="{{item.cover_url}}" src="{{item.cover_url}}" class="act-cover-img" mode="aspectFill"/>
-          <text wx:else class="act-cover-char serif">{{item.title[0]}}</text>
-          <text class="act-cover-seal serif">醒書</text>
-          <text class="act-badge act-badge-{{item.badgeType}}">{{item.badge}}</text>
+        bindtap="onTypeTap"
+      >{{item.name}}</view>
+    </scroll-view>
+
+    <view wx:if="{{allLoaded && !actItems.length}}" class="act-empty">
+      <text class="act-empty-icon serif">期</text>
+      <text class="act-empty-title">活动筹备中</text>
+      <text class="act-empty-hint">敬请期待</text>
+    </view>
+
+    <block wx:for="{{actItems}}" wx:key="key">
+      <view wx:if="{{item.kind === 'month'}}" class="act-month serif">{{item.label}}</view>
+      <view wx:else class="act-row {{item.st === 'done' ? 'act-row-past' : ''}}" data-id="{{item.id}}" bindtap="onOpen">
+        <view class="act-tico {{item.tcls}}">
+          <view class="tico tico-{{item.tico}}"></view>
         </view>
-        <view class="act-card-body">
-          <text class="act-card-title serif">{{item.title}}</text>
-          <view class="act-meta"><view class="act-meta-icon ic-calendar"></view><text>{{item.start_time}}</text></view>
-          <view class="act-meta"><view class="act-meta-icon ic-pin"></view><text>{{item.type === 'online' ? '线上活动' : item.city + ' · ' + item.location}}</text></view>
-          <view class="act-progress-row">
-            <view class="act-progress"><view class="act-progress-fill" style="width: {{item.pct}}%"></view></view>
-            <text class="act-count">{{item.signup_count}}/{{item.capacity}} 人</text>
+        <view class="act-rmain">
+          <text class="act-rtitle">{{item.title}}</text>
+          <view class="act-rmeta">
+            <text>{{item.timeText}} · {{item.place}}{{item.full ? ' · 名额已满' : ''}}</text>
+            <text class="act-rtype {{item.tcls}}">{{item.typeName}}</text>
           </view>
         </view>
+        <text class="act-st act-st-{{item.st}}">{{item.stLabel}}</text>
       </view>
     </block>
-
-    <block wx:if="{{past.length}}">
-      <view class="act-section-title serif" style="margin-top: 40rpx;">往期回顧</view>
-      <view
-        wx:for="{{past}}"
-        wx:key="id"
-        class="activity-card"
-        data-id="{{item.id}}"
-        bindtap="onOpen"
-      >
-        <view class="act-cover">
-          <image wx:if="{{item.cover_url}}" src="{{item.cover_url}}" class="act-cover-img" mode="aspectFill"/>
-          <text wx:else class="act-cover-char serif">{{item.title[0]}}</text>
-          <text class="act-cover-seal serif">醒書</text>
-          <text class="act-badge act-badge-past">回顾</text>
-        </view>
-        <view class="act-card-body">
-          <text class="act-card-title serif">{{item.title}}</text>
-          <view class="act-meta"><view class="act-meta-icon ic-calendar"></view><text>{{item.start_time}}</text></view>
-          <text class="act-count-past">{{item.signup_count}} 位醒书人参与</text>
-        </view>
-      </view>
-    </block>
-
     <view class="act-bottom-pad"></view>
   </scroll-view>
+
+  <!-- 近期活动预告轮播（共享组件）：仅分享页签展示，固定于 tab-bar 之上 -->
+  <view class="act-banner-bar" hidden="{{tab !== 'share' || !actBannerCount}}">
+    <act-banner id="actBanner" bind:change="onActBannerChange"></act-banner>
+  </view>
 </view>

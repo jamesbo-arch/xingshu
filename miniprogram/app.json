@@ -50,6 +50,7 @@
   "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json",
   "usingComponents": {
-    "kefu-fab": "/components/kefu-fab/index"
+    "kefu-fab": "/components/kefu-fab/index",
+    "act-banner": "/components/act-banner/index"
   }
 }

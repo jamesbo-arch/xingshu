@@ -1,0 +1,14 @@
+<swiper wx:if="{{banners.length}}" class="act-banner-swiper" circular="{{banners.length > 1}}" autoplay="{{banners.length > 1}}"
+  interval="10000" duration="400" indicator-dots="{{banners.length > 1}}"
+  indicator-color="rgba(255, 255, 255, 0.35)" indicator-active-color="#FFFFFF">
+  <swiper-item wx:for="{{banners}}" wx:key="id">
+    <view class="act-banner" data-id="{{item.id}}" bindtap="onTap">
+      <text class="act-banner-tag serif">近期活動</text>
+      <view class="act-banner-info">
+        <text class="act-banner-title">{{item.title}}</text>
+        <text class="act-banner-time">{{item.start_time}}（{{item.week}}）· {{item.channelText}}</text>
+      </view>
+      <text class="act-banner-arrow">›</text>
+    </view>
+  </swiper-item>
+</swiper>

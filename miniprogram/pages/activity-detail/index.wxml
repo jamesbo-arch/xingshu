@@ -6,7 +6,7 @@
     <view class="nav-right" bindtap="onOpenPoster"><view class="nav-share-icon ic-share"></view></view>
   </view>
 
-  <scroll-view class="detail-scroll" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="onPostsMore" lower-threshold="150">
+  <scroll-view class="detail-scroll" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="onPostsMore" lower-threshold="150" scroll-into-view="{{scrollInto}}">
     <view class="detail-body">
       <view class="act-cover">
         <image wx:if="{{activity.cover_url}}" src="{{activity.cover_url}}" class="act-cover-img" mode="aspectFill"/>
@@ -66,7 +66,7 @@
 
       <!-- 現場分享：已报名者活动开始后可发（canPost），所有登录用户可看 -->
       <block wx:if="{{postsTotal > 0 || activity.canPost}}">
-        <view class="act-section-title serif" style="margin-top: 40rpx;">現場分享{{postsTotal ? ' · ' + postsTotal : ''}}</view>
+        <view id="postsAnchor" class="act-section-title serif" style="margin-top: 40rpx;">現場分享{{postsTotal ? ' · ' + postsTotal : ''}}</view>
         <view wx:if="{{activity.canPost}}" class="post-entry" bindtap="onOpenPostSheet">
           <text class="post-entry-plus">＋</text>
           <text>分享现场</text>

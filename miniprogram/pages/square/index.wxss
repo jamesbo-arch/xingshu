@@ -177,73 +177,11 @@ page { height: 100%; overflow: hidden; }
   background-size: contain;
 }
 
-/* 近期活动轮播：满宽贴底，固定在自定义 tab-bar（100rpx+安全区）正上方，深红底与纸色页面差异化 */
+/* 近期活动轮播容器：满宽贴底，固定在自定义 tab-bar（100rpx+安全区）正上方；轮播本体见 components/act-banner */
 .act-banner-bar {
   position: fixed;
   left: 0;
   right: 0;
   bottom: calc(100rpx + env(safe-area-inset-bottom));
   z-index: 10;
-}
-
-.act-banner-swiper {
-  height: 160rpx;
-}
-
-/* 指示点下移到底缘，避免与第二行文字重叠 */
-.act-banner-swiper .wx-swiper-dots.wx-swiper-dots-horizontal {
-  bottom: 8rpx;
-}
-
-.act-banner {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 20rpx;
-  height: 100%;
-  box-sizing: border-box;
-  padding: 0 32rpx 10rpx;
-  background: linear-gradient(135deg, #877052, #A08A63);
-  border-radius: 24rpx 24rpx 0 0;
-  box-shadow: 0 -6rpx 24rpx rgba(42, 39, 35, 0.08);
-}
-
-.act-banner-tag {
-  flex-shrink: 0;
-  font-size: 22rpx;
-  letter-spacing: 3rpx;
-  color: #FFF7EC;
-  border: 2rpx solid rgba(255, 247, 236, 0.75);
-  border-radius: 6rpx;
-  padding: 6rpx 10rpx;
-}
-
-.act-banner-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
-
-.act-banner-title {
-  font-size: 30rpx;
-  font-weight: 600;
-  color: #FFFFFF;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.act-banner-time {
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #FFDFA8;
-}
-
-.act-banner-arrow {
-  flex-shrink: 0;
-  font-size: 40rpx;
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1;
 }

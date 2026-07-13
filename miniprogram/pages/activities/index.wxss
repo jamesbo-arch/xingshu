@@ -1,3 +1,4 @@
+/* 醒书活动页（重构版）：双页签——活动分享瀑布流 + 全部活动简洁列表 */
 /* 禁用页面级滚动/回弹：仅内部 scroll-view 滚动，锁定顶部标题栏 */
 page { height: 100%; overflow: hidden; }
 
@@ -9,7 +10,7 @@ page { height: 100%; overflow: hidden; }
 }
 
 .page-header {
-  padding: 16rpx 32rpx 20rpx;
+  padding: 16rpx 32rpx 0;
   flex-shrink: 0;
 }
 
@@ -21,21 +22,160 @@ page { height: 100%; overflow: hidden; }
   display: block;
 }
 
-.page-subtitle {
-  font-size: 24rpx;
-  color: #A8A39B;
-  margin-top: 4rpx;
-  display: block;
-}
-
 .serif {
   font-family: 'Songti SC', 'STSong', 'SimSun', serif;
 }
 
-/* 类型筛选 chips */
+/* ── 双页签：衬线大字 + 印章红下划短线 ── */
+.act-tabs {
+  display: flex;
+  gap: 48rpx;
+  padding: 4rpx 32rpx 0;
+  flex-shrink: 0;
+}
+
+.act-tab {
+  font-size: 32rpx;
+  letter-spacing: 2rpx;
+  color: #A8A39B;
+  padding: 10rpx 4rpx 20rpx;
+  position: relative;
+}
+
+.act-tab-on {
+  color: #2A2723;
+  font-weight: 700;
+}
+
+.act-tab-on::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 8rpx;
+  width: 48rpx;
+  height: 6rpx;
+  border-radius: 4rpx;
+  background: #B6452F;
+}
+
+.act-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 24rpx;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* ── 页签一：活动分享 双列瀑布流 ── */
+.feed-cols {
+  display: flex;
+  gap: 16rpx;
+  padding-top: 8rpx;
+}
+
+.feed-col {
+  flex: 1;
+  min-width: 0;
+}
+
+.m-card {
+  background: #FFFCF5;
+  border: 1rpx solid rgba(126, 102, 64, 0.16);
+  border-radius: 20rpx;
+  overflow: hidden;
+  margin-bottom: 16rpx;
+}
+
+.m-cover {
+  position: relative;
+  background: #EFE7D4;
+}
+
+.m-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.m-imgcount {
+  position: absolute;
+  right: 12rpx;
+  top: 12rpx;
+  font-size: 20rpx;
+  color: #fff;
+  background: rgba(42, 39, 35, 0.45);
+  border-radius: 16rpx;
+  padding: 2rpx 14rpx;
+}
+
+.m-text {
+  padding: 14rpx 18rpx 0;
+  font-size: 25rpx;
+  line-height: 1.65;
+  color: #2A2723;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.m-text-solo {
+  -webkit-line-clamp: 6;
+  font-size: 26rpx;
+  padding-top: 22rpx;
+}
+
+.m-foot {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  padding: 16rpx 18rpx 18rpx;
+}
+
+.m-ava,
+.m-ava-img {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.m-ava {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+  color: #fff;
+}
+
+.m-nick {
+  flex: 1;
+  min-width: 0;
+  font-size: 22rpx;
+  color: #A8A39B;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-act {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  color: #877052;
+  background: rgba(135, 112, 82, 0.1);
+  border-radius: 8rpx;
+  padding: 2rpx 12rpx;
+  max-width: 11em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 页签二：全部活动 简洁列表 ── */
 .type-chips {
   white-space: nowrap;
-  padding: 0 32rpx 16rpx;
+  padding: 8rpx 8rpx 16rpx;
   flex-shrink: 0;
 }
 
@@ -57,153 +197,135 @@ page { height: 100%; overflow: hidden; }
   border-color: #2A2723;
 }
 
-/* 即将开始（48h 内）角标：朱砂红底 */
-.act-badge-soon { color: #fff; background: #C2563F; }
-
-.act-scroll {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0 32rpx;
-  box-sizing: border-box;
-  width: 100%;
-}
-
-.act-section-title {
-  font-size: 30rpx;
+/* 月份分隔线 */
+.act-month {
+  font-size: 24rpx;
   letter-spacing: 6rpx;
-  color: #2A2723;
-  margin: 16rpx 0 20rpx;
+  color: #A8A39B;
+  margin: 24rpx 8rpx 16rpx;
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 20rpx;
 }
 
-.act-section-title::after {
+.act-month::after {
   content: '';
   flex: 1;
   height: 1rpx;
   background: rgba(126, 102, 64, 0.18);
 }
 
-.activity-card {
-  background: #FFFCF5;
-  border-radius: 24rpx;
-  overflow: hidden;
-  border: 1rpx solid rgba(126, 102, 64, 0.16);
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
-  margin-bottom: 28rpx;
-}
-
-.act-cover {
-  position: relative;
-  height: 300rpx;
-  background: #EFE7D4;
+.act-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-}
-
-.act-cover-img {
-  width: 100%;
-  height: 100%;
-}
-
-.act-cover-char {
-  font-size: 128rpx;
-  letter-spacing: 16rpx;
-  color: rgba(126, 102, 64, 0.45);
-}
-
-.act-cover-seal {
-  position: absolute;
-  left: 24rpx;
-  bottom: 20rpx;
-  font-size: 20rpx;
-  letter-spacing: 4rpx;
-  color: #B6452F;
-  border: 2rpx solid #B6452F;
-  border-radius: 4rpx;
-  padding: 4rpx 8rpx;
-  opacity: 0.75;
-}
-
-.act-badge {
-  position: absolute;
-  top: 20rpx;
-  right: 20rpx;
-  font-size: 22rpx;
-  padding: 6rpx 18rpx;
-  border-radius: 999rpx;
-  letter-spacing: 2rpx;
-}
-
-.act-badge-open { color: #fff; background: #B6452F; }
-.act-badge-full { color: #7A746A; background: rgba(239, 231, 212, 0.94); }
-.act-badge-past { color: #FBF7EE; background: rgba(42, 39, 35, 0.72); }
-
-.act-card-body {
-  padding: 24rpx 28rpx 28rpx;
-}
-
-.act-card-title {
-  font-size: 32rpx;
-  line-height: 1.45;
-  color: #2A2723;
-  display: block;
+  gap: 22rpx;
+  background: #FFFCF5;
+  border: 1rpx solid rgba(126, 102, 64, 0.16);
+  border-radius: 24rpx;
+  padding: 22rpx 24rpx;
   margin-bottom: 16rpx;
 }
 
-.act-meta {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  font-size: 25rpx;
-  color: #7A746A;
-  margin-bottom: 10rpx;
-  line-height: 1.5;
+/* 已结束整行降透明度，自然沉底 */
+.act-row-past {
+  opacity: 0.62;
 }
 
-.act-meta-icon {
-  width: 26rpx;
-  height: 26rpx;
+.act-tico {
+  width: 80rpx;
+  height: 80rpx;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.tico {
+  width: 40rpx;
+  height: 40rpx;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
 }
 
-.act-progress-row {
+.act-rmain {
+  flex: 1;
+  min-width: 0;
+}
+
+.act-rtitle {
+  display: block;
+  font-size: 29rpx;
+  font-weight: 600;
+  color: #2A2723;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.act-rmeta {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: 12rpx;
+  font-size: 22rpx;
+  color: #A8A39B;
   margin-top: 8rpx;
 }
 
-.act-progress {
-  flex: 1;
-  height: 8rpx;
-  border-radius: 999rpx;
-  background: #EFE7D4;
+.act-rmeta text:first-child {
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.act-progress-fill {
-  height: 100%;
-  border-radius: 999rpx;
-  background: linear-gradient(90deg, #C2563F, #B6452F);
-}
-
-.act-count {
-  font-size: 22rpx;
-  color: #A8A39B;
+.act-rtype {
   flex-shrink: 0;
+  font-size: 20rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
 }
 
-.act-count-past {
+/* 状态胶囊：报名中（印章红）/ 进行中（青绿）/ 已结束（灰描边） */
+.act-st {
+  flex-shrink: 0;
   font-size: 22rpx;
-  color: #A8A39B;
+  padding: 6rpx 18rpx;
+  border-radius: 20rpx;
+  letter-spacing: 1rpx;
 }
 
+.act-st-open { color: #fff; background: #B6452F; }
+.act-st-live { color: #fff; background: #5B8F6C; }
+.act-st-done { color: #A8A39B; border: 1rpx solid rgba(126, 102, 64, 0.18); }
+
+/* ── 类型特色色块 + 线性图标（颜色内嵌于 SVG） ── */
+.act-tico.tc-brown { background: rgba(135, 112, 82, 0.14); }
+.act-tico.tc-blue  { background: rgba(58, 107, 158, 0.12); }
+.act-tico.tc-red   { background: rgba(182, 69, 47, 0.10); }
+.act-tico.tc-cocoa { background: rgba(107, 74, 58, 0.12); }
+.act-tico.tc-gold  { background: rgba(194, 144, 19, 0.12); }
+
+.act-rtype.tc-brown { color: #877052; background: rgba(135, 112, 82, 0.10); }
+.act-rtype.tc-blue  { color: #3A6B9E; background: rgba(58, 107, 158, 0.08); }
+.act-rtype.tc-red   { color: #B6452F; background: rgba(182, 69, 47, 0.07); }
+.act-rtype.tc-cocoa { color: #6B4A3A; background: rgba(107, 74, 58, 0.08); }
+.act-rtype.tc-gold  { color: #A87E12; background: rgba(194, 144, 19, 0.10); }
+
+/* 醒书咖啡 · 咖啡杯（暖棕） */
+.tico-coffee { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23877052' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 9h12v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z'/%3E%3Cpath d='M16 10h2a2 2 0 0 1 0 4h-2'/%3E%3Cpath d='M8 5v1.5M12 4.5V6'/%3E%3C/svg%3E"); }
+/* 月度故事会 · 月牙（夜蓝） */
+.tico-moon { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233A6B9E' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 4a8 8 0 1 0 3 10A8.5 8.5 0 0 1 17 4z'/%3E%3C/svg%3E"); }
+/* 线下观影会 · 胶片框（夜蓝） */
+.tico-film { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%233A6B9E' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='5' width='18' height='14' rx='2'/%3E%3Cpath d='M7 5v14M17 5v14M3 10h4M3 14h4M17 10h4M17 14h4'/%3E%3C/svg%3E"); }
+/* 线下故事会 · 篝火（印章红） */
+.tico-fire { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23B6452F' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 3c2 3 5 4.5 5 8.5A5 5 0 0 1 7 11.5C7 7.5 10 6 12 3z'/%3E%3Cpath d='M12 21a3 3 0 0 0 3-3c0-2-3-3.5-3-3.5S9 16 9 18a3 3 0 0 0 3 3z'/%3E%3C/svg%3E"); }
+/* 巧克力工坊 · 排块巧克力（可可褐） */
+.tico-choco { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236B4A3A' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='4' width='16' height='16' rx='2'/%3E%3Cpath d='M12 4v16M4 12h16'/%3E%3C/svg%3E"); }
+/* 醒书厨房 · 锅具（姜金） */
+.tico-pot { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23A87E12' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 10h16v4a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z'/%3E%3Cpath d='M2 10h20M12 7v2'/%3E%3C/svg%3E"); }
+
+/* 空态 */
 .act-empty {
   text-align: center;
   padding: 120rpx 48rpx;
@@ -230,6 +352,24 @@ page { height: 100%; overflow: hidden; }
   display: block;
 }
 
+.act-empty-link {
+  color: #B6452F;
+}
+
 .act-bottom-pad {
   height: 200rpx;
+}
+
+/* 预告轮播可见时，瀑布流底部额外让出轮播高度 */
+.act-bottom-pad.pad-banner {
+  height: calc(200rpx + 160rpx);
+}
+
+/* 近期活动轮播容器：满宽贴底，固定在自定义 tab-bar 之上；轮播本体见 components/act-banner */
+.act-banner-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(100rpx + env(safe-area-inset-bottom));
+  z-index: 10;
 }

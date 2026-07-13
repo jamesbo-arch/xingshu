@@ -1,6 +1,5 @@
 const app = getApp()
 const diaryApi = require('../../api/diary')
-const activityApi = require('../../api/activity')
 const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const cache = require('../../utils/cache')
@@ -34,7 +33,7 @@ Page({
     filtersActive: false,
     allTags: [],
     statusBarHeight: 0,
-    actBanners: [], // 近期活动轮播（全部已发布且未开始的场次，固定于 tab-bar 上方，空则不渲染）
+    actBannerCount: 0, // 近期活动轮播场次数（act-banner 组件回报，用于列表让位/FAB 上移）
   },
 
   onLoad() {
@@ -54,40 +53,14 @@ Page({
     }
   },
 
-  // 近期活动轮播：取全部 upcoming（已发布）；缓存只存原始最小字段，10 分钟避免每次 onShow 打接口。
-  // force=true 绕过缓存强制重取（下拉刷新时与日记列表一并刷新，新发活动立即可见）
-  async _loadActBanner(force) {
-    const cached = force ? null : cache.get('square:actbanners2')
-    if (cached !== null) { this.setData({ actBanners: this._decorateBanners(cached) }); return }
-    const data = await activityApi.getList()
-    if (!data) return
-    const list = (data.upcoming || []).map(a => ({ id: a.id, title: a.title, start_time: a.start_time, type: a.type }))
-    cache.set('square:actbanners2', list, 10)
-    this.setData({ actBanners: this._decorateBanners(list) })
+  // 近期活动轮播由 act-banner 组件自管（数据/缓存/跳转）；此处透传刷新，数量经 change 事件回来做布局让位
+  _loadActBanner(force) {
+    const banner = this.selectComponent('#actBanner')
+    if (banner) banner.load(force)
   },
 
-  // 未开始过滤 + 展示字段派生统一放读取侧：无论数据来自网络还是缓存，周几/线上线下都现算，
-  // 不依赖缓存里的历史形状（否则旧缓存缺字段会渲染成空）。后端 upcoming 含已开始未结束的，需按时间过滤
-  _decorateBanners(list) {
-    const now = Date.now()
-    return (list || [])
-      .filter(a => new Date(String(a.start_time).replace(/-/g, '/')).getTime() > now)
-      .map(a => ({
-        ...a,
-        week: this._weekOf(a.start_time),
-        channelText: a.type === 'online' ? '线上' : '线下',
-      }))
-  },
-
-  // 「周几」文案：start_time 为 "YYYY-MM-DD HH:mm" 北京时间字面量，iOS 解析需 '/'
-  _weekOf(t) {
-    const d = new Date(String(t).replace(/-/g, '/'))
-    return isNaN(d.getTime()) ? '' : '周' + '日一二三四五六'[d.getDay()]
-  },
-
-  onActBannerTap(e) {
-    const id = Number(e.currentTarget.dataset.id)
-    if (id) throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
+  onActBannerChange(e) {
+    this.setData({ actBannerCount: e.detail.count })
   },
 
   async _loadDiaries(reset) {

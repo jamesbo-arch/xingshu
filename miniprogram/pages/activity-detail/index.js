@@ -32,6 +32,7 @@ Page({
     _postShow: false,
     postContent: '',
     postImages: [],
+    scrollInto: '', // 定位锚点（feed 跳入时滚到現場分享区）
   },
 
   onLoad(options) {
@@ -44,6 +45,8 @@ Page({
       if (m) id = parseInt(m[1], 10)
     }
     this._id = id
+    // 活动页分享瀑布流跳入：加载后定位到現場分享区
+    this._scrollToPosts = options.to === 'posts'
     // v2.3：活动详情需微信登录（轻授权），未登录先拉起登录弹窗，取消则返回列表
     if (!ensureLogin(this, () => this._load())) return
     this._load()
@@ -114,6 +117,11 @@ Page({
         postsPage: page + 1,
         postsHasMore: page * data.pageSize < data.total,
       })
+      // 瀑布流跳入：分享区渲染完成后滚动定位（仅首次）
+      if (reset && this._scrollToPosts) {
+        this._scrollToPosts = false
+        setTimeout(() => this.setData({ scrollInto: 'postsAnchor' }), 200)
+      }
     } finally {
       this._postsLoading = false
     }

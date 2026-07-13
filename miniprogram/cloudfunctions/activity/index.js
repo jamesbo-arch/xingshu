@@ -25,12 +25,16 @@ const handlers = {
     return rows
   },
 
-  // 列表：仅 online（近期）与 finished（往期回顾），draft 不可见；可按类型筛选
-  async list({ typeId } = {}) {
+  // 列表：仅 online（近期）与 finished（往期回顾），draft 不可见；可按类型筛选。
+  // mode:'all' → 平铺全部按开始时间倒序（活动页「全部活动」页签）；默认仍返回 upcoming/past 两组（广场预告等）
+  async list({ typeId, mode } = {}) {
     const params = []
     let where = "WHERE a.status IN ('online', 'finished')"
     if (typeId) { where += ' AND a.type_id = ?'; params.push(typeId) }
     const [rows] = await db.query(`${LIST_SELECT} ${where}`, params)
+    if (mode === 'all') {
+      return { list: rows.sort((a, b) => b.start_time.localeCompare(a.start_time)) }
+    }
     // online 按开始时间正序（最近的活动在前），finished 按开始时间倒序
     const upcoming = rows.filter(a => a.status === 'online')
       .sort((a, b) => a.start_time.localeCompare(b.start_time))
@@ -136,6 +140,29 @@ const handlers = {
        ORDER BY p.id DESC LIMIT ? OFFSET ?`, [id, pageSize, (page - 1) * pageSize])
     const user = await findUser(openid)
     const list = rows.map(p => ({ ...p, images: p.images || [], isMine: !!user && p.user_id === user.id }))
+    return { list, total, page, pageSize }
+  },
+
+  // 跨活动分享流（活动页「活动分享」瀑布流）：聚合全部 active 分享倒序分页；
+  // 游客可浏览（不查 user），draft 活动的分享不外泄
+  async postFeed({ page = 1, pageSize = 10 } = {}) {
+    page = Math.max(1, parseInt(page, 10) || 1)
+    pageSize = Math.min(50, Math.max(1, parseInt(pageSize, 10) || 10))
+    const [[{ total }]] = await db.query(
+      `SELECT COUNT(*) AS total FROM activity_posts p JOIN activities a ON p.activity_id = a.id
+       WHERE p.status = 'active' AND a.status != 'draft'`)
+    const [rows] = await db.query(
+      `SELECT p.id, p.activity_id, p.content, p.images,
+              DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS created_at,
+              u.nickname, u.avatar_hue, u.avatar_url,
+              a.title AS activity_title, t.name AS type_name, a.type AS activity_channel
+       FROM activity_posts p
+       JOIN activities a ON p.activity_id = a.id
+       LEFT JOIN activity_types t ON a.type_id = t.id
+       JOIN users u ON p.user_id = u.id
+       WHERE p.status = 'active' AND a.status != 'draft'
+       ORDER BY p.id DESC LIMIT ? OFFSET ?`, [pageSize, (page - 1) * pageSize])
+    const list = rows.map(p => ({ ...p, images: p.images || [] }))
     return { list, total, page, pageSize }
   },
 
