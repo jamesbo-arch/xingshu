@@ -17,7 +17,7 @@
           <td>{{ a.startTime }}</td>
           <td>{{ a.type === 'online' ? '线上' : '线下·' + a.city }}</td>
           <td><a class="link" @click="openSignups(a)">{{ a.signedUp }}/{{ a.capacity }}</a></td>
-          <td><span class="badge" :class="'badge-'+a.status">{{ statusLabel(a.status) }}</span></td>
+          <td><span class="act-st" :class="'st-' + actState(a).cls">{{ actState(a).label }}</span></td>
           <td>
             <button class="btn btn-ghost" @click="openForm(a)">编辑</button>
             <a class="link" @click="openPosts(a)">分享</a>
@@ -327,7 +327,21 @@ const imgUrls = ref({})
 onMounted(async () => { await Promise.all([load(), loadTypes()]) })
 async function load() { list.value = (await getActivities()).list }
 async function loadTypes() { types.value = await getActivityTypes() }
-function statusLabel(s) { return { draft: '草稿', online: '上线', finished: '已结束' }[s] || s }
+// 列表状态派生（与小程序端口径一致）：规划中(draft) / 报名中(未开始) / 进行中(已开始未结束，
+// 无结束时间按开始后 24h 内) / 已结束(finished 或已过结束判定线)
+function actState(a) {
+  if (a.status === 'draft') return { cls: 'plan', label: '规划中' }
+  const now = Date.now()
+  const start = new Date(String(a.startTime).replace(/-/g, '/')).getTime()
+  const end = a.endTime
+    ? new Date(String(a.endTime).replace(/-/g, '/')).getTime()
+    : start + 24 * 3600 * 1000
+  if (a.status !== 'finished') {
+    if (now < start) return { cls: 'open', label: '报名中' }
+    if (now <= end) return { cls: 'live', label: '进行中' }
+  }
+  return { cls: 'done', label: '已结束' }
+}
 
 // 表单类型选项：启用项 +（编辑回显时）当前活动已关联但被停用的类型
 const formTypeOptions = computed(() => {
@@ -527,6 +541,13 @@ async function onDeletePost(p) {
 </script>
 
 <style scoped>
+/* 活动状态胶囊：规划中/报名中/进行中/已结束 */
+.act-st { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 10px; white-space: nowrap; }
+.st-plan { color: var(--ink-3); background: rgba(126, 102, 64, 0.08); }
+.st-open { color: #fff; background: #B6452F; }
+.st-live { color: #fff; background: #5B8F6C; }
+.st-done { color: var(--ink-4); border: 0.5px solid var(--tbl-border); }
+
 .addr-row { display: flex; gap: 8px; align-items: center; }
 .addr-row .input-full { flex: 1; }
 .addr-map-btn { flex-shrink: 0; white-space: nowrap; }

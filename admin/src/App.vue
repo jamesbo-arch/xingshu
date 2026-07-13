@@ -20,7 +20,7 @@
       </nav>
       <div class="sidebar-footer">
         <a class="logout-link" @click="onLogout">退出登录</a>
-        <div>v0.2 · 运营后台</div>
+        <div>v{{ appVersion }} · 运营后台</div>
       </div>
     </aside>
     <main class="main-content">
@@ -32,6 +32,10 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { logout, ENV_LABEL, IS_PROD } from './api'
+// 版本号单一来源：仓库根 package.json 的 version，发版打 tag 时同步（见 CLAUDE.md 发版流程）
+import rootPkg from '../../package.json'
+
+const appVersion = rootPkg.version
 
 const router = useRouter()
 function onLogout() {

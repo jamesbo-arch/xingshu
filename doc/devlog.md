@@ -2735,3 +2735,15 @@ fn-activity-feed-test 10/10、fn-activity-test 11/11、fn-activity-type-test 9/9
 fn-activity-feed-test 11/11 绿；admin build 通过。走查：报名名单弹窗勾选若干 → 保存 → 重开弹窗勾选态保留、标题计数正确。
 
 **部署（用户操作）**：重部署 admin 云函数；admin Web 发布；prod 上线补 DDL。
+
+### 2026-07-13 — 活动列表四态状态列 + 管理后台版本号跟随小程序
+
+**类型**：前端（admin Web）| 配置 | 文档
+**修改文件**：
+- `admin/src/views/Activities.vue` — 列表「状态」列改派生四态：规划中（draft）/ 报名中（未开始）/ 进行中（已开始未结束，无结束时间按开始后 24h）/ 已结束，口径与小程序端一致；新增状态胶囊样式
+- `package.json`（根）— 新增 `version` 字段（当前 1.2.2），作为版本号单一来源
+- `admin/src/App.vue` — 侧边栏版本号改读根 package.json 的 version（原硬编码 v0.2）
+- `CLAUDE.md` — 发版流程新增第 4 步：打 tag 时同步根 package.json version
+
+**验证**：
+admin build 通过，产物含 1.2.2 版本串。走查：活动列表草稿行显示「规划中」、未开始上线活动「报名中」、进行中/已结束正确；侧边栏显示 v1.2.2。
