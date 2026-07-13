@@ -56,7 +56,7 @@
             <label>活动地址
               <span class="addr-row">
                 <input v-model="form.location" class="input-full" placeholder="详细地址，可地图选点" />
-                <button v-if="mapEnabled" class="btn btn-ghost addr-map-btn" @click="showMap = true">地图选点</button>
+                <button v-if="mapEnabled" class="btn btn-ghost addr-map-btn" @click="openMapPicker">地图选点</button>
               </span>
               <span v-if="form.latitude" class="addr-coord">已定位：{{ form.latitude }}, {{ form.longitude }}</span>
             </label>
@@ -207,8 +207,20 @@ const showForm = ref(false), form = ref({}), saving = ref(false)
 const TMAP_KEY = import.meta.env.VITE_TMAP_KEY || ''
 const mapEnabled = !!TMAP_KEY
 const showMap = ref(false)
+// 初始中心坐标：打开前先在父页面取浏览器定位（组件内置定位 iframe 常被 Permissions Policy 拦，
+// 导致附近列表加载失败）；拒绝/超时兜底广州中心。coordtype=1 表示 WGS84（浏览器定位坐标系）
+const mapCoord = ref('23.105000,113.325000')
+function openMapPicker() {
+  const open = () => { showMap.value = true }
+  if (!navigator.geolocation) { open(); return }
+  navigator.geolocation.getCurrentPosition(
+    p => { mapCoord.value = `${p.coords.latitude.toFixed(6)},${p.coords.longitude.toFixed(6)}`; open() },
+    open,
+    { timeout: 3000, maximumAge: 600000 }
+  )
+}
 const mapSrc = computed(() =>
-  `https://apis.map.qq.com/tools/locpicker?search=1&type=1&key=${TMAP_KEY}&referer=xingshu-admin`)
+  `https://apis.map.qq.com/tools/locpicker?search=1&type=1&coord=${mapCoord.value}&coordtype=1&key=${TMAP_KEY}&referer=xingshu-admin`)
 const showSignups = ref(false), signups = ref([]), signupsActivity = ref({})
 const showTypes = ref(false), typeForm = ref({ channel: 'offline', sort: 0 })
 const showPosts = ref(false), posts = ref([]), postsActivity = ref({}), postsTotal = ref(0), postsPage = ref(1)
