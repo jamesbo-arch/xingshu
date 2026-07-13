@@ -208,7 +208,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import {
   getActivities, saveActivity, getActivitySignups,
   getActivityTypes, saveActivityType, getActivityPosts, deleteActivityPost, resolveFileUrls,
@@ -341,6 +341,13 @@ const effectiveType = computed(() => {
     if (t) return t.channel
   }
   return form.value.type
+})
+
+// 选定活动类型时，「活动形式」下拉同步跳到该类型的渠道（disabled 态下展示与实际一致）
+watch(() => form.value.type_id, (id) => {
+  if (!id) return
+  const t = types.value.find(x => x.id === id)
+  if (t) form.value.type = t.channel
 })
 
 function openForm(a) {
