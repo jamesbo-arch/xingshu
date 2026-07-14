@@ -104,7 +104,7 @@
 
   <!-- 分享页签 FAB：直达发布分享（参照广场写日记入口） -->
   <view wx:if="{{tab === 'share'}}" class="fab {{actBannerCount ? 'fab-raised' : ''}}" bindtap="onShareFab">
-    <view class="fab-icon ic-pen-w"></view>
+    <view class="fab-icon ic-camera-w"></view>
   </view>
 
   <!-- 发布分享弹层：场次选择（已报名且已开始，按时间倒序）+ 文字 + 照片 -->
