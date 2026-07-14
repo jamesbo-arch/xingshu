@@ -104,6 +104,8 @@ export async function getActivityPosts(activityId, page = 1) { return call('post
 export async function deleteActivityPost(id) { return call('postDeleteAdmin', { id }) }
 // 实际参与名单：整场覆盖式保存勾选的报名 ID
 export async function saveAttendance(activityId, attendedIds) { return call('attendanceSave', { activityId, attendedIds }) }
+// 邀请函：该活动的带参小程序码（dataURL，直供 canvas 出图）
+export async function getInviteQr(activityId) { return call('inviteQr', { activityId }) }
 
 // cloud:// fileID 批量换临时 URL（展示小程序上传的现场分享图片）。
 // 走 admin 云函数服务端换链——Web 端匿名登录对云存储常无读权限，客户端 getTempFileURL 会拿到空链接

@@ -562,6 +562,23 @@ const handlers = {
   },
 
   // ── 活动现场分享（管理端全量含已删行，利于审计追溯）──
+  // 邀请函二维码：生成该活动的带参小程序码（scene "a=<id>"，同 generateMiniCode 约定），
+  // 以 base64 dataURL 直接返回——Web 端 canvas 出图无跨域问题，也不落云存储
+  async inviteQr({ activityId } = {}) {
+    if (!activityId) throw new Error('缺少活动 ID')
+    const [rows] = await db.query('SELECT id FROM activities WHERE id = ?', [activityId])
+    if (!rows.length) throw new Error('活动不存在')
+    const cloud = require('wx-server-sdk')
+    cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+    const result = await cloud.openapi.wxacode.getUnlimited({
+      scene: `a=${activityId}`,
+      page: 'pages/activity-detail/index',
+      width: 430,
+      checkPath: false,
+    })
+    return { dataUrl: `data:image/png;base64,${Buffer.from(result.buffer).toString('base64')}` }
+  },
+
   // 云存储 fileID 批量换临时 URL：服务端权限换链，规避 Web 端匿名登录读不到存储的 ACL 限制
   // （wx-server-sdk 惰性加载，仅此 action 使用，不影响其余 action 与本地测试 harness）
   async fileUrls({ fileIDs = [] } = {}) {

@@ -21,6 +21,7 @@
           <td>
             <button class="btn btn-ghost" @click="openForm(a)">编辑</button>
             <a class="link" @click="openPosts(a)">现场分享</a>
+            <a class="link" @click="openInvite(a)">邀请函</a>
           </td>
         </tr>
       </tbody>
@@ -112,6 +113,46 @@
         <div class="modal-actions">
           <button class="btn btn-ghost" @click="closeMap">取消</button>
           <button class="btn btn-primary" :disabled="!mapAddr" @click="onConfirmMap">使用该位置</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 邀请函弹窗：按活动类型主题渲染，html2canvas 下载成图 -->
+    <div v-if="showInvite" class="modal-mask" @click.self="showInvite = false">
+      <div class="modal invite-modal">
+        <h2 class="modal-title">邀请函 · {{ inviteAct.title }}</h2>
+        <div class="invite-scroll">
+          <div class="inv-card" :class="'inv-' + invite.theme" ref="inviteRef">
+            <div class="inv-body">
+              <span class="inv-tag">{{ invite.tagText }}</span>
+              <div class="inv-kicker">{{ invite.kicker }}</div>
+              <div class="inv-title">{{ inviteAct.title }}</div>
+              <p class="inv-intro">{{ invite.intro }}</p>
+              <div class="inv-info">
+                <div class="inv-row"><b>活动时间</b><span>{{ invite.timeText }}</span></div>
+                <div class="inv-row"><b>参与方式</b><span>{{ invite.joinText }}</span></div>
+                <div class="inv-row"><b>报名限额</b><span>{{ invite.quotaText }}</span></div>
+              </div>
+              <div class="inv-cta">
+                <span>长按识别小程序码 · 报名参加</span>
+                <img v-if="inviteQr" :src="inviteQr" class="inv-qr" />
+                <span v-else class="inv-qr inv-qr-loading">码生成中</span>
+              </div>
+            </div>
+            <div class="inv-foot">
+              <div class="invf-logo">
+                <div class="invf-name">醒书咨询</div>
+                <div class="invf-en">XINGSHU CONSULTING</div>
+              </div>
+              <div class="invf-desc">醒书咨询，一家专注经典文化与现代生活深度对话的机构，为中小企业和个人提供发展咨询服务。</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" @click="showInvite = false">关闭</button>
+          <button class="btn btn-primary" :disabled="inviteSaving || !inviteQr" @click="onDownloadInvite">
+            {{ inviteSaving ? '生成中…' : '下载图片' }}
+          </button>
         </div>
       </div>
     </div>
@@ -214,7 +255,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import {
-  getActivities, saveActivity, getActivitySignups, saveAttendance,
+  getActivities, saveActivity, getActivitySignups, saveAttendance, getInviteQr,
   getActivityTypes, saveActivityType, getActivityPosts, deleteActivityPost, resolveFileUrls,
 } from '../api/index.js'
 
@@ -320,6 +361,9 @@ function closeMap() {
 const showSignups = ref(false), signups = ref([]), signupsActivity = ref({})
 const attendSet = ref({}), attendSaving = ref(false)
 const attendCount = computed(() => Object.values(attendSet.value).filter(Boolean).length)
+// 邀请函
+const showInvite = ref(false), inviteAct = ref({}), inviteQr = ref(''), inviteSaving = ref(false)
+const inviteRef = ref(null)
 const showTypes = ref(false), typeForm = ref({ channel: 'offline', sort: 0 })
 const showPosts = ref(false), posts = ref([]), postsActivity = ref({}), postsTotal = ref(0), postsPage = ref(1)
 const imgUrls = ref({})
@@ -494,6 +538,66 @@ async function onSaveAttendance() {
   }
 }
 
+// ── 邀请函 ──
+// 主题映射：按类型名关键词，渠道兜底（与小程序端类型图标口径一致）
+function inviteTheme(a) {
+  const n = a.typeName || ''
+  if (n.includes('咖啡')) return { theme: 'coffee', tagText: `${n || '醒书咖啡'} · 线上`, kicker: 'SATURDAY MORNING COFFEE' }
+  if (n.includes('观影') || n.includes('电影')) return { theme: 'film', tagText: `${n} · 线下`, kicker: 'XINGSHU CINEMA CLUB' }
+  if (n.includes('巧克力')) return { theme: 'choco', tagText: `${n} · 线下`, kicker: 'BEAN TO BAR WORKSHOP' }
+  if (n.includes('厨房') || n.includes('餐')) return { theme: 'pot', tagText: `${n} · 线下`, kicker: 'XINGSHU KITCHEN TABLE' }
+  if (a.type === 'online') return { theme: 'story', tagText: `${n || '醒书活动'} · 线上`, kicker: 'XINGSHU MONTHLY STORY' }
+  return { theme: 'fire', tagText: `${n || '醒书活动'} · 线下`, kicker: 'XINGSHU CAMPFIRE STORIES' }
+}
+
+const invite = computed(() => {
+  const a = inviteAct.value
+  if (!a.id) return { theme: 'story' }
+  const t = inviteTheme(a)
+  const wd = (s) => {
+    const d = new Date(String(s).replace(/-/g, '/'))
+    return isNaN(d.getTime()) ? '' : '（周' + '日一二三四五六'[d.getDay()] + '）'
+  }
+  const endPart = a.endTime ? ' – ' + (String(a.endTime).slice(0, 10) === String(a.startTime).slice(0, 10)
+    ? String(a.endTime).slice(11, 16) : a.endTime) : ''
+  return {
+    ...t,
+    intro: (a.content || '').replace(/\s+/g, ' ').slice(0, 110) + ((a.content || '').length > 110 ? '…' : ''),
+    timeText: `${a.startTime}${wd(a.startTime)}${endPart}`,
+    joinText: a.type === 'online' ? '线上 · 腾讯会议（会议号报名后可见）' : `线下 · ${a.city || ''} · ${a.location || ''}`,
+    quotaText: a.capacity > 0 ? `${a.capacity} 人 · 先到先得` : '不限名额',
+  }
+})
+
+async function openInvite(a) {
+  inviteAct.value = a
+  inviteQr.value = ''
+  showInvite.value = true
+  try {
+    const r = await getInviteQr(a.id)
+    inviteQr.value = r.dataUrl
+  } catch (e) {
+    alert('小程序码生成失败：' + e.message)
+  }
+}
+
+async function onDownloadInvite() {
+  if (inviteSaving.value || !inviteRef.value) return
+  inviteSaving.value = true
+  try {
+    const html2canvas = (await import('html2canvas')).default
+    const canvas = await html2canvas(inviteRef.value, { scale: 3, backgroundColor: null, useCORS: true })
+    const link = document.createElement('a')
+    link.download = `邀请函-${inviteAct.value.title}.png`
+    link.href = canvas.toDataURL('image/png')
+    link.click()
+  } catch (e) {
+    alert('生成图片失败：' + e.message)
+  } finally {
+    inviteSaving.value = false
+  }
+}
+
 // ── 类型管理 ──
 function openTypes() { resetTypeForm(); showTypes.value = true }
 function resetTypeForm() { typeForm.value = { channel: 'offline', sort: 0, schedule_hint: '' } }
@@ -541,6 +645,42 @@ async function onDeletePost(p) {
 </script>
 
 <style scoped>
+/* ── 邀请函 ── */
+.invite-modal { width: 440px; max-width: 94vw; }
+.invite-scroll { max-height: 66vh; overflow-y: auto; display: flex; justify-content: center; padding: 4px 0 8px; }
+.inv-card { width: 360px; flex-shrink: 0; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 12px 32px rgba(30,25,18,.25); }
+.inv-body { padding: 30px 28px 24px; position: relative; display: flex; flex-direction: column; }
+.inv-tag { align-self: flex-start; font-size: 12px; letter-spacing: 3px; padding: 4px 12px; border-radius: 4px; border: 1.5px solid currentColor; }
+.inv-kicker { font-size: 10px; letter-spacing: 4px; margin-top: 22px; opacity: .7; }
+.inv-title { font-family: 'Songti SC', 'Noto Serif SC', SimSun, serif; font-size: 28px; line-height: 1.45; letter-spacing: 2px; font-weight: 700; margin: 6px 0 12px; }
+.inv-intro { font-size: 13px; line-height: 1.9; opacity: .9; margin: 0 0 20px; }
+.inv-info { border-top: 1px solid; border-color: currentColor; opacity: .96; padding-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+.inv-row { display: flex; gap: 12px; font-size: 13px; align-items: baseline; }
+.inv-row b { flex-shrink: 0; width: 60px; font-weight: 500; font-size: 11px; letter-spacing: 2px; opacity: .72; }
+.inv-row span { flex: 1; }
+.inv-cta { margin-top: 20px; display: flex; align-items: center; gap: 14px; justify-content: space-between; border: 1.5px dashed currentColor; border-radius: 12px; padding: 12px 16px; font-size: 12px; letter-spacing: 2px; }
+.inv-qr { width: 74px; height: 74px; border-radius: 6px; background: #fff; flex-shrink: 0; }
+.inv-qr-loading { display: flex; align-items: center; justify-content: center; font-size: 10px; letter-spacing: 1px; opacity: .7; background: rgba(255,255,255,.15); }
+/* 品牌页脚（复刻醒书咨询品牌条） */
+.inv-foot { background: #A08A63; color: #FDF9F0; padding: 12px 18px; display: flex; align-items: center; gap: 12px; }
+.invf-logo { flex-shrink: 0; text-align: center; }
+.invf-name { font-family: 'Songti SC', SimSun, serif; font-size: 13px; letter-spacing: 2px; font-weight: 700; }
+.invf-en { font-size: 6.5px; letter-spacing: 1.5px; opacity: .85; }
+.invf-desc { flex: 1; font-size: 9px; line-height: 1.75; opacity: .92; border-left: 1px solid rgba(253,249,240,.35); padding-left: 12px; }
+/* 六类主题 */
+.inv-story { background: linear-gradient(168deg, #1F3450, #2C4A6E 55%, #3A6B9E); color: #F2EFE6; }
+.inv-story .inv-tag, .inv-story .inv-cta { color: #F8E9BE; }
+.inv-coffee { background: linear-gradient(165deg, #F6EDDC, #EAD9B8 60%, #DEC79A); color: #4A3A28; }
+.inv-coffee .inv-tag, .inv-coffee .inv-cta { color: #8A6E4B; }
+.inv-film { background: linear-gradient(170deg, #26232B, #3A3442 60%, #4A4256); color: #EDE8F2; }
+.inv-film .inv-tag, .inv-film .inv-cta { color: #C9B8E8; }
+.inv-fire { background: linear-gradient(168deg, #8C2F1E, #A73D28 55%, #C2563F); color: #FBEFE3; }
+.inv-fire .inv-tag, .inv-fire .inv-cta { color: #FFD9A0; }
+.inv-choco { background: linear-gradient(166deg, #3E2A20, #5A3D2C 55%, #6B4A3A); color: #F2E4D4; }
+.inv-choco .inv-tag, .inv-choco .inv-cta { color: #E8C39A; }
+.inv-pot { background: linear-gradient(167deg, #B8860B, #C29013 50%, #D8A93C); color: #FFF9EA; }
+.inv-pot .inv-tag, .inv-pot .inv-cta { color: #FFF3D0; }
+
 /* 活动状态胶囊：规划中/报名中/进行中/已结束 */
 .act-st { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 10px; white-space: nowrap; }
 .st-plan { color: var(--ink-3); background: rgba(126, 102, 64, 0.08); }
