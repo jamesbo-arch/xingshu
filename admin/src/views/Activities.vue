@@ -19,9 +19,11 @@
           <td><a class="link" @click="openSignups(a)">{{ a.signedUp }}/{{ a.capacity }}</a></td>
           <td><span class="act-st" :class="'st-' + actState(a).cls">{{ actState(a).label }}</span></td>
           <td>
-            <button class="btn btn-ghost" @click="openForm(a)">编辑</button>
-            <a class="link" @click="openPosts(a)">现场分享</a>
-            <a class="link" @click="openInvite(a)">邀请函</a>
+            <div class="act-ops">
+              <button class="btn btn-ghost" @click="openForm(a)">编辑</button>
+              <a class="link" @click="openPosts(a)">现场分享</a>
+              <a class="link" @click="openInvite(a)">邀请函</a>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -645,6 +647,9 @@ async function onDeletePost(p) {
 </script>
 
 <style scoped>
+/* 操作列：按钮与链接横排留距 */
+.act-ops { display: flex; align-items: center; gap: 12px; white-space: nowrap; }
+
 /* ── 邀请函 ── */
 .invite-modal { width: 440px; max-width: 94vw; }
 .invite-scroll { max-height: 66vh; overflow-y: auto; display: flex; justify-content: center; padding: 4px 0 8px; }
