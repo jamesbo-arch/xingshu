@@ -52,7 +52,13 @@ Page({
 
   onLoad(options) {
     const info = wx.getWindowInfo()
-    this.setData({ statusBarHeight: info.statusBarHeight || 0 })
+    // 导航栏右侧让出微信胶囊按钮的宽度，避免分享按钮被胶囊盖住
+    let capsulePad = 96
+    try {
+      const mb = wx.getMenuButtonBoundingClientRect()
+      if (mb && mb.left) capsulePad = info.windowWidth - mb.left + 6
+    } catch (e) { /* 兜底固定让位 */ }
+    this.setData({ statusBarHeight: info.statusBarHeight || 0, capsulePad })
     let id = options.id ? (parseInt(options.id, 10) || options.id) : null
     // 扫码/转发以本页为启动页时，id 藏在 scene（"a=3&s=8"）里
     if (!id && options.scene) {

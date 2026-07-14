@@ -1,6 +1,6 @@
 <view class="page-wrap paper-bg" wx:if="{{activity}}">
   <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
-  <view class="detail-nav">
+  <view class="detail-nav" style="padding-right: {{capsulePad}}px;">
     <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
     <text class="nav-title serif">{{isPast ? '活動回顧' : '活動詳情'}}</text>
     <view class="nav-right" bindtap="onOpenPoster"><view class="nav-share-icon ic-share"></view></view>
