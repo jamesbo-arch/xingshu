@@ -159,17 +159,41 @@ page { height: 100%; overflow: hidden; }
   white-space: nowrap;
 }
 
+.m-actline {
+  padding: 12rpx 18rpx 0;
+}
+
 .m-act {
-  flex-shrink: 0;
+  display: inline-block;
   font-size: 20rpx;
   color: #877052;
   background: rgba(135, 112, 82, 0.1);
   border-radius: 8rpx;
   padding: 2rpx 12rpx;
-  max-width: 11em;
+  max-width: 100%;
+  box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 分享点赞：♡/♥ + 计数，选中印章红 */
+.m-like {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  font-size: 26rpx;
+  color: #A8A39B;
+  padding: 4rpx 4rpx 4rpx 16rpx;
+}
+
+.m-like-on {
+  color: #B6452F;
+}
+
+.m-like-n {
+  font-size: 22rpx;
 }
 
 /* ── 页签二：全部活动 简洁列表 ── */

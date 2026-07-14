@@ -28,11 +28,14 @@
               <text wx:if="{{item.imgCount > 1}}" class="m-imgcount">{{item.imgCount}} 图</text>
             </view>
             <text wx:if="{{item.text}}" class="m-text {{item.image ? '' : 'm-text-solo'}}">{{item.text}}</text>
+            <view class="m-actline"><text class="m-act">{{item.actLabel}}</text></view>
             <view class="m-foot">
               <image wx:if="{{item.avatarUrl}}" class="m-ava-img" src="{{item.avatarUrl}}" mode="aspectFill" />
               <view wx:else class="m-ava" style="background-color: {{item.avatarColor}};"><text>{{item.initial}}</text></view>
               <text class="m-nick">{{item.nickname}}</text>
-              <text class="m-act">{{item.actLabel}}</text>
+              <view class="m-like {{item.isLiked ? 'm-like-on' : ''}}" data-id="{{item.id}}" catchtap="onLikePost">
+                <text>{{item.isLiked ? '♥' : '♡'}}</text><text wx:if="{{item.likeCount}}" class="m-like-n">{{item.likeCount}}</text>
+              </view>
             </view>
           </view>
         </block>
@@ -45,11 +48,14 @@
               <text wx:if="{{item.imgCount > 1}}" class="m-imgcount">{{item.imgCount}} 图</text>
             </view>
             <text wx:if="{{item.text}}" class="m-text {{item.image ? '' : 'm-text-solo'}}">{{item.text}}</text>
+            <view class="m-actline"><text class="m-act">{{item.actLabel}}</text></view>
             <view class="m-foot">
               <image wx:if="{{item.avatarUrl}}" class="m-ava-img" src="{{item.avatarUrl}}" mode="aspectFill" />
               <view wx:else class="m-ava" style="background-color: {{item.avatarColor}};"><text>{{item.initial}}</text></view>
               <text class="m-nick">{{item.nickname}}</text>
-              <text class="m-act">{{item.actLabel}}</text>
+              <view class="m-like {{item.isLiked ? 'm-like-on' : ''}}" data-id="{{item.id}}" catchtap="onLikePost">
+                <text>{{item.isLiked ? '♥' : '♡'}}</text><text wx:if="{{item.likeCount}}" class="m-like-n">{{item.likeCount}}</text>
+              </view>
             </view>
           </view>
         </block>

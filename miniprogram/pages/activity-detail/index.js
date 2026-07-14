@@ -167,6 +167,8 @@ Page({
         timeText: formatTime(p.created_at) || p.created_at,
         avatarColor: hueToColor(p.avatar_hue),
         initial: getInitial(p.nickname),
+        likeCount: p.like_count || 0,
+        isLiked: !!p.isLiked,
       }))
       this.setData({
         posts: reset ? mapped : [...this.data.posts, ...mapped],
@@ -192,6 +194,23 @@ Page({
     const { pidx, idx } = e.currentTarget.dataset
     const images = (this.data.posts[Number(pidx)] || {}).images || []
     wx.previewImage({ current: images[Number(idx)], urls: images })
+  },
+
+  // 分享点赞：乐观翻转，失败回滚，成功用后端权威值校准（本页已登录，无需再拦）
+  onLikePost(e) {
+    const id = Number(e.currentTarget.dataset.id)
+    return lock(this, 'plike' + id, async () => {
+      const flip = (p) => ({ ...p, isLiked: !p.isLiked, likeCount: Math.max(0, p.likeCount + (p.isLiked ? -1 : 1)) })
+      this._patchPost(id, flip)
+      const r = await activityApi.likePost(id)
+      if (!r) { this._patchPost(id, flip); return }
+      this._patchPost(id, p => ({ ...p, isLiked: r.liked, likeCount: r.likeCount }))
+    })
+  },
+
+  _patchPost(id, fn) {
+    const i = this.data.posts.findIndex(p => p.id === id)
+    if (i >= 0) this.setData({ [`posts[${i}]`]: fn(this.data.posts[i]) })
   },
 
   onDeletePost(e) {

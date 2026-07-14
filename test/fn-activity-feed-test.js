@@ -161,6 +161,27 @@ async function run() {
       if (!logs.length) throw new Error('无审计记录')
     })
 
+    await test('FEED-12 分享点赞：点赞/取消/计数/视角标记/未注册拒', async () => {
+      const pid = p1.data.id
+      // 点赞
+      const r1 = await act('postLike', { id: pid })
+      if (r1.code !== 0) throw new Error(r1.msg)
+      if (!r1.data.liked || r1.data.likeCount !== 1) throw new Error(`点赞后应 liked/1，实际 ${JSON.stringify(r1.data)}`)
+      // feed 行视角：本人 isLiked=1；游客 isLiked=0 但计数可见
+      const mine = await act('postFeed', { page: 1, pageSize: 50 })
+      const myRow = mine.data.list.find(p => p.id === pid)
+      if (!myRow || myRow.isLiked !== 1 || myRow.like_count !== 1) throw new Error('本人视角标记错误')
+      const ghost = await act('postFeed', { page: 1, pageSize: 50 }, 'test_ghost_' + Date.now())
+      const gRow = ghost.data.list.find(p => p.id === pid)
+      if (gRow.isLiked !== 0 || gRow.like_count !== 1) throw new Error('游客视角标记错误')
+      // 重复点 → 取消
+      const r2 = await act('postLike', { id: pid })
+      if (r2.data.liked || r2.data.likeCount !== 0) throw new Error('取消点赞失败')
+      // 未注册 openid 点赞被拒
+      const bad = await act('postLike', { id: pid }, 'test_ghost_' + Date.now())
+      if (bad.code === 0) throw new Error('未注册不应可点赞')
+    })
+
     await test('FEED-06 list mode:all + typeId 筛选', async () => {
       const [[t]] = await conn.query("SELECT id FROM activity_types WHERE is_active = 1 ORDER BY id LIMIT 1")
       const typedId = await makeActivity({ type_id: t.id })
@@ -172,6 +193,10 @@ async function run() {
   } finally {
     if (createdActs.length) {
       const ph = createdActs.map(() => '?').join(',')
+      await conn.query(
+        `DELETE i FROM interactions i JOIN activity_posts p
+           ON i.target_type = 'activity_post' AND i.target_id = p.id
+         WHERE p.activity_id IN (${ph})`, createdActs)
       await conn.query(`DELETE FROM activity_posts WHERE activity_id IN (${ph})`, createdActs)
       await conn.query(`DELETE FROM activity_signups WHERE activity_id IN (${ph})`, createdActs)
       await conn.query(`DELETE FROM activities WHERE id IN (${ph})`, createdActs)

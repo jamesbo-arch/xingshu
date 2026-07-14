@@ -125,7 +125,31 @@ Page({
       initial: getInitial(p.nickname),
       actLabel: p.type_name || p.activity_title,
       timeText: formatTime(p.created_at),
+      likeCount: p.like_count || 0,
+      isLiked: !!p.isLiked,
     }
+  },
+
+  // 分享点赞：乐观翻转（双列各自定位补丁），失败回滚，成功用后端权威值校准
+  onLikePost(e) {
+    const id = Number(e.currentTarget.dataset.id)
+    if (!ensureLogin(this, () => this.onLikePost(e))) return
+    return lock(this, 'plike' + id, async () => {
+      const flip = (p) => ({ ...p, isLiked: !p.isLiked, likeCount: Math.max(0, p.likeCount + (p.isLiked ? -1 : 1)) })
+      this._patchPost(id, flip)
+      const r = await activityApi.likePost(id)
+      if (!r) { this._patchPost(id, flip); return }
+      this._patchPost(id, p => ({ ...p, isLiked: r.liked, likeCount: r.likeCount }))
+    })
+  },
+
+  _patchPost(id, fn) {
+    const patch = {}
+    ;['colL', 'colR'].forEach(col => {
+      const i = this.data[col].findIndex(p => p.id === id)
+      if (i >= 0) patch[`${col}[${i}]`] = fn(this.data[col][i])
+    })
+    if (Object.keys(patch).length) this.setData(patch)
   },
 
   _estHeight(p) {

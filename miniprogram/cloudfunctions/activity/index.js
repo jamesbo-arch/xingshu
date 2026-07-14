@@ -17,6 +17,18 @@ async function findUser(openid) {
   return rows.length ? rows[0] : null
 }
 
+// 当前用户对一批分享的点赞集合（游客/未注册返回空集）
+async function likedPostIds(user, rows) {
+  if (!user || !rows.length) return new Set()
+  const ids = rows.map(p => p.id)
+  const [liked] = await db.query(
+    `SELECT target_id FROM interactions
+     WHERE user_id = ? AND target_type = 'activity_post' AND action = 'like'
+       AND target_id IN (${ids.map(() => '?').join(',')})`,
+    [user.id, ...ids])
+  return new Set(liked.map(r => r.target_id))
+}
+
 const handlers = {
   // 活动类型（分类）：小程序筛选用，仅启用项
   async typeList() {
@@ -164,26 +176,57 @@ const handlers = {
     const [[{ total }]] = await db.query(
       "SELECT COUNT(*) AS total FROM activity_posts WHERE activity_id = ? AND status = 'active'", [id])
     const [rows] = await db.query(
-      `SELECT p.id, p.user_id, p.content, p.images, u.nickname, u.avatar_hue, u.avatar_url,
+      `SELECT p.id, p.user_id, p.content, p.images, p.like_count, u.nickname, u.avatar_hue, u.avatar_url,
               DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS created_at
        FROM activity_posts p JOIN users u ON p.user_id = u.id
        WHERE p.activity_id = ? AND p.status = 'active'
        ORDER BY p.id DESC LIMIT ? OFFSET ?`, [id, pageSize, (page - 1) * pageSize])
     const user = await findUser(openid)
-    const list = rows.map(p => ({ ...p, images: p.images || [], isMine: !!user && p.user_id === user.id }))
+    const likedSet = await likedPostIds(user, rows)
+    const list = rows.map(p => ({
+      ...p,
+      images: p.images || [],
+      isMine: !!user && p.user_id === user.id,
+      isLiked: likedSet.has(p.id) ? 1 : 0,
+    }))
     return { list, total, page, pageSize }
   },
 
+  // 现场分享点赞：登录用户可赞，重复点取消；计数落 activity_posts.like_count，返回权威值供前端校准
+  async postLike({ id } = {}, openid) {
+    const user = await findUser(openid)
+    if (!user) throw new Error('user not found')
+    const [posts] = await db.query("SELECT id FROM activity_posts WHERE id = ? AND status = 'active'", [id])
+    if (!posts.length) throw new Error('分享不存在')
+    const [existing] = await db.query(
+      "SELECT id FROM interactions WHERE user_id = ? AND target_type = 'activity_post' AND target_id = ? AND action = 'like'",
+      [user.id, id])
+    let liked
+    if (existing.length) {
+      await db.query('DELETE FROM interactions WHERE id = ?', [existing[0].id])
+      await db.query('UPDATE activity_posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = ?', [id])
+      liked = false
+    } else {
+      await db.query(
+        "INSERT INTO interactions (user_id, target_type, target_id, action, created_by) VALUES (?, 'activity_post', ?, 'like', ?)",
+        [user.id, id, user.id])
+      await db.query('UPDATE activity_posts SET like_count = like_count + 1 WHERE id = ?', [id])
+      liked = true
+    }
+    const [[{ c }]] = await db.query('SELECT like_count c FROM activity_posts WHERE id = ?', [id])
+    return { liked, likeCount: c }
+  },
+
   // 跨活动分享流（活动页「活动分享」瀑布流）：聚合全部 active 分享倒序分页；
-  // 游客可浏览（不查 user），draft 活动的分享不外泄
-  async postFeed({ page = 1, pageSize = 10 } = {}) {
+  // 游客可浏览（isLiked 恒 0），draft 活动的分享不外泄
+  async postFeed({ page = 1, pageSize = 10 } = {}, openid) {
     page = Math.max(1, parseInt(page, 10) || 1)
     pageSize = Math.min(50, Math.max(1, parseInt(pageSize, 10) || 10))
     const [[{ total }]] = await db.query(
       `SELECT COUNT(*) AS total FROM activity_posts p JOIN activities a ON p.activity_id = a.id
        WHERE p.status = 'active' AND a.status != 'draft'`)
     const [rows] = await db.query(
-      `SELECT p.id, p.activity_id, p.content, p.images,
+      `SELECT p.id, p.activity_id, p.content, p.images, p.like_count,
               DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS created_at,
               u.nickname, u.avatar_hue, u.avatar_url,
               a.title AS activity_title, t.name AS type_name, a.type AS activity_channel
@@ -193,7 +236,9 @@ const handlers = {
        JOIN users u ON p.user_id = u.id
        WHERE p.status = 'active' AND a.status != 'draft'
        ORDER BY p.id DESC LIMIT ? OFFSET ?`, [pageSize, (page - 1) * pageSize])
-    const list = rows.map(p => ({ ...p, images: p.images || [] }))
+    const user = await findUser(openid)
+    const likedSet = await likedPostIds(user, rows)
+    const list = rows.map(p => ({ ...p, images: p.images || [], isLiked: likedSet.has(p.id) ? 1 : 0 }))
     return { list, total, page, pageSize }
   },
 

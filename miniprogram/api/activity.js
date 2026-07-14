@@ -38,4 +38,8 @@ module.exports = {
   deletePost(id) {
     return call('activity', { action: 'postDelete', payload: { id } })
   },
+  // 分享点赞（重复点取消，返回权威 liked/likeCount）
+  likePost(id) {
+    return call('activity', { action: 'postLike', payload: { id } })
+  },
 }

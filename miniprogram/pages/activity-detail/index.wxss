@@ -623,6 +623,25 @@
   color: #7A746A;
 }
 
+/* 分享点赞：♡/♥ + 计数，选中印章红 */
+.post-like {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6rpx;
+  font-size: 28rpx;
+  color: #A8A39B;
+  padding: 8rpx 12rpx;
+}
+
+.post-like-on {
+  color: #B6452F;
+}
+
+.post-like-n {
+  font-size: 23rpx;
+}
+
 /* ===== 现场分享 ===== */
 .post-entry {
   display: flex;
