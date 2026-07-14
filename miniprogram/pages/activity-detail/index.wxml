@@ -115,33 +115,48 @@
     <view wx:else class="act-signup-btn" bindtap="onOpenSignup">报名参加</view>
   </view>
 
-  <!-- 活动海报弹层（v2.2） -->
+  <!-- 活动邀请函弹层：主题化预览 + 保存/分享成图（码带分享人参数，扫码授权即绑定推荐人） -->
   <view wx:if="{{showPoster}}">
     <view class="sheet-mask {{_posterShow ? 'mask-show' : ''}}" bindtap="onClosePoster"></view>
     <view class="sheet poster-sheet {{_posterShow ? 'sheet-show' : ''}}" catchtap="">
       <view class="sheet-handle"></view>
-      <text class="signup-title serif">活动海报</text>
-      <view class="poster-card">
-        <view class="poster-brand serif">醒 書 活 動</view>
-        <text class="poster-title serif">{{activity.title}}</text>
-        <text class="poster-meta">{{activity.start_time}}</text>
-        <text class="poster-meta">{{activity.type === 'online' ? '线上活动' : activity.city + ' · ' + activity.location}}</text>
-        <view class="poster-divider"></view>
-        <view class="poster-footer">
-          <view class="poster-footer-info">
-            <text class="poster-signed serif">{{isPast ? '往期回顾' : '已有 ' + activity.signup_count + ' 位醒书人报名'}}</text>
-            <text class="poster-hint">长按扫码 · 与同路人相见</text>
+      <text class="signup-title serif">活動邀請函</text>
+      <scroll-view scroll-y class="inv-preview-scroll">
+        <view class="inv-card inv-{{invite.key}}">
+          <view class="inv-body">
+            <text class="inv-tag">{{invite.tagText}}</text>
+            <text class="inv-kicker">{{invite.kicker}}</text>
+            <text class="inv-title serif">{{activity.title}}</text>
+            <text class="inv-intro">{{invite.intro}}</text>
+            <view class="inv-info">
+              <view class="inv-row"><text class="inv-b">活动时间</text><text class="inv-v">{{invite.timeText}}</text></view>
+              <view class="inv-row"><text class="inv-b">参与方式</text><text class="inv-v">{{invite.joinText}}</text></view>
+              <view class="inv-row"><text class="inv-b">报名限额</text><text class="inv-v">{{invite.quotaText}}</text></view>
+            </view>
+            <view class="inv-cta">
+              <view class="inv-cta-text"><text>长按识别小程序码</text><text>报名参加</text></view>
+              <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="inv-qr" mode="aspectFit"/>
+              <view wx:else class="inv-qr inv-qr-loading"><text>生成中</text></view>
+            </view>
           </view>
-          <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="poster-qr" mode="aspectFit"/>
-          <view wx:else class="poster-qr poster-qr-loading"><text>生成中</text></view>
+          <view class="inv-foot">
+            <view class="invf-logo">
+              <text class="invf-name serif">醒书咨询</text>
+              <text class="invf-en">XINGSHU CONSULTING</text>
+            </view>
+            <text class="invf-desc">醒书咨询，一家专注经典文化与现代生活深度对话的机构，为中小企业和个人提供发展咨询服务。</text>
+          </view>
         </view>
-      </view>
+      </scroll-view>
       <view class="poster-actions">
-        <view class="btn-ghost poster-btn" bindtap="onSaveQr">保存小程序码</view>
-        <view class="act-signup-btn poster-btn" bindtap="onClosePoster">完成</view>
+        <view class="btn-ghost poster-btn" bindtap="onSaveInvite">保存图片</view>
+        <view class="act-signup-btn poster-btn" bindtap="onShareInvite">分享给朋友</view>
       </view>
     </view>
   </view>
+
+  <!-- 邀请函离屏画布（Canvas 2D，导出 750×1180 成图） -->
+  <canvas id="inv-canvas" type="2d" class="inv-canvas"></canvas>
 
   <!-- 报名表单弹层 -->
   <view wx:if="{{showSignup}}">
