@@ -28,7 +28,7 @@
               <text wx:if="{{item.imgCount > 1}}" class="m-imgcount">{{item.imgCount}} 图</text>
             </view>
             <text wx:if="{{item.text}}" class="m-text {{item.image ? '' : 'm-text-solo'}}">{{item.text}}</text>
-            <view class="m-actline"><text class="m-act">{{item.actLabel}}</text></view>
+            <view class="m-actline"><text class="m-act">{{item.actLabel}}</text><text wx:if="{{item.actDate}}" class="m-actdate">{{item.actDate}}</text></view>
             <view class="m-foot">
               <image wx:if="{{item.avatarUrl}}" class="m-ava-img" src="{{item.avatarUrl}}" mode="aspectFill" />
               <view wx:else class="m-ava" style="background-color: {{item.avatarColor}};"><text>{{item.initial}}</text></view>
@@ -48,7 +48,7 @@
               <text wx:if="{{item.imgCount > 1}}" class="m-imgcount">{{item.imgCount}} 图</text>
             </view>
             <text wx:if="{{item.text}}" class="m-text {{item.image ? '' : 'm-text-solo'}}">{{item.text}}</text>
-            <view class="m-actline"><text class="m-act">{{item.actLabel}}</text></view>
+            <view class="m-actline"><text class="m-act">{{item.actLabel}}</text><text wx:if="{{item.actDate}}" class="m-actdate">{{item.actDate}}</text></view>
             <view class="m-foot">
               <image wx:if="{{item.avatarUrl}}" class="m-ava-img" src="{{item.avatarUrl}}" mode="aspectFill" />
               <view wx:else class="m-ava" style="background-color: {{item.avatarColor}};"><text>{{item.initial}}</text></view>

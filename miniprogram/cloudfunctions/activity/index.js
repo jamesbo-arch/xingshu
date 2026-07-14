@@ -229,7 +229,8 @@ const handlers = {
       `SELECT p.id, p.activity_id, p.content, p.images, p.like_count,
               DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS created_at,
               u.nickname, u.avatar_hue, u.avatar_url,
-              a.title AS activity_title, t.name AS type_name, a.type AS activity_channel
+              a.title AS activity_title, t.name AS type_name, a.type AS activity_channel,
+              DATE_FORMAT(a.start_time, '%Y-%m-%d') AS activity_date
        FROM activity_posts p
        JOIN activities a ON p.activity_id = a.id
        LEFT JOIN activity_types t ON a.type_id = t.id

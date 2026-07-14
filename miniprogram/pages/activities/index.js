@@ -9,6 +9,14 @@ const { formatTime } = require('../../utils/mapper')
 const CN_DIGIT = '〇一二三四五六七八九'
 const CN_MONTH = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二']
 
+// "2026-07-12" → "7月12日（周六）"——分享卡活动标签后的场次日期
+function actDateLabel(dateStr) {
+  if (!dateStr) return ''
+  const d = new Date(String(dateStr).replace(/-/g, '/'))
+  if (isNaN(d.getTime())) return ''
+  return `${d.getMonth() + 1}月${d.getDate()}日（周${'日一二三四五六'[d.getDay()]}）`
+}
+
 Page({
   data: {
     statusBarHeight: 0,
@@ -124,6 +132,7 @@ Page({
       avatarColor: hueToColor(p.avatar_hue),
       initial: getInitial(p.nickname),
       actLabel: p.type_name || p.activity_title,
+      actDate: actDateLabel(p.activity_date),
       timeText: formatTime(p.created_at),
       likeCount: p.like_count || 0,
       isLiked: !!p.isLiked,
