@@ -37,6 +37,9 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 2 })
     }
+    // 轻量刷新预告轮播：同步手动关闭状态（组件内命中关闭标记即自清；正常路径走缓存）
+    const banner = this.selectComponent('#actBanner')
+    if (banner) banner.load()
   },
 
   onTabTap(e) {

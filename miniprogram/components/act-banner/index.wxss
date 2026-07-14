@@ -1,4 +1,30 @@
 /* 近期活动轮播：暖棕驼色渐变（全站描边色同源），满宽贴底仅上圆角；定位由宿主页容器提供 */
+.act-banner-wrap {
+  position: relative;
+}
+
+/* 关闭按钮：右上角半透明圆钮，catchtap 不触发卡片跳转 */
+.act-banner-close {
+  position: absolute;
+  right: 16rpx;
+  top: 12rpx;
+  width: 44rpx;
+  height: 44rpx;
+  border-radius: 50%;
+  background: rgba(42, 39, 35, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+}
+
+.act-banner-close text {
+  color: rgba(255, 247, 236, 0.9);
+  font-size: 32rpx;
+  line-height: 1;
+  margin-top: -2rpx;
+}
+
 .act-banner-swiper {
   height: 160rpx;
 }

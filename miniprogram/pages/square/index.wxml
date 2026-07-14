@@ -8,11 +8,6 @@
       <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書日記</text><kefu-fab /></view>
     </view>
 
-    <!-- 近期活动轮播（共享组件）：置于标题与搜索栏之间；无未开始活动时组件自空，容器隐藏 -->
-    <view class="act-banner-top" hidden="{{!actBannerCount}}">
-      <act-banner id="actBanner" bind:change="onActBannerChange"></act-banner>
-    </view>
-
     <!-- Search bar -->
     <view class="search-row">
       <view class="search-bar">
@@ -53,11 +48,16 @@
       bind:fav="onCardFav"
       bind:share="onCardShare"
     ></diary-card>
-    <view class="list-bottom-pad"></view>
+    <view class="list-bottom-pad {{actBannerCount ? 'pad-banner' : ''}}"></view>
   </scroll-view>
 
+  <!-- 近期活动轮播（共享组件）：固定在 tab-bar 之上，可手动关闭（当次会话）；无未开始活动时容器隐藏 -->
+  <view class="act-banner-bar" hidden="{{!actBannerCount}}">
+    <act-banner id="actBanner" bind:change="onActBannerChange"></act-banner>
+  </view>
+
   <!-- FAB -->
-  <view class="fab" bindtap="onFabTap">
+  <view class="fab {{actBannerCount ? 'fab-raised' : ''}}" bindtap="onFabTap">
     <view class="fab-icon ic-pen-w"></view>
   </view>
 

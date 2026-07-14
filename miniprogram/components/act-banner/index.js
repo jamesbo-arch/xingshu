@@ -5,6 +5,9 @@ const activityApi = require('../../api/activity')
 const cache = require('../../utils/cache')
 const { throttle } = require('../../utils/guard')
 
+// 手动关闭标记：模块级变量，同一次小程序会话内所有页面的轮播一并隐藏，重启恢复
+let dismissed = false
+
 Component({
   options: { addGlobalClass: true },
 
@@ -15,8 +18,13 @@ Component({
   },
 
   methods: {
-    // force=true 绕过缓存强制重取（下拉刷新时新发活动立即可见）
+    // force=true 绕过缓存强制重取（下拉刷新时新发活动立即可见）；已手动关闭则保持隐藏
     async load(force) {
+      if (dismissed) {
+        this.setData({ banners: [] })
+        this.triggerEvent('change', { count: 0 })
+        return
+      }
       let list = force ? null : cache.get('square:actbanners2')
       if (list === null) {
         const data = await activityApi.getList()
@@ -50,6 +58,13 @@ Component({
     onTap(e) {
       const id = Number(e.currentTarget.dataset.id)
       if (id) throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
+    },
+
+    // 手动关闭：当次会话内不再显示（所有页面同步），重启小程序恢复
+    onClose() {
+      dismissed = true
+      this.setData({ banners: [] })
+      this.triggerEvent('change', { count: 0 })
     },
   },
 })
