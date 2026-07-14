@@ -25,8 +25,13 @@ Component({
   },
 
   methods: {
-    // force=true 绕过缓存强制重取（下拉刷新时新发活动立即可见）；已手动关闭则保持隐藏
+    // force=true 绕过缓存强制重取（下拉刷新时新发活动立即可见），并视为用户主动召回——
+    // 清除手动关闭标记重新展示；非 force（onShow/切页）则维持关闭状态
     async load(force) {
+      if (force) {
+        dismissed = false
+        cache.remove(DISMISS_KEY)
+      }
       if (isDismissed()) {
         this.setData({ banners: [] })
         this.triggerEvent('change', { count: 0 })
