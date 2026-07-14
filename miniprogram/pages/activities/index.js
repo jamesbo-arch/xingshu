@@ -51,6 +51,8 @@ Page({
     // 轻量刷新预告轮播：同步手动关闭状态（组件内命中关闭标记即自清；正常路径走缓存）
     const banner = this.selectComponent('#actBanner')
     if (banner) banner.load()
+    // 从活动详情返回时同步报名状态（详情内报名/取消报名后，列表「已报名/报名中」需重新派生）
+    if (this.data.tab === 'all' && this.data.allLoaded) this._loadAll()
   },
 
   onTabTap(e) {
