@@ -374,3 +374,172 @@ page { height: 100%; overflow: hidden; }
   bottom: calc(100rpx + env(safe-area-inset-bottom));
   z-index: 10;
 }
+
+/* ── 分享页签 FAB（参照广场写日记入口） ── */
+.fab {
+  position: fixed;
+  right: 36rpx;
+  bottom: calc(120rpx + env(safe-area-inset-bottom));
+  width: 108rpx;
+  height: 108rpx;
+  background: #2A2723;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(42, 39, 35, 0.28);
+  z-index: 20;
+  transition: bottom 0.25s ease;
+}
+
+/* 轮播可见时 FAB 上移让位 */
+.fab.fab-raised {
+  bottom: calc(120rpx + env(safe-area-inset-bottom) + 156rpx);
+}
+
+.fab-icon {
+  width: 48rpx;
+  height: 48rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+/* ── 发布分享弹层（sheet 基类为全局，此处补动画与内容样式，与活动详情发布弹层同语言） ── */
+.sheet-mask {
+  background: rgba(0, 0, 0, 0);
+  transition: background 0.3s;
+}
+
+.sheet-mask.mask-show {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.sheet {
+  border-radius: 32rpx 32rpx 0 0;
+  padding: 20rpx 40rpx calc(56rpx + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+}
+
+.sheet.sheet-show {
+  transform: translateY(0);
+}
+
+.sheet-handle {
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 999rpx;
+  background: rgba(126, 102, 64, 0.2);
+  margin: 0 auto 24rpx;
+}
+
+.post-sheet-title {
+  font-size: 34rpx;
+  letter-spacing: 4rpx;
+  color: #2A2723;
+  display: block;
+  margin-bottom: 6rpx;
+}
+
+.post-label {
+  font-size: 25rpx;
+  color: #7A746A;
+  display: block;
+  margin: 20rpx 0 12rpx;
+}
+
+/* 场次选择行 */
+.post-act-picker {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  padding: 20rpx 24rpx;
+  background: #FBF7EE;
+  border: 1px solid rgba(126, 102, 64, 0.16);
+  border-radius: 12rpx;
+}
+
+.post-act-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 27rpx;
+  color: #2A2723;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.post-act-arrow {
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: #A8A39B;
+}
+
+.post-textarea {
+  width: 100%;
+  min-height: 220rpx;
+  padding: 20rpx;
+  box-sizing: border-box;
+  font-size: 28rpx;
+  color: #2A2723;
+  line-height: 1.7;
+  background: #FBF7EE;
+  border: 1px solid rgba(126, 102, 64, 0.16);
+  border-radius: 12rpx;
+  margin: 16rpx 0 20rpx;
+}
+
+.post-pick-grid {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 14rpx;
+  margin-bottom: 24rpx;
+}
+
+.post-pick-cell { position: relative; width: 140rpx; height: 140rpx; }
+
+.post-pick-thumb { width: 100%; height: 100%; border-radius: 10rpx; }
+
+.post-pick-remove {
+  position: absolute;
+  top: -10rpx;
+  right: -10rpx;
+  width: 36rpx;
+  height: 36rpx;
+  border-radius: 50%;
+  background: rgba(42, 39, 35, 0.85);
+  color: #fff;
+  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.post-pick-add {
+  width: 140rpx;
+  height: 140rpx;
+  border: 1px dashed rgba(126, 102, 64, 0.35);
+  border-radius: 10rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #A8A39B;
+}
+
+.post-pick-add-icon { font-size: 44rpx; line-height: 1; }
+.post-pick-add-text { font-size: 22rpx; margin-top: 4rpx; }
+
+.post-submit {
+  height: 92rpx;
+  border-radius: 999rpx;
+  background: #B6452F;
+  color: #fff;
+  font-size: 30rpx;
+  letter-spacing: 4rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

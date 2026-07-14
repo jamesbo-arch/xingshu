@@ -1,6 +1,8 @@
 // 醒书活动页（重构版）：双页签——「活动分享」跨活动瀑布流（默认）+「全部活动」简洁列表（时间倒序）
 const activityApi = require('../../api/activity')
-const { throttle } = require('../../utils/guard')
+const toast = require('../../utils/toast')
+const { throttle, lock } = require('../../utils/guard')
+const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
 const { hueToColor, getInitial } = require('../../utils/color')
 const { formatTime } = require('../../utils/mapper')
 
@@ -24,6 +26,15 @@ Page({
     allLoaded: false,
     types: [],
     activeTypeId: 0,    // 0 = 全部
+    // FAB 直达发布分享（带场次选择）
+    showLoginSheet: false,
+    showPostSheet: false,
+    _postShow: false,
+    postContent: '',
+    postImages: [],
+    postables: [],       // 可分享场次：已报名且已开始，按活动时间倒序
+    postableTitles: [],
+    postActIndex: 0,
   },
 
   onLoad() {
@@ -229,5 +240,112 @@ Page({
   onOpen(e) {
     const id = e.currentTarget.dataset.id
     throttle(this, 'open', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
+  },
+
+  // ── FAB 直达发布分享 ──
+
+  _tabBar(hidden) { const tb = this.getTabBar && this.getTabBar(); if (tb) tb.setData({ hidden }) },
+
+  onLoginClose() {
+    this.setData({ showLoginSheet: false })
+    this._tabBar(false)
+    this._pendingLoginAction = null
+  },
+  onLoginSuccess() { handleLoginSuccess(this) },
+
+  // FAB：登录 → 取可分享场次（已报名且已开始，list mode:all 已按时间倒序）→ 打开发布弹窗
+  onShareFab() {
+    if (!ensureLogin(this, () => this.onShareFab())) return
+    return lock(this, 'sharefab', async () => {
+      const data = await activityApi.getList(undefined, 'all')
+      if (!data) return
+      const now = Date.now()
+      const postables = (data.list || []).filter(a =>
+        a.isSignedUp && new Date(String(a.start_time).replace(/-/g, '/')).getTime() <= now)
+      if (!postables.length) {
+        wx.showModal({
+          title: '暂无可分享的活动',
+          content: '报名参加活动、活动开始后即可分享现场。去「全部活动」看看近期场次吧。',
+          showCancel: false,
+          confirmText: '知道了',
+        })
+        return
+      }
+      this.setData({
+        postables,
+        postableTitles: postables.map(a => `${a.title}（${String(a.start_time).slice(5, 16)}）`),
+        postActIndex: 0,
+        postContent: '',
+        postImages: [],
+        showPostSheet: true,
+      })
+      this._tabBar(true)
+      setTimeout(() => this.setData({ _postShow: true }), 20)
+    })
+  },
+
+  onPostActChange(e) { this.setData({ postActIndex: Number(e.detail.value) || 0 }) },
+  onClosePostSheet() {
+    this.setData({ _postShow: false })
+    this._tabBar(false)
+    setTimeout(() => this.setData({ showPostSheet: false }), 300)
+  },
+  onPostInput(e) { this.setData({ postContent: e.detail.value }) },
+  onAddPostImage() {
+    const remaining = 9 - this.data.postImages.length
+    if (remaining <= 0) return
+    wx.chooseMedia({
+      count: remaining,
+      mediaType: ['image'],
+      sourceType: ['album', 'camera'],
+      success: res => {
+        const paths = res.tempFiles.map(f => f.tempFilePath)
+        this.setData({ postImages: [...this.data.postImages, ...paths] })
+      },
+    })
+  },
+  onRemovePostImage(e) {
+    const images = [...this.data.postImages]
+    images.splice(Number(e.currentTarget.dataset.index), 1)
+    this.setData({ postImages: images })
+  },
+  onPreviewPickImage(e) {
+    wx.previewImage({
+      current: this.data.postImages[Number(e.currentTarget.dataset.index)],
+      urls: this.data.postImages,
+    })
+  },
+
+  async onSubmitPost() {
+    return lock(this, 'submitPost', async () => {
+      const act = this.data.postables[this.data.postActIndex]
+      if (!act) return
+      const content = this.data.postContent.trim()
+      if (!content && !this.data.postImages.length) { toast.info('写点文字或选张照片吧'); return }
+      // 本地图上传云存储换 fileID（同活动详情发布弹层，前缀 activity-posts/）
+      let images = []
+      try {
+        if (this.data.postImages.length) wx.showLoading({ title: '上传照片中…', mask: true })
+        for (const img of this.data.postImages) {
+          if (img.indexOf('cloud://') === 0) { images.push(img); continue }
+          const extMatch = img.match(/\.(\w+)$/)
+          const ext = extMatch ? extMatch[1] : 'jpg'
+          const cloudPath = `activity-posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+          const res = await wx.cloud.uploadFile({ cloudPath, filePath: img })
+          images.push(res.fileID)
+        }
+      } catch (err) {
+        wx.hideLoading()
+        toast.error('照片上传失败，请重试')
+        return
+      }
+      if (this.data.postImages.length) wx.hideLoading()
+      const r = await activityApi.createPost(act.id, { content, images })
+      if (r) {
+        toast.success('已分享')
+        this.onClosePostSheet()
+        this._loadFeed(true)
+      }
+    })
   },
 })

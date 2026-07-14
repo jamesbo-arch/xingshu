@@ -101,4 +101,53 @@
   <view class="act-banner-bar" hidden="{{tab !== 'share' || !actBannerCount}}">
     <act-banner id="actBanner" bind:change="onActBannerChange"></act-banner>
   </view>
+
+  <!-- 分享页签 FAB：直达发布分享（参照广场写日记入口） -->
+  <view wx:if="{{tab === 'share'}}" class="fab {{actBannerCount ? 'fab-raised' : ''}}" bindtap="onShareFab">
+    <view class="fab-icon ic-pen-w"></view>
+  </view>
+
+  <!-- 发布分享弹层：场次选择（已报名且已开始，按时间倒序）+ 文字 + 照片 -->
+  <view wx:if="{{showPostSheet}}">
+    <view class="sheet-mask {{_postShow ? 'mask-show' : ''}}" bindtap="onClosePostSheet"></view>
+    <view class="sheet post-sheet {{_postShow ? 'sheet-show' : ''}}" catchtap="">
+      <view class="sheet-handle"></view>
+      <text class="post-sheet-title serif">分享现场</text>
+      <text class="post-label">活动场次</text>
+      <picker range="{{postableTitles}}" value="{{postActIndex}}" bindchange="onPostActChange">
+        <view class="post-act-picker">
+          <text class="post-act-name">{{postableTitles[postActIndex]}}</text>
+          <text class="post-act-arrow">▾</text>
+        </view>
+      </picker>
+      <textarea
+        class="post-textarea"
+        placeholder="记录此刻的所见所感…"
+        placeholder-style="color: #A8A39B;"
+        maxlength="1000"
+        value="{{postContent}}"
+        bindinput="onPostInput"
+        show-confirm-bar="{{false}}"
+      />
+      <view class="post-pick-grid">
+        <view wx:for="{{postImages}}" wx:key="*this" class="post-pick-cell">
+          <image class="post-pick-thumb" src="{{item}}" mode="aspectFill" data-index="{{index}}" bindtap="onPreviewPickImage"/>
+          <view class="post-pick-remove" data-index="{{index}}" catchtap="onRemovePostImage"><text>×</text></view>
+        </view>
+        <view wx:if="{{postImages.length < 9}}" class="post-pick-add" bindtap="onAddPostImage">
+          <text class="post-pick-add-icon">+</text>
+          <text class="post-pick-add-text">照片</text>
+        </view>
+      </view>
+      <view class="post-submit" bindtap="onSubmitPost">发布</view>
+    </view>
+  </view>
+
+  <!-- v2.3 微信登录弹窗：游客点 FAB 时拉起，登录后自动续做 -->
+  <login-sheet
+    visible="{{showLoginSheet}}"
+    subtitle="登录后即可分享活动现场，和同路人分享此刻。"
+    bind:close="onLoginClose"
+    bind:success="onLoginSuccess"
+  ></login-sheet>
 </view>
