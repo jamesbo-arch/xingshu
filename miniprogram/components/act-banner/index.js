@@ -5,8 +5,15 @@ const activityApi = require('../../api/activity')
 const cache = require('../../utils/cache')
 const { throttle } = require('../../utils/guard')
 
-// 手动关闭标记：模块级变量，同一次小程序会话内所有页面的轮播一并隐藏，重启恢复
+// 手动关闭标记：内存标记 + 本地存储（12 小时）双保险——纯内存标记在部分环境/在途请求竞态下
+// 会被绕过（关闭后下拉刷新轮播复活），存储化后关闭状态跨页面、跨会话稳定生效，12 小时后自动恢复
 let dismissed = false
+const DISMISS_KEY = 'actbanner:dismissed'
+const DISMISS_TTL_MIN = 12 * 60
+
+function isDismissed() {
+  return dismissed || !!require('../../utils/cache').get(DISMISS_KEY)
+}
 
 Component({
   options: { addGlobalClass: true },
@@ -20,7 +27,7 @@ Component({
   methods: {
     // force=true 绕过缓存强制重取（下拉刷新时新发活动立即可见）；已手动关闭则保持隐藏
     async load(force) {
-      if (dismissed) {
+      if (isDismissed()) {
         this.setData({ banners: [] })
         this.triggerEvent('change', { count: 0 })
         return
@@ -32,6 +39,8 @@ Component({
         list = (data.upcoming || []).map(a => ({ id: a.id, title: a.title, start_time: a.start_time, type: a.type }))
         cache.set('square:actbanners2', list, 10)
       }
+      // 网络在途期间被手动关闭 → 丢弃本次结果，避免关闭后又被画回来
+      if (isDismissed()) return
       const banners = this._decorate(list)
       this.setData({ banners })
       this.triggerEvent('change', { count: banners.length })
@@ -60,9 +69,10 @@ Component({
       if (id) throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
     },
 
-    // 手动关闭：当次会话内不再显示（所有页面同步），重启小程序恢复
+    // 手动关闭：12 小时内不再显示（所有页面同步，跨会话生效，到期自动恢复）
     onClose() {
       dismissed = true
+      cache.set(DISMISS_KEY, 1, DISMISS_TTL_MIN)
       this.setData({ banners: [] })
       this.triggerEvent('change', { count: 0 })
     },
