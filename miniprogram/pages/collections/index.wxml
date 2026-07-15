@@ -72,6 +72,14 @@
     bind:authorize="onGuardAuthorize"
     bind:joinMember="onGuardJoinMember"
   ></member-guard>
+
+  <!-- v2.3 微信登录弹窗：guest 点卡片/点赞/收藏时拉起，登录后自动续做（与广场页一致） -->
+  <login-sheet
+    visible="{{showLoginSheet}}"
+    subtitle="登录后即可查看收藏的日记，继续未读完的文字。"
+    bind:close="onLoginClose"
+    bind:success="onLoginSuccess"
+  ></login-sheet>
 </view>
 
 <!-- 隐私授权弹窗（敏感接口首次调用时触发） -->

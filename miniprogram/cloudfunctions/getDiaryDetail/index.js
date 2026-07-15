@@ -28,12 +28,12 @@ exports.main = async (event, context) => {
   const diary = diaries[0]
   const isAuthor = userId && diary.user_id === userId
 
+  // v2.3 权限矩阵：未登录不可读任何日记详情——含自己写的（退出登录即回游客视角，与列表页拦截口径一致）
+  if (userIdentity === 'guest') {
+    return { code: -3, msg: '登录后即可阅读' }
+  }
   if (diary.permission === 'private' && !isAuthor) {
     return { code: -1, msg: '日记不存在' }
-  }
-  // v2.3 权限矩阵：未登录用户不可读任何日记详情（引导微信登录，不泄露内容）
-  if (!isAuthor && userIdentity === 'guest') {
-    return { code: -3, msg: '登录后即可阅读' }
   }
   // v2.1 内容墙：已授权非会员读会员日记 → 服务端截断前 30% + 渐隐标记
   if (!isAuthor && diary.permission === 'member' && userIdentity !== 'member') {

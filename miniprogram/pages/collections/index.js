@@ -4,6 +4,7 @@ const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const filterUtil = require('../../utils/filter')
 const { lock, throttle } = require('../../utils/guard')
+const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
 
 Page({
   data: {
@@ -14,6 +15,7 @@ Page({
     hasMore: true,
     showFilterSheet: false,
     showMemberGuard: false,
+    showLoginSheet: false,
     showPosterSheet: false,
     posterDiary: null,
     userIdentity: 'authed',
@@ -73,9 +75,22 @@ Page({
   onApplyFilter(e) { this._tabBar(false); this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
 
   // v2.1：会员日记直接进详情（非会员见 30% 渐隐），不再弹窗拦截
+  // v2.3：guest（含退出登录的曾会员）点卡片先拉起登录弹窗，与广场页口径一致
   onCardOpen(e) {
     const { id } = e.detail
-    throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + id }))
+    const open = () => throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + id }))
+    if (!ensureLogin(this, open)) return
+    open()
+  },
+
+  onLoginClose() {
+    this.setData({ showLoginSheet: false })
+    this._tabBar(false)
+    this._pendingLoginAction = null
+  },
+  onLoginSuccess() {
+    this.setData({ userIdentity: (app.globalData.user || {}).identity || 'guest' })
+    handleLoginSuccess(this)
   },
   onCloseMemberGuard() { this.setData({ showMemberGuard: false }) },
   onGuardAuthorize() {
@@ -93,11 +108,13 @@ Page({
   onGuardJoinMember() { this.setData({ showMemberGuard: false }); wx.switchTab({ url: '/pages/member/index' }) },
 
   onCardLike(e) {
+    if (!ensureLogin(this, () => this.onCardLike(e))) return
     const { id } = e.detail
     // 乐观更新：立即翻转 UI，后台失败自动回滚
     return lock(this, 'like' + id, () => optimisticLike(this, id))
   },
   onCardFav(e) {
+    if (!ensureLogin(this, () => this.onCardFav(e))) return
     const { id } = e.detail
     // 「我的收藏」里取消收藏 → 卡片立即移除，后台失败原位恢复
     return lock(this, 'fav' + id, () => optimisticFav(this, id, { removeOnUnfav: true }))

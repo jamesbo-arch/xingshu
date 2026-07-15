@@ -3,6 +3,7 @@
   "navigationStyle": "custom",
   "usingComponents": {
     "diary-card": "/components/diary-card/index",
-    "filter-sheet": "/components/filter-sheet/index"
+    "filter-sheet": "/components/filter-sheet/index",
+    "login-sheet": "/components/login-sheet/index"
   }
 }

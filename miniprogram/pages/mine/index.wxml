@@ -61,4 +61,12 @@
     bind:close="onCloseFilter"
     bind:apply="onApplyFilter"
   ></filter-sheet>
+
+  <!-- v2.3 微信登录弹窗：guest 点卡片/互动时拉起，登录后自动续做（与广场页一致） -->
+  <login-sheet
+    visible="{{showLoginSheet}}"
+    subtitle="登录后即可查看和管理你的日记。"
+    bind:close="onLoginClose"
+    bind:success="onLoginSuccess"
+  ></login-sheet>
 </view>

@@ -19,6 +19,17 @@ Component({
     defaultAvatar: 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect width=%22100%22 height=%22100%22 fill=%22%2307C160%22/%3E%3Cellipse cx=%2242%22 cy=%2243%22 rx=%2222%22 ry=%2217%22 fill=%22%23fff%22/%3E%3Cellipse cx=%2266%22 cy=%2262%22 rx=%2215%22 ry=%2212%22 fill=%22%23fff%22/%3E%3Ccircle cx=%2235%22 cy=%2241%22 r=%223%22 fill=%22%2307C160%22/%3E%3Ccircle cx=%2249%22 cy=%2241%22 r=%223%22 fill=%22%2307C160%22/%3E%3Ccircle cx=%2261%22 cy=%2260%22 r=%222.5%22 fill=%22%2307C160%22/%3E%3Ccircle cx=%2271%22 cy=%2260%22 r=%222.5%22 fill=%22%2307C160%22/%3E%3C/svg%3E',
   },
 
+  lifetimes: {
+    // 页面在 onLoad 即置 visible=true（如活动详情登录墙）时，visible 是首渲染的初始属性值，
+    // observer 不触发导致弹窗永不挂载（页面白屏）——attached 时补挂载一次
+    attached() {
+      if (this.data.visible && !this.data._mounted) {
+        this.setData({ _mounted: true })
+        setTimeout(() => this.setData({ _show: true }), 20)
+      }
+    },
+  },
+
   observers: {
     'visible': function(val) {
       if (val) {

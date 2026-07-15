@@ -3,7 +3,7 @@ const diaryApi = require('../../api/diary')
 const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const { lock, throttle } = require('../../utils/guard')
-const { ensureMember } = require('../../utils/auth-guard')
+const { ensureLogin, ensureMember, handleLoginSuccess } = require('../../utils/auth-guard')
 
 Page({
   data: {
@@ -13,6 +13,7 @@ Page({
     page: 1,
     hasMore: true,
     showFilterSheet: false,
+    showLoginSheet: false,
     filters: {
       tags: [], author: '', timeMode: 'quick', quickRange: 'all',
       dateFrom: '', dateTo: '', years: [], months: [],
@@ -62,18 +63,35 @@ Page({
   onCloseFilter() { this.setData({ showFilterSheet: false }) },
   onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
 
-  onCardOpen(e) { throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + e.detail.id })) },
+  // v2.3：guest（含退出登录的曾会员）点卡片/互动先拉起登录弹窗，与广场页口径一致
+  onCardOpen(e) {
+    const open = () => throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + e.detail.id }))
+    if (!ensureLogin(this, open)) return
+    open()
+  },
+
+  onLoginClose() {
+    this.setData({ showLoginSheet: false })
+    const tb = this.getTabBar && this.getTabBar()
+    if (tb) tb.setData({ hidden: false })
+    this._pendingLoginAction = null
+  },
+  onLoginSuccess() { handleLoginSuccess(this) },
+
   onCardLike(e) {
+    if (!ensureLogin(this, () => this.onCardLike(e))) return
     const { id } = e.detail
     // 乐观更新：立即翻转 UI，后台失败自动回滚
     return lock(this, 'like' + id, () => optimisticLike(this, id))
   },
   onCardFav(e) {
+    if (!ensureLogin(this, () => this.onCardFav(e))) return
     const { id } = e.detail
     return lock(this, 'fav' + id, () => optimisticFav(this, id))
   },
   onCardEdit(e) { ensureMember(this, () => throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/compose/index?diaryId=' + e.detail.id }))) },
   onCardDelete(e) {
+    if (!ensureLogin(this, () => this.onCardDelete(e))) return
     const { id } = e.detail
     return lock(this, 'del' + id, async () => {
       const res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除后不可恢复', success: r }))
