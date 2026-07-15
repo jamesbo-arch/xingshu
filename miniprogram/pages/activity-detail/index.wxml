@@ -240,6 +240,21 @@
   </view>
 </view>
 
+<!-- 未登录占位页：登录墙拦截中（needLogin）时渲染，杜绝白屏；按钮为点击时触发的可靠路径 -->
+<view wx:if="{{!activity && needLogin}}" class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
+  <view class="detail-nav" style="padding-right: {{capsulePad}}px;">
+    <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
+    <text class="nav-title serif">活動詳情</text>
+  </view>
+  <view class="act-wall">
+    <text class="act-wall-icon serif">醒</text>
+    <text class="act-wall-title">登录后即可查看活动详情</text>
+    <text class="act-wall-hint">了解活动安排、报名参加、查看现场分享</text>
+    <view class="act-wall-btn" bindtap="onWallLogin">微信登录</view>
+  </view>
+</view>
+
 <!-- v2.3 微信登录弹窗：活动详情需轻授权，activity 为空时也需可见，故置于根节点之外 -->
 <login-sheet
   visible="{{showLoginSheet}}"

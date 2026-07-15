@@ -790,3 +790,47 @@
 
 .post-pick-add-icon { font-size: 44rpx; line-height: 1; }
 .post-pick-add-text { font-size: 22rpx; margin-top: 4rpx; }
+
+/* ===== 未登录占位页（登录墙）===== */
+.act-wall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 200rpx 60rpx 0;
+}
+
+.act-wall-icon {
+  width: 110rpx;
+  height: 110rpx;
+  border: 2rpx solid rgba(126, 102, 64, 0.35);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 52rpx;
+  color: #877052;
+  margin-bottom: 36rpx;
+}
+
+.act-wall-title {
+  font-size: 32rpx;
+  color: #3D3A33;
+  margin-bottom: 14rpx;
+}
+
+.act-wall-hint {
+  font-size: 24rpx;
+  color: #A8A39B;
+  margin-bottom: 56rpx;
+}
+
+.act-wall-btn {
+  min-width: 320rpx;
+  text-align: center;
+  padding: 22rpx 48rpx;
+  border-radius: 44rpx;
+  background: #B6452F;
+  color: #FBF7EE;
+  font-size: 30rpx;
+  letter-spacing: 2rpx;
+}
