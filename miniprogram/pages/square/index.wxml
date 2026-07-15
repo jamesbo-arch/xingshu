@@ -53,7 +53,7 @@
 
   <!-- 近期活动轮播（共享组件）：固定在 tab-bar 之上，可手动关闭（当次会话）；无未开始活动时容器隐藏 -->
   <view class="act-banner-bar" hidden="{{!actBannerCount}}">
-    <act-banner id="actBanner" bind:change="onActBannerChange"></act-banner>
+    <act-banner id="actBanner" bind:change="onActBannerChange" bind:open="onActBannerOpen"></act-banner>
   </view>
 
   <!-- FAB -->

@@ -75,6 +75,14 @@ Page({
     this.setData({ actBannerCount: e.detail.count })
   },
 
+  // 轮播点击（组件抛事件，本页守卫）：未登录先弹登录窗，登录成功自动进该活动详情
+  onActBannerOpen(e) {
+    const id = e.detail.id
+    const open = () => throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
+    if (!ensureLogin(this, open)) return
+    open()
+  },
+
   async onRefresh() {
     this.setData({ refreshing: true })
     try {

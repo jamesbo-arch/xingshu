@@ -105,7 +105,7 @@
 
   <!-- 近期活动预告轮播（共享组件）：仅分享页签展示，固定于 tab-bar 之上 -->
   <view class="act-banner-bar" hidden="{{tab !== 'share' || !actBannerCount}}">
-    <act-banner id="actBanner" bind:change="onActBannerChange"></act-banner>
+    <act-banner id="actBanner" bind:change="onActBannerChange" bind:open="onActBannerOpen"></act-banner>
   </view>
 
   <!-- 分享页签 FAB：直达发布分享（参照广场写日记入口） -->
