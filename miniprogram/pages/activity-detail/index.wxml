@@ -81,7 +81,7 @@
               <text class="post-time">{{item.timeText}}</text>
             </view>
             <view class="post-like {{item.isLiked ? 'post-like-on' : ''}}" data-id="{{item.id}}" catchtap="onLikePost">
-              <text>{{item.isLiked ? '♥' : '♡'}}</text><text wx:if="{{item.likeCount}}" class="post-like-n">{{item.likeCount}}</text>
+              <text>{{item.isLiked ? '♥︎' : '♡'}}</text><text wx:if="{{item.likeCount}}" class="post-like-n">{{item.likeCount}}</text>
             </view>
             <text wx:if="{{item.isMine}}" class="post-del" data-id="{{item.id}}" catchtap="onDeletePost">删除</text>
           </view>

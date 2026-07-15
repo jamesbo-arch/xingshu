@@ -2954,3 +2954,17 @@ fn-activity-feed-test 12/12 绿；`node --check` 过。走查：瀑布流/详情
 fn-activity-feed-test 12/12 绿；`node --check` 两文件过。
 
 **部署（用户操作）**：重部署 activity 云函数（与今日活动批次合并一次即可）。
+
+### 2026-07-15 16:40 — 点赞心形与未点赞形状统一（VS15 强制文本渲染）
+
+**类型**：前端
+**计划关联**：现场分享点赞迭代
+**修改文件**：
+- `miniprogram/pages/activities/index.wxml` — 瀑布流双列点赞态 ♥ 追加 U+FE0E 变体选择符
+- `miniprogram/pages/activity-detail/index.wxml` — 详情分享卡同上
+
+**变更说明**：
+iOS 把 U+2665 实心心默认按 emoji 渲染（圆润红心），与未点赞的文本空心 ♡（U+2661）轮廓不一致。给点赞态字符追加 VS15（U+FE0E）强制文本呈现，两态同字体同轮廓，仅以实心+印章红区分状态。
+
+**验证**：
+grep 确认三处 ♥+FE0E 序列写入；真机走查两态心形轮廓一致。
