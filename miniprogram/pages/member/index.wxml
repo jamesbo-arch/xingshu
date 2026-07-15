@@ -5,23 +5,9 @@
     <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">会员中心</text><kefu-fab /></view>
   </view>
 
-  <!-- 固定顶部：身份卡（会员额外含有效期卡） -->
+  <!-- 固定顶部：身份卡（会员额外含有效期卡；guest 不显示卡片，仅居中登录引导） -->
   <view class="member-top">
-    <block wx:if="{{user.identity === 'guest'}}">
-      <view class="identity-card guest-card">
-        <view class="guest-avatar">
-          <text class="guest-question">?</text>
-        </view>
-        <view class="identity-info">
-          <view class="identity-name-row">
-            <text class="identity-name">未登录</text>
-            <text class="identity-label-badge guest-badge">游客</text>
-          </view>
-          <text class="identity-hint">未登录 · 仅可浏览日记、活动列表</text>
-        </view>
-      </view>
-    </block>
-    <block wx:elif="{{user.identity === 'authed'}}">
+    <block wx:if="{{user.identity === 'authed'}}">
       <view class="identity-card authed-card">
         <view class="avatar-wrap-click" bindtap="onShowProfileSheet">
           <image wx:if="{{user.avatarUrl}}" src="{{user.avatarUrl}}" class="avatar lg avatar-real" mode="aspectFill" />
