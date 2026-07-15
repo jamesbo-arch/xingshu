@@ -272,9 +272,12 @@ Page({
     this.setData({ activeTypeId: id }, () => this._loadAll())
   },
 
+  // 未登录点活动行：先在列表页拉起登录弹窗（同广场日记列表），登录成功自动进详情
   onOpen(e) {
     const id = e.currentTarget.dataset.id
-    throttle(this, 'open', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
+    const open = () => throttle(this, 'open', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
+    if (!ensureLogin(this, open)) return
+    open()
   },
 
   // ── FAB 直达发布分享 ──
