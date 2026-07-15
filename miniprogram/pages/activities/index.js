@@ -175,10 +175,13 @@ Page({
     if (this.data.feedHasMore) this._loadFeed(false)
   },
 
-  // 分享卡点击 → 该活动详情并定位到现场分享区
+  // 分享卡点击 → 该活动详情并定位到现场分享区；未登录先在本页拉起登录弹窗（同全部活动列表）
   onOpenPost(e) {
     const id = Number(e.currentTarget.dataset.aid)
-    if (id) throttle(this, 'open', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}&to=posts` }))
+    if (!id) return
+    const open = () => throttle(this, 'open', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}&to=posts` }))
+    if (!ensureLogin(this, open)) return
+    open()
   },
 
   onGoAll() {
