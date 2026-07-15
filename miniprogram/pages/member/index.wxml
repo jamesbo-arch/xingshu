@@ -87,10 +87,12 @@
     <!-- ===== GUEST STATE ===== -->
     <block wx:if="{{user.identity === 'guest'}}">
 
-      <view class="auth-section">
-        <view class="btn-primary auth-btn" bindtap="onAuthorize">
-          <text>微信登录 · 解锁完整功能</text>
-        </view>
+      <!-- 未登录引导：与活动详情登录页同风格（居中构图 + 印章红圆角按钮） -->
+      <view class="guest-wall">
+        <text class="guest-wall-icon serif">醒</text>
+        <text class="guest-wall-title">登录后解锁完整功能</text>
+        <text class="guest-wall-hint">阅读日记全文、点赞评论收藏、报名醒书活动</text>
+        <view class="guest-wall-btn" bindtap="onAuthorize">微信登录</view>
         <text class="auth-hint">仅获取你的微信身份标识，不涉及手机号</text>
       </view>
 

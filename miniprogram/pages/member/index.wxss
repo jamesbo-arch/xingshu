@@ -313,21 +313,48 @@ page { height: 100%; overflow: hidden; }
   font-weight: 700;
 }
 
-/* ===== Auth section (guest) ===== */
-.auth-section {
-  margin-bottom: 28rpx;
+/* ===== 未登录引导（guest，与活动详情登录页同风格） ===== */
+.guest-wall {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 120rpx 60rpx 0;
 }
 
-.auth-btn {
-  width: 100%;
+.guest-wall-icon {
+  width: 110rpx;
+  height: 110rpx;
+  border: 2rpx solid rgba(126, 102, 64, 0.35);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 52rpx;
+  color: #877052;
+  margin-bottom: 36rpx;
+}
+
+.guest-wall-title {
+  font-size: 32rpx;
+  color: #3D3A33;
+  margin-bottom: 14rpx;
+}
+
+.guest-wall-hint {
+  font-size: 24rpx;
+  color: #A8A39B;
+  margin-bottom: 56rpx;
+}
+
+.guest-wall-btn {
+  min-width: 320rpx;
+  text-align: center;
+  padding: 22rpx 48rpx;
+  border-radius: 44rpx;
+  background: #B6452F;
+  color: #FBF7EE;
   font-size: 30rpx;
-  padding: 28rpx;
-  border-radius: 14px;
-  letter-spacing: 3rpx;
-}
-
-.auth-btn::after {
-  border: none;
+  letter-spacing: 2rpx;
 }
 
 .auth-hint {
