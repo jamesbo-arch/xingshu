@@ -17,10 +17,7 @@
             <text class="identity-name">未登录</text>
             <text class="identity-label-badge guest-badge">游客</text>
           </view>
-          <text class="identity-hint">未登录 · 仅可浏览日记列表</text>
-        </view>
-        <view class="id-seal guest-seal">
-          <text class="id-seal-text serif">游客</text>
+          <text class="identity-hint">未登录 · 仅可浏览日记、活动列表</text>
         </view>
       </view>
     </block>
@@ -95,19 +92,6 @@
           <text>微信登录 · 解锁完整功能</text>
         </view>
         <text class="auth-hint">仅获取你的微信身份标识，不涉及手机号</text>
-      </view>
-
-      <view class="section-header-row">
-        <text class="section-label serif">会员权益</text>
-      </view>
-      <view class="section-card benefits-card">
-        <view wx:for="{{benefits}}" wx:key="title" class="benefit-item dimmed">
-          <text class="benefit-diamond">✦</text>
-          <view class="benefit-body">
-            <text class="benefit-title">{{item.title}}</text>
-            <text wx:if="{{item.desc}}" class="benefit-desc">{{item.desc}}</text>
-          </view>
-        </view>
       </view>
 
     </block>
@@ -303,8 +287,8 @@
 
     </block>
 
-    <!-- 醒书咨询图（随内容滚动） -->
-    <view class="consulting-banner">
+    <!-- 醒书咨询图（随内容滚动；未登录态保持简洁不展示） -->
+    <view wx:if="{{user.identity !== 'guest'}}" class="consulting-banner">
       <image class="consulting-img" src="/images/consulting-banner.png" mode="widthFix" />
     </view>
 
