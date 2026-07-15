@@ -50,8 +50,13 @@ async function run() {
     const [[o]] = await conn.query("SELECT status, DATE_FORMAT(valid_until,'%Y-%m-%d') vu FROM orders WHERE id = ?", [order1Id])
     if (o.status !== 'paid') throw new Error(`订单状态 ${o.status}`)
     if (o.vu !== plus365) throw new Error(`订单 valid_until=${o.vu}`)
-    const [[u]] = await conn.query('SELECT identity FROM users WHERE id = ?', [authedId])
-    if (u.identity !== 'member') throw new Error(`用户身份 ${u.identity}，未升级`)
+    // 两字段语义：identity 列保持授权态（authed），会员资格 = member_until 落库；派生展示为 member
+    const [[u]] = await conn.query(
+      "SELECT identity, DATE_FORMAT(member_until,'%Y-%m-%d') mu FROM users WHERE id = ?", [authedId])
+    if (u.identity !== 'authed') throw new Error(`identity 列应保持授权态 authed，实际 ${u.identity}`)
+    if (u.mu !== plus365) throw new Error(`member_until=${u.mu}，会员期未落库`)
+    const d = await admin('userDetail', { id: authedId })
+    if (d.data.user.identity !== 'member') throw new Error(`admin 派生身份 ${d.data.user.identity}，应为 member`)
   })
 
   await test('ORDER-A03 现会员续期 → 有效期从原到期日顺延（时长叠加，不覆盖剩余）', async () => {

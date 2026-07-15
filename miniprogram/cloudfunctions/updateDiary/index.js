@@ -8,7 +8,7 @@ exports.main = async (event, context) => {
   if (!diaryId) return { code: -1, msg: '缺少日记ID' }
 
   const [users] = await db.query(
-    "SELECT id, (identity='member' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
+    "SELECT id, (identity <> 'guest' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
     [OPENID])
   if (!users.length) return { code: -1, msg: 'user not found' }
   const userId = users[0].id

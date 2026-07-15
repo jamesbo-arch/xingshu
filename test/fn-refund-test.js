@@ -41,9 +41,10 @@ async function run() {
   }
 
   // uA：3 天前入会（7 天内全额）；uB：30 天前入会（折算）；uC：会员已过期
-  const uA = await mkUser('a', 'member', fmtDate(daysLater(362)))
-  const uB = await mkUser('b', 'member', fmtDate(daysLater(335)))
-  const uC = await mkUser('c', 'member', fmtDate(daysAgo(1)))
+  // 两字段语义：identity 存授权态 authed，会员资格由 member_until 表达
+  const uA = await mkUser('a', 'authed', fmtDate(daysLater(362)))
+  const uB = await mkUser('b', 'authed', fmtDate(daysLater(335)))
+  const uC = await mkUser('c', 'authed', fmtDate(daysAgo(1)))
   await mkOrder('XS-TEST-A1', uA, 365, 3, fmtDate(daysAgo(3)), fmtDate(daysLater(362)))
   await mkOrder('XS-TEST-B1', uB, 365, 30, fmtDate(daysAgo(30)), fmtDate(daysLater(335)))
   await mkOrder('XS-TEST-C1', uC, 365, 400, fmtDate(daysAgo(400)), fmtDate(daysAgo(1)))
@@ -93,10 +94,10 @@ async function run() {
       if (Number(row.amount) !== Number(r.data.refundAmount)) throw new Error('金额与返回不一致')
     })
 
-    await test('REF-05 退费后会员即时失效（identity=authed、会员期清空）', async () => {
+    await test('REF-05 退费后会员即时失效（会员期清空，授权态不变）', async () => {
       const [[u]] = await conn.query(
         'SELECT identity, member_from, member_until FROM users WHERE id = ?', [uB])
-      if (u.identity !== 'authed') throw new Error(`identity=${u.identity}`)
+      if (u.identity !== 'authed') throw new Error(`identity=${u.identity}（授权态不应被退费改动）`)
       if (u.member_from !== null || u.member_until !== null) throw new Error('会员期未清空')
     })
 

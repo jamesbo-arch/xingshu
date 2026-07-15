@@ -19,13 +19,13 @@ exports.main = async (event, context) => {
     where += ' AND d.user_id = ?'
     params.push(userId)
   } else {
-    // 会员判断综合身份 + 有效期：过期会员（member_until < 今天）按 authed 处理
+    // 两字段语义：identity 存授权态，会员资格由 member_until 派生（过期即按 authed，无自愈依赖）
     const [users] = await db.query(
-      "SELECT id, identity, (identity='member' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
+      "SELECT id, identity, (identity <> 'guest' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
       [OPENID])
     userId = users.length ? users[0].id : null
-    userIdentity = !users.length ? 'guest'
-      : (users[0].validMember ? 'member' : (users[0].identity === 'member' ? 'authed' : users[0].identity))
+    userIdentity = (!users.length || users[0].identity === 'guest') ? 'guest'
+      : (users[0].validMember ? 'member' : 'authed')
 
     if (mode === 'collections') {
       where += ' AND d.id IN (SELECT target_id FROM interactions WHERE user_id = ? AND target_type = ? AND action = ?)'
@@ -92,7 +92,7 @@ exports.main = async (event, context) => {
 
   const [diaries] = await db.query(
     `SELECT d.*, u.nickname AS author_name, u.avatar_hue AS author_avatar_hue,
-            u.identity AS author_identity,
+            IF(u.member_until IS NOT NULL AND u.member_until >= CURDATE(), 'member', 'authed') AS author_identity,
             ${likedSql}
             GROUP_CONCAT(t.name ORDER BY t.name SEPARATOR ',') AS tags_csv
      FROM diaries d

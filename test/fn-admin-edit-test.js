@@ -45,12 +45,14 @@ async function run() {
     if (r2.code === 0) throw new Error('不存在用户不应通过')
   })
 
-  await test('AE-A10 updateUser 改身份为 member + 有效期 → 落库 member_from/until', async () => {
+  await test('AE-A10 updateUser 改身份为 member + 有效期 → 会员期落库，identity 列保持授权态，回传派生 member', async () => {
     const r = await admin('updateUser', { userId: u1.id, identity: 'member', memberFrom: '2026-05-19', memberUntil: '2027-05-19' })
     if (r.code !== 0) throw new Error(r.msg)
+    // 两字段语义：identity 列只存授权态（authed），会员资格 = member_until；回传的 identity 为派生值
     const [[u]] = await conn.query(
       "SELECT identity, DATE_FORMAT(member_from,'%Y-%m-%d') mf, DATE_FORMAT(member_until,'%Y-%m-%d') mu FROM users WHERE id = ?", [u1.id])
-    if (u.identity !== 'member' || u.mf !== '2026-05-19' || u.mu !== '2027-05-19') throw new Error(`落库异常 ${u.identity}/${u.mf}/${u.mu}`)
+    if (u.identity !== 'authed' || u.mf !== '2026-05-19' || u.mu !== '2027-05-19') throw new Error(`落库异常 ${u.identity}/${u.mf}/${u.mu}`)
+    if (r.data.user.identity !== 'member') throw new Error(`回传派生身份 ${r.data.user.identity}，应为 member`)
   })
 
   await test('AE-A12 updateUser 设置性别 → 落库、USER_SELECT 回传', async () => {

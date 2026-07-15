@@ -7,7 +7,7 @@ exports.main = async (event, context) => {
   // 互动统计按其名下日记实算（users.*_count 未维护、废弃，不能用）
   const [rows] = await db.query(
     `SELECT u.*,
-       (u.identity='member' AND (u.member_until IS NULL OR u.member_until < CURDATE())) AS memberExpired,
+       (u.identity <> 'guest' AND u.member_until IS NOT NULL AND u.member_until >= CURDATE()) AS validMember,
        (SELECT COUNT(*) FROM diaries d WHERE d.user_id=u.id AND d.status='active') AS statDiaries,
        (SELECT COALESCE(SUM(d.like_count),0)    FROM diaries d WHERE d.user_id=u.id AND d.status='active') AS statLikes,
        (SELECT COALESCE(SUM(d.fav_count),0)     FROM diaries d WHERE d.user_id=u.id AND d.status='active') AS statFavorites,
@@ -17,12 +17,8 @@ exports.main = async (event, context) => {
     [OPENID])
   if (!rows.length) return { code: -1, msg: 'user not found' }
   const user = rows[0]
-  // 会员到期自愈：身份仍为 member 但 member_until 已过 → 回落 authed 并清空到期日
-  if (user.memberExpired) {
-    await db.query("UPDATE users SET identity = 'authed', member_until = NULL WHERE id = ?", [user.id])
-    user.identity = 'authed'
-    user.member_until = null
-  }
+  // 两字段语义：identity 只存授权态，会员由 member_until 派生（member 为派生值，过期即回落 authed，无需改写库）
+  user.identity = user.identity === 'guest' ? 'guest' : (user.validMember ? 'member' : 'authed')
   const stats = {
     diaries: Number(user.statDiaries) || 0,
     likes: Number(user.statLikes) || 0,
@@ -30,6 +26,6 @@ exports.main = async (event, context) => {
     comments: Number(user.statComments) || 0,
     shares: Number(user.statShares) || 0,
   }
-  ;['memberExpired', 'statDiaries', 'statLikes', 'statFavorites', 'statComments', 'statShares'].forEach(k => delete user[k])
+  ;['validMember', 'statDiaries', 'statLikes', 'statFavorites', 'statComments', 'statShares'].forEach(k => delete user[k])
   return { code: 0, data: { ...user, stats } }
 }

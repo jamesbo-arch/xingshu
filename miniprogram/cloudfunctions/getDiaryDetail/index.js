@@ -10,19 +10,20 @@ exports.main = async (event, context) => {
   // 用户与日记两条查询互相独立，并行执行
   const [[users], [diaries]] = await Promise.all([
     db.query(
-      "SELECT id, identity, (identity='member' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
+      "SELECT id, identity, (identity <> 'guest' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
       [OPENID]),
+    // 作者徽章（author_identity）按会员资格（member_until）派生，与作者登录态无关
     db.query(
       `SELECT d.*, u.nickname AS author_name, u.avatar_hue AS author_avatar_hue,
-              u.identity AS author_identity
+              IF(u.member_until IS NOT NULL AND u.member_until >= CURDATE(), 'member', 'authed') AS author_identity
        FROM diaries d JOIN users u ON d.user_id = u.id
        WHERE d.id = ? AND d.status = ?`, [diaryId, 'active']
     ),
   ])
   const userId = users.length ? users[0].id : null
-  // 会员判断综合身份 + 有效期：过期会员按 authed 处理
-  const userIdentity = !users.length ? 'guest'
-    : (users[0].validMember ? 'member' : (users[0].identity === 'member' ? 'authed' : users[0].identity))
+  // 两字段语义：identity 存授权态，会员资格由 member_until 派生（过期即按 authed）
+  const userIdentity = (!users.length || users[0].identity === 'guest') ? 'guest'
+    : (users[0].validMember ? 'member' : 'authed')
   if (!diaries.length) return { code: -1, msg: '日记不存在' }
 
   const diary = diaries[0]

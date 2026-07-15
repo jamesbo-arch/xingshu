@@ -36,7 +36,9 @@ async function auditLog(action, targetType, targetId, detail) {
 const USER_SELECT = `
   SELECT u.id, u.nickname, COALESCE(u.real_name,'') AS realName, COALESCE(u.phone,'') AS phone,
          COALESCE(u.gender,'') AS gender,
-         u.avatar_hue AS avatarHue, u.identity,
+         u.avatar_hue AS avatarHue,
+         CASE WHEN u.member_until IS NOT NULL AND u.member_until >= CURDATE() THEN 'member'
+              WHEN u.identity = 'guest' THEN 'guest' ELSE 'authed' END AS identity,
          DATE_FORMAT(u.member_from, '%Y-%m-%d') AS memberFrom,
          DATE_FORMAT(u.member_until, '%Y-%m-%d') AS memberUntil,
          GREATEST(COALESCE(DATEDIFF(u.member_until, CURDATE()), 0), 0) AS daysLeft,
@@ -115,9 +117,11 @@ function rowToOrder(r) {
 // 规则：支付日起 7 天内全额退款；过 7 天按剩余天数折算（金额 × 剩余天数 ÷ 订单总天数），已过期不可退
 async function refundCalc(userId) {
   if (!userId) throw new Error('缺少用户 ID')
-  const [users] = await db.query('SELECT id, identity FROM users WHERE id = ?', [userId])
+  // 会员资格按 member_until 判定（与登录态无关——退出登录的会员同样可退费）
+  const [users] = await db.query(
+    'SELECT id, (member_until IS NOT NULL AND member_until >= CURDATE()) AS isMember FROM users WHERE id = ?', [userId])
   if (!users.length) throw new Error('用户不存在')
-  if (users[0].identity !== 'member') throw new Error('该用户当前不是会员，无可退订单')
+  if (!users[0].isMember) throw new Error('该用户当前不是会员，无可退订单')
   const [orders] = await db.query(
     `SELECT o.id, o.amount, o.plan, o.method,
             DATE_FORMAT(o.valid_from,'%Y-%m-%d') AS validFrom,
@@ -185,7 +189,14 @@ async function deleteDiaryById(id) {
 const handlers = {
   async users({ identity, keyword, page, pageSize } = {}) {
     const where = [], params = []
-    if (identity) { where.push('u.identity = ?'); params.push(identity) }
+    // 两字段语义：identity 列只存授权态，会员按 member_until 派生——筛选口径与列表展示的派生值一致
+    if (identity === 'member') {
+      where.push('u.member_until IS NOT NULL AND u.member_until >= CURDATE()')
+    } else if (identity === 'authed') {
+      where.push("u.identity <> 'guest' AND (u.member_until IS NULL OR u.member_until < CURDATE())")
+    } else if (identity === 'guest') {
+      where.push("u.identity = 'guest' AND (u.member_until IS NULL OR u.member_until < CURDATE())")
+    }
     if (keyword) {
       where.push('(u.nickname LIKE ? OR u.phone LIKE ? OR u.real_name LIKE ? OR u.id = ?)')
       params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, Number(keyword) || 0)
@@ -209,7 +220,10 @@ const handlers = {
       `${DIARY_LIST_SELECT} WHERE d.user_id = ? AND d.status = 'active' ORDER BY d.created_at DESC`, [id])
     // v2.2 "他推荐的用户"
     const [referred] = await db.query(
-      `SELECT id, nickname, identity, DATE_FORMAT(created_at, '%Y-%m-%d') AS registeredAt
+      `SELECT id, nickname,
+              CASE WHEN member_until IS NOT NULL AND member_until >= CURDATE() THEN 'member'
+                   WHEN identity = 'guest' THEN 'guest' ELSE 'authed' END AS identity,
+              DATE_FORMAT(created_at, '%Y-%m-%d') AS registeredAt
        FROM users WHERE referrer_user_id = ? ORDER BY created_at DESC`, [id])
     return { user, diaries: diaries.map(rowToDiary), referred }
   },
@@ -231,13 +245,16 @@ const handlers = {
     if (gender !== undefined) { fields.push('gender = ?'); values.push(gender || null) }
     if (identity !== undefined) {
       if (!['guest', 'authed', 'member'].includes(identity)) throw new Error('身份取值非法')
-      fields.push('identity = ?'); values.push(identity)
+      // 两字段语义：identity 列只存授权态（guest/authed），会员资格 = member_until。
+      // 表单选"会员"→ 只写会员期（授权态提为 authed，除非本就已授权）；选非会员 → 写授权态并清会员期。
       if (identity === 'member') {
         const dateRe = /^\d{4}-\d{2}-\d{2}$/
         if (!dateRe.test(memberFrom || '') || !dateRe.test(memberUntil || '')) throw new Error('会员有效期日期格式无效')
         if (memberUntil <= memberFrom) throw new Error('会员失效日期须晚于生效日期')
+        fields.push("identity = IF(identity = 'guest', 'guest', 'authed')")
         fields.push('member_from = ?', 'member_until = ?'); values.push(memberFrom, memberUntil)
       } else {
+        fields.push('identity = ?'); values.push(identity)
         fields.push('member_from = NULL', 'member_until = NULL')
       }
     }
@@ -389,8 +406,8 @@ const handlers = {
     const count = async sql => (await db.query(sql))[0][0].c
     const users = await count('SELECT COUNT(*) c FROM users')
     const usersNew = await count('SELECT COUNT(*) c FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)')
-    const members = await count("SELECT COUNT(*) c FROM users WHERE identity = 'member'")
-    const membersNew = await count("SELECT COUNT(*) c FROM users WHERE identity = 'member' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")
+    const members = await count("SELECT COUNT(*) c FROM users WHERE member_until IS NOT NULL AND member_until >= CURDATE()")
+    const membersNew = await count("SELECT COUNT(*) c FROM users WHERE member_until IS NOT NULL AND member_until >= CURDATE() AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")
     const diaries = await count("SELECT COUNT(*) c FROM diaries WHERE status = 'active'")
     const diariesNew = await count("SELECT COUNT(*) c FROM diaries WHERE status = 'active' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")
     const inter = await count('SELECT COUNT(*) c FROM interactions') +
@@ -701,11 +718,12 @@ const handlers = {
     const days = Number(memberDays) || 365
 
     const [users] = await db.query(
-      "SELECT id, identity, DATE_FORMAT(member_from,'%Y-%m-%d') AS memberFrom, member_until FROM users WHERE id = ?",
+      `SELECT id, identity, DATE_FORMAT(member_from,'%Y-%m-%d') AS memberFrom, member_until,
+              (member_until IS NOT NULL AND member_until >= CURDATE()) AS isMember FROM users WHERE id = ?`,
       [userId])
     if (!users.length) throw new Error('用户不存在')
     const user = users[0]
-    if (user.identity === 'guest') throw new Error('游客不可开通会员，需先登录')
+    if (user.identity === 'guest' && !user.isMember) throw new Error('游客不可开通会员，需先登录')
 
     const todayStr = bjNow().toISOString().slice(0, 10)
     const payTime = paymentTime || bjNow().toISOString().slice(0, 19).replace('T', ' ')
@@ -719,18 +737,17 @@ const handlers = {
       vFrom = validFrom
       vUntil = validUntil
     } else {
-      // 未指定 → 生效日默认取支付日；现会员（未过期）仍从原到期日顺延叠加，否则支付日 +days
+      // 未指定 → 生效日默认取支付日；现会员（member_until 未过期）仍从原到期日顺延叠加，否则支付日 +days
       const [[calc]] = await db.query(
-        `SELECT CASE WHEN ? = 'member' AND ? IS NOT NULL AND ? >= CURDATE()
-                     THEN DATE_FORMAT(?, '%Y-%m-%d') ELSE ? END AS base`,
-        [user.identity, user.member_until, user.member_until, user.member_until, payDate])
+        `SELECT CASE WHEN ? = 1 THEN DATE_FORMAT(?, '%Y-%m-%d') ELSE ? END AS base`,
+        [user.isMember ? 1 : 0, user.member_until, payDate])
       vFrom = payDate
       const [[dates]] = await db.query(
         'SELECT DATE_FORMAT(DATE_ADD(?, INTERVAL ? DAY), "%Y-%m-%d") AS validUntil', [calc.base, days])
       vUntil = dates.validUntil
     }
     // 首次开通用生效日为 member_from，续期保留原 member_from
-    const memberFrom = (user.identity === 'member' && user.memberFrom) ? user.memberFrom : vFrom
+    const memberFrom = (user.isMember && user.memberFrom) ? user.memberFrom : vFrom
 
     const orderId = 'XS-' + todayStr.replace(/-/g, '') + '-' +
       Math.floor(Math.random() * 10000).toString().padStart(4, '0')
@@ -749,8 +766,9 @@ const handlers = {
            related_order_id, valid_from, valid_until, payment_time, note, proof_url, created_by)
          VALUES (?,?,?,?,?,'paid',?,?,?,?,?,?,?,'admin-web')`,
         [orderId, userId, amt, plan, method, days, relatedOrderId, vFrom, vUntil, payTime, note, proofUrl])
+      // 两字段语义：只写会员期（授权态不动——用户若处退出态，重新登录即以会员身份生效）
       await conn.query(
-        "UPDATE users SET identity = 'member', member_from = ?, member_until = ? WHERE id = ?",
+        'UPDATE users SET member_from = ?, member_until = ? WHERE id = ?',
         [memberFrom, vUntil, userId])
       await conn.commit()
     } catch (err) {
@@ -759,7 +777,7 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('createOrder', 'order', orderId, { userId, amount: amt, validUntil: vUntil, renew: user.identity === 'member' })
+    await auditLog('createOrder', 'order', orderId, { userId, amount: amt, validUntil: vUntil, renew: !!user.isMember })
     const [orderRows] = await db.query(`${ORDER_SELECT} WHERE o.id = ?`, [orderId])
     return { order: rowToOrder(orderRows[0]), validUntil: vUntil }
   },
@@ -790,8 +808,9 @@ const handlers = {
          VALUES (?,?,?,?,?,'refunded',0,?,?,?,'admin-web')`,
         [refundId, userId, calc.refundAmount, calc.order.plan, calc.order.method,
          calc.order.id, now, note])
+      // 两字段语义：退费只清会员期（授权态不动——用户若处退出态不应被误改为已授权）
       await conn.query(
-        "UPDATE users SET identity = 'authed', member_from = NULL, member_until = NULL WHERE id = ?",
+        'UPDATE users SET member_from = NULL, member_until = NULL WHERE id = ?',
         [userId])
       await conn.commit()
     } catch (err) {

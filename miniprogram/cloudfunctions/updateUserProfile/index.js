@@ -14,11 +14,11 @@ exports.main = async (event, context) => {
   if (avatarUrl !== undefined) { fields.push('avatar_url = ?'); values.push(avatarUrl) }
 
   if (authorize) {
-    // v2.3 微信登录：会员期内恢复 member，否则 authed；记录授权时间
-    fields.push("identity = IF(member_until IS NOT NULL AND member_until > NOW(), 'member', 'authed')")
+    // 两字段语义：identity 只存授权态（authed），会员与否由 member_until 派生（返回时计算，口径统一 >= CURDATE()）
+    fields.push("identity = 'authed'")
     fields.push('authorized_at = NOW()')
   } else if (logout) {
-    // 退出登录：仅回退身份为 guest，保留 member_until/unionid，重新登录可恢复
+    // 退出登录：仅回退授权态为 guest，保留 member_until/unionid，重新登录即恢复会员
     fields.push("identity = 'guest'")
   }
 
@@ -28,6 +28,12 @@ exports.main = async (event, context) => {
   values.push(OPENID)
 
   await db.query(`UPDATE users SET ${fields.join(', ')} WHERE openid = ?`, values)
-  const [rows] = await db.query('SELECT * FROM users WHERE openid = ?', [OPENID])
-  return { code: 0, data: rows[0] }
+  const [rows] = await db.query(
+    "SELECT *, (identity <> 'guest' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
+    [OPENID])
+  const user = rows[0]
+  // 对外 identity 返回派生三态（member 为派生值），前端判断口径不变
+  user.identity = user.identity === 'guest' ? 'guest' : (user.validMember ? 'member' : 'authed')
+  delete user.validMember
+  return { code: 0, data: user }
 }
