@@ -12,7 +12,9 @@ exports.main = async (event, context) => {
   if (isActive !== undefined) { fields.push('is_active = ?'); values.push(isActive) }
   if (!fields.length) return { code: -1, msg: 'nothing to update' }
 
-  fields.push('updated_by = ?'); values.push(OPENID)
+  // updated_by 统一存用户表 id
+  const [users] = await db.query('SELECT id FROM users WHERE openid = ?', [OPENID])
+  fields.push('updated_by = ?'); values.push(users.length ? users[0].id : null)
   values.push(tagId)
 
   await db.query(`UPDATE tags SET ${fields.join(', ')} WHERE id = ?`, values)

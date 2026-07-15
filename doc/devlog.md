@@ -3028,3 +3028,29 @@ dev 库已执行 `UPDATE users SET identity='authed' WHERE identity='member'`（
 npm test 全量 18 文件全绿（含新增 MEM-A11）；node --check 全过。遗留未引用函数 activateMember/createOrder（小程序端，Phase 2 遗物，以 identity='member' 当管理员校验）无前端引用，未改动——迁移后其校验永假等效禁用，后续可删。
 
 **部署（用户操作）**：重部署 9 个云函数：login / getUserInfo / checkMemberStatus / updateUserProfile / getDiaryList / getDiaryDetail / createDiary / updateDiary / admin。
+
+### 2026-07-15 20:40 — created_by/updated_by 统一改存用户表 id
+
+**类型**：云函数 | 数据库 | 测试
+**计划关联**：数据规范化（用户提出：审计字段统一用 users.id）
+**修改文件**：
+- `miniprogram/cloudfunctions/login/index.js` — 新用户注册后回填 created_by=自身 id（原写 openid）
+- `miniprogram/cloudfunctions/updateUserProfile/index.js` — updated_by 改 `= id`（引用本行列，原写 openid）
+- `miniprogram/cloudfunctions/addTag/index.js` / `updateTag/index.js` — 先查 users.id 再写（原写 openid）
+- `miniprogram/cloudfunctions/activity/index.js` — postCreate 写 user.id（原写 openid）
+- `miniprogram/cloudfunctions/admin/index.js` — typeSave/activitySave/createOrder/refundOrder 不再写 'admin-web'（置 NULL，审计走 admin_logs）；ORDER_SELECT 的 createdBy 用 COALESCE(created_by,'后台') 兼容展示
+- `scripts/migrate-createdby-to-userid.js`（新增）— 幂等迁移脚本：先放开 NOT NULL → 值归一（openid→id、数字串保留、标记值→NULL）→ 列转 INT UNSIGNED NULL
+- `test/seed-stories.js` — 种子标识从 created_by='seed-stories' 改为 openid 前缀 story_；清理 SQL 同步
+- `test/seed.js` / `test/e2e-flow-test.js` / `test/fn-{admin-edit,order,permission,refund,filter,activity}-test.js` — 造数不再写字符串 created_by（NULL 或用户 id）
+- `test/fn-activity-type-test.js` — TYPE-A01 种子识别从 created_by='seed' 改为固定名称集
+
+**变更说明**：
+原 8 张表的 created_by/updated_by 为 varchar(64)，混存 openid / 'admin-web' / 'seed' 等；另 4 张（diaries/comments/interactions/diary_tags）已是 INT 用户 id。统一规范：**用户操作存 users.id；管理后台/系统操作存 NULL**（管理端审计一律走 admin_logs，与 diaries 先例一致）。**admin_logs 保留 varchar 不迁**——其操作主体是管理员（admin_openid），不是小程序用户。
+
+**数据迁移**：
+dev 库已执行 `node scripts/migrate-createdby-to-userid.js`——users(53/11)、orders(15)、activities(9/9)、activity_types(6)、activity_posts(11) 行值归一，7 张表列转 INT UNSIGNED NULL。**prod 上线执行**：`XINGSHU_ENV_FILE=.env.prod node scripts/migrate-createdby-to-userid.js`（幂等可重跑）。
+
+**验证**：
+npm test 18 文件全绿 + test:e2e 20/20 绿；node --check 全过。遗留未引用函数 activateMember/createOrder（小程序端）仍写 openid——列转 INT 后若被调用会报错，但两者无前端引用（等效已禁用），留待清理。
+
+**部署（用户操作）**：重部署 6 个云函数：login / updateUserProfile / addTag / updateTag / activity / admin（与今日"两字段语义"批次合并部署即可，合计仍是 9+2=11 个不同函数：login、getUserInfo、checkMemberStatus、updateUserProfile、getDiaryList、getDiaryDetail、createDiary、updateDiary、admin、addTag、updateTag、activity）。

@@ -25,8 +25,8 @@ async function run() {
   // ── 造数：三个测试用户 + 手工订单 ──
   async function mkUser(suffix, identity, memberUntil) {
     const [r] = await conn.query(
-      `INSERT INTO users (openid, nickname, identity, avatar_hue, member_from, member_until, created_by)
-       VALUES (?, ?, ?, 30, ?, ?, 'test')`,
+      `INSERT INTO users (openid, nickname, identity, avatar_hue, member_from, member_until)
+       VALUES (?, ?, ?, 30, ?, ?)`,
       [`test_refund_${suffix}`, `test_refund_${suffix}`, identity,
        memberUntil ? fmtDate(daysAgo(30)) : null, memberUntil])
     return r.insertId
@@ -34,8 +34,8 @@ async function run() {
   async function mkOrder(id, userId, amount, payDaysAgo, validFrom, validUntil) {
     await conn.query(
       `INSERT INTO orders (id, user_id, amount, plan, method, status, member_days,
-         valid_from, valid_until, payment_time, created_by)
-       VALUES (?, ?, ?, '年度会员', '微信转账', 'paid', 365, ?, ?, ?, 'test')`,
+         valid_from, valid_until, payment_time)
+       VALUES (?, ?, ?, '年度会员', '微信转账', 'paid', 365, ?, ?, ?)`,
       [id, userId, amount, validFrom, validUntil,
        fmtDate(daysAgo(payDaysAgo)) + ' 10:00:00'])
   }

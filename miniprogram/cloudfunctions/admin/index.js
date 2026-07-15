@@ -90,7 +90,7 @@ const ORDER_SELECT = `
   SELECT o.id, o.user_id AS userId, u.nickname AS userName, COALESCE(u.phone,'') AS userPhone,
          u.avatar_hue AS avatarHue, o.amount, o.plan, o.method, o.status,
          o.member_days AS memberDays, o.related_order_id AS relatedOrderId,
-         o.note, o.created_by AS createdBy,
+         o.note, COALESCE(o.created_by, '后台') AS createdBy,
          DATE_FORMAT(o.valid_from, '%Y-%m-%d') AS validFrom,
          DATE_FORMAT(o.valid_until, '%Y-%m-%d') AS validUntil,
          DATE_FORMAT(o.payment_time, '%Y-%m-%d %H:%i') AS paymentTime,
@@ -509,8 +509,9 @@ const handlers = {
       await auditLog('typeUpdate', 'activityType', id, { name, channel, is_active })
       return { id }
     }
+    // created_by 统一存用户表 id：管理后台操作非小程序用户，置 NULL（审计走 admin_logs）
     const [r] = await db.query(
-      'INSERT INTO activity_types (name, channel, schedule_hint, sort, is_active, created_by) VALUES (?,?,?,?,?,\'admin-web\')',
+      'INSERT INTO activity_types (name, channel, schedule_hint, sort, is_active) VALUES (?,?,?,?,?)',
       [String(name).trim(), channel, schedule_hint, sort, is_active ? 1 : 0])
     await auditLog('typeCreate', 'activityType', r.insertId, { name, channel })
     return { id: r.insertId }
@@ -552,7 +553,7 @@ const handlers = {
         `UPDATE activities SET title=?, cover_url=?, content=?, images=?, start_time=?, end_time=?,
          type=?, type_id=?, city=?, location=?, latitude=?, longitude=?, organizer=?, capacity=?,
          signup_deadline=?, status=?,
-         review_content=?, review_images=?, updated_by='admin-web' WHERE id=?`,
+         review_content=?, review_images=?, updated_by=NULL WHERE id=?`,
         [title, cover_url, content, imagesJson, start_time, end_time, type, type_id, city, location,
          latitude, longitude, organizer, capacity, signup_deadline, status, review_content, reviewImagesJson, id])
       await auditLog('activityUpdate', 'activity', id, { title, status })
@@ -561,8 +562,8 @@ const handlers = {
     const [r] = await db.query(
       `INSERT INTO activities (title, cover_url, content, images, start_time, end_time, type, type_id, city,
         location, latitude, longitude, organizer, capacity, signup_deadline, status,
-        review_content, review_images, created_by)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'admin-web')`,
+        review_content, review_images)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [title, cover_url, content, imagesJson, start_time, end_time, type, type_id, city, location,
        latitude, longitude, organizer, capacity, signup_deadline, status, review_content, reviewImagesJson])
     await auditLog('activityCreate', 'activity', r.insertId, { title, status })
@@ -763,8 +764,8 @@ const handlers = {
       await conn.beginTransaction()
       await conn.query(
         `INSERT INTO orders (id, user_id, amount, plan, method, status, member_days,
-           related_order_id, valid_from, valid_until, payment_time, note, proof_url, created_by)
-         VALUES (?,?,?,?,?,'paid',?,?,?,?,?,?,?,'admin-web')`,
+           related_order_id, valid_from, valid_until, payment_time, note, proof_url)
+         VALUES (?,?,?,?,?,'paid',?,?,?,?,?,?,?)`,
         [orderId, userId, amt, plan, method, days, relatedOrderId, vFrom, vUntil, payTime, note, proofUrl])
       // 两字段语义：只写会员期（授权态不动——用户若处退出态，重新登录即以会员身份生效）
       await conn.query(
@@ -804,8 +805,8 @@ const handlers = {
       await conn.beginTransaction()
       await conn.query(
         `INSERT INTO orders (id, user_id, amount, plan, method, status, member_days,
-           related_order_id, payment_time, note, created_by)
-         VALUES (?,?,?,?,?,'refunded',0,?,?,?,'admin-web')`,
+           related_order_id, payment_time, note)
+         VALUES (?,?,?,?,?,'refunded',0,?,?,?)`,
         [refundId, userId, calc.refundAmount, calc.order.plan, calc.order.method,
          calc.order.id, now, note])
       // 两字段语义：退费只清会员期（授权态不动——用户若处退出态不应被误改为已授权）

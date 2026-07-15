@@ -24,8 +24,8 @@ async function run() {
 
   // 前置：临时 guest 用户 + 作者（member）名下三种权限的测试日记
   await conn.query(
-    "INSERT INTO users (openid, nickname, identity, avatar_hue, created_by) VALUES (?, '权限游客', 'guest', 45, ?) ON DUPLICATE KEY UPDATE identity='guest'",
-    [GUEST, GUEST])
+    "INSERT INTO users (openid, nickname, identity, avatar_hue) VALUES (?, '权限游客', 'guest', 45) ON DUPLICATE KEY UPDATE identity='guest'",
+    [GUEST])
   async function makeDiary(permission) {
     const r = await callFn('createDiary', {
       title: `test_perm_${permission}`, content: LONG_CONTENT,
@@ -122,9 +122,9 @@ async function run() {
     // 临时用户：identity=member 但 member_until 已过 → 应被当作 authed（会员墙 30%）
     const EXP = 'test_perm_expmember'
     await conn.query(
-      "INSERT INTO users (openid, nickname, identity, avatar_hue, member_until, created_by) " +
-      "VALUES (?, '过期会员', 'member', 45, DATE_SUB(CURDATE(),INTERVAL 1 DAY), ?) " +
-      "ON DUPLICATE KEY UPDATE identity='member', member_until=DATE_SUB(CURDATE(),INTERVAL 1 DAY)", [EXP, EXP])
+      "INSERT INTO users (openid, nickname, identity, avatar_hue, member_until) " +
+      "VALUES (?, '过期会员', 'member', 45, DATE_SUB(CURDATE(),INTERVAL 1 DAY)) " +
+      "ON DUPLICATE KEY UPDATE identity='member', member_until=DATE_SUB(CURDATE(),INTERVAL 1 DAY)", [EXP])
     const r = await detail(memId, EXP)
     if (r.code !== 0) throw new Error(r.msg)
     if (!r.data.truncated) throw new Error('过期会员读会员日记应被截断（按非会员处理）')

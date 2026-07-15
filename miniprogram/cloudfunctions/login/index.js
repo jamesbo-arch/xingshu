@@ -38,10 +38,12 @@ exports.main = async (event, context) => {
   }
 
   const [result] = await db.query(
-    `INSERT INTO users (openid, unionid, nickname, identity, avatar_hue, referrer_user_id, created_by)
-     VALUES (?, ?, ?, 'guest', ?, ?, ?)`,
-    [OPENID, UNIONID || null, event.nickname || '微信用户', event.avatarHue || 60, referrerId, OPENID]
+    `INSERT INTO users (openid, unionid, nickname, identity, avatar_hue, referrer_user_id)
+     VALUES (?, ?, ?, 'guest', ?, ?)`,
+    [OPENID, UNIONID || null, event.nickname || '微信用户', event.avatarHue || 60, referrerId]
   )
+  // created_by 统一存用户表 id：自注册即本人（插入后才有 id，回填一次）
+  await db.query('UPDATE users SET created_by = ? WHERE id = ?', [result.insertId, result.insertId])
 
   const [newUser] = await db.query('SELECT * FROM users WHERE id = ?', [result.insertId])
   return { code: 0, data: newUser[0] }

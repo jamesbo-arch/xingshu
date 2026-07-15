@@ -25,8 +25,8 @@ async function run() {
   // 准备测试用户（直接建表以精确控制身份与到期日）
   async function mkUser(openid, identity, memberUntil = null) {
     await conn.query(
-      "INSERT INTO users (openid, nickname, identity, avatar_hue, member_until, member_from, created_by) VALUES (?,?,?,?,?,?,?)",
-      [openid, openid, identity, 60, memberUntil, memberUntil ? today : null, openid])
+      "INSERT INTO users (openid, nickname, identity, avatar_hue, member_until, member_from) VALUES (?,?,?,?,?,?)",
+      [openid, openid, identity, 60, memberUntil, memberUntil ? today : null])
     const [[u]] = await conn.query('SELECT id FROM users WHERE openid = ?', [openid])
     return u.id
   }
@@ -90,11 +90,11 @@ async function run() {
   await test('ORDER-A07 orderList 状态派生：expiring / expired', async () => {
     // 直接构造两笔已过期 / 即将到期订单
     await conn.query(
-      "INSERT INTO orders (id,user_id,amount,plan,method,status,member_days,valid_from,valid_until,payment_time,created_by) " +
-      "VALUES ('XS-TESTEXPIRED',?,365,'年度会员','offline','paid',365,DATE_SUB(CURDATE(),INTERVAL 400 DAY),DATE_SUB(CURDATE(),INTERVAL 35 DAY),NOW(),'admin-web')", [authedId])
+      "INSERT INTO orders (id,user_id,amount,plan,method,status,member_days,valid_from,valid_until,payment_time) " +
+      "VALUES ('XS-TESTEXPIRED',?,365,'年度会员','offline','paid',365,DATE_SUB(CURDATE(),INTERVAL 400 DAY),DATE_SUB(CURDATE(),INTERVAL 35 DAY),NOW())", [authedId])
     await conn.query(
-      "INSERT INTO orders (id,user_id,amount,plan,method,status,member_days,valid_from,valid_until,payment_time,created_by) " +
-      "VALUES ('XS-TESTEXPIRING',?,365,'年度会员','offline','paid',365,CURDATE(),DATE_ADD(CURDATE(),INTERVAL 10 DAY),NOW(),'admin-web')", [authedId])
+      "INSERT INTO orders (id,user_id,amount,plan,method,status,member_days,valid_from,valid_until,payment_time) " +
+      "VALUES ('XS-TESTEXPIRING',?,365,'年度会员','offline','paid',365,CURDATE(),DATE_ADD(CURDATE(),INTERVAL 10 DAY),NOW())", [authedId])
     const r = await admin('orderList', { pageSize: 100000 })  // 取全量以定位测试数据（服务端分页后）
     if (r.code !== 0) throw new Error(r.msg)
     const expired = r.data.list.find(o => o.id === 'XS-TESTEXPIRED')

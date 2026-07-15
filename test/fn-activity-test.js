@@ -116,8 +116,8 @@ async function run() {
     if (!guestOpenid) {
       guestOpenid = 'test_act_guest'
       await conn.query(
-        "INSERT INTO users (openid, nickname, identity, avatar_hue, created_by) VALUES (?, '活动游客', 'guest', 90, ?)",
-        [guestOpenid, guestOpenid])
+        "INSERT INTO users (openid, nickname, identity, avatar_hue) VALUES (?, '活动游客', 'guest', 90)",
+        [guestOpenid])
     }
     const r = await act('signup', { id: onlineId, name: '游客报名' }, guestOpenid)
     if (r.code !== 0) throw new Error(`guest 报名失败: ${r.msg}`)

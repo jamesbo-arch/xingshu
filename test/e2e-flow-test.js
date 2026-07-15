@@ -15,14 +15,15 @@ async function run() {
   // 1. 游客首次访问 → login 云函数创建用户
   let testUserId
   try {
-    const [r] = await db.query("INSERT INTO users (openid, nickname, identity, avatar_hue, created_by) VALUES ('test_e2e_openid', '测试用户', 'guest', 120, 'test_e2e_openid')")
+    const [r] = await db.query("INSERT INTO users (openid, nickname, identity, avatar_hue) VALUES ('test_e2e_openid', '测试用户', 'guest', 120)")
     testUserId = r.insertId
+    await db.query('UPDATE users SET created_by = ? WHERE id = ?', [testUserId, testUserId])
     t('guest 注册',`user_id=${testUserId}`)
   } catch(e) { f('guest 注册', e.message) }
 
   // 2. 游客升级到 authed
   try {
-    await db.query("UPDATE users SET identity='authed', updated_by=? WHERE id=?", ['test_e2e_openid', testUserId])
+    await db.query("UPDATE users SET identity='authed', updated_by=? WHERE id=?", [testUserId, testUserId])
     const [u] = await db.query('SELECT identity FROM users WHERE id=?', [testUserId])
     if (u[0].identity !== 'authed') throw new Error('identity not updated')
     t('guest → authed 升级',`identity=${u[0].identity}`)
@@ -33,7 +34,7 @@ async function run() {
     const orderId = 'TEST-' + Date.now().toString(36).toUpperCase()
     const [r] = await db.query(
       "INSERT INTO orders (id, user_id, amount, plan, method, status, note, created_by) VALUES (?,?,365,'年度会员','offline','pending','E2E测试',?)",
-      [orderId, testUserId, 'test_e2e_openid']
+      [orderId, testUserId, testUserId]
     )
     await db.query("UPDATE orders SET status='paid' WHERE id=?", [orderId])
     await db.query("UPDATE users SET identity='member', member_from=CURDATE(), member_until=DATE_ADD(CURDATE(),INTERVAL 365 DAY) WHERE id=?", [testUserId])
@@ -152,7 +153,7 @@ async function run() {
 
   // 14. 标签重复 → 阻止
   try {
-    await db.query("INSERT INTO tags (name,created_by) VALUES ('修身为本','test')")
+    await db.query("INSERT INTO tags (name,created_by) VALUES ('修身为本',?)", [testUserId])
     f('标签重复防护', '未报错')
   } catch(e) {
     if (e.code === 'ER_DUP_ENTRY') t('标签重复防护', '唯一约束生效')
@@ -165,7 +166,7 @@ async function run() {
   // 15. 订单状态流转
   try {
     const oid = 'TST-' + Date.now().toString(36).toUpperCase()
-    await db.query("INSERT INTO orders (id,user_id,amount,plan,method,status,created_by) VALUES (?,?,365,'年度会员','offline','pending',?)", [oid, testUserId, 'test_e2e_openid'])
+    await db.query("INSERT INTO orders (id,user_id,amount,plan,method,status,created_by) VALUES (?,?,365,'年度会员','offline','pending',?)", [oid, testUserId, testUserId])
     const [r1] = await db.query('SELECT status FROM orders WHERE id=?', [oid])
     if (r1[0].status !== 'pending') throw new Error('not pending')
     await db.query("UPDATE orders SET status='paid', payment_time=NOW() WHERE id=?", [oid])

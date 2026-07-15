@@ -165,7 +165,7 @@ const handlers = {
     if (!signed.length) throw new Error('报名参加后才能分享现场')
     const [r] = await db.query(
       'INSERT INTO activity_posts (activity_id, user_id, content, images, created_by) VALUES (?,?,?,?,?)',
-      [id, user.id, content, images && images.length ? JSON.stringify(images) : null, openid])
+      [id, user.id, content, images && images.length ? JSON.stringify(images) : null, user.id])
     return { id: r.insertId }
   },
 

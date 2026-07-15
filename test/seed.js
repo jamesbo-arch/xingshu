@@ -39,10 +39,7 @@ async function seed() {
   // 1. 插入标签（忽略重复）
   console.log('[1/4] 写入标签...')
   for (const name of TAGS) {
-    await db.query(
-      'INSERT IGNORE INTO tags (name, created_by) VALUES (?, ?)',
-      [name, 'seed']
-    )
+    await db.query('INSERT IGNORE INTO tags (name) VALUES (?)', [name])
   }
   console.log(`  ✓ ${TAGS.length} 个标签`)
 
@@ -57,8 +54,8 @@ async function seed() {
       continue
     }
     const [r] = await db.query(
-      `INSERT INTO users (openid, nickname, identity, avatar_hue, created_by, registered_at, last_active)
-       VALUES (?, ?, ?, ?, 'seed', NOW(), NOW())`,
+      `INSERT INTO users (openid, nickname, identity, avatar_hue, registered_at, last_active)
+       VALUES (?, ?, ?, ?, NOW(), NOW())`,
       [u.openid, u.nickname, u.identity, u.avatarHue]
     )
     userIdMap[u.openid] = r.insertId

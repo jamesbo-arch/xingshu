@@ -17,8 +17,8 @@ async function run() {
   }
 
   await conn.query(
-    "INSERT INTO users (openid, nickname, identity, avatar_hue, created_by) VALUES (?, '筛选测试', 'authed', 60, ?)",
-    [OPENID, OPENID])
+    "INSERT INTO users (openid, nickname, identity, avatar_hue) VALUES (?, '筛选测试', 'authed', 60)",
+    [OPENID])
   const [[u]] = await conn.query('SELECT id FROM users WHERE openid = ?', [OPENID])
   // 今日一篇、400 天前一篇（跨年、超一年）
   const [rNew] = await conn.query(

@@ -37,7 +37,9 @@ async function run() {
   }
 
   await test('TYPE-A01 activity_types 表存在且种子 6 条（渠道正确）', async () => {
-    const [rows] = await conn.query("SELECT name, channel FROM activity_types WHERE created_by='seed' ORDER BY sort")
+    // created_by 已改存用户 id（种子为 NULL），种子 6 类按固定名称集识别
+    const [rows] = await conn.query(
+      "SELECT name, channel FROM activity_types WHERE name IN ('月度故事会','醒书咖啡','线下观影会','线下故事会','巧克力工坊','醒书厨房') ORDER BY sort")
     if (rows.length !== 6) throw new Error(`种子=${rows.length} 条`)
     const expect = {
       '月度故事会': 'online', '醒书咖啡': 'online',

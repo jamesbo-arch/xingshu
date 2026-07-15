@@ -20,8 +20,8 @@ async function run() {
 
   // 准备：一个已授权测试用户 + 其一篇日记
   await conn.query(
-    "INSERT INTO users (openid, unionid, nickname, real_name, phone, identity, avatar_hue, created_by) " +
-    "VALUES ('test_ae_u1','test_ae_union1','原昵称','原实名','13800000000','authed',60,'test_ae_u1')")
+    "INSERT INTO users (openid, unionid, nickname, real_name, phone, identity, avatar_hue) " +
+    "VALUES ('test_ae_u1','test_ae_union1','原昵称','原实名','13800000000','authed',60)")
   const [[u1]] = await conn.query("SELECT id FROM users WHERE openid = 'test_ae_u1'")
   const [dr] = await conn.query(
     "INSERT INTO diaries (user_id,title,content,permission,created_by) VALUES (?,?,?,?,?)",

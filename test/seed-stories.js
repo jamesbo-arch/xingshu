@@ -2,7 +2,8 @@
 // 数据源：test/data/stories-<YYYY-MM>.json（[{author,title,date,content}...]），见 MONTHS。
 //
 // 作者 → 展示型种子用户：openid 按作者名稳定哈希（`story_<md5前16>`），跨月同名归并为同一用户，
-//   非真实微信账号，identity=authed，avatar_hue 由名字派生（稳定分散），created_by='seed-stories'。
+//   非真实微信账号，identity=authed，avatar_hue 由名字派生（稳定分散）。
+//   种子标识 = openid 前缀 story_（created_by 已改存用户 id，不再作来源标记）。
 // 日记：permission=public、status=active、created_at 取自各篇日期（同日按收录顺序加秒保序）、计数器全 0。
 // 幂等键：(user_id, title, 日期)——同作者同标题不同月的作品不会互相误跳（如 Olia 的重复标题）。
 //
@@ -29,12 +30,13 @@ async function main() {
   try {
     console.log(`数据源：${MONTHS.join(', ')} → ${stories.length} 篇 / ${authors.length} 作者${DRY ? '（DRY）' : ''}${RESET ? '（RESET）' : ''}`)
 
+    // created_by 已改存用户 id，种子标识改按 openid 前缀（openidFor 生成 story_ 开头）
     if (RESET && !DRY) {
-      const sub = 'SELECT id FROM diaries WHERE created_by IN (SELECT id FROM users WHERE created_by = "seed-stories")'
+      const sub = "SELECT id FROM diaries WHERE user_id IN (SELECT id FROM users WHERE openid LIKE 'story\\_%')"
       await c.query(`DELETE FROM interactions WHERE target_type = "diary" AND target_id IN (${sub})`)
       await c.query(`DELETE FROM comments WHERE diary_id IN (${sub})`)
-      await c.query('DELETE FROM diaries WHERE created_by IN (SELECT id FROM users WHERE created_by = "seed-stories")')
-      await c.query('DELETE FROM users WHERE created_by = "seed-stories"')
+      await c.query("DELETE FROM diaries WHERE user_id IN (SELECT id FROM users WHERE openid LIKE 'story\\_%')")
+      await c.query("DELETE FROM users WHERE openid LIKE 'story\\_%'")
       console.log('  已清除旧 seed-stories 数据')
     }
 
@@ -44,8 +46,8 @@ async function main() {
       const openid = openidFor(name)
       if (!DRY) {
         await c.query(
-          `INSERT INTO users (openid, nickname, identity, avatar_hue, created_by)
-           VALUES (?, ?, 'authed', ?, 'seed-stories')
+          `INSERT INTO users (openid, nickname, identity, avatar_hue)
+           VALUES (?, ?, 'authed', ?)
            ON DUPLICATE KEY UPDATE nickname = VALUES(nickname), avatar_hue = VALUES(avatar_hue)`,
           [openid, name.slice(0, 32), hueFor(name)]
         )

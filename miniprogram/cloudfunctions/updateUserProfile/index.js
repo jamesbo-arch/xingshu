@@ -24,7 +24,8 @@ exports.main = async (event, context) => {
 
   if (!fields.length) return { code: -1, msg: 'nothing to update' }
 
-  fields.push('updated_by = ?'); values.push(OPENID)
+  // updated_by 统一存用户表 id：本人操作，直接引用本行 id 列
+  fields.push('updated_by = id')
   values.push(OPENID)
 
   await db.query(`UPDATE users SET ${fields.join(', ')} WHERE openid = ?`, values)
