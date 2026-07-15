@@ -34,7 +34,7 @@
               <view wx:else class="m-ava" style="background-color: {{item.avatarColor}};"><text>{{item.initial}}</text></view>
               <text class="m-nick">{{item.nickname}}</text>
               <view class="m-like {{item.isLiked ? 'm-like-on' : ''}}" data-id="{{item.id}}" catchtap="onLikePost">
-                <text>{{item.isLiked ? '♥︎' : '♡'}}</text><text wx:if="{{item.likeCount}}" class="m-like-n">{{item.likeCount}}</text>
+                <view class="hicon"></view><text wx:if="{{item.likeCount}}" class="m-like-n">{{item.likeCount}}</text>
               </view>
             </view>
           </view>
@@ -54,7 +54,7 @@
               <view wx:else class="m-ava" style="background-color: {{item.avatarColor}};"><text>{{item.initial}}</text></view>
               <text class="m-nick">{{item.nickname}}</text>
               <view class="m-like {{item.isLiked ? 'm-like-on' : ''}}" data-id="{{item.id}}" catchtap="onLikePost">
-                <text>{{item.isLiked ? '♥︎' : '♡'}}</text><text wx:if="{{item.likeCount}}" class="m-like-n">{{item.likeCount}}</text>
+                <view class="hicon"></view><text wx:if="{{item.likeCount}}" class="m-like-n">{{item.likeCount}}</text>
               </view>
             </view>
           </view>
