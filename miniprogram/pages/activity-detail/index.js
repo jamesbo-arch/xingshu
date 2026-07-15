@@ -68,7 +68,12 @@ Page({
     this._id = id
     // 活动页分享瀑布流跳入：加载后定位到現場分享区
     this._scrollToPosts = options.to === 'posts'
-    // v2.3：活动详情需微信登录（轻授权），未登录先拉起登录弹窗，取消则返回列表
+  },
+
+  // v2.3：活动详情需微信登录（轻授权），未登录先拉起登录弹窗，取消则返回列表。
+  // 登录墙放 onReady（首渲染后）而非 onLoad：onLoad 同步置 visible=true 会成为组件初始属性，
+  // observer 不触发致弹窗不挂载（真机白屏）；onReady 时是 false→true 常规更新，必然触发（同日记详情路径）
+  onReady() {
     if (!ensureLogin(this, () => this._load())) return
     this._load()
   },
