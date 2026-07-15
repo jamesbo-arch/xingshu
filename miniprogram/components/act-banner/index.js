@@ -4,6 +4,7 @@
 const activityApi = require('../../api/activity')
 const cache = require('../../utils/cache')
 const { throttle } = require('../../utils/guard')
+const { ensureLogin } = require('../../utils/auth-guard')
 
 // 手动关闭标记：内存标记 + 本地存储（12 小时）双保险——纯内存标记在部分环境/在途请求竞态下
 // 会被绕过（关闭后下拉刷新轮播复活），存储化后关闭状态跨页面、跨会话稳定生效，12 小时后自动恢复
@@ -69,9 +70,15 @@ Component({
       return isNaN(d.getTime()) ? '' : '周' + '日一二三四五六'[d.getDay()]
     },
 
+    // 未登录点轮播：借宿主页拉起登录弹窗（广场/活动页均挂 login-sheet 与回调），登录成功自动进详情
     onTap(e) {
       const id = Number(e.currentTarget.dataset.id)
-      if (id) throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
+      if (!id) return
+      const open = () => throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
+      const pages = getCurrentPages()
+      const page = pages[pages.length - 1]
+      if (page && !ensureLogin(page, open)) return
+      open()
     },
 
     // 手动关闭：12 小时内不再显示（所有页面同步，跨会话生效，到期自动恢复）
