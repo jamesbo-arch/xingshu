@@ -3054,3 +3054,17 @@ dev 库已执行 `node scripts/migrate-createdby-to-userid.js`——users(53/11)
 npm test 18 文件全绿 + test:e2e 20/20 绿；node --check 全过。遗留未引用函数 activateMember/createOrder（小程序端）仍写 openid——列转 INT 后若被调用会报错，但两者无前端引用（等效已禁用），留待清理。
 
 **部署（用户操作）**：重部署 6 个云函数：login / updateUserProfile / addTag / updateTag / activity / admin（与今日"两字段语义"批次合并部署即可，合计仍是 9+2=11 个不同函数：login、getUserInfo、checkMemberStatus、updateUserProfile、getDiaryList、getDiaryDetail、createDiary、updateDiary、admin、addTag、updateTag、activity）。
+
+### 2026-07-15 21:10 — 活动详情登录墙"一闪即关卡白屏"修复（幽灵点击 + navigateBack 失败兜底）
+
+**类型**：前端
+**计划关联**：退出登录态权限收口回归
+**修改文件**：
+- `miniprogram/components/login-sheet/index.js` — 弹窗出现 500ms 内忽略蒙层点击：页面切换入场期间，触发跳转的手势可能在新页蒙层产生"幽灵点击"，导致 onLoad 即弹的登录墙一闪即关
+- `miniprogram/pages/activity-detail/index.js` — `_goBack` 加 navigateBack fail 兜底跳活动 tab：入场动画未结束时 navigateBack 静默失败，会卡在空白详情页
+
+**变更说明**：
+未授权用户从全部活动列表点入详情：登录墙弹出瞬间被同一手势的幽灵点击命中蒙层 → 弹窗关闭并触发返回 → navigateBack 在入场过渡中失败 → 卡白屏。双保险修复：出现初期蒙层不可关 + 返回失败兜底 switchTab。
+
+**验证**：
+node --check 过。走查：未授权点全部活动任一行 → 登录墙稳定停留；点蒙层（>0.5s 后）关闭 → 正常返回列表；登录成功自动加载详情。

@@ -24,6 +24,7 @@ Component({
     // observer 不触发导致弹窗永不挂载（页面白屏）——attached 时补挂载一次
     attached() {
       if (this.data.visible && !this.data._mounted) {
+        this._shownAt = Date.now()
         this.setData({ _mounted: true })
         setTimeout(() => this.setData({ _show: true }), 20)
       }
@@ -33,6 +34,7 @@ Component({
   observers: {
     'visible': function(val) {
       if (val) {
+        this._shownAt = Date.now()
         this.setData({ _mounted: true })
         setTimeout(() => this.setData({ _show: true }), 20)
       } else {
@@ -44,6 +46,9 @@ Component({
 
   methods: {
     onClose() {
+      // 页面切换入场期间，触发跳转的那次手势可能在新页蒙层上产生"幽灵点击"——
+      // 弹窗刚出现 500ms 内的蒙层点击一律忽略（onLoad 即弹登录墙的场景会一闪即关并卡白屏）
+      if (this._shownAt && Date.now() - this._shownAt < 500) return
       this.triggerEvent('close')
     },
 

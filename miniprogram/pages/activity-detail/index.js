@@ -312,8 +312,12 @@ Page({
 
   // 若本页是启动页（转发/扫码直达，栈内仅本页），navigateBack 无上一页会报错 → 改回活动列表
   _goBack() {
-    if (getCurrentPages().length > 1) wx.navigateBack()
-    else wx.switchTab({ url: '/pages/activities/index' })
+    // 页面入场动画未结束时 navigateBack 会静默失败（如登录墙秒关的场景）——失败兜底跳活动 tab，避免卡在空白详情页
+    if (getCurrentPages().length > 1) {
+      wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/activities/index' }) })
+    } else {
+      wx.switchTab({ url: '/pages/activities/index' })
+    }
   },
   onBack() { throttle(this, 'nav', () => this._goBack()) },
 
