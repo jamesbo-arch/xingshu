@@ -1,5 +1,32 @@
 {
   "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
   "version": "2.0",
-  "envId": "cloud1-xingshu-prd-d1cev0fcca864"
+  "envId": "cloud1-xingshu-prd-d1cev0fcca864",
+  "functionRoot": "miniprogram/cloudfunctions",
+  "functions": [
+    { "name": "login", "timeout": 10 },
+    { "name": "getUserInfo", "timeout": 10 },
+    { "name": "checkMemberStatus", "timeout": 10 },
+    { "name": "updateUserProfile", "timeout": 10 },
+    { "name": "createDiary", "timeout": 10 },
+    { "name": "updateDiary", "timeout": 10 },
+    { "name": "deleteDiary", "timeout": 10 },
+    { "name": "getDiaryDetail", "timeout": 10 },
+    { "name": "getDiaryList", "timeout": 10 },
+    { "name": "createComment", "timeout": 10 },
+    { "name": "deleteComment", "timeout": 10 },
+    { "name": "getComments", "timeout": 10 },
+    { "name": "toggleLike", "timeout": 10 },
+    { "name": "toggleFavorite", "timeout": 10 },
+    { "name": "recordShare", "timeout": 10 },
+    { "name": "getTags", "timeout": 10 },
+    { "name": "addTag", "timeout": 10 },
+    { "name": "updateTag", "timeout": 10 },
+    { "name": "createOrder", "timeout": 10 },
+    { "name": "getOrderList", "timeout": 10 },
+    { "name": "activateMember", "timeout": 10 },
+    { "name": "generateMiniCode", "timeout": 10 },
+    { "name": "activity", "timeout": 10 },
+    { "name": "admin", "timeout": 15 }
+  ]
 }
