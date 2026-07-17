@@ -4,6 +4,7 @@ const storyApi = require('../../api/story')
 const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
 const { lock, throttle } = require('../../utils/guard')
+const { ensureLogin } = require('../../utils/auth-guard')
 
 Page({
   data: {
@@ -61,13 +62,7 @@ Page({
       storyApi.getDetailRaw(id),
       socialApi.getComments(id, 1),
     ])
-    // v2.3：未登录 → 原页拉起微信登录弹窗，登录成功后重载本故事
-    if (res.code === -3) {
-      this._pendingId = id
-      this.setData({ showLoginSheet: true })
-      return
-    }
-    // v3.0：非会员打开未善选的会员故事（分享/深链直达）→ 全屏会员引导墙
+    // v3.0：非会员（含未登录）打开未善选的会员故事 → 全屏会员引导墙
     if (res.code === -2) {
       this.setData({ memberWall: true, story: null })
       wx.setNavigationBarTitle({ title: '故事' })
@@ -102,7 +97,9 @@ Page({
 
   onGoMember() { throttle(this, 'nav', () => wx.switchTab({ url: '/pages/member/index' })) },
 
+  // 以下互动均需授权：guest 可读善选全文，但点赞/收藏/评论/分享在点击那刻拉起登录，登录后自动续做
   onLike() {
+    if (!ensureLogin(this, () => this.onLike())) return
     return lock(this, 'like', async () => {
       const story = this.data.story
       if (!story) return
@@ -116,6 +113,7 @@ Page({
   },
 
   onFav() {
+    if (!ensureLogin(this, () => this.onFav())) return
     return lock(this, 'fav', async () => {
       const story = this.data.story
       if (!story) return
@@ -130,14 +128,20 @@ Page({
   },
 
   // 发一级评论：清空 replyTo（回复态）
-  onShowCommentInput() { this.setData({ showCommentInput: true, replyTo: null }) },
+  onShowCommentInput() {
+    if (!ensureLogin(this, () => this.onShowCommentInput())) return
+    this.setData({ showCommentInput: true, replyTo: null })
+  },
   onHideCommentInput() { this.setData({ showCommentInput: false, commentInput: '', replyTo: null }) },
   onCommentInput(e) { this.setData({ commentInput: e.detail.value }) },
 
   // 点某条评论的「回复」→ 打开输入框，占位显示 "回复 @昵称"
+  // 事件对象在异步回调中会被复用，故先取出 id/user 再闭包给登录续做
   onReplyComment(e) {
     const { id, user } = e.currentTarget.dataset
-    this.setData({ replyTo: { id, user }, showCommentInput: true })
+    const open = () => this.setData({ replyTo: { id, user }, showCommentInput: true })
+    if (!ensureLogin(this, open)) return
+    open()
   },
 
   onSubmitComment() {
@@ -200,17 +204,24 @@ Page({
     else wx.switchTab({ url: '/pages/square/index' })
   },
 
-  // v2.3 登录弹窗：未登录时不展示内容，取消登录则返回上一页
+  // 登录弹窗：guest 可继续浏览（取消登录不返回），仅互动被拦时拉起
   onLoginClose() {
     this.setData({ showLoginSheet: false })
-    if (!this.data.story) this._goBack()
+    this._pendingLoginAction = null
   },
-  onLoginSuccess() {
+  // 先重载拿到本人互动态（isLiked/isFavorited），再续做被拦下的操作，避免续做基于陈旧状态
+  async onLoginSuccess() {
     this.setData({ showLoginSheet: false })
-    if (this._pendingId) this._loadStory(this._pendingId)
+    const action = this._pendingLoginAction
+    this._pendingLoginAction = null
+    if (this.data.story) await this._loadStory(this.data.story.id)
+    if (typeof action === 'function') action()
   },
 
-  onShare() { this.setData({ showPosterSheet: true }) },
+  onShare() {
+    if (!ensureLogin(this, () => this.onShare())) return
+    this.setData({ showPosterSheet: true })
+  },
   onPosterClose() { this.setData({ showPosterSheet: false }) },
   onShareApp() { wx.showToast({ title: '请使用右上角分享', icon: 'none', duration: 2000 }) },
   onBack() { throttle(this, 'nav', () => this._goBack()) },

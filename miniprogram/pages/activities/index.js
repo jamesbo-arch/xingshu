@@ -54,7 +54,7 @@ Page({
 
   onShow() {
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 2 })
+      this.getTabBar().refresh('pages/activities/index')
     }
     // 轻量刷新预告轮播：同步手动关闭状态（组件内命中关闭标记即自清；正常路径走缓存）
     const banner = this.selectComponent('#actBanner')

@@ -49,7 +49,7 @@ Page({
     this._loadActBanner()
     this.setData({ userIdentity: (app.globalData.user || {}).identity || 'guest' })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 0 })
+      this.getTabBar().refresh('pages/square/index')
     }
   },
 
@@ -120,12 +120,10 @@ Page({
     this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadStories(true))
   },
 
-  // v2.3：guest 点卡片先拉起微信登录弹窗，登录成功后直达该故事；authed 看会员故事走详情页渐隐
+  // v3.0：善选故事对公众开放，未登录也可直接进详情读全文（互动在详情页内触发登录）
   onCardOpen(e) {
     const { id } = e.detail
-    const open = () => throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + id }))
-    if (!ensureLogin(this, open)) return
-    open()
+    throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + id }))
   },
 
   onLoginClose() {
@@ -160,6 +158,8 @@ Page({
 
   onCardShare(e) {
     const { id } = e.detail
+    // 海报含分享人推荐码，需登录后再生成
+    if (!ensureLogin(this, () => this.onCardShare(e))) return
     const story = this.data.stories.find(d => d.id === id)
     if (story) { this.setData({ showPosterSheet: true, posterStory: story }); this._tabBar(true) }
   },

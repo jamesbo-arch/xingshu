@@ -107,10 +107,21 @@ App({
   setUser(user) {
     this.globalData.user = user
     cache.set('user', user, 7 * 24 * 60)
+    this.refreshTabBar()
   },
 
   updateUser(patch) {
     Object.assign(this.globalData.user, patch)
     cache.set('user', this.globalData.user, 7 * 24 * 60)
+    this.refreshTabBar()
+  },
+
+  // v3.0 页签按身份增减（guest 3 项 / authed 4 项 / member 5 项）——身份一变即重算当前页的 tab-bar；
+  // 其余 tab 页在自身 onShow 里各自 refresh，无需在此遍历
+  refreshTabBar() {
+    const pages = getCurrentPages()
+    const cur = pages[pages.length - 1]
+    const tb = cur && typeof cur.getTabBar === 'function' && cur.getTabBar()
+    if (tb && typeof tb.refresh === 'function') tb.refresh()
   },
 })

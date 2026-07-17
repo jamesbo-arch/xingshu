@@ -68,7 +68,7 @@ Page({
     // 后台刷新（getUserInfo 返回实时互动统计 + 会员到期自愈），回来再渲染
     if (app.globalData.user) app.refreshUser().then(() => this._loadUser())
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 4 })
+      this.getTabBar().refresh('pages/member/index')
     }
   },
 

@@ -3245,3 +3245,25 @@ npm test 19 套件全绿（含新 FEAT 10 条与重写 PERM 12 条）+ npm run t
 - `miniprogram/pages/square/index.wxml` — 页头标题「醒書日記」→「醒书故事」
 
 **验证**：仅文案变更，开发者工具预览页头即可。
+
+### 2026-07-17 17:20 — 善选故事免登录阅读 + 互动才需授权 + 底部页签按身份增减
+
+**类型**：云函数 | 前端
+**计划关联**：v3.0 善选改版收尾（用户追加三项：①善选故事免授权读全文；②点赞/收藏/评论/转发仍需授权；③页签按身份显示 3/4/5 个）
+**修改文件**：
+- `miniprogram/cloudfunctions/getStoryDetail/index.js` — 删除 guest 一律 -3 的分支：未登录自然落入「非会员」分支，命中上架善选副本即返回副本全文，未善选仍 -2、暂存稿仍 -1；**userId 收窄为授权态才取**（`userIdentity !== 'guest'`），退出登录后不再认作者特权、不带出历史点赞/收藏态
+- `miniprogram/cloudfunctions/getStoryList/index.js` — 删除 guest 的 80 字摘要截断（详情已开放，列表再截断无意义且劣化体验），非会员统一返回善选副本全文；userId 同样按授权态收窄
+- `miniprogram/pages/detail/index.js` — 删 -3 处理分支；onLike/onFav/onShowCommentInput/onReplyComment/onShare（海报）加 `ensureLogin` 守卫；onLoginSuccess 改为「先重载拿本人互动态 → 再续做被拦操作」，避免续做基于陈旧 isLiked；onLoginClose 不再强制返回（guest 可继续浏览）
+- `miniprogram/pages/square/index.js` — onCardOpen 去掉 ensureLogin（未登录直进详情）；onCardShare 补 ensureLogin（海报含推荐码）
+- `miniprogram/custom-tab-bar/index.js` — 重写：FULL_LIST 各项标 minRole（guest/authed/member），按身份裁剪；新增 `refresh(pagePath)` 在**裁剪后列表**里按路径算 selected（页签数动态，硬编码索引会错位）；switchTab 不再本地设 selected（由目标页 onShow 落定）
+- `miniprogram/pages/{square,collections,activities,mine,member}/index.js` — onShow 由 `setData({selected: N})` 改为 `getTabBar().refresh('pages/xxx/index')`
+- `miniprogram/app.js` — 新增 `refreshTabBar()`，在 setUser/updateUser 后调用：登录/退出/开通会员即时增减页签，无需重启
+- `test/fn-permission-test.js` — PERM-A01 改为「guest 免登录读善选副本全文且无互动态字段」，新增 A01b（guest 读未善选 -2）、A01c（guest 读暂存 -1）、**A13（退出登录即回游客视角：作者读不到自己的暂存稿、列表不泄露）**；A07/A08/A09 摘要断言改副本全文断言
+- `test/fn-smoke-test.js` — guest 列表 excerpt 断言改为 content_rich 不泄露断言
+- `CLAUDE.md` / `test/checklist.md` / `doc/小程序用户操作指引.md` — 权限矩阵加「底部页签数」行与页签规则要点，guest 行改为免登录可读善选
+
+**变更说明**：
+善选故事是运营认可的对外内容，登录墙前置只会挡住传播，故对公众完全开放阅读（含未登录）；登录门槛后移到**互动**（点赞/收藏/评论/回复/海报分享）——点击那刻拉起登录，成功后自动续做。右上角原生转发菜单无法拦截，维持原口径（能转发但不计分享数、无推荐人归属）。页签按身份裁剪：guest 3 个（收藏/我的故事对其无内容可看）、authed 4 个、有效会员 5 个。顺带修复一个被 guest -3 分支掩盖的口径漏洞：退出登录的用户此前仍会因 userId 匹配拿到作者特权（能读自己的 draft、带出历史点赞态），现已按「退出即回游客视角」收紧。
+
+**验证**：
+npm test 19 套件全绿（权限矩阵扩至 15 条，含新增退出态用例）；getStoryList/getStoryDetail 已 tcb CLI 部署至 dev（xingshu-prd）。真机待走查：未登录读善选全文 → 点赞弹登录 → 登录后赞自动生效；页签 3/4/5 随身份即时增减。

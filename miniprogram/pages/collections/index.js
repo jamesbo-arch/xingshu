@@ -40,7 +40,7 @@ Page({
     this._loadStories(true)
     this.setData({ userIdentity: (app.globalData.user || {}).identity || 'authed' })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().setData({ selected: 1 })
+      this.getTabBar().refresh('pages/collections/index')
     }
   },
 

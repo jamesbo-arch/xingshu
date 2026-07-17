@@ -3,8 +3,8 @@ const db = require('./db')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 // 故事详情（v3.0 善选版）
-// guest → -3 登录引导；作者/member → 原文全文；
-// authed 非会员 → 已善选（副本上架）用副本内容覆盖返回（计数/评论/互动仍挂原故事），未善选 → -2 会员专享
+// 作者/member → 原文全文；非会员（含未登录 guest）→ 已善选（副本上架）用副本内容覆盖返回
+// （计数/评论/互动仍挂原故事，读全文无需授权），未善选 → -2 会员专享；暂存稿非作者 → -1
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
   const { storyId } = event
@@ -23,15 +23,12 @@ exports.main = async (event, context) => {
        WHERE d.id = ? AND d.status = ?`, [storyId, 'active']
     ),
   ])
-  const userId = users.length ? users[0].id : null
   // 两字段语义：identity 存授权态，会员资格由 member_until 派生（过期即按 authed）
   const userIdentity = (!users.length || users[0].identity === 'guest') ? 'guest'
     : (users[0].validMember ? 'member' : 'authed')
+  // 退出登录即回游客视角：作者特权与互动态一律按授权态取，退出态用户不认作者、不带出历史点赞
+  const userId = (users.length && userIdentity !== 'guest') ? users[0].id : null
 
-  // 未登录不可读任何故事详情——含自己写的（退出登录即回游客视角，与列表页拦截口径一致）
-  if (userIdentity === 'guest') {
-    return { code: -3, msg: '登录后即可阅读' }
-  }
   if (!stories.length) return { code: -1, msg: '故事不存在' }
 
   const story = stories[0]
@@ -41,7 +38,7 @@ exports.main = async (event, context) => {
   if (story.publish_status === 'draft' && !isAuthor) {
     return { code: -1, msg: '故事不存在' }
   }
-  // 非会员（authed）只可读善选故事：命中上架副本则用副本内容覆盖（互动/计数仍挂原故事）
+  // 非会员（含未登录 guest）只可读善选故事：命中上架副本则用副本内容覆盖（互动/计数仍挂原故事）
   if (!isAuthor && userIdentity !== 'member') {
     const [featured] = await db.query(
       "SELECT title, content, content_rich, images FROM featured_stories WHERE story_id = ? AND status = 'online'",

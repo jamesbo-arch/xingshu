@@ -1,6 +1,7 @@
-// 故事权限矩阵测试（v3.0 善选版）— PERM-A01 ~ PERM-A10
+// 故事权限矩阵测试（v3.0 善选版）— PERM-A01 ~ PERM-A13
 // 身份：guest=test_perm_guest（临时创建）/ authed=mock_me / member=mock_luminyuan / 作者=mock_yanqiu（member）
-// 新语义：故事两态（draft 仅作者 / published 面向会员）；公众（guest/authed）只见善选副本；30% 会员墙已下线
+// 新语义：故事两态（draft 仅作者 / published 面向会员）；善选故事对公众开放（未登录亦可读全文，互动才需授权）；
+// 非会员读未善选 → -2；30% 会员墙已下线；退出登录即回游客视角（不认作者、不带互动态）
 const mysql = require('mysql2/promise')
 const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
@@ -14,7 +15,7 @@ const FEAT_TITLE = 'test_perm_featured_修订版标题'
 const FEAT_CONTENT = '这是管理员修订过的善选副本正文（与原文不同）'
 
 async function run() {
-  console.log('=== 故事权限矩阵测试（PERM-A01~A10 · 善选版）===\n')
+  console.log('=== 故事权限矩阵测试（PERM-A01~A13 · 善选版）===\n')
   let passed = 0, failed = 0
   const created = []
   const conn = await mysql.createConnection(DB)
@@ -48,12 +49,24 @@ async function run() {
   const detail = (id, openid) => callFn('getStoryDetail', { storyId: id }, openid)
   const list = (openid) => callFn('getStoryList', { mode: 'square', page: 1, pageSize: 50 }, openid)
 
-  await test('PERM-A01 guest 看任意故事详情 → -3 登录引导且不泄露内容', async () => {
-    for (const id of [featStoryId, pubOnlyId]) {
-      const r = await detail(id, GUEST)
-      if (r.code !== -3) throw new Error(`期望 code -3，实际 ${r.code}`)
-      if (JSON.stringify(r).includes(LONG_CONTENT.slice(0, 20))) throw new Error('响应泄露了内容')
-    }
+  await test('PERM-A01 guest 看善选故事详情 → 免登录读副本全文（无互动态字段）', async () => {
+    const r = await detail(featStoryId, GUEST)
+    if (r.code !== 0) throw new Error(`期望 code 0，实际 ${r.code}`)
+    if (r.data.title !== FEAT_TITLE || r.data.content !== FEAT_CONTENT) throw new Error('未返回善选副本全文')
+    if (JSON.stringify(r.data.content).includes(LONG_CONTENT.slice(0, 20))) throw new Error('泄露了原文')
+    if (r.data.isLiked !== undefined || r.data.isFavorited !== undefined) throw new Error('未登录不应带互动态')
+  })
+
+  await test('PERM-A01b guest 看未善选的会员故事 → -2 会员专享且不泄露内容', async () => {
+    const r = await detail(pubOnlyId, GUEST)
+    if (r.code !== -2) throw new Error(`期望 code -2，实际 ${r.code}`)
+    if (JSON.stringify(r).includes(LONG_CONTENT.slice(0, 20))) throw new Error('响应泄露了内容')
+  })
+
+  await test('PERM-A01c guest 看暂存稿 → -1 不存在', async () => {
+    const r = await detail(draftId, GUEST)
+    if (r.code !== -1) throw new Error(`期望 code -1，实际 ${r.code}`)
+    if (JSON.stringify(r).includes(LONG_CONTENT.slice(0, 20))) throw new Error('响应泄露了内容')
   })
 
   await test('PERM-A02 authed 看善选故事详情 → 副本全文（修订版，非原文）', async () => {
@@ -93,7 +106,7 @@ async function run() {
     if (l.data.list.some(d => d.id === draftId)) throw new Error('暂存故事泄露到列表')
   })
 
-  await test('PERM-A07 guest 广场列表 → 仅善选卡片且为摘要、无 content_rich', async () => {
+  await test('PERM-A07 guest 广场列表 → 仅善选卡片、副本全文、无 content_rich', async () => {
     const l = await list(GUEST)
     if (l.code !== 0) throw new Error(l.msg)
     const ids = l.data.list.map(d => d.id)
@@ -101,18 +114,17 @@ async function run() {
     if (ids.includes(pubOnlyId)) throw new Error('未善选故事泄露给游客')
     if (ids.includes(draftId)) throw new Error('暂存故事泄露')
     const row = l.data.list.find(d => d.id === featStoryId)
-    if (!row.excerpt || row.content.length > 80) throw new Error(`未截断为摘要：len=${row.content.length}`)
+    if (row.title !== FEAT_TITLE || row.content !== FEAT_CONTENT) throw new Error('列表应展示善选副本全文')
     if (row.content_rich !== undefined) throw new Error('列表泄露样式版 content_rich')
-    if (row.title !== FEAT_TITLE) throw new Error('列表应展示善选副本标题')
+    if (row.isLiked || row.isFavorited) throw new Error('未登录不应有互动态')
   })
 
-  await test('PERM-A08 authed 广场列表 → 仅善选卡片且为副本全文（不截断）', async () => {
+  await test('PERM-A08 authed 广场列表 → 仅善选卡片且为副本全文', async () => {
     const l = await list(AUTHED)
     const ids = l.data.list.map(d => d.id)
     if (!ids.includes(featStoryId)) throw new Error('善选卡片缺失')
     if (ids.includes(pubOnlyId)) throw new Error('未善选故事泄露给非会员')
     const row = l.data.list.find(d => d.id === featStoryId)
-    if (row.excerpt) throw new Error('authed 善选卡片不应截断')
     if (row.content !== FEAT_CONTENT) throw new Error('内容应为副本全文')
   })
 
@@ -125,7 +137,7 @@ async function run() {
     if (!featRow.is_featured) throw new Error('善选故事缺 is_featured 标记')
     if (featRow.title === FEAT_TITLE) throw new Error('会员应看原文标题而非善选副本')
     const pubRow = l.data.list.find(d => d.id === pubOnlyId)
-    if (pubRow.excerpt) throw new Error('member 不应被截断')
+    if (pubRow.content !== LONG_CONTENT) throw new Error('member 应读原文全文')
   })
 
   await test('PERM-A10 善选副本下架 → 公众端消失、authed 详情回落 -2', async () => {
@@ -146,6 +158,27 @@ async function run() {
     const r = await detail(pubOnlyId, EXP)
     if (r.code !== -2) throw new Error(`过期会员读未善选故事应 -2，实际 ${r.code}`)
     await conn.query('DELETE FROM users WHERE openid = ?', [EXP])
+  })
+
+  await test('PERM-A13 退出登录即回游客视角：作者读不到自己的暂存稿，不带互动态', async () => {
+    const EXA = 'test_perm_exauthor'
+    await conn.query(
+      "INSERT INTO users (openid, nickname, identity, avatar_hue, member_until) " +
+      "VALUES (?, '退出态作者', 'authed', 45, DATE_ADD(CURDATE(),INTERVAL 30 DAY)) " +
+      "ON DUPLICATE KEY UPDATE identity='authed', member_until=DATE_ADD(CURDATE(),INTERVAL 30 DAY)", [EXA])
+    const own = await callFn('createStory', { title: 'test_perm_ex_draft', content: LONG_CONTENT, tags: [], publishStatus: 'draft' }, EXA)
+    if (own.code !== 0) throw new Error('前置造数失败：' + own.msg)
+    // 授权态：作者可读自己的暂存稿
+    const before = await detail(own.data.id, EXA)
+    if (before.code !== 0) throw new Error(`授权态作者应可读自己的暂存稿，实际 ${before.code}`)
+    // 退出登录（identity=guest，会员期仍在）：不再认作者
+    await conn.query("UPDATE users SET identity='guest' WHERE openid = ?", [EXA])
+    const after = await detail(own.data.id, EXA)
+    if (after.code !== -1) throw new Error(`退出态应按游客拦截（-1），实际 ${after.code}`)
+    const l = await list(EXA)
+    if (l.data.list.some(d => d.id === own.data.id)) throw new Error('退出态广场泄露自己的暂存稿')
+    await conn.query('DELETE FROM stories WHERE id = ?', [own.data.id])
+    await conn.query('DELETE FROM users WHERE openid = ?', [EXA])
   })
 
   await test('PERM-A12 authed 可对善选故事点赞/评论（互动落在原故事）', async () => {

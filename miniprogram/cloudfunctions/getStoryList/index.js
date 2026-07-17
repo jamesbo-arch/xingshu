@@ -4,7 +4,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 // 故事列表（v3.0 善选版）
 // mode=mine：作者旁路，返回自己全部故事（含 draft）
-// mode=square/collections：member → 已发布故事全文；guest/authed → 仅善选故事（展示善选副本内容，guest 摘要）
+// mode=square/collections：member → 已发布故事全文；非会员（含未登录 guest）→ 仅善选故事（展示善选副本全文）
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
   const { mode, keyword, tag, author, page = 1, pageSize = 20 } = event
@@ -21,9 +21,10 @@ exports.main = async (event, context) => {
     const [users] = await db.query(
       "SELECT id, identity, (identity <> 'guest' AND member_until IS NOT NULL AND member_until >= CURDATE()) AS validMember FROM users WHERE openid = ?",
       [OPENID])
-    userId = users.length ? users[0].id : null
     userIdentity = (!users.length || users[0].identity === 'guest') ? 'guest'
       : (users[0].validMember ? 'member' : 'authed')
+    // 退出登录即回游客视角：互动态（点赞/收藏）一律按授权态取，退出态不带出历史标记
+    userId = (users.length && userIdentity !== 'guest') ? users[0].id : null
   }
 
   // 非会员（guest/authed）的广场与收藏走善选视图：只见 featured_stories 上架副本
@@ -131,18 +132,11 @@ exports.main = async (event, context) => {
     [...likedParams, ...params, pageSize, offset]
   )
 
-  const EXCERPT_LEN = 80
   const list = rows.map(d => {
     const tags = d.tags_csv ? d.tags_csv.split(',') : []
     delete d.tags_csv
     const row = { ...d, tags, isLiked: d.isLiked === 1, isFavorited: d.isFavorited === 1 }
-    delete row.content_rich // 列表卡片只用纯文本；样式版为全文，留在列表会泄露内容
-
-    // guest 只看摘要（点详情拉登录）；authed 看善选副本全文；member/作者全文
-    if (featuredView && userIdentity === 'guest') {
-      row.content = (d.content || '').slice(0, EXCERPT_LEN)
-      row.excerpt = true
-    }
+    delete row.content_rich // 列表卡片只用纯文本；样式版留在列表无用且徒增返回体
     return row
   })
 
