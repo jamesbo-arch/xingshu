@@ -7,8 +7,12 @@ const routes = [
   { path: '/orders', name: 'Orders', component: () => import('../views/Orders.vue') },
   { path: '/users', name: 'Users', component: () => import('../views/Users.vue') },
   { path: '/users/:id', name: 'UserDetail', component: () => import('../views/UserDetail.vue') },
-  { path: '/diaries', name: 'Diaries', component: () => import('../views/Diaries.vue') },
-  { path: '/diaries/:id', name: 'DiaryDetail', component: () => import('../views/DiaryDetail.vue') },
+  { path: '/stories', name: 'Stories', component: () => import('../views/Stories.vue') },
+  { path: '/stories/:id', name: 'StoryDetail', component: () => import('../views/StoryDetail.vue') },
+  { path: '/featured', name: 'Featured', component: () => import('../views/Featured.vue') },
+  // 旧路径兼容（书签/历史链接）
+  { path: '/diaries', redirect: '/stories' },
+  { path: '/diaries/:id', redirect: to => `/stories/${to.params.id}` },
   { path: '/interactions', name: 'Interactions', component: () => import('../views/Interactions.vue') },
   { path: '/activities', name: 'Activities', component: () => import('../views/Activities.vue') },
 ]

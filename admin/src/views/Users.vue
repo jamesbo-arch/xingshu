@@ -14,7 +14,7 @@
     <table class="data-table">
       <thead><tr>
         <th>ID</th><th>用户</th><th>真实姓名</th><th>性别</th><th>手机号</th><th>身份</th>
-        <th>会员有效期</th><th>日记</th><th>互动</th><th>推荐人</th><th>注册</th><th>最后活跃</th><th>操作</th>
+        <th>会员有效期</th><th>故事</th><th>互动</th><th>推荐人</th><th>注册</th><th>最后活跃</th><th>操作</th>
       </tr></thead>
       <tbody>
         <tr v-for="u in list" :key="u.id">
@@ -33,7 +33,7 @@
             <template v-if="u.memberUntil">{{ u.memberUntil }}<span class="dim"> · 剩 {{ u.daysLeft }} 天</span></template>
             <template v-else>—</template>
           </td>
-          <td>{{ u.diaries }}</td>
+          <td>{{ u.stories }}</td>
           <td>{{ (u.likes||0) + (u.favorites||0) + (u.comments||0) + (u.shares||0) }}</td>
           <td>{{ u.referrerName || '-' }}</td>
           <td>{{ u.registeredAt }}</td>
@@ -74,9 +74,9 @@ async function onExport() {
   const r = await getUsers({ keyword: keyword.value.trim() || undefined, identity: identity.value || undefined, page: 1, pageSize: 100000 })
   exportCsv(
     `醒书用户列表-${new Date().toISOString().slice(0, 10)}.csv`,
-    ['用户ID', '昵称', '真实姓名', '性别', '手机号', '身份', '会员到期', '剩余天数', '日记数', '获赞', '收藏', '评论', '转发', '注册时间', '最后活跃'],
+    ['用户ID', '昵称', '真实姓名', '性别', '手机号', '身份', '会员到期', '剩余天数', '故事数', '获赞', '收藏', '评论', '转发', '注册时间', '最后活跃'],
     r.list.map(u => [u.id, u.nickname, u.realName, genderLabel(u.gender), u.phone, identityLabel(u.identity),
-      u.memberUntil || '', u.daysLeft || 0, u.diaries, u.likes, u.favorites, u.comments, u.shares, u.registeredAt, u.lastActive])
+      u.memberUntil || '', u.daysLeft || 0, u.stories, u.likes, u.favorites, u.comments, u.shares, u.registeredAt, u.lastActive])
   )
 }
 </script>

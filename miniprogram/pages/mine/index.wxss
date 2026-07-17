@@ -108,7 +108,7 @@ page { height: 100%; overflow: hidden; }
   border: 2px solid #FBF7EE;
 }
 
-.diary-list {
+.story-list {
   flex: 1;
   min-height: 0;
   width: 100%;

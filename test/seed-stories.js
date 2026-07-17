@@ -1,10 +1,10 @@
-// 将《醒记故事汇》各月日记集初始化入库。
+// 将《醒记故事汇》各月故事集初始化入库。
 // 数据源：test/data/stories-<YYYY-MM>.json（[{author,title,date,content}...]），见 MONTHS。
 //
 // 作者 → 展示型种子用户：openid 按作者名稳定哈希（`story_<md5前16>`），跨月同名归并为同一用户，
 //   非真实微信账号，identity=authed，avatar_hue 由名字派生（稳定分散）。
 //   种子标识 = openid 前缀 story_（created_by 已改存用户 id，不再作来源标记）。
-// 日记：permission=public、status=active、created_at 取自各篇日期（同日按收录顺序加秒保序）、计数器全 0。
+// 故事：publish_status=published、status=active、created_at 取自各篇日期（同日按收录顺序加秒保序）、计数器全 0。
 // 幂等键：(user_id, title, 日期)——同作者同标题不同月的作品不会互相误跳（如 Olia 的重复标题）。
 //
 // 用法：node test/seed-stories.js           幂等写库（已存在则跳过）
@@ -32,10 +32,10 @@ async function main() {
 
     // created_by 已改存用户 id，种子标识改按 openid 前缀（openidFor 生成 story_ 开头）
     if (RESET && !DRY) {
-      const sub = "SELECT id FROM diaries WHERE user_id IN (SELECT id FROM users WHERE openid LIKE 'story\\_%')"
-      await c.query(`DELETE FROM interactions WHERE target_type = "diary" AND target_id IN (${sub})`)
-      await c.query(`DELETE FROM comments WHERE diary_id IN (${sub})`)
-      await c.query("DELETE FROM diaries WHERE user_id IN (SELECT id FROM users WHERE openid LIKE 'story\\_%')")
+      const sub = "SELECT id FROM stories WHERE user_id IN (SELECT id FROM users WHERE openid LIKE 'story\\_%')"
+      await c.query(`DELETE FROM interactions WHERE target_type = "story" AND target_id IN (${sub})`)
+      await c.query(`DELETE FROM comments WHERE story_id IN (${sub})`)
+      await c.query("DELETE FROM stories WHERE user_id IN (SELECT id FROM users WHERE openid LIKE 'story\\_%')")
       await c.query("DELETE FROM users WHERE openid LIKE 'story\\_%'")
       console.log('  已清除旧 seed-stories 数据')
     }
@@ -56,7 +56,7 @@ async function main() {
       authorId[name] = rows.length ? rows[0].id : null
     }
 
-    // 日记（幂等：user + title + 日期）
+    // 故事（幂等：user + title + 日期）
     let inserted = 0, skipped = 0
     for (let idx = 0; idx < stories.length; idx++) {
       const s = stories[idx]
@@ -66,7 +66,7 @@ async function main() {
       const dateStr = `${y}-${pad(m)}-${pad(d)}`
       if (uid) {
         const [ex] = await c.query(
-          'SELECT id FROM diaries WHERE user_id = ? AND title = ? AND DATE(created_at) = ? LIMIT 1',
+          'SELECT id FROM stories WHERE user_id = ? AND title = ? AND DATE(created_at) = ? LIMIT 1',
           [uid, title, dateStr]
         )
         if (ex.length) { skipped++; continue }
@@ -74,21 +74,21 @@ async function main() {
       const createdAt = `${dateStr} 12:${pad(Math.floor(idx / 60))}:${pad(idx % 60)}`
       if (!DRY) {
         await c.query(
-          `INSERT INTO diaries (user_id, title, content, permission, status, created_by, created_at)
-           VALUES (?, ?, ?, 'public', 'active', ?, ?)`,
+          `INSERT INTO stories (user_id, title, content, publish_status, status, created_by, created_at)
+           VALUES (?, ?, ?, 'published', 'active', ?, ?)`,
           [uid, title, s.content, uid, createdAt]
         )
       }
       inserted++
     }
 
-    // 回填作者 diary_count
+    // 回填作者 story_count
     if (!DRY) {
       for (const name of authors) {
         const uid = authorId[name]
         if (!uid) continue
         await c.query(
-          'UPDATE users SET diary_count = (SELECT COUNT(*) FROM diaries WHERE user_id = ? AND status = "active") WHERE id = ?',
+          'UPDATE users SET story_count = (SELECT COUNT(*) FROM stories WHERE user_id = ? AND status = "active") WHERE id = ?',
           [uid, uid]
         )
       }

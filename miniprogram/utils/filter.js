@@ -1,9 +1,9 @@
-function applyFilters(diaries, mode, search, filters) {
-  let arr = [...diaries]
+function applyFilters(stories, mode, search, filters) {
+  let arr = [...stories]
 
   if (mode === 'collections') arr = arr.filter(d => d.isFavorited)
   if (mode === 'mine') arr = arr.filter(d => d.isMine || d.author === '我')
-  if (mode === 'square') arr = arr.filter(d => d.permission !== 'private' || d.isMine)
+  if (mode === 'square') arr = arr.filter(d => d.publishStatus !== 'draft' || d.isMine)
 
   if (search && search.trim()) {
     const s = search.trim()
@@ -76,7 +76,7 @@ function applyFilters(diaries, mode, search, filters) {
   return arr
 }
 
-// 将筛选条件转为 getDiaryList 服务端参数（标签取首个、作者、时间三模式），undefined 项不传
+// 将筛选条件转为 getStoryList 服务端参数（标签取首个、作者、时间三模式），undefined 项不传
 function listQuery(filters = {}) {
   const q = {
     tag: (filters.tags && filters.tags[0]) || undefined,

@@ -16,6 +16,9 @@ async function run() {
     catch (e) { console.log(`  FAIL  ${name}: ${e.message}`); failed++ }
   }
 
+  // 前置清理：上一轮若被中断（如隧道抖动）会残留 test_auth_ 用户，使 A02"新用户"前提失效
+  await conn.query("DELETE FROM users WHERE openid LIKE 'test_auth_%'")
+
   await test('AUTH-A01 users.unionid / authorized_at 列存在', async () => {
     const [u] = await conn.query("SHOW COLUMNS FROM users LIKE 'unionid'")
     const [a] = await conn.query("SHOW COLUMNS FROM users LIKE 'authorized_at'")

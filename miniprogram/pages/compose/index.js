@@ -1,5 +1,5 @@
 const app = getApp()
-const diaryApi = require('../../api/diary')
+const storyApi = require('../../api/story')
 const { throttle } = require('../../utils/guard')
 
 // 数组 → 布尔查找表（WXML 里用 set[key] 判断选中，避免不可靠的 .indexOf() 表达式）
@@ -9,7 +9,7 @@ function toTagSet(arr) {
   return o
 }
 
-// 旧日记只有纯文本：转义后按换行转 <br>，供 editor.setContents({html}) 回填
+// 旧故事只有纯文本：转义后按换行转 <br>，供 editor.setContents({html}) 回填
 function plainToHtml(s) {
   const esc = String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   return '<p>' + esc.replace(/\n/g, '<br>') + '</p>'
@@ -17,24 +17,19 @@ function plainToHtml(s) {
 
 Page({
   data: {
-    diaryId: null,
+    storyId: null,
     isEditing: false,
     title: '',
     content: '',
     images: [],
     maxImages: 9,
     selectedTags: [],
-    permission: 'public',
-    isMember: false,  // 仅会员可发布「会员专属」日记
+    // 两态：暂存(draft 仅自己可见) / 发布(published 面向会员)，公众可见性由后台善选决定
+    publishStatus: 'published',
     showTagPicker: false,
     allTags: [],
     pickerSelectedTags: [],
     pickerTagSet: {},
-    permOptions: [
-      { key: 'public', label: '公众可读', desc: '所有人可见', ic: 'ic-eye' },
-      { key: 'member', label: '会员可读', desc: '仅会员可见', ic: 'ic-star-gold' },
-      { key: 'private', label: '个人草稿', desc: '仅自己可见', ic: 'ic-draft' },
-    ],
     maxTitle: 30,
     maxContent: 3000,
     statusBarHeight: 0,
@@ -61,8 +56,7 @@ Page({
 
   onLoad(options) {
     const info = wx.getWindowInfo()
-    const isMember = ((app.globalData.user || {}).identity === 'member')
-    this.setData({ statusBarHeight: info.statusBarHeight || 0, allTags: app.globalData.tags, isMember })
+    this.setData({ statusBarHeight: info.statusBarHeight || 0, allTags: app.globalData.tags })
     // 工具条跟随键盘（editor 不自动避让键盘，官方 editor demo 同款做法）+ 可拖拽上下移
     const safeBottom = info.safeArea ? Math.max(0, (info.screenHeight || 0) - info.safeArea.bottom) : 0
     this._winHeight = info.windowHeight || 667
@@ -81,19 +75,19 @@ Page({
     this._html = ''
     this._original = this._snapshot()
 
-    if (options.diaryId) {
-      const id = parseInt(options.diaryId, 10) || options.diaryId
-      diaryApi.getDetail(id).then(diary => {
-        if (diary) {
+    if (options.storyId) {
+      const id = parseInt(options.storyId, 10) || options.storyId
+      storyApi.getDetail(id).then(story => {
+        if (story) {
           this.setData({
-            diaryId: diary.id, isEditing: true,
-            title: diary.title || '', content: diary.content || '',
-            images: diary.images || [],
-            selectedTags: diary.tags || [], permission: diary.permission || 'public',
+            storyId: story.id, isEditing: true,
+            title: story.title || '', content: story.content || '',
+            images: story.images || [],
+            selectedTags: story.tags || [], publishStatus: story.publish_status || 'published',
           })
-          // 正文回填编辑器：有样式版用样式版，旧纯文本日记转义回填；editor 可能尚未 ready，暂存待用
+          // 正文回填编辑器：有样式版用样式版，旧纯文本故事转义回填；editor 可能尚未 ready，暂存待用
           // 注意 getDetail 返回云函数原始行（snake_case，未过 mapper），样式版字段是 content_rich
-          this._pendingHtml = diary.content_rich || plainToHtml(diary.content || '')
+          this._pendingHtml = story.content_rich || plainToHtml(story.content || '')
           if (this.editorCtx) this._applyHtml(this._pendingHtml)
         }
       })
@@ -203,21 +197,20 @@ Page({
 
   // 当前表单快照，用于对比是否有未保存改动
   _snapshot() {
-    const { title, content, images, selectedTags, permission } = this.data
+    const { title, content, images, selectedTags } = this.data
     return {
       title: (title || '').trim(),
       content: (content || '').trim(),
       rich: this._html || '',  // 纯格式调整（文字未变）也算改动
       images: (images || []).join(','),
       tags: (selectedTags || []).join(','),
-      permission,
     }
   },
   _isDirty() {
     const a = this._snapshot()
     const b = this._original || {}
     return a.title !== b.title || a.content !== b.content || a.rich !== b.rich ||
-      a.images !== b.images || a.tags !== b.tags || a.permission !== b.permission
+      a.images !== b.images || a.tags !== b.tags
   },
   // 有未保存内容时二次确认，确认后才返回；无改动直接返回
   _confirmLeave() {
@@ -225,7 +218,7 @@ Page({
     throttle(this, 'leave', () => {
       if (!this._isDirty()) { wx.navigateBack(); return }
       wx.showModal({
-        title: this.data.isEditing ? '放弃修改' : '放弃日记',
+        title: this.data.isEditing ? '放弃修改' : '放弃故事',
         content: '当前内容尚未保存，确定要放弃并返回吗？',
         confirmText: '放弃',
         cancelText: '继续编辑',
@@ -269,20 +262,11 @@ Page({
       if (img.indexOf('cloud://') === 0) { uploaded.push(img); continue }
       const extMatch = img.match(/\.(\w+)$/)
       const ext = extMatch ? extMatch[1] : 'jpg'
-      const cloudPath = `diary-images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const cloudPath = `story-images/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
       const res = await wx.cloud.uploadFile({ cloudPath, filePath: img })
       uploaded.push(res.fileID)
     }
     return uploaded
-  },
-  setPermission(e) {
-    const key = e.currentTarget.dataset.key
-    // 非会员不可发布「会员专属」日记：拦截并提示
-    if (key === 'member' && !this.data.isMember) {
-      wx.showToast({ title: '开通会员后可发布会员专属日记', icon: 'none', duration: 2000 })
-      return
-    }
-    this.setData({ permission: key })
   },
   removeTag(e) {
     this.setData({ selectedTags: this.data.selectedTags.filter(t => t !== e.currentTarget.dataset.tag) })
@@ -313,11 +297,13 @@ Page({
     })
   },
 
-  async onPublish() {
-    // 防双击：图片上传拉长发布耗时，重复点击会创建重复日记
+  // 暂存/发布共用提交入口：按钮 dataset.status 决定 publishStatus（draft/published）
+  async onSubmit(e) {
+    // 防双击：图片上传拉长提交耗时，重复点击会创建重复故事
     if (this._publishing) return
     this._publishing = true
-    const { title, selectedTags, permission, isEditing, diaryId } = this.data
+    const publishStatus = (e.currentTarget.dataset.status === 'draft') ? 'draft' : 'published'
+    const { title, selectedTags, isEditing, storyId } = this.data
     const c = await this._getContents()
     const content = ((c ? c.text : this.data.content) || '').replace(/\n$/, '')
     const contentRich = c ? c.html : this._html
@@ -326,7 +312,7 @@ Page({
       this._publishing = false
       return
     }
-    // editor 无 maxlength，超长在发布时拦截
+    // editor 无 maxlength，超长在提交时拦截
     if (content.length > this.data.maxContent) {
       wx.showToast({ title: `正文超出 ${this.data.maxContent} 字上限`, icon: 'none', duration: 2000 })
       this._publishing = false
@@ -343,13 +329,14 @@ Page({
         return
       }
       if (this.data.images.length) wx.hideLoading()
-      const data = { title: title.trim(), content: content.trim(), contentRich, images, tags: selectedTags, permission }
-      if (isEditing && diaryId) {
-        const result = await diaryApi.update(diaryId, data)
-        if (result) { wx.showToast({ title: '保存成功', icon: 'success', duration: 1500 }); wx.navigateBack() }
+      const data = { title: title.trim(), content: content.trim(), contentRich, images, tags: selectedTags, publishStatus }
+      const okTitle = publishStatus === 'draft' ? '已暂存' : '发布成功'
+      if (isEditing && storyId) {
+        const result = await storyApi.update(storyId, data)
+        if (result) { wx.showToast({ title: okTitle, icon: 'success', duration: 1500 }); wx.navigateBack() }
       } else {
-        const result = await diaryApi.create(data)
-        if (result) { wx.showToast({ title: '发布成功', icon: 'success', duration: 1500 }); wx.navigateBack() }
+        const result = await storyApi.create(data)
+        if (result) { wx.showToast({ title: okTitle, icon: 'success', duration: 1500 }); wx.navigateBack() }
       }
     } finally {
       this._publishing = false

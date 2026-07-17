@@ -42,29 +42,29 @@ const USER_SELECT = `
          DATE_FORMAT(u.member_from, '%Y-%m-%d') AS memberFrom,
          DATE_FORMAT(u.member_until, '%Y-%m-%d') AS memberUntil,
          GREATEST(COALESCE(DATEDIFF(u.member_until, CURDATE()), 0), 0) AS daysLeft,
-         u.diary_count AS diaries,
-         (SELECT COALESCE(SUM(d.like_count),0) FROM diaries d WHERE d.user_id = u.id AND d.status = 'active') AS likes,
-         (SELECT COALESCE(SUM(d.fav_count),0) FROM diaries d WHERE d.user_id = u.id AND d.status = 'active') AS favorites,
-         (SELECT COALESCE(SUM(d.comment_count),0) FROM diaries d WHERE d.user_id = u.id AND d.status = 'active') AS comments,
-         (SELECT COALESCE(SUM(d.share_count),0) FROM diaries d WHERE d.user_id = u.id AND d.status = 'active') AS shares,
+         u.story_count AS stories,
+         (SELECT COALESCE(SUM(d.like_count),0) FROM stories d WHERE d.user_id = u.id AND d.status = 'active') AS likes,
+         (SELECT COALESCE(SUM(d.fav_count),0) FROM stories d WHERE d.user_id = u.id AND d.status = 'active') AS favorites,
+         (SELECT COALESCE(SUM(d.comment_count),0) FROM stories d WHERE d.user_id = u.id AND d.status = 'active') AS comments,
+         (SELECT COALESCE(SUM(d.share_count),0) FROM stories d WHERE d.user_id = u.id AND d.status = 'active') AS shares,
          DATE_FORMAT(u.created_at, '%Y-%m-%d') AS registeredAt,
          DATE_FORMAT(u.updated_at, '%Y-%m-%d') AS lastActive,
          u.referrer_user_id AS referrerId, r.nickname AS referrerName
   FROM users u LEFT JOIN users r ON u.referrer_user_id = r.id`
 
 // 详情用：全文
-const DIARY_SELECT = `
-  SELECT d.id, d.title, d.content, d.permission, d.status,
+const STORY_SELECT = `
+  SELECT d.id, d.title, d.content, d.publish_status AS publishStatus, d.is_featured AS isFeatured, d.status,
          DATE_FORMAT(d.created_at, '%Y-%m-%d %H:%i') AS createdAt,
          d.content_edited_at AS editedAt,
          d.like_count AS likes, d.fav_count AS favorites,
          d.comment_count AS comments, d.share_count AS shares,
          u.nickname AS author, u.id AS authorId,
-         (SELECT GROUP_CONCAT(t.name ORDER BY t.name) FROM diary_tags dt JOIN tags t ON t.id = dt.tag_id WHERE dt.diary_id = d.id) AS tags_csv
-  FROM diaries d JOIN users u ON d.user_id = u.id`
+         (SELECT GROUP_CONCAT(t.name ORDER BY t.name) FROM story_tags st JOIN tags t ON t.id = st.tag_id WHERE st.story_id = d.id) AS tags_csv
+  FROM stories d JOIN users u ON d.user_id = u.id`
 
 // 列表用：正文仅取前 80 字摘要（避免几千篇全文撑爆 callFunction 返回体）
-const DIARY_LIST_SELECT = DIARY_SELECT.replace('d.content,', 'LEFT(d.content, 80) AS content,')
+const STORY_LIST_SELECT = STORY_SELECT.replace('d.content,', 'LEFT(d.content, 80) AS content,')
 
 // 分页参数规整：page≥1，pageSize 限 1..100
 // 北京时间的"现在"（云函数运行时为 UTC，+8 后用 toISOString/getUTC* 读取，避免午夜 0~8 点日期差一天）
@@ -79,10 +79,10 @@ function pageArgs({ page = 1, pageSize = 20 } = {}) {
 }
 
 const COMMENT_SELECT = `
-  SELECT c.id, c.diary_id AS diaryId, d.title AS diaryTitle,
+  SELECT c.id, c.story_id AS storyId, d.title AS storyTitle,
          u.nickname AS user, c.user_id AS userId, c.content,
          DATE_FORMAT(c.created_at, '%Y-%m-%d %H:%i') AS time
-  FROM comments c JOIN users u ON c.user_id = u.id JOIN diaries d ON c.diary_id = d.id`
+  FROM comments c JOIN users u ON c.user_id = u.id JOIN stories d ON c.story_id = d.id`
 
 // 订单查询：附用户信息 + 据 valid_until 实时计算状态（active/expiring≤15天/expired/pending）
 // 注：不含 proof_url（凭证 base64 较大），仅 orderDetail 单独取，避免列表/历史返回过重
@@ -158,23 +158,24 @@ async function refundCalc(userId) {
   }
 }
 
-function rowToDiary(r) {
+function rowToStory(r) {
   const tags = r.tags_csv ? r.tags_csv.split(',') : []
   delete r.tags_csv
   return { ...r, tags }
 }
 
-// 软删日记并联动清理互动（updated_by 为用户 id 整型列，管理员操作不写入，审计走 admin_logs）
-async function deleteDiaryById(id) {
-  const [rows] = await db.query("SELECT id, user_id FROM diaries WHERE id = ? AND status = 'active'", [id])
-  if (!rows.length) throw new Error('日记不存在或已删除')
+// 软删故事并联动清理互动 + 善选副本下架（updated_by 为用户 id 整型列，管理员操作不写入，审计走 admin_logs）
+async function deleteStoryById(id) {
+  const [rows] = await db.query("SELECT id, user_id FROM stories WHERE id = ? AND status = 'active'", [id])
+  if (!rows.length) throw new Error('故事不存在或已删除')
   const conn = await db.getConnection()
   try {
     await conn.beginTransaction()
-    await conn.query("UPDATE diaries SET status = 'deleted' WHERE id = ?", [id])
-    await conn.query('UPDATE comments SET is_deleted = 1 WHERE diary_id = ?', [id])
-    await conn.query("DELETE FROM interactions WHERE target_type = 'diary' AND target_id = ?", [id])
-    await conn.query('UPDATE users SET diary_count = GREATEST(diary_count - 1, 0) WHERE id = ?', [rows[0].user_id])
+    await conn.query("UPDATE stories SET status = 'deleted', is_featured = 0 WHERE id = ?", [id])
+    await conn.query("UPDATE featured_stories SET status = 'offline' WHERE story_id = ?", [id])
+    await conn.query('UPDATE comments SET is_deleted = 1 WHERE story_id = ?', [id])
+    await conn.query("DELETE FROM interactions WHERE target_type = 'story' AND target_id = ?", [id])
+    await conn.query('UPDATE users SET story_count = GREATEST(story_count - 1, 0) WHERE id = ?', [rows[0].user_id])
     await conn.commit()
   } catch (err) {
     await conn.rollback()
@@ -216,8 +217,8 @@ const handlers = {
     const [[ids]] = await db.query(
       "SELECT openid, COALESCE(unionid,'') AS unionid FROM users WHERE id = ?", [id])
     const user = { ...users[0], openid: ids.openid, unionid: ids.unionid }
-    const [diaries] = await db.query(
-      `${DIARY_LIST_SELECT} WHERE d.user_id = ? AND d.status = 'active' ORDER BY d.created_at DESC`, [id])
+    const [stories] = await db.query(
+      `${STORY_LIST_SELECT} WHERE d.user_id = ? AND d.status = 'active' ORDER BY d.created_at DESC`, [id])
     // v2.2 "他推荐的用户"
     const [referred] = await db.query(
       `SELECT id, nickname,
@@ -225,7 +226,7 @@ const handlers = {
                    WHEN identity = 'guest' THEN 'guest' ELSE 'authed' END AS identity,
               DATE_FORMAT(created_at, '%Y-%m-%d') AS registeredAt
        FROM users WHERE referrer_user_id = ? ORDER BY created_at DESC`, [id])
-    return { user, diaries: diaries.map(rowToDiary), referred }
+    return { user, stories: stories.map(rowToStory), referred }
   },
 
   // B 档：管理员编辑用户资料（昵称/真实姓名/手机号 + 会员身份/有效期），写审计
@@ -266,11 +267,12 @@ const handlers = {
     return { user: after[0] }
   },
 
-  // B 档：管理员编辑日记（标题/正文/权限/标签），置 content_edited_at，写审计
-  async updateDiary({ id, title, content, permission, tags } = {}) {
-    if (!id) throw new Error('缺少日记 ID')
-    const [rows] = await db.query("SELECT id FROM diaries WHERE id = ? AND status = 'active'", [id])
-    if (!rows.length) throw new Error('日记不存在或已删除')
+  // B 档：管理员编辑故事（标题/正文/发布状态/标签），置 content_edited_at，写审计
+  async updateStory({ id, title, content, publishStatus, tags } = {}) {
+    if (!id) throw new Error('缺少故事 ID')
+    if (publishStatus !== undefined && !['draft', 'published'].includes(publishStatus)) throw new Error('发布状态非法')
+    const [rows] = await db.query("SELECT id FROM stories WHERE id = ? AND status = 'active'", [id])
+    if (!rows.length) throw new Error('故事不存在或已删除')
     const conn = await db.getConnection()
     try {
       await conn.beginTransaction()
@@ -278,21 +280,21 @@ const handlers = {
       if (title !== undefined) { fields.push('title = ?'); values.push(title) }
       // 后台改的是纯文本，同时清掉样式版，防旧样式盖新文
       if (content !== undefined) { fields.push('content = ?'); values.push(content); fields.push('content_rich = NULL') }
-      if (permission !== undefined) { fields.push('permission = ?'); values.push(permission) }
-      if (title !== undefined || content !== undefined || permission !== undefined || tags !== undefined) {
+      if (publishStatus !== undefined) { fields.push('publish_status = ?'); values.push(publishStatus) }
+      if (title !== undefined || content !== undefined || publishStatus !== undefined || tags !== undefined) {
         fields.push('content_edited_at = NOW()')
       }
       if (fields.length) {
         values.push(id)
-        await conn.query(`UPDATE diaries SET ${fields.join(', ')} WHERE id = ?`, values)
+        await conn.query(`UPDATE stories SET ${fields.join(', ')} WHERE id = ?`, values)
       }
       if (tags !== undefined) {
-        await conn.query('DELETE FROM diary_tags WHERE diary_id = ?', [id])
+        await conn.query('DELETE FROM story_tags WHERE story_id = ?', [id])
         for (const name of tags) {
           let [t] = await conn.query('SELECT id FROM tags WHERE name = ?', [name])
           const tagId = t.length ? t[0].id
             : (await conn.query('INSERT INTO tags (name, usage_count) VALUES (?, 0)', [name]))[0].insertId
-          await conn.query('INSERT INTO diary_tags (diary_id, tag_id) VALUES (?, ?)', [id, tagId])
+          await conn.query('INSERT INTO story_tags (story_id, tag_id) VALUES (?, ?)', [id, tagId])
         }
       }
       await conn.commit()
@@ -302,33 +304,34 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('updateDiary', 'diary', id, { title, permission })
-    const [d] = await db.query(`${DIARY_SELECT} WHERE d.id = ?`, [id])
-    return { diary: rowToDiary(d[0]) }
+    await auditLog('updateStory', 'story', id, { title, publishStatus })
+    const [d] = await db.query(`${STORY_SELECT} WHERE d.id = ?`, [id])
+    return { story: rowToStory(d[0]) }
   },
 
-  // C 档：后台代发日记（以指定用户身份发布），写审计
-  async createDiary({ authorId, title, content, permission = 'public', tags = [] } = {}) {
+  // C 档：后台代发故事（以指定用户身份发布），写审计
+  async createStory({ authorId, title, content, publishStatus = 'published', tags = [] } = {}) {
     if (!authorId) throw new Error('缺少作者 ID')
     if (!title || !content) throw new Error('标题和内容不能为空')
+    if (!['draft', 'published'].includes(publishStatus)) throw new Error('发布状态非法')
     const [author] = await db.query('SELECT id FROM users WHERE id = ?', [authorId])
     if (!author.length) throw new Error('作者不存在')
     const conn = await db.getConnection()
-    let diaryId
+    let storyId
     try {
       await conn.beginTransaction()
       // created_by 为 INT（用户 id 列），代发以作者 id 记录；管理员留痕走 admin_logs
       const [r] = await conn.query(
-        'INSERT INTO diaries (user_id, title, content, permission, created_by) VALUES (?,?,?,?,?)',
-        [authorId, title, content, permission, authorId])
-      diaryId = r.insertId
+        'INSERT INTO stories (user_id, title, content, publish_status, created_by) VALUES (?,?,?,?,?)',
+        [authorId, title, content, publishStatus, authorId])
+      storyId = r.insertId
       for (const name of tags) {
         let [t] = await conn.query('SELECT id FROM tags WHERE name = ?', [name])
         const tagId = t.length ? t[0].id
           : (await conn.query('INSERT INTO tags (name, usage_count) VALUES (?, 0)', [name]))[0].insertId
-        await conn.query('INSERT INTO diary_tags (diary_id, tag_id) VALUES (?, ?)', [diaryId, tagId])
+        await conn.query('INSERT INTO story_tags (story_id, tag_id) VALUES (?, ?)', [storyId, tagId])
       }
-      await conn.query('UPDATE users SET diary_count = diary_count + 1 WHERE id = ?', [authorId])
+      await conn.query('UPDATE users SET story_count = story_count + 1 WHERE id = ?', [authorId])
       await conn.commit()
     } catch (err) {
       await conn.rollback()
@@ -336,9 +339,9 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('createDiary', 'diary', diaryId, { authorId, title })
-    const [d] = await db.query(`${DIARY_SELECT} WHERE d.id = ?`, [diaryId])
-    return { diary: rowToDiary(d[0]) }
+    await auditLog('createStory', 'story', storyId, { authorId, title })
+    const [d] = await db.query(`${STORY_SELECT} WHERE d.id = ?`, [storyId])
+    return { story: rowToStory(d[0]) }
   },
 
   // v2.2 管理员修改推荐人：非本人、不得互为推荐循环，写审计（旧值→新值）
@@ -359,35 +362,36 @@ const handlers = {
     return true
   },
 
-  async diaries({ keyword, permission, tag, page, pageSize } = {}) {
+  async stories({ keyword, publishStatus, featured, tag, page, pageSize } = {}) {
     const where = ["d.status = 'active'"], params = []
     if (keyword) {
       where.push('(d.title LIKE ? OR d.content LIKE ? OR u.nickname LIKE ? OR d.id = ?)')
       params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`, Number(keyword) || 0)
     }
-    if (permission) { where.push('d.permission = ?'); params.push(permission) }
+    if (publishStatus) { where.push('d.publish_status = ?'); params.push(publishStatus) }
+    if (featured !== undefined && featured !== '') { where.push('d.is_featured = ?'); params.push(featured ? 1 : 0) }
     if (tag) {
-      where.push('EXISTS (SELECT 1 FROM diary_tags dt2 JOIN tags t2 ON t2.id = dt2.tag_id WHERE dt2.diary_id = d.id AND t2.name = ?)')
+      where.push('EXISTS (SELECT 1 FROM story_tags st2 JOIN tags t2 ON t2.id = st2.tag_id WHERE st2.story_id = d.id AND t2.name = ?)')
       params.push(tag)
     }
     const whereSql = 'WHERE ' + where.join(' AND ')
     const [[{ total }]] = await db.query(
-      `SELECT COUNT(*) total FROM diaries d JOIN users u ON d.user_id = u.id ${whereSql}`, params)
+      `SELECT COUNT(*) total FROM stories d JOIN users u ON d.user_id = u.id ${whereSql}`, params)
     const { limit, offset, page: p, pageSize: ps } = pageArgs({ page, pageSize })
     const [rows] = await db.query(
-      `${DIARY_LIST_SELECT} ${whereSql} ORDER BY d.created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset])
-    return { list: rows.map(rowToDiary), total, page: p, pageSize: ps }
+      `${STORY_LIST_SELECT} ${whereSql} ORDER BY d.created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset])
+    return { list: rows.map(rowToStory), total, page: p, pageSize: ps }
   },
 
-  async diaryDetail({ id } = {}) {
-    const [rows] = await db.query(`${DIARY_SELECT} WHERE d.id = ?`, [id])
-    if (!rows.length) throw new Error('日记不存在')
+  async storyDetail({ id } = {}) {
+    const [rows] = await db.query(`${STORY_SELECT} WHERE d.id = ?`, [id])
+    if (!rows.length) throw new Error('故事不存在')
     const [comments] = await db.query(
-      `${COMMENT_SELECT} WHERE c.diary_id = ? AND c.is_deleted = 0 ORDER BY c.created_at ASC`, [id])
-    return { diary: rowToDiary(rows[0]), comments }
+      `${COMMENT_SELECT} WHERE c.story_id = ? AND c.is_deleted = 0 ORDER BY c.created_at ASC`, [id])
+    return { story: rowToStory(rows[0]), comments }
   },
 
-  // 系统标签名列表（供日记编辑/代发的标签选择器）
+  // 系统标签名列表（供故事编辑/代发的标签选择器）
   async tagList() {
     const [rows] = await db.query("SELECT name FROM tags WHERE is_active = 1 ORDER BY usage_count DESC, name ASC")
     return { list: rows.map(r => r.name) }
@@ -408,8 +412,8 @@ const handlers = {
     const usersNew = await count('SELECT COUNT(*) c FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)')
     const members = await count("SELECT COUNT(*) c FROM users WHERE member_until IS NOT NULL AND member_until >= CURDATE()")
     const membersNew = await count("SELECT COUNT(*) c FROM users WHERE member_until IS NOT NULL AND member_until >= CURDATE() AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")
-    const diaries = await count("SELECT COUNT(*) c FROM diaries WHERE status = 'active'")
-    const diariesNew = await count("SELECT COUNT(*) c FROM diaries WHERE status = 'active' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")
+    const stories = await count("SELECT COUNT(*) c FROM stories WHERE status = 'active'")
+    const storiesNew = await count("SELECT COUNT(*) c FROM stories WHERE status = 'active' AND created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)")
     const inter = await count('SELECT COUNT(*) c FROM interactions') +
       await count('SELECT COUNT(*) c FROM comments WHERE is_deleted = 0')
     const interNew = await count("SELECT COUNT(*) c FROM interactions WHERE created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)") +
@@ -420,15 +424,15 @@ const handlers = {
     return {
       users: { value: users, delta: delta(usersNew, users) },
       members: { value: members, delta: delta(membersNew, members) },
-      diaries: { value: diaries, delta: delta(diariesNew, diaries) },
+      stories: { value: stories, delta: delta(storiesNew, stories) },
       interactions: { value: inter, delta: delta(interNew, inter) },
       revenue: { value: Number(revenue), delta: delta(Number(revenueNew), Number(revenue)) },
     }
   },
 
   async activity() {
-    const [diaries] = await db.query(
-      `SELECT u.nickname, d.title, d.created_at FROM diaries d JOIN users u ON d.user_id = u.id
+    const [stories] = await db.query(
+      `SELECT u.nickname, d.title, d.created_at FROM stories d JOIN users u ON d.user_id = u.id
        WHERE d.status = 'active' ORDER BY d.created_at DESC LIMIT 5`)
     const [users] = await db.query(
       'SELECT nickname, created_at FROM users ORDER BY created_at DESC LIMIT 5')
@@ -441,7 +445,7 @@ const handlers = {
       return m ? `${m[1]} ${m[2]}` : s.slice(0, 16)
     }
     const items = [
-      ...diaries.map(r => ({ type: 'diary', text: `${r.nickname} 发布《${r.title}》`, time: fmt(r.created_at), ts: +new Date(r.created_at) })),
+      ...stories.map(r => ({ type: 'story', text: `${r.nickname} 发布《${r.title}》`, time: fmt(r.created_at), ts: +new Date(r.created_at) })),
       ...users.map(r => ({ type: 'user', text: `${r.nickname} 完成注册`, time: fmt(r.created_at), ts: +new Date(r.created_at) })),
       ...orders.map(r => ({ type: 'order', text: `为「${r.nickname}」确认${r.plan}订单`, time: fmt(r.created_at), ts: +new Date(r.created_at) })),
     ].sort((a, b) => b.ts - a.ts).slice(0, 8)
@@ -458,7 +462,7 @@ const handlers = {
       return map
     }
     const u = await daily('users')
-    const d = await daily('diaries', "AND status = 'active'")
+    const d = await daily('stories', "AND status = 'active'")
     const i = await daily('interactions')
     const out = []
     for (let n = 29; n >= 0; n--) {
@@ -467,29 +471,153 @@ const handlers = {
       out.push({
         date: `${dt.getUTCMonth() + 1}/${dt.getUTCDate()}`,
         newUsers: u[key] || 0,
-        newDiaries: d[key] || 0,
+        newStories: d[key] || 0,
         interactions: i[key] || 0,
       })
     }
     return out
   },
 
-  async deleteDiary({ id } = {}) {
-    await deleteDiaryById(id)
-    await auditLog('deleteDiary', 'diary', id, {})
+  async deleteStory({ id } = {}) {
+    await deleteStoryById(id)
+    await auditLog('deleteStory', 'story', id, {})
     return true
   },
 
   // 批量删除：逐条独立事务，单条失败不影响其余；汇总写一条审计
-  async deleteDiaries({ ids } = {}) {
-    if (!Array.isArray(ids) || !ids.length) throw new Error('缺少日记 ID 列表')
+  async deleteStories({ ids } = {}) {
+    if (!Array.isArray(ids) || !ids.length) throw new Error('缺少故事 ID 列表')
     const deleted = [], failed = []
     for (const id of ids) {
-      try { await deleteDiaryById(id); deleted.push(id) }
+      try { await deleteStoryById(id); deleted.push(id) }
       catch (err) { failed.push({ id, msg: err.message }) }
     }
-    await auditLog('deleteDiaries', 'diary', ids.join(','), { deleted, failed })
+    await auditLog('deleteStories', 'story', ids.join(','), { deleted, failed })
     return { deleted, failed }
+  },
+
+  // ── 善选故事（面向公众的修订副本；互动/计数共享原故事）──
+  // 热度榜：未善选（无任何副本，含 offline）的已发布故事按加权计数排序
+  async featuredRank({ dateFrom, dateTo, wLike = 1, wFav = 1, wComment = 1, page, pageSize } = {}) {
+    const w = k => { const n = Number(k); if (isNaN(n) || n < 0 || n > 100) throw new Error('权重须为 0~100 的数字'); return n }
+    const weights = [w(wLike), w(wFav), w(wComment)]
+    const where = ["d.status = 'active'", "d.publish_status = 'published'",
+      'NOT EXISTS (SELECT 1 FROM featured_stories f WHERE f.story_id = d.id)']
+    const params = []
+    if (dateFrom) { where.push('DATE(d.created_at) >= ?'); params.push(dateFrom) }
+    if (dateTo) { where.push('DATE(d.created_at) <= ?'); params.push(dateTo) }
+    const whereSql = 'WHERE ' + where.join(' AND ')
+    const [[{ total }]] = await db.query(`SELECT COUNT(*) total FROM stories d ${whereSql}`, params)
+    const { limit, offset, page: p, pageSize: ps } = pageArgs({ page, pageSize })
+    const [rows] = await db.query(
+      `SELECT d.id, d.title, LEFT(d.content, 80) AS excerpt,
+              d.like_count AS likes, d.fav_count AS favorites, d.comment_count AS comments, d.share_count AS shares,
+              (d.like_count * ? + d.fav_count * ? + d.comment_count * ?) AS score,
+              u.nickname AS author, u.id AS authorId,
+              DATE_FORMAT(d.created_at, '%Y-%m-%d') AS createdAt
+       FROM stories d JOIN users u ON d.user_id = u.id
+       ${whereSql}
+       ORDER BY score DESC, d.id DESC LIMIT ? OFFSET ?`,
+      [...weights, ...params, limit, offset])
+    return { list: rows.map(r => ({ ...r, score: Number(r.score) })), total, page: p, pageSize: ps }
+  },
+
+  // 纳入善选：拷贝原文建副本（管理员可再修订），原故事标记 is_featured
+  async featuredAdd({ storyId } = {}) {
+    if (!storyId) throw new Error('缺少故事 ID')
+    const conn = await db.getConnection()
+    let featuredId
+    try {
+      await conn.beginTransaction()
+      const [r] = await conn.query(
+        `INSERT INTO featured_stories (story_id, title, content, content_rich, images)
+         SELECT id, title, content, content_rich, images FROM stories
+         WHERE id = ? AND status = 'active' AND publish_status = 'published'`, [storyId])
+      if (!r.affectedRows) throw new Error('故事不存在或未发布')
+      featuredId = r.insertId
+      await conn.query('UPDATE stories SET is_featured = 1 WHERE id = ?', [storyId])
+      await conn.commit()
+    } catch (err) {
+      await conn.rollback()
+      if (err.code === 'ER_DUP_ENTRY') throw new Error('该故事已在善选中')
+      throw err
+    } finally {
+      conn.release()
+    }
+    await auditLog('featuredAdd', 'featured', featuredId, { storyId })
+    return { id: featuredId }
+  },
+
+  // 修订副本：只动 featured_stories，不影响原作者故事原文
+  async featuredUpdate({ id, title, content, contentRich, images } = {}) {
+    if (!id) throw new Error('缺少善选 ID')
+    const fields = [], values = []
+    if (title !== undefined) { fields.push('title = ?'); values.push(title) }
+    if (content !== undefined) {
+      fields.push('content = ?'); values.push(content)
+      // 与故事编辑同规则：只改纯文本未带样式版时清掉旧样式，防旧样式盖新文
+      if (contentRich === undefined) fields.push('content_rich = NULL')
+    }
+    if (contentRich !== undefined) { fields.push('content_rich = ?'); values.push(contentRich || null) }
+    if (images !== undefined) { fields.push('images = ?'); values.push(images && images.length ? JSON.stringify(images) : null) }
+    if (!fields.length) throw new Error('无可更新字段')
+    values.push(id)
+    const [r] = await db.query(`UPDATE featured_stories SET ${fields.join(', ')} WHERE id = ?`, values)
+    if (!r.affectedRows) throw new Error('善选故事不存在')
+    await auditLog('featuredUpdate', 'featured', id, { title })
+    return true
+  },
+
+  // 上/下架：offline 后公众侧消失，原故事 is_featured 同步（会员端眼睛徽章随之隐藏）
+  async featuredToggle({ id, status } = {}) {
+    if (!id) throw new Error('缺少善选 ID')
+    if (!['online', 'offline'].includes(status)) throw new Error('状态须为 online/offline')
+    const [rows] = await db.query('SELECT story_id FROM featured_stories WHERE id = ?', [id])
+    if (!rows.length) throw new Error('善选故事不存在')
+    const conn = await db.getConnection()
+    try {
+      await conn.beginTransaction()
+      await conn.query('UPDATE featured_stories SET status = ? WHERE id = ?', [status, id])
+      await conn.query('UPDATE stories SET is_featured = ? WHERE id = ?', [status === 'online' ? 1 : 0, rows[0].story_id])
+      await conn.commit()
+    } catch (err) {
+      await conn.rollback()
+      throw err
+    } finally {
+      conn.release()
+    }
+    await auditLog('featuredToggle', 'featured', id, { storyId: rows[0].story_id, status })
+    return true
+  },
+
+  async featuredList({ keyword, status, page, pageSize } = {}) {
+    const where = ['1=1'], params = []
+    if (keyword) { where.push('(f.title LIKE ? OR f.content LIKE ? OR u.nickname LIKE ?)'); params.push(`%${keyword}%`, `%${keyword}%`, `%${keyword}%`) }
+    if (status) { where.push('f.status = ?'); params.push(status) }
+    const whereSql = 'WHERE ' + where.join(' AND ')
+    const base = `FROM featured_stories f JOIN stories d ON f.story_id = d.id JOIN users u ON d.user_id = u.id`
+    const [[{ total }]] = await db.query(`SELECT COUNT(*) total ${base} ${whereSql}`, params)
+    const { limit, offset, page: p, pageSize: ps } = pageArgs({ page, pageSize })
+    const [rows] = await db.query(
+      `SELECT f.id, f.story_id AS storyId, f.title, LEFT(f.content, 80) AS excerpt, f.status,
+              d.status AS storyStatus, d.like_count AS likes, d.fav_count AS favorites, d.comment_count AS comments,
+              u.nickname AS author,
+              DATE_FORMAT(f.created_at, '%Y-%m-%d %H:%i') AS featuredAt,
+              DATE_FORMAT(f.updated_at, '%Y-%m-%d %H:%i') AS updatedAt
+       ${base} ${whereSql} ORDER BY f.created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset])
+    return { list: rows, total, page: p, pageSize: ps }
+  },
+
+  // 副本全文 + 原文对照（修订用）
+  async featuredDetail({ id } = {}) {
+    const [rows] = await db.query(
+      `SELECT f.id, f.story_id AS storyId, f.title, f.content, f.content_rich AS contentRich, f.images, f.status,
+              d.title AS originTitle, d.content AS originContent, d.status AS storyStatus,
+              u.nickname AS author, u.id AS authorId
+       FROM featured_stories f JOIN stories d ON f.story_id = d.id JOIN users u ON d.user_id = u.id
+       WHERE f.id = ?`, [id])
+    if (!rows.length) throw new Error('善选故事不存在')
+    return rows[0]
   },
 
   // ── 活动分类（typeSave 同时承担启停 is_active）──
@@ -661,11 +789,11 @@ const handlers = {
   },
 
   async deleteComment({ id } = {}) {
-    const [rows] = await db.query('SELECT diary_id FROM comments WHERE id = ? AND is_deleted = 0', [id])
+    const [rows] = await db.query('SELECT story_id FROM comments WHERE id = ? AND is_deleted = 0', [id])
     if (!rows.length) throw new Error('评论不存在或已删除')
     await db.query('UPDATE comments SET is_deleted = 1 WHERE id = ?', [id])
-    await db.query('UPDATE diaries SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?', [rows[0].diary_id])
-    await auditLog('deleteComment', 'comment', id, { diaryId: rows[0].diary_id })
+    await db.query('UPDATE stories SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?', [rows[0].story_id])
+    await auditLog('deleteComment', 'comment', id, { storyId: rows[0].story_id })
     return true
   },
 

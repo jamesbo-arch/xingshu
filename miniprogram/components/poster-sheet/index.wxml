@@ -1,4 +1,4 @@
-<view wx:if="{{_mounted && diary}}">
+<view wx:if="{{_mounted && story}}">
   <view class="sheet-mask {{_show ? 'mask-show' : ''}}" bindtap="onMaskTap"></view>
   <view class="sheet poster-sheet-wrap {{_show ? 'sheet-show' : ''}}" catchtap="onSheetTap">
     <view class="sheet-handle"></view>
@@ -17,15 +17,15 @@
       </view>
 
       <!-- Title -->
-      <view class="poster-title serif">{{diary.title}}</view>
+      <view class="poster-title serif">{{story.title}}</view>
 
       <!-- Content excerpt -->
       <view class="poster-content">{{contentExcerpt}}</view>
 
       <!-- Tags -->
-      <view class="poster-tags" wx:if="{{diary.tags && diary.tags.length}}">
+      <view class="poster-tags" wx:if="{{story.tags && story.tags.length}}">
         <text
-          wx:for="{{diary.tags}}"
+          wx:for="{{story.tags}}"
           wx:key="*this"
           class="seal-tag"
         >{{item}}</text>
@@ -45,8 +45,8 @@
             <text>{{avatarInitial}}</text>
           </view>
           <view>
-            <text class="poster-author-name">{{diary.author}}</text>
-            <text class="poster-time">{{diary.dateText}}</text>
+            <text class="poster-author-name">{{story.author}}</text>
+            <text class="poster-time">{{story.dateText}}</text>
           </view>
         </view>
         <!-- v2.2 带参小程序码（scene 携带日记 ID + 分享人 ID，加载失败回退占位） -->

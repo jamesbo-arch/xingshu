@@ -1,5 +1,5 @@
 const app = getApp()
-const diaryApi = require('../../api/diary')
+const storyApi = require('../../api/story')
 const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const cache = require('../../utils/cache')
@@ -9,14 +9,14 @@ const { lock, throttle } = require('../../utils/guard')
 
 Page({
   data: {
-    diaries: [],
+    stories: [],
     search: '',
     page: 1,
     hasMore: true,
     refreshing: false,
     showFilterSheet: false,
     showPosterSheet: false,
-    posterDiary: null,
+    posterStory: null,
     showMemberGuard: false,
     showLoginSheet: false,
     userIdentity: 'guest',
@@ -45,7 +45,7 @@ Page({
   },
 
   onShow() {
-    this._loadDiaries(true)
+    this._loadStories(true)
     this._loadActBanner()
     this.setData({ userIdentity: (app.globalData.user || {}).identity || 'guest' })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
@@ -71,18 +71,18 @@ Page({
     open()
   },
 
-  async _loadDiaries(reset) {
+  async _loadStories(reset) {
     // 防重入：缓存使首屏瞬间可滚动，网络返回前触底会用未自增的 page 重复请求
     if (this._loading) return
     this._loading = true
     const page = reset ? 1 : this.data.page
     const plain = !this.data.search && !this._isFiltersActive()
     // 冷启动首屏：无搜索/筛选时先展示缓存的第一页，网络返回后覆盖
-    if (reset && plain && !this.data.diaries.length) {
+    if (reset && plain && !this.data.stories.length) {
       const cached = cache.get('square:first')
-      if (cached) this.setData({ diaries: cached })
+      if (cached) this.setData({ stories: cached })
     }
-    const data = await diaryApi.getList({
+    const data = await storyApi.getList({
       mode: 'square',
       page,
       keyword: this.data.search || undefined,
@@ -90,10 +90,10 @@ Page({
     })
     if (data) {
       const active = this._isFiltersActive()
-      const mapped = data.list.map(mapper.diary)
+      const mapped = data.list.map(mapper.story)
       if (reset && plain) cache.set('square:first', mapped, 10)
       this.setData({
-        diaries: reset ? mapped : [...this.data.diaries, ...mapped],
+        stories: reset ? mapped : [...this.data.stories, ...mapped],
         page: page + 1,
         hasMore: data.list.length >= data.pageSize,
         filtersActive: active,
@@ -108,8 +108,8 @@ Page({
   },
 
   onSearchInput(e) { this.setData({ search: e.detail.value }) },
-  onSearchClear() { this.setData({ search: '' }, () => this._loadDiaries(true)) },
-  onSearchConfirm() { this._loadDiaries(true) },
+  onSearchClear() { this.setData({ search: '' }, () => this._loadStories(true)) },
+  onSearchConfirm() { this._loadStories(true) },
 
   // 弹层打开时隐藏自定义 tab-bar，避免其独立层遮挡弹层底部按钮
   _tabBar(hidden) { const tb = this.getTabBar && this.getTabBar(); if (tb) tb.setData({ hidden }) },
@@ -117,10 +117,10 @@ Page({
   onCloseFilter() { this.setData({ showFilterSheet: false }); this._tabBar(false) },
   onApplyFilter(e) {
     this._tabBar(false)
-    this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true))
+    this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadStories(true))
   },
 
-  // v2.3：guest 点卡片先拉起微信登录弹窗，登录成功后直达该日记；authed 看会员日记走详情页渐隐
+  // v2.3：guest 点卡片先拉起微信登录弹窗，登录成功后直达该故事；authed 看会员故事走详情页渐隐
   onCardOpen(e) {
     const { id } = e.detail
     const open = () => throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + id }))
@@ -160,29 +160,29 @@ Page({
 
   onCardShare(e) {
     const { id } = e.detail
-    const diary = this.data.diaries.find(d => d.id === id)
-    if (diary) { this.setData({ showPosterSheet: true, posterDiary: diary }); this._tabBar(true) }
+    const story = this.data.stories.find(d => d.id === id)
+    if (story) { this.setData({ showPosterSheet: true, posterStory: story }); this._tabBar(true) }
   },
-  onClosePoster() { this.setData({ showPosterSheet: false, posterDiary: null }); this._tabBar(false) },
+  onClosePoster() { this.setData({ showPosterSheet: false, posterStory: null }); this._tabBar(false) },
   // 分享成功后列表卡片的分享数即时 +1（保留 share_count 兼容旧字段读取）
   onShared(e) {
     const { id, shares } = e.detail
     this.setData({
-      diaries: this.data.diaries.map(d => d.id === id ? { ...d, shares, share_count: shares } : d)
+      stories: this.data.stories.map(d => d.id === id ? { ...d, shares, share_count: shares } : d)
     })
   },
 
   onFabTap() {
-    // 写日记为会员专享：非有效会员弹窗引导开通
+    // 写故事为会员专享：非有效会员弹窗引导开通
     ensureMember(this, () => throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/compose/index' })))
   },
-  onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
+  onReachBottom() { if (this.data.hasMore) this._loadStories(false) },
 
   // 顶部下拉刷新：重载第一页 + 强刷活动预告（scroll-view 自带 refresher，非页面级 onPullDownRefresh）
   async onRefresh() {
     this.setData({ refreshing: true })
     try {
-      await Promise.all([this._loadDiaries(true), this._loadActBanner(true)])
+      await Promise.all([this._loadStories(true), this._loadActBanner(true)])
     } finally {
       this.setData({ refreshing: false })
     }

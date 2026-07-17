@@ -94,7 +94,7 @@
     <div v-if="user" class="section">
       <h2>互动统计</h2>
       <div class="stat-grid">
-        <div class="stat-cell"><div class="stat-num">{{ user.diaries || 0 }}</div><div class="stat-lbl">日记</div></div>
+        <div class="stat-cell"><div class="stat-num">{{ user.stories || 0 }}</div><div class="stat-lbl">故事</div></div>
         <div class="stat-cell"><div class="stat-num">{{ user.likes || 0 }}</div><div class="stat-lbl">获赞</div></div>
         <div class="stat-cell"><div class="stat-num">{{ user.favorites || 0 }}</div><div class="stat-lbl">被收藏</div></div>
         <div class="stat-cell"><div class="stat-num">{{ user.comments || 0 }}</div><div class="stat-lbl">评论</div></div>
@@ -173,12 +173,12 @@
       </table>
     </div>
 
-    <div v-if="diaries.length" class="section">
-      <h2>发布日记 ({{ diaries.length }})</h2>
+    <div v-if="stories.length" class="section">
+      <h2>发布故事 ({{ stories.length }})</h2>
       <table class="data-table">
         <thead><tr><th>ID</th><th>标题</th><th>时间</th><th>权限</th><th>点赞</th><th>收藏</th><th>评论</th></tr></thead>
-        <tbody><tr v-for="d in diaries" :key="d.id">
-          <td>{{ d.id }}</td><td><router-link :to="'/diaries/'+d.id" class="link">{{ d.title }}</router-link></td>
+        <tbody><tr v-for="d in stories" :key="d.id">
+          <td>{{ d.id }}</td><td><router-link :to="'/stories/'+d.id" class="link">{{ d.title }}</router-link></td>
           <td>{{ d.createdAt }}</td><td>{{ d.permission }}</td><td>{{ d.likes }}</td><td>{{ d.favorites }}</td><td>{{ d.comments }}</td>
         </tr></tbody>
       </table>
@@ -192,7 +192,7 @@ import { useRoute } from 'vue-router'
 import { getUserDetail, getUsers, updateReferrer, getUserOrders, updateUser, getRefundPreview, refundOrder } from '../api/index.js'
 
 const route = useRoute()
-const user = ref(null), diaries = ref([]), referred = ref([]), orders = ref([])
+const user = ref(null), stories = ref([]), referred = ref([]), orders = ref([])
 const showRefEdit = ref(false), refKeyword = ref(''), refSelected = ref(null)
 const allUsers = ref([]), candidates = ref([])
 const editing = ref(false), form = ref({})
@@ -201,7 +201,7 @@ const showRefund = ref(false), refund = ref(null), refundError = ref(''), refund
 onMounted(load)
 async function load() {
   const data = await getUserDetail(route.params.id)
-  user.value = data.user; diaries.value = data.diaries; referred.value = data.referred || []
+  user.value = data.user; stories.value = data.stories; referred.value = data.referred || []
   orders.value = (await getUserOrders(route.params.id)).list
 }
 

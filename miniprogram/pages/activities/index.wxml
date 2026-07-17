@@ -108,7 +108,7 @@
     <act-banner id="actBanner" bind:change="onActBannerChange" bind:open="onActBannerOpen"></act-banner>
   </view>
 
-  <!-- 分享页签 FAB：直达发布分享（参照广场写日记入口） -->
+  <!-- 分享页签 FAB：直达发布分享（参照广场写故事入口） -->
   <view wx:if="{{tab === 'share'}}" class="fab {{actBannerCount ? 'fab-raised' : ''}}" bindtap="onShareFab">
     <view class="fab-icon ic-camera-w"></view>
   </view>

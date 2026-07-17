@@ -1,16 +1,19 @@
 <template>
   <div>
-    <h1 class="page-title">日记管理</h1>
+    <h1 class="page-title">故事管理</h1>
     <div class="filter-bar">
       <input v-model="keyword" placeholder="搜索标题/内容/作者/ID" class="input" @input="onFilter" />
-      <select v-model="permission" class="select" @change="onFilter">
-        <option value="">全部权限</option><option value="public">公众</option><option value="member">会员</option><option value="private">私密</option>
+      <select v-model="publishStatus" class="select" @change="onFilter">
+        <option value="">全部状态</option><option value="published">已发布</option><option value="draft">暂存</option>
+      </select>
+      <select v-model="featured" class="select" @change="onFilter">
+        <option value="">是否善选</option><option value="1">已善选</option><option value="0">未善选</option>
       </select>
       <select v-model="tag" class="select" @change="onFilter">
         <option value="">全部标签</option>
         <option v-for="t in allTags" :key="t" :value="t">{{ t }}</option>
       </select>
-      <button class="btn btn-primary" @click="openCreate">+ 新建日记</button>
+      <button class="btn btn-primary" @click="openCreate">+ 新建故事</button>
       <button class="btn btn-ghost" @click="onExport">导出（{{ total }}）</button>
       <button class="btn btn-danger" :disabled="!selected.length" @click="onBatchDelete">
         批量删除{{ selected.length ? `（${selected.length}）` : '' }}
@@ -19,7 +22,7 @@
     <table class="data-table">
       <thead><tr>
         <th style="width:36px"><input type="checkbox" :checked="allChecked" @change="toggleAll" /></th>
-        <th>ID</th><th>标题</th><th>作者</th><th>标签</th><th>时间</th><th>权限</th>
+        <th>ID</th><th>标题</th><th>作者</th><th>标签</th><th>时间</th><th>状态</th><th>善选</th>
         <th>赞</th><th>藏</th><th>评</th><th>转</th><th>操作</th>
       </tr></thead>
       <tbody>
@@ -27,7 +30,7 @@
           <td><input type="checkbox" :value="d.id" v-model="selected" /></td>
           <td>{{ d.id }}</td>
           <td>
-            <router-link :to="'/diaries/'+d.id" class="link">{{ d.title }}</router-link>
+            <router-link :to="'/stories/'+d.id" class="link">{{ d.title }}</router-link>
             <span v-if="d.editedAt" class="edited-tag">已编辑</span>
             <div class="excerpt">{{ excerpt(d.content) }}</div>
           </td>
@@ -37,22 +40,23 @@
             <span v-if="(d.tags||[]).length > 2" class="tag-more">+{{ d.tags.length - 2 }}</span>
           </td>
           <td class="dim">{{ d.createdAt }}</td>
-          <td><span class="badge" :class="'badge-'+d.permission">{{ permLabel(d.permission) }}</span></td>
+          <td><span class="badge" :class="'badge-'+d.publishStatus">{{ statusLabel(d.publishStatus) }}</span></td>
+          <td><span v-if="d.isFeatured" class="featured-tag">善选</span><span v-else class="dim">—</span></td>
           <td>{{ d.likes }}</td><td>{{ d.favorites }}</td><td>{{ d.comments }}</td><td>{{ d.shares }}</td>
           <td class="ops">
             <button class="btn btn-ghost" @click="openEdit(d)">编辑</button>
             <button class="btn btn-danger" @click="onDelete(d)">删除</button>
           </td>
         </tr>
-        <tr v-if="!list.length"><td colspan="12" class="empty">暂无日记</td></tr>
+        <tr v-if="!list.length"><td colspan="13" class="empty">暂无故事</td></tr>
       </tbody>
     </table>
     <Paginate :page="page" :pageSize="pageSize" :total="total" @change="onPage" />
 
-    <!-- 日记编辑 / 后台代发弹窗 -->
+    <!-- 故事编辑 / 后台代发弹窗 -->
     <div v-if="showForm" class="modal-mask" @click.self="showForm = false">
       <div class="modal">
-        <h2 class="modal-title">{{ form.id ? '编辑日记' : '新建日记（后台代发）' }}</h2>
+        <h2 class="modal-title">{{ form.id ? '编辑故事' : '新建故事（后台代发）' }}</h2>
 
         <label class="block-label">作者
           <template v-if="form.id">
@@ -83,9 +87,9 @@
           <span v-for="t in sysTags" :key="t" class="tag-opt" :class="{ on: form.tags.includes(t) }" @click="toggleTag(t)">{{ t }}</span>
         </div>
 
-        <label class="block-label">权限</label>
+        <label class="block-label">状态</label>
         <div class="seg-pick">
-          <span v-for="p in ['public','member','private']" :key="p" class="opt" :class="{ active: form.permission===p }" @click="form.permission=p">{{ permLabel(p) }}</span>
+          <span v-for="p in ['published','draft']" :key="p" class="opt" :class="{ active: form.publishStatus===p }" @click="form.publishStatus=p">{{ statusLabel(p) }}</span>
         </div>
 
         <div class="modal-actions">
@@ -99,11 +103,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { getDiaries, deleteDiary, deleteDiaries, updateDiary, createDiary, getTagList, getUsers } from '../api/index.js'
+import { getStories, deleteStory, deleteStories, updateStory, createStory, getTagList, getUsers } from '../api/index.js'
 import { exportCsv } from '../utils/csv.js'
 import Paginate from '../components/Paginate.vue'
 
-const list = ref([]), keyword = ref(''), permission = ref(''), tag = ref('')
+const list = ref([]), keyword = ref(''), publishStatus = ref(''), featured = ref(''), tag = ref('')
 const page = ref(1), pageSize = ref(20), total = ref(0)
 const selected = ref([]), allTags = ref([])
 let timer = null
@@ -117,16 +121,23 @@ onMounted(async () => {
   allTags.value = (await getTagList()).list  // 标签筛选下拉：全量系统标签
   await reload()
 })
-function filters() { return { keyword: keyword.value.trim() || undefined, permission: permission.value || undefined, tag: tag.value || undefined } }
+function filters() {
+  return {
+    keyword: keyword.value.trim() || undefined,
+    publishStatus: publishStatus.value || undefined,
+    featured: featured.value === '' ? undefined : Number(featured.value),
+    tag: tag.value || undefined,
+  }
+}
 async function reload() {
-  const r = await getDiaries({ ...filters(), page: page.value, pageSize: pageSize.value })
+  const r = await getStories({ ...filters(), page: page.value, pageSize: pageSize.value })
   list.value = r.list; total.value = r.total
   selected.value = selected.value.filter(id => list.value.some(d => d.id === id))
 }
 function onFilter() { clearTimeout(timer); timer = setTimeout(() => { page.value = 1; reload() }, 250) }
 function onPage({ page: p, pageSize: ps }) { page.value = p; pageSize.value = ps; reload() }
 
-function permLabel(p) { return { public:'公众', member:'会员', private:'私密' }[p] || p }
+function statusLabel(p) { return { published: '已发布', draft: '暂存' }[p] || p }
 function idLabel(i) { return { guest:'游客', authed:'已授权', member:'会员' }[i] || i }
 function excerpt(c) { return c ? (c.length > 50 ? c.slice(0, 50) + '…' : c) : '' }
 
@@ -139,8 +150,8 @@ function toggleAll(e) {
 }
 function interTotal(d) { return (d.likes||0) + (d.favorites||0) + (d.comments||0) + (d.shares||0) }
 async function onDelete(d) {
-  if (!confirm(`确定删除《${d.title}》（作者 ${d.author}）？\n该日记及其 ${interTotal(d)} 条互动数据将同步从小程序移除，无法恢复。`)) return
-  await deleteDiary(d.id)
+  if (!confirm(`确定删除《${d.title}》（作者 ${d.author}）？\n该故事及其 ${interTotal(d)} 条互动数据将同步从小程序移除（善选副本一并下架），无法恢复。`)) return
+  await deleteStory(d.id)
   await reload()
 }
 async function onBatchDelete() {
@@ -148,18 +159,18 @@ async function onBatchDelete() {
     const d = list.value.find(x => x.id === id)
     return s + (d ? interTotal(d) : 0)
   }, 0)
-  if (!confirm(`确定删除选中的 ${selected.value.length} 篇日记？\n连同约 ${total0} 条互动数据一并永久删除，无法恢复。`)) return
-  const r = await deleteDiaries(selected.value)
+  if (!confirm(`确定删除选中的 ${selected.value.length} 篇故事？\n连同约 ${total0} 条互动数据一并永久删除（善选副本下架），无法恢复。`)) return
+  const r = await deleteStories(selected.value)
   if (r.failed.length) alert(`${r.failed.length} 篇删除失败：${r.failed.map(f => f.id).join(', ')}`)
   selected.value = []
   await reload()
 }
 async function onExport() {
-  const r = await getDiaries({ ...filters(), page: 1, pageSize: 100000 })
+  const r = await getStories({ ...filters(), page: 1, pageSize: 100000 })
   exportCsv(
-    `醒书日记列表-${new Date().toISOString().slice(0, 10)}.csv`,
-    ['日记ID', '标题', '作者', '发布时间', '权限', '标签', '点赞', '收藏', '评论', '转发', '已编辑'],
-    r.list.map(d => [d.id, d.title, d.author, d.createdAt, permLabel(d.permission),
+    `醒书故事列表-${new Date().toISOString().slice(0, 10)}.csv`,
+    ['故事ID', '标题', '作者', '发布时间', '状态', '善选', '标签', '点赞', '收藏', '评论', '转发', '已编辑'],
+    r.list.map(d => [d.id, d.title, d.author, d.createdAt, statusLabel(d.publishStatus), d.isFeatured ? '是' : '',
       (d.tags || []).join('、'), d.likes, d.favorites, d.comments, d.shares, d.editedAt ? '是' : ''])
   )
 }
@@ -171,12 +182,12 @@ async function ensureMeta() {
 }
 async function openEdit(d) {
   await ensureMeta()
-  form.value = { id: d.id, authorName: d.author, title: d.title, content: d.content, permission: d.permission, tags: [...(d.tags || [])] }
+  form.value = { id: d.id, authorName: d.author, title: d.title, content: d.content, publishStatus: d.publishStatus, tags: [...(d.tags || [])] }
   showForm.value = true
 }
 async function openCreate() {
   await ensureMeta()
-  form.value = { title: '', content: '', permission: 'public', tags: [] }
+  form.value = { title: '', content: '', publishStatus: 'published', tags: [] }
   pickedAuthor.value = null; authorKeyword.value = ''; filterAuthors()
   showForm.value = true
 }
@@ -198,9 +209,9 @@ async function onSave() {
   saving.value = true
   try {
     if (form.value.id) {
-      await updateDiary({ id: form.value.id, title: form.value.title.trim(), content: form.value.content.trim(), permission: form.value.permission, tags: form.value.tags })
+      await updateStory({ id: form.value.id, title: form.value.title.trim(), content: form.value.content.trim(), publishStatus: form.value.publishStatus, tags: form.value.tags })
     } else {
-      await createDiary({ authorId: pickedAuthor.value.id, title: form.value.title.trim(), content: form.value.content.trim(), permission: form.value.permission, tags: form.value.tags })
+      await createStory({ authorId: pickedAuthor.value.id, title: form.value.title.trim(), content: form.value.content.trim(), publishStatus: form.value.publishStatus, tags: form.value.tags })
     }
     showForm.value = false
     allTags.value = (await getTagList()).list
@@ -222,6 +233,7 @@ async function onSave() {
 .dim { color: #A8A39B; font-size: 12px; }
 .empty { text-align: center; color: #A8A39B; padding: 24px; }
 .edited-tag { margin-left: 8px; font-size: 10px; color: var(--warn); background: rgba(192,147,83,0.14); padding: 1px 6px; border-radius: 3px; }
+.featured-tag { font-size: 11px; color: #5B8F6C; background: rgba(91,143,108,0.12); padding: 1px 8px; border-radius: 3px; }
 .ops { display: flex; gap: 6px; }
 
 .picked-author { margin-top: 8px; font-size: 13px; color: var(--ink-2); }

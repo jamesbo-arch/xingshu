@@ -4,19 +4,19 @@ module.exports = {
   toggleLike(targetId, targetType) {
     return call('toggleLike', { targetId, targetType })
   },
-  toggleFav(diaryId) {
-    return call('toggleFavorite', { diaryId })
+  toggleFav(storyId) {
+    return call('toggleFavorite', { storyId })
   },
-  createComment(diaryId, content, parentId) {
-    return call('createComment', { diaryId, content, parentId })
+  createComment(storyId, content, parentId) {
+    return call('createComment', { storyId, content, parentId })
   },
-  getComments(diaryId, page = 1) {
-    return call('getComments', { diaryId, page }, { retry: 1 })
+  getComments(storyId, page = 1) {
+    return call('getComments', { storyId, page }, { retry: 1 })
   },
   deleteComment(commentId) {
     return call('deleteComment', { commentId })
   },
-  recordShare(diaryId) {
-    return call('recordShare', { diaryId }, { showError: false })
+  recordShare(storyId) {
+    return call('recordShare', { storyId }, { showError: false })
   },
 }

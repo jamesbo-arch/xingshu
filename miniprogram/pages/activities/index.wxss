@@ -421,7 +421,7 @@ page { height: 100%; overflow: hidden; }
   z-index: 10;
 }
 
-/* ── 分享页签 FAB（参照广场写日记入口） ── */
+/* ── 分享页签 FAB（参照广场写故事入口） ── */
 .fab {
   position: fixed;
   right: 36rpx;
@@ -451,7 +451,7 @@ page { height: 100%; overflow: hidden; }
   background-size: contain;
 }
 
-/* 分享现场 FAB · 相机图标（白色线性，与写日记的笔图标区分） */
+/* 分享现场 FAB · 相机图标（白色线性，与写故事的笔图标区分） */
 .ic-camera-w {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23FBF7EE' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7h2.5L8 5h8l1.5 2H20a1.5 1.5 0 0 1 1.5 1.5V18a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2V8.5A1.5 1.5 0 0 1 4 7z'/%3E%3Ccircle cx='12' cy='13' r='4'/%3E%3C/svg%3E");
 }

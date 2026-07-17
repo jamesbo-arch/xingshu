@@ -18,7 +18,7 @@ exports.main = async (event, context) => {
   await db.query('UPDATE comments SET is_deleted = 1 WHERE id = ?', [commentId])
 
   if (!comments[0].parent_id) {
-    await db.query('UPDATE diaries SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?', [comments[0].diary_id])
+    await db.query('UPDATE stories SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?', [comments[0].story_id])
   }
 
   return { code: 0, msg: '删除成功' }

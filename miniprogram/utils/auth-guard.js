@@ -48,7 +48,7 @@ function isValidMember(user) {
   return until >= today
 }
 
-// 会员专享操作守卫（如写日记）：非有效会员弹窗引导至会员中心；有效会员执行 action
+// 会员专享操作守卫（如写故事）：非有效会员弹窗引导至会员中心；有效会员执行 action
 // 返回 true = 有效会员已放行；false = 已弹窗拦截
 function ensureMember(page, action) {
   const user = getApp().globalData.user || {}
@@ -60,8 +60,8 @@ function ensureMember(page, action) {
   wx.showModal({
     title: '会员专享',
     content: isGuest
-      ? '写日记是会员专享功能，请登录并开通会员后使用。'
-      : '写日记是会员专享功能，开通会员后即可记录你的醒书日记。',
+      ? '写故事是会员专享功能，请登录并开通会员后使用。'
+      : '写故事是会员专享功能，开通会员后即可记录你的醒书故事。',
     confirmText: '去开通',
     cancelText: '再想想',
     success: (res) => {

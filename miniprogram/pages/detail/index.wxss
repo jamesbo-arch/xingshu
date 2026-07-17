@@ -418,7 +418,7 @@ rich-text.content-text {
   background: rgba(69, 119, 164, 0.12);
 }
 
-/* Diary images */
+/* Story images */
 .detail-images {
   display: flex;
   flex-direction: column;
@@ -433,21 +433,6 @@ rich-text.content-text {
 }
 
 /* v2.1 会员内容墙：30% 预览渐隐 */
-.detail-content.is-truncated {
-  position: relative;
-  overflow: hidden;
-}
-
-.content-fade {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 160rpx;
-  background: linear-gradient(180deg, rgba(251, 247, 238, 0) 0%, #FBF7EE 92%);
-  pointer-events: none;
-}
-
 .member-wall {
   text-align: center;
   padding: 8rpx 40rpx 40rpx;
@@ -477,4 +462,45 @@ rich-text.content-text {
   color: #FFFCF5;
   font-size: 28rpx;
   letter-spacing: 4rpx;
+}
+
+/* v3.0 全屏会员引导墙（非会员深链打开未善选故事） */
+.member-wall-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.wall-back {
+  padding: 120rpx 32rpx 0;
+}
+
+.wall-back .nav-back-icon {
+  width: 44rpx;
+  height: 44rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.wall-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 200rpx;
+}
+
+.wall-seal {
+  width: 128rpx;
+  height: 128rpx;
+  border: 3rpx solid #B6452F;
+  border-radius: 50%;
+  color: #B6452F;
+  font-size: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40rpx;
 }

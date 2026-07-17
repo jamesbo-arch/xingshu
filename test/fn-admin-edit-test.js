@@ -1,5 +1,5 @@
 // 后台编辑/代发/ID 测试 — 对应 prd-ch3-test-cases.md AE-A01~A08（B/C/D 档）
-// 经 admin 云函数（HMAC token）。测试用户/日记以 test_ae_ 前缀，结束硬删
+// 经 admin 云函数（HMAC token）。测试用户/故事以 test_ae_ 前缀，结束硬删
 const mysql = require('mysql2/promise')
 const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
@@ -18,15 +18,15 @@ async function run() {
   const token = login.data.token
   const admin = (action, payload) => callFn('admin', { action, token, payload })
 
-  // 准备：一个已授权测试用户 + 其一篇日记
+  // 准备：一个已授权测试用户 + 其一篇故事
   await conn.query(
     "INSERT INTO users (openid, unionid, nickname, real_name, phone, identity, avatar_hue) " +
     "VALUES ('test_ae_u1','test_ae_union1','原昵称','原实名','13800000000','authed',60)")
   const [[u1]] = await conn.query("SELECT id FROM users WHERE openid = 'test_ae_u1'")
   const [dr] = await conn.query(
-    "INSERT INTO diaries (user_id,title,content,permission,created_by) VALUES (?,?,?,?,?)",
-    [u1.id, '原标题', '原正文内容', 'public', u1.id])
-  const diaryId = dr.insertId
+    "INSERT INTO stories (user_id,title,content,publish_status,created_by) VALUES (?,?,?,?,?)",
+    [u1.id, '原标题', '原正文内容', 'published', u1.id])
+  const storyId = dr.insertId
 
   await test('AE-A01 updateUser 改昵称/真实姓名/手机号 → 落库、身份不变、写审计', async () => {
     const r = await admin('updateUser', { userId: u1.id, nickname: '新昵称', realName: '新实名', phone: '13900000000' })
@@ -76,43 +76,43 @@ async function run() {
     if (u.identity !== 'authed' || u.member_from !== null || u.member_until !== null) throw new Error('改回 authed 未清空会员期')
   })
 
-  await test('AE-A03 updateDiary 改标题/正文/权限 → 落库 + content_edited_at 置位 + 审计', async () => {
-    const r = await admin('updateDiary', { id: diaryId, title: '改后标题', content: '改后正文', permission: 'member' })
+  await test('AE-A03 updateStory 改标题/正文/状态 → 落库 + content_edited_at 置位 + 审计', async () => {
+    const r = await admin('updateStory', { id: storyId, title: '改后标题', content: '改后正文', publishStatus: 'draft' })
     if (r.code !== 0) throw new Error(r.msg)
-    const [[d]] = await conn.query('SELECT title, content, permission, content_edited_at FROM diaries WHERE id = ?', [diaryId])
-    if (d.title !== '改后标题' || d.content !== '改后正文' || d.permission !== 'member') throw new Error('未落库')
+    const [[d]] = await conn.query('SELECT title, content, publish_status, content_edited_at FROM stories WHERE id = ?', [storyId])
+    if (d.title !== '改后标题' || d.content !== '改后正文' || d.publish_status !== 'draft') throw new Error('未落库')
     if (!d.content_edited_at) throw new Error('content_edited_at 未置位')
-    const [[{ c }]] = await conn.query("SELECT COUNT(*) c FROM admin_logs WHERE action='updateDiary' AND target_id=?", [String(diaryId)])
+    const [[{ c }]] = await conn.query("SELECT COUNT(*) c FROM admin_logs WHERE action='updateStory' AND target_id=?", [String(storyId)])
     if (c !== 1) throw new Error('审计缺失')
   })
 
-  await test('AE-A04 updateDiary 改标签 → diary_tags 重建', async () => {
-    const r = await admin('updateDiary', { id: diaryId, tags: ['修身为本', '日新又新'] })
+  await test('AE-A04 updateStory 改标签 → story_tags 重建', async () => {
+    const r = await admin('updateStory', { id: storyId, tags: ['修身为本', '日新又新'] })
     if (r.code !== 0) throw new Error(r.msg)
     const [rows] = await conn.query(
-      'SELECT t.name FROM diary_tags dt JOIN tags t ON t.id = dt.tag_id WHERE dt.diary_id = ? ORDER BY t.name', [diaryId])
+      'SELECT t.name FROM story_tags dt JOIN tags t ON t.id = dt.tag_id WHERE dt.story_id = ? ORDER BY t.name', [storyId])
     const names = rows.map(x => x.name)
     if (names.length !== 2 || !names.includes('修身为本') || !names.includes('日新又新')) throw new Error('标签未重建: ' + names)
   })
 
-  let newDiaryId
-  await test('AE-A05 createDiary 代发（指定 authorId）→ 归属该用户 + diary_count +1 + 审计', async () => {
-    const [[before]] = await conn.query('SELECT diary_count FROM users WHERE id = ?', [u1.id])
-    const r = await admin('createDiary', { authorId: u1.id, title: '代发标题', content: '代发正文', permission: 'public', tags: ['格物致知'] })
+  let newStoryId
+  await test('AE-A05 createStory 代发（指定 authorId）→ 归属该用户 + story_count +1 + 审计', async () => {
+    const [[before]] = await conn.query('SELECT story_count FROM users WHERE id = ?', [u1.id])
+    const r = await admin('createStory', { authorId: u1.id, title: '代发标题', content: '代发正文', publishStatus: 'published', tags: ['格物致知'] })
     if (r.code !== 0) throw new Error(r.msg)
-    newDiaryId = r.data.diary.id
-    const [[d]] = await conn.query('SELECT user_id FROM diaries WHERE id = ?', [newDiaryId])
+    newStoryId = r.data.story.id
+    const [[d]] = await conn.query('SELECT user_id FROM stories WHERE id = ?', [newStoryId])
     if (d.user_id !== u1.id) throw new Error('归属错误')
-    const [[after]] = await conn.query('SELECT diary_count FROM users WHERE id = ?', [u1.id])
-    if (after.diary_count !== before.diary_count + 1) throw new Error('diary_count 未 +1')
-    const [[{ c }]] = await conn.query("SELECT COUNT(*) c FROM admin_logs WHERE action='createDiary' AND target_id=?", [String(newDiaryId)])
+    const [[after]] = await conn.query('SELECT story_count FROM users WHERE id = ?', [u1.id])
+    if (after.story_count !== before.story_count + 1) throw new Error('story_count 未 +1')
+    const [[{ c }]] = await conn.query("SELECT COUNT(*) c FROM admin_logs WHERE action='createStory' AND target_id=?", [String(newStoryId)])
     if (c !== 1) throw new Error('审计缺失')
   })
 
-  await test('AE-A06 createDiary 校验：作者不存在 / 缺标题内容 → 拒绝', async () => {
-    const r1 = await admin('createDiary', { authorId: 999999999, title: 't', content: 'c' })
+  await test('AE-A06 createStory 校验：作者不存在 / 缺标题内容 → 拒绝', async () => {
+    const r1 = await admin('createStory', { authorId: 999999999, title: 't', content: 'c' })
     if (r1.code === 0) throw new Error('作者不存在不应通过')
-    const r2 = await admin('createDiary', { authorId: u1.id, title: '', content: 'c' })
+    const r2 = await admin('createStory', { authorId: u1.id, title: '', content: 'c' })
     if (r2.code === 0) throw new Error('缺标题不应通过')
   })
 
@@ -123,20 +123,20 @@ async function run() {
     if (r.data.user.unionid !== 'test_ae_union1') throw new Error('unionid 缺失/错误')
   })
 
-  await test('AE-A08 已编辑标记：新建代发日记 editedAt 空；被编辑日记 editedAt 非空', async () => {
-    const r = await admin('diaries', { pageSize: 100000 })  // 取全量以定位测试数据（服务端分页后）
+  await test('AE-A08 已编辑标记：新建代发故事 editedAt 空；被编辑故事 editedAt 非空', async () => {
+    const r = await admin('stories', { pageSize: 100000 })  // 取全量以定位测试数据（服务端分页后）
     if (r.code !== 0) throw new Error(r.msg)
-    const edited = r.data.list.find(d => d.id === diaryId)
-    const fresh = r.data.list.find(d => d.id === newDiaryId)
-    if (!edited || !edited.editedAt) throw new Error('被编辑日记 editedAt 应非空')
-    if (!fresh || fresh.editedAt) throw new Error('新建日记 editedAt 应为空')
+    const edited = r.data.list.find(d => d.id === storyId)
+    const fresh = r.data.list.find(d => d.id === newStoryId)
+    if (!edited || !edited.editedAt) throw new Error('被编辑故事 editedAt 应非空')
+    if (!fresh || fresh.editedAt) throw new Error('新建故事 editedAt 应为空')
   })
 
-  // 清理（diary_tags 随日记级联；先删日记/审计/用户）
-  await conn.query('DELETE FROM diary_tags WHERE diary_id IN (?, ?)', [diaryId, newDiaryId || 0])
-  await conn.query('DELETE FROM diaries WHERE id IN (?, ?)', [diaryId, newDiaryId || 0])
-  await conn.query("DELETE FROM admin_logs WHERE action IN ('updateUser','updateDiary','createDiary') AND target_id IN (?,?,?)",
-    [String(u1.id), String(diaryId), String(newDiaryId || 0)])
+  // 清理（story_tags 随故事级联；先删故事/审计/用户）
+  await conn.query('DELETE FROM story_tags WHERE story_id IN (?, ?)', [storyId, newStoryId || 0])
+  await conn.query('DELETE FROM stories WHERE id IN (?, ?)', [storyId, newStoryId || 0])
+  await conn.query("DELETE FROM admin_logs WHERE action IN ('updateUser','updateStory','createStory') AND target_id IN (?,?,?)",
+    [String(u1.id), String(storyId), String(newStoryId || 0)])
   await conn.query("DELETE FROM users WHERE openid = 'test_ae_u1'")
   await conn.end()
   console.log('\n  测试数据已清理')

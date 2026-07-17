@@ -1,7 +1,7 @@
-<view class="page-wrap paper-bg" wx:if="{{diary}}">
+<view class="page-wrap paper-bg" wx:if="{{story}}">
   <scroll-view class="content-scroll" scroll-y enhanced show-scrollbar="{{false}}">
     <view class="detail-title-wrap">
-      <text class="detail-title serif">{{diary.title}}</text>
+      <text class="detail-title serif">{{story.title}}</text>
     </view>
 
     <view class="author-row">
@@ -9,45 +9,40 @@
         <view class="avatar sm" style="background-color: {{avatarColor}};">
           <text>{{avatarInitial}}</text>
         </view>
-        <view wx:if="{{diary.authorIsMember}}" class="member-badge">
+        <view wx:if="{{story.authorIsMember}}" class="member-badge">
           <text class="member-badge-text">会</text>
         </view>
       </view>
       <view class="author-meta">
-        <text class="author-name">{{diary.author}}</text>
-        <text class="author-time">{{diary.timestamp}}</text>
+        <text class="author-name">{{story.author}}</text>
+        <text class="author-time">{{story.timestamp}}</text>
       </view>
-      <view wx:if="{{diary.permission === 'public'}}" class="perm-badge perm-public">
-        <view class="perm-ic ic-eye"></view>
-      </view>
-      <view wx:if="{{diary.permission === 'member'}}" class="perm-badge perm-member">
-        <view class="perm-ic ic-star-gold"></view>
-      </view>
-      <view wx:if="{{diary.permission === 'private'}}" class="perm-badge perm-private">
+      <view wx:if="{{story.publishStatus === 'draft'}}" class="perm-badge perm-private">
         <view class="perm-ic ic-draft"></view>
       </view>
+      <block wx:else>
+        <view class="perm-badge perm-member">
+          <view class="perm-ic ic-star-gold"></view>
+        </view>
+        <view wx:if="{{story.isFeatured}}" class="perm-badge perm-public">
+          <view class="perm-ic ic-eye"></view>
+        </view>
+      </block>
     </view>
 
-    <view class="detail-tags" wx:if="{{diary.tags && diary.tags.length}}">
-      <text wx:for="{{diary.tags}}" wx:key="*this" class="seal-tag lg">{{item}}</text>
+    <view class="detail-tags" wx:if="{{story.tags && story.tags.length}}">
+      <text wx:for="{{story.tags}}" wx:key="*this" class="seal-tag lg">{{item}}</text>
     </view>
 
-    <view class="detail-content {{diary.truncated ? 'is-truncated' : ''}}">
-      <!-- 有样式版（富文本）用 rich-text 渲染；截断（会员墙）或旧纯文本日记回退 text -->
-      <rich-text wx:if="{{diary.contentRich && !diary.truncated}}" class="content-text" nodes="{{diary.contentRich}}" user-select></rich-text>
-      <text wx:else class="content-text" user-select>{{diary.content}}</text>
-      <view wx:if="{{diary.truncated}}" class="content-fade"></view>
+    <view class="detail-content">
+      <!-- 有样式版（富文本）用 rich-text 渲染；旧纯文本故事回退 text -->
+      <rich-text wx:if="{{story.contentRich}}" class="content-text" nodes="{{story.contentRich}}" user-select></rich-text>
+      <text wx:else class="content-text" user-select>{{story.content}}</text>
     </view>
 
-    <view wx:if="{{diary.truncated}}" class="member-wall">
-      <text class="member-wall-text serif">完整内容向会员开放</text>
-      <text class="member-wall-hint">会员费不只是看内容，更是你对这份认真的承诺</text>
-      <view class="member-wall-btn" bindtap="onGoMember">了解会员</view>
-    </view>
-
-    <view wx:if="{{diary.images && diary.images.length}}" class="detail-images">
+    <view wx:if="{{story.images && story.images.length}}" class="detail-images">
       <image
-        wx:for="{{diary.images}}"
+        wx:for="{{story.images}}"
         wx:key="*this"
         class="detail-image"
         src="{{item}}"
@@ -59,14 +54,14 @@
 
     <view class="seal-stamp-wrap">
       <view class="seal-stamp">
-        <text class="seal-stamp-text serif">{{diary.author}}</text>
+        <text class="seal-stamp-text serif">{{story.author}}</text>
       </view>
     </view>
 
     <view class="comments-section">
       <view class="comments-header">
         <text class="comments-title">评论</text>
-        <text class="comments-count ink-3">· {{diary.comments}}</text>
+        <text class="comments-count ink-3">· {{story.comments}}</text>
       </view>
 
       <view wx:if="{{comments.length === 0}}" class="comments-empty">
@@ -116,12 +111,12 @@
     </view>
     <view class="bar-actions">
       <view class="bar-action" bindtap="onLike">
-        <view class="bar-action-icon {{diary.isLiked ? 'ic-heart-on' : 'ic-heart'}}"></view>
-        <text class="bar-action-count {{diary.isLiked ? 'liked' : ''}}">{{diary.likes}}</text>
+        <view class="bar-action-icon {{story.isLiked ? 'ic-heart-on' : 'ic-heart'}}"></view>
+        <text class="bar-action-count {{story.isLiked ? 'liked' : ''}}">{{story.likes}}</text>
       </view>
       <view class="bar-action" bindtap="onFav">
-        <view class="bar-action-icon {{diary.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
-        <text class="bar-action-count {{diary.isFavorited ? 'faved' : ''}}">{{diary.favorites}}</text>
+        <view class="bar-action-icon {{story.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
+        <text class="bar-action-count {{story.isFavorited ? 'faved' : ''}}">{{story.favorites}}</text>
       </view>
       <view class="bar-action" bindtap="onShare">
         <view class="bar-action-icon ic-share"></view>
@@ -129,7 +124,7 @@
     </view>
   </view>
 
-  <poster-sheet visible="{{showPosterSheet}}" diary="{{diary}}" bind:close="onPosterClose"></poster-sheet>
+  <poster-sheet visible="{{showPosterSheet}}" story="{{story}}" bind:close="onPosterClose"></poster-sheet>
 
   <view wx:if="{{showCommentInput}}" class="comment-overlay">
     <view class="comment-overlay-mask" bindtap="onHideCommentInput"></view>
@@ -145,7 +140,20 @@
   </view>
 </view>
 
-<!-- v2.3 微信登录弹窗：未登录访问详情时在本页拉起（diary 为空时也需可见，故置于根节点之外） -->
+<!-- v3.0 会员引导墙：非会员打开未善选的会员故事（分享/深链直达）时全屏展示 -->
+<view class="page-wrap paper-bg member-wall-page" wx:if="{{!story && memberWall}}">
+  <view class="wall-back" bindtap="onBack">
+    <view class="nav-back-icon ic-back"></view>
+  </view>
+  <view class="member-wall wall-center">
+    <view class="wall-seal serif">醒</view>
+    <text class="member-wall-text serif">这是一篇会员专享故事</text>
+    <text class="member-wall-hint">开通会员后即可阅读全部会员故事，也开始记录属于你自己的故事</text>
+    <view class="member-wall-btn" bindtap="onGoMember">了解会员</view>
+  </view>
+</view>
+
+<!-- v2.3 微信登录弹窗：未登录访问详情时在本页拉起（story 为空时也需可见，故置于根节点之外） -->
 <login-sheet
   visible="{{showLoginSheet}}"
   subtitle="你刚刚被打动了，对吗？登录后为喜欢的文字点赞、收藏，也开始记录属于你自己的故事。"

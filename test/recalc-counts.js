@@ -1,4 +1,4 @@
-// 校准日记计数器 — 把 diaries 表的 like_count/fav_count/comment_count/share_count
+// 校准故事计数器 — 把 stories 表的 like_count/fav_count/comment_count/share_count
 // 按 interactions / comments 的实际行数回填，消除种子/历史造成的"虚高"数字。
 //
 // 计数口径（与云函数保持一致）：
@@ -17,19 +17,19 @@ const apply = process.argv.includes('--apply')
 async function main() {
   const c = await mysql.createConnection(cfg)
   try {
-    const [diaries] = await c.query(
-      'SELECT id, title, like_count, fav_count, comment_count, share_count FROM diaries'
+    const [stories] = await c.query(
+      'SELECT id, title, like_count, fav_count, comment_count, share_count FROM stories'
     )
     let changed = 0
-    for (const d of diaries) {
+    for (const d of stories) {
       const [[lk]] = await c.query(
-        "SELECT COUNT(*) n FROM interactions WHERE target_type='diary' AND target_id=? AND action='like'", [d.id])
+        "SELECT COUNT(*) n FROM interactions WHERE target_type='story' AND target_id=? AND action='like'", [d.id])
       const [[fv]] = await c.query(
-        "SELECT COUNT(*) n FROM interactions WHERE target_type='diary' AND target_id=? AND action='favorite'", [d.id])
+        "SELECT COUNT(*) n FROM interactions WHERE target_type='story' AND target_id=? AND action='favorite'", [d.id])
       const [[sh]] = await c.query(
-        "SELECT COUNT(*) n FROM interactions WHERE target_type='diary' AND target_id=? AND action='share'", [d.id])
+        "SELECT COUNT(*) n FROM interactions WHERE target_type='story' AND target_id=? AND action='share'", [d.id])
       const [[cm]] = await c.query(
-        "SELECT COUNT(*) n FROM comments WHERE diary_id=? AND is_deleted=0 AND parent_id IS NULL", [d.id])
+        "SELECT COUNT(*) n FROM comments WHERE story_id=? AND is_deleted=0 AND parent_id IS NULL", [d.id])
 
       const next = { like_count: lk.n, fav_count: fv.n, comment_count: cm.n, share_count: sh.n }
       const diff = ['like_count', 'fav_count', 'comment_count', 'share_count'].some(k => d[k] !== next[k])
@@ -40,13 +40,13 @@ async function main() {
                   `评 ${d.comment_count}→${next.comment_count}  享 ${d.share_count}→${next.share_count}`)
       if (apply) {
         await c.query(
-          'UPDATE diaries SET like_count=?, fav_count=?, comment_count=?, share_count=? WHERE id=?',
+          'UPDATE stories SET like_count=?, fav_count=?, comment_count=?, share_count=? WHERE id=?',
           [next.like_count, next.fav_count, next.comment_count, next.share_count, d.id])
       }
     }
     console.log('')
     if (!changed) console.log('所有计数器均已与实际数据一致，无需校准。')
-    else console.log(apply ? `已校准 ${changed} 篇日记的计数器。` : `${changed} 篇日记计数器与实际不符（上为预览，加 --apply 写库）。`)
+    else console.log(apply ? `已校准 ${changed} 篇故事的计数器。` : `${changed} 篇故事计数器与实际不符（上为预览，加 --apply 写库）。`)
   } finally {
     await c.end()
   }

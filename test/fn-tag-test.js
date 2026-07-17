@@ -1,10 +1,10 @@
 // 标签维护测试 — 对应 test/prd-ch3-test-cases.md TAG-A01 ~ TAG-A03（PRD 3.1.1）
-// 测试标签以 test_tag_ 前缀创建，结束时硬删（含关联 diary_tags 与测试日记）
+// 测试标签以 test_tag_ 前缀创建，结束时硬删（含关联 story_tags 与测试故事）
 const mysql = require('mysql2/promise')
 const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
-const OPENID = 'mock_yanqiu' // 种子会员用户，仅用于建关联日记（写日记为会员专享）
+const OPENID = 'mock_yanqiu' // 种子会员用户，仅用于建关联故事（写故事为会员专享）
 
 async function run() {
   console.log('=== 标签维护测试（TAG-A01~A03）===\n')
@@ -16,7 +16,7 @@ async function run() {
     catch (e) { console.log(`  FAIL  ${name}: ${e.message}`); failed++ }
   }
 
-  let tagId, diaryId
+  let tagId, storyId
   await test('TAG-A01 getTags 返回启用标签名数组，停用标签不出现', async () => {
     const r = await callFn('getTags', {}, OPENID)
     if (r.code !== 0) throw new Error(r.msg)
@@ -40,18 +40,18 @@ async function run() {
     if (long.code === 0) throw new Error('超过16字不应通过')
   })
 
-  await test('TAG-A03 updateTag 改名后日记关联不丢；停用后不再出现在 getTags', async () => {
-    const d = await callFn('createDiary', {
-      title: '标签回环测试日记', content: '本条由 fn-tag-test 创建，若残留请删除',
-      tags: ['test_tag_rn'], permission: 'private',
+  await test('TAG-A03 updateTag 改名后故事关联不丢；停用后不再出现在 getTags', async () => {
+    const d = await callFn('createStory', {
+      title: '标签回环测试故事', content: '本条由 fn-tag-test 创建，若残留请删除',
+      tags: ['test_tag_rn'], publishStatus: 'draft',
     }, OPENID)
     if (d.code !== 0) throw new Error(d.msg)
-    diaryId = d.data.id
+    storyId = d.data.id
     const r = await callFn('updateTag', { tagId, name: 'test_tag_rn2' }, OPENID)
     if (r.code !== 0 || r.data.name !== 'test_tag_rn2') throw new Error('改名未生效')
     const [[link]] = await conn.query(
-      'SELECT COUNT(*) c FROM diary_tags WHERE diary_id = ? AND tag_id = ?', [diaryId, tagId])
-    if (link.c !== 1) throw new Error('改名后 diary_tags 关联丢失')
+      'SELECT COUNT(*) c FROM story_tags WHERE story_id = ? AND tag_id = ?', [storyId, tagId])
+    if (link.c !== 1) throw new Error('改名后 story_tags 关联丢失')
     const off = await callFn('updateTag', { tagId, isActive: 0 }, OPENID)
     if (off.code !== 0) throw new Error(off.msg)
     const g = await callFn('getTags', {}, OPENID)
@@ -59,9 +59,9 @@ async function run() {
   })
 
   // 清理
-  if (diaryId) {
-    await conn.query('DELETE FROM diary_tags WHERE diary_id = ?', [diaryId])
-    await conn.query('DELETE FROM diaries WHERE id = ?', [diaryId])
+  if (storyId) {
+    await conn.query('DELETE FROM story_tags WHERE story_id = ?', [storyId])
+    await conn.query('DELETE FROM stories WHERE id = ?', [storyId])
   }
   await conn.query("DELETE FROM tags WHERE name LIKE 'test_tag_%'")
   await conn.end()

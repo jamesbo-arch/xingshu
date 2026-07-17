@@ -44,8 +44,8 @@ Page({
       { key: 'secret', label: '保密' },
     ],
     benefits: [
-      { title: '查看全部醒书日记' },
-      { title: '日记点赞评论收藏转发' },
+      { title: '查看全部会员故事' },
+      { title: '故事点赞评论收藏转发' },
       { title: '报名参加各类醒书活动' },
       { title: '参加知行社线下沟通交流' },
     ],
@@ -81,7 +81,7 @@ Page({
     user.memberUntil = p ? p.str : ''
     user.daysLeft = daysUntil(raw.member_until || user.memberUntil)
     // 兜底：getUserInfo 未部署/未返回 stats 时也不让统计绑定落到 undefined
-    if (!user.stats) user.stats = { diaries: 0, likes: 0, favorites: 0, comments: 0, shares: 0 }
+    if (!user.stats) user.stats = { stories: 0, likes: 0, favorites: 0, comments: 0, shares: 0 }
     // 续费(会员)与开通(非会员)文案区分
     const isRenew = user.identity === 'member'
     this.setData({

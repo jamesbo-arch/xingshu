@@ -321,7 +321,7 @@ button { font-family: inherit; }
   flex-shrink: 0;
 }
 .tag-order   { background: var(--gold-soft); color: var(--gold-deep); }
-.tag-diary   { background: rgba(69, 119, 164, 0.12); color: var(--blue-deep); }
+.tag-story   { background: rgba(69, 119, 164, 0.12); color: var(--blue-deep); }
 .tag-user    { background: rgba(91,143,108,0.12); color: var(--success); }
 .tag-warning { background: rgba(192,147,83,0.16); color: var(--warn); }
 .activity-time {

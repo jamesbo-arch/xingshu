@@ -1,4 +1,4 @@
-function diary(item) {
+function story(item) {
   if (!item) return item
   return {
     ...item,
@@ -10,6 +10,8 @@ function diary(item) {
     favorites: item.fav_count != null ? item.fav_count : item.favorites,
     comments: item.comment_count != null ? item.comment_count : item.comments,
     shares: item.share_count != null ? item.share_count : item.shares,
+    publishStatus: item.publish_status || item.publishStatus || 'published',
+    isFeatured: !!(item.is_featured != null ? item.is_featured : item.isFeatured),
     time: item.created_at || item.time,
     timestamp: absTime(item.created_at || item.timestamp, true),  // 详情：年月日 时分
     dateText: absTime(item.created_at || item.time || item.timestamp, false),  // 海报：年月日
@@ -70,4 +72,4 @@ function formatTime(t) {
   return s.substring(0, 16)
 }
 
-module.exports = { diary, user, comment, formatTime }
+module.exports = { story, user, comment, formatTime }

@@ -1,5 +1,5 @@
 // 醒书活动云函数 — action 路由：list / detail / signup / cancelSignup（PRD v2.1 MVP）
-// 活动仅需微信授权（openid 存在即可），与日记的手机号验证相互独立
+// 活动仅需微信授权（openid 存在即可），与故事的登录验证相互独立
 const cloud = require('wx-server-sdk')
 const db = require('./db')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -169,7 +169,7 @@ const handlers = {
     return { id: r.insertId }
   },
 
-  // 分享列表：所有登录用户可看（详情页本身有登录门槛），分页同 getDiaryList 形状
+  // 分享列表：所有登录用户可看（详情页本身有登录门槛），分页同 getStoryList 形状
   async postList({ id, page = 1, pageSize = 10 } = {}, openid) {
     page = Math.max(1, parseInt(page, 10) || 1)
     pageSize = Math.min(50, Math.max(1, parseInt(pageSize, 10) || 10))

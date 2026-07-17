@@ -67,6 +67,22 @@
   font-weight: 600;
 }
 
+.action-draft {
+  flex: 1;
+  padding: 22rpx 0;
+  text-align: center;
+  background: #F5EFE2;
+  border: 1.5px solid rgba(126, 102, 64, 0.25);
+  border-radius: 28rpx;
+  font-size: 30rpx;
+  color: #6B6459;
+  font-weight: 600;
+}
+
+.action-draft.disabled {
+  opacity: 0.5;
+}
+
 .action-publish {
   flex: 1;
   padding: 22rpx 0;
@@ -301,74 +317,12 @@
 }
 
 /* Permission options */
-.perm-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-}
 
-.perm-option {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 20rpx;
-  padding: 20rpx 24rpx;
-  background: #F5EFE2;
-  border-radius: 12px;
-  border: 1.5px solid transparent;
-}
-
-.perm-option.selected {
-  background: #FFFCF5;
-  border-color: rgba(126, 102, 64, 0.25);
-}
-
-.perm-option-icon {
-  width: 40rpx;
-  height: 40rpx;
-  flex-shrink: 0;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-}
-
-.perm-option-info {
-  flex: 1;
-}
-
-.perm-option-label {
-  display: block;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #2A2723;
-}
-
-.perm-option-desc {
+.publish-hint {
   display: block;
   font-size: 24rpx;
   color: #A8A39B;
-}
-
-.perm-check {
-  width: 32rpx;
-  height: 32rpx;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-}
-
-/* 非会员：会员专属选项置灰、不可选，右侧标「会员专属」 */
-.perm-option.perm-locked {
-  opacity: 0.55;
-}
-.perm-lock-tag {
-  flex-shrink: 0;
-  font-size: 20rpx;
-  color: #9A7E4F;
-  background: #F4ECD9;
-  padding: 4rpx 12rpx;
-  border-radius: 999px;
-  letter-spacing: 0.5px;
+  line-height: 1.6;
 }
 
 .compose-bottom-pad {

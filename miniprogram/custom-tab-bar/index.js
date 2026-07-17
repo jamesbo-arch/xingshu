@@ -11,7 +11,7 @@ Component({
       { pagePath: 'pages/square/index', text: '醒书广场', ic: 'nav-square' },
       { pagePath: 'pages/collections/index', text: '我的收藏', ic: 'nav-collect' },
       { pagePath: 'pages/activities/index', text: '醒书活动', ic: 'nav-act' },
-      { pagePath: 'pages/mine/index', text: '我的日记', ic: 'nav-mine' },
+      { pagePath: 'pages/mine/index', text: '我的故事', ic: 'nav-mine' },
       { pagePath: 'pages/member/index', text: '会员中心', ic: 'nav-member' },
     ],
   },

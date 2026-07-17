@@ -7,13 +7,15 @@
 #       ③ 生产部署前已准备好根目录 .env.prod（连 xingshu_prod）。
 # 用法：bash scripts/deploy-functions.sh                部署全部到 dev
 #       bash scripts/deploy-functions.sh --prod         部署全部到 prod
-#       bash scripts/deploy-functions.sh --prod admin getDiaryList   仅部分函数到 prod
+#       bash scripts/deploy-functions.sh --prod admin getStoryList   仅部分函数到 prod
 #
 # 注意：generateMiniCode 依赖 openapi 权限（wxacode.getUnlimited），CLI 不一定应用其
 #       config.json 的权限——若扫码报 -604101，请改用微信开发者工具对该函数「上传并部署」。
+#
+# 环境映射（2026-07-13 两环境对调后）：dev=开发/体验槽位 xingshu-prd；prod=release 槽位（原免费开发环境）。
 set -u
-DEV_ENV="cloud1-d9gbozhfp4a6c50c0"
-PROD_ENV="cloud1-xingshu-prd-d1cev0fcca864"
+DEV_ENV="cloud1-xingshu-prd-d1cev0fcca864"
+PROD_ENV="cloud1-d9gbozhfp4a6c50c0"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DIR="$ROOT/miniprogram/cloudfunctions"
 

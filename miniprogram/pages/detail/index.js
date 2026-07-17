@@ -1,13 +1,13 @@
 const app = getApp()
 const { hueToColor, getInitial } = require('../../utils/color')
-const diaryApi = require('../../api/diary')
+const storyApi = require('../../api/story')
 const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
 const { lock, throttle } = require('../../utils/guard')
 
 Page({
   data: {
-    diary: null,
+    story: null,
     comments: [],
     commentPage: 1,
     avatarColor: '#8B7A4A',
@@ -17,6 +17,7 @@ Page({
     replyTo: null,
     showPosterSheet: false,
     showLoginSheet: false,
+    memberWall: false, // 非会员打开未善选故事：全屏会员引导
     userAvatarColor: '#8B7A4A',
     userAvatarInitial: '?',
   },
@@ -28,68 +29,74 @@ Page({
       const m = decodeURIComponent(options.scene).match(/(?:^|&)d=(\d+)/)
       if (m) id = parseInt(m[1], 10)
     }
-    if (id) this._loadDiary(id)
+    if (id) this._loadStory(id)
   },
 
   onShow() {
-    if (this.data.diary) this._loadDiary(this.data.diary.id)
+    if (this.data.story) this._loadStory(this.data.story.id)
   },
 
-  // 微信「…」菜单转发给好友：分享当前日记，带分享人 ID（s=）延续推荐人机制
+  // 微信「…」菜单转发给好友：分享当前故事，带分享人 ID（s=）延续推荐人机制
   onShareAppMessage() {
-    const d = this.data.diary || {}
+    const d = this.data.story || {}
     const sharerId = (app.globalData.user || {}).id
     return {
-      title: d.title || '醒书日记',
+      title: d.title || '醒书故事',
       path: `/pages/detail/index?id=${d.id}${sharerId ? '&s=' + sharerId : ''}`,
     }
   },
   // 分享到朋友圈
   onShareTimeline() {
-    const d = this.data.diary || {}
+    const d = this.data.story || {}
     const sharerId = (app.globalData.user || {}).id
     return {
-      title: d.title || '醒书日记',
+      title: d.title || '醒书故事',
       query: `id=${d.id}${sharerId ? '&s=' + sharerId : ''}`,
     }
   },
 
-  async _loadDiary(id) {
+  async _loadStory(id) {
     // 详情与评论并行拉取，避免两次云函数往返串行（首屏打开慢的主因）
     const [res, commentsData] = await Promise.all([
-      diaryApi.getDetailRaw(id),
+      storyApi.getDetailRaw(id),
       socialApi.getComments(id, 1),
     ])
-    // v2.3：未登录 → 原页拉起微信登录弹窗，登录成功后重载本日记
+    // v2.3：未登录 → 原页拉起微信登录弹窗，登录成功后重载本故事
     if (res.code === -3) {
       this._pendingId = id
       this.setData({ showLoginSheet: true })
       return
     }
+    // v3.0：非会员打开未善选的会员故事（分享/深链直达）→ 全屏会员引导墙
+    if (res.code === -2) {
+      this.setData({ memberWall: true, story: null })
+      wx.setNavigationBarTitle({ title: '故事' })
+      return
+    }
     if (res.code !== 0 || !res.data) {
-      wx.showToast({ title: res.msg || '日记不存在', icon: 'none', duration: 1500 })
+      wx.showToast({ title: res.msg || '故事不存在', icon: 'none', duration: 1500 })
       setTimeout(() => this._goBack(), 1200)
       return
     }
     const raw = res.data
-    const diary = mapper.diary(raw)
+    const story = mapper.story(raw)
     const comments = commentsData ? commentsData.list.map(mapper.comment) : []
     const user = app.globalData.user || {}
 
     this.setData({
-      diary,
+      story,
       comments,
       commentPage: 2,
-      avatarColor: hueToColor(diary.avatarHue || 60),
-      avatarInitial: getInitial(diary.author || '?'),
+      avatarColor: hueToColor(story.avatarHue || 60),
+      avatarInitial: getInitial(story.author || '?'),
       userAvatarColor: hueToColor(user.avatarHue || user.avatar_hue || 60),
       userAvatarInitial: getInitial(user.nickname || '?'),
     })
-    wx.setNavigationBarTitle({ title: '日记' })
+    wx.setNavigationBarTitle({ title: '故事' })
   },
 
   onPreviewImage(e) {
-    const images = this.data.diary.images || []
+    const images = this.data.story.images || []
     wx.previewImage({ current: images[e.currentTarget.dataset.index], urls: images })
   },
 
@@ -97,12 +104,12 @@ Page({
 
   onLike() {
     return lock(this, 'like', async () => {
-      const diary = this.data.diary
-      if (!diary) return
-      const result = await socialApi.toggleLike(diary.id, 'diary')
+      const story = this.data.story
+      if (!story) return
+      const result = await socialApi.toggleLike(story.id, 'story')
       if (result) {
         this.setData({
-          diary: { ...diary, isLiked: result.liked, likes: diary.likes + (result.liked ? 1 : -1) }
+          story: { ...story, isLiked: result.liked, likes: story.likes + (result.liked ? 1 : -1) }
         })
       }
     })
@@ -110,13 +117,13 @@ Page({
 
   onFav() {
     return lock(this, 'fav', async () => {
-      const diary = this.data.diary
-      if (!diary) return
-      const result = await socialApi.toggleFav(diary.id)
+      const story = this.data.story
+      if (!story) return
+      const result = await socialApi.toggleFav(story.id)
       if (result) {
         wx.showToast({ title: result.favorited ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
         this.setData({
-          diary: { ...diary, isFavorited: result.favorited, favorites: diary.favorites + (result.favorited ? 1 : -1) }
+          story: { ...story, isFavorited: result.favorited, favorites: story.favorites + (result.favorited ? 1 : -1) }
         })
       }
     })
@@ -137,13 +144,13 @@ Page({
     return lock(this, 'comment', async () => {
       const text = this.data.commentInput.trim()
       if (!text) return
-      const diary = this.data.diary
+      const story = this.data.story
       const replyTo = this.data.replyTo
-      const result = await socialApi.createComment(diary.id, text, replyTo ? replyTo.id : undefined)
+      const result = await socialApi.createComment(story.id, text, replyTo ? replyTo.id : undefined)
       if (!result) return
       const mapped = { ...mapper.comment(result), isMine: true }
       if (replyTo) {
-        // 二级回复：并入所属评论的 replies（后端不计入日记评论数，故 diary.comments 不变）
+        // 二级回复：并入所属评论的 replies（后端不计入故事评论数，故 story.comments 不变）
         const comments = this.data.comments.map(c => {
           if (c.id !== replyTo.id) return c
           return { ...c, replies: [...(c.replies || []), mapped] }
@@ -154,7 +161,7 @@ Page({
         this.setData({
           commentInput: '', showCommentInput: false,
           comments: [mapped, ...this.data.comments],
-          diary: { ...diary, comments: diary.comments + 1 },
+          story: { ...story, comments: story.comments + 1 },
         })
         wx.showToast({ title: '评论已发布', icon: 'none', duration: 1500 })
       }
@@ -172,7 +179,7 @@ Page({
     })
   },
 
-  // 删除自己的二级回复：仅从所属评论的 replies 移除（日记评论数不受影响）
+  // 删除自己的二级回复：仅从所属评论的 replies 移除（故事评论数不受影响）
   onDeleteReply(e) {
     const { id, parent } = e.currentTarget.dataset
     return lock(this, 'delReply' + id, async () => {
@@ -196,11 +203,11 @@ Page({
   // v2.3 登录弹窗：未登录时不展示内容，取消登录则返回上一页
   onLoginClose() {
     this.setData({ showLoginSheet: false })
-    if (!this.data.diary) this._goBack()
+    if (!this.data.story) this._goBack()
   },
   onLoginSuccess() {
     this.setData({ showLoginSheet: false })
-    if (this._pendingId) this._loadDiary(this._pendingId)
+    if (this._pendingId) this._loadStory(this._pendingId)
   },
 
   onShare() { this.setData({ showPosterSheet: true }) },

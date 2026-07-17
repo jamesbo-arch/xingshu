@@ -44,7 +44,7 @@ async function run() {
     if (r.data.total !== c) throw new Error(`total=${r.data.total}，库内 ${c}`)
     const u = r.data.list[0]
     // A档：互动合计需 favorites/comments/shares + lastActive/realName（列表展示对齐）
-    for (const k of ['id', 'nickname', 'identity', 'avatarHue', 'diaries', 'likes',
+    for (const k of ['id', 'nickname', 'identity', 'avatarHue', 'stories', 'likes',
                      'favorites', 'comments', 'shares', 'lastActive', 'realName', 'registeredAt']) {
       if (!(k in u)) throw new Error(`缺少字段 ${k}`)
     }
@@ -56,7 +56,7 @@ async function run() {
     if (r.data.list.some(u => u.identity !== 'member')) throw new Error('筛选失效')
   })
 
-  await test('users/diaries 服务端分页：page/pageSize/total 返回且切片正确', async () => {
+  await test('users/stories 服务端分页：page/pageSize/total 返回且切片正确', async () => {
     const r = await admin('users', { page: 1, pageSize: 2 })
     if (r.code !== 0) throw new Error(r.msg)
     if (r.data.page !== 1 || r.data.pageSize !== 2) throw new Error('分页字段缺失')
@@ -68,13 +68,13 @@ async function run() {
       const p1 = r.data.list.map(u => u.id), p2 = r2.data.list.map(u => u.id)
       if (p2.some(id => p1.includes(id))) throw new Error('第 2 页与第 1 页重叠')
     }
-    const d = await admin('diaries', { page: 1, pageSize: 3 })
-    if (d.data.page !== 1 || d.data.pageSize !== 3 || typeof d.data.total !== 'number') throw new Error('diaries 分页字段缺失')
-    if (d.data.list.length > 3) throw new Error('diaries page1 应 ≤3 条')
+    const d = await admin('stories', { page: 1, pageSize: 3 })
+    if (d.data.page !== 1 || d.data.pageSize !== 3 || typeof d.data.total !== 'number') throw new Error('stories 分页字段缺失')
+    if (d.data.list.length > 3) throw new Error('stories page1 应 ≤3 条')
   })
 
-  await test('diaries 列表含 tags 数组与作者', async () => {
-    const r = await admin('diaries')
+  await test('stories 列表含 tags 数组与作者', async () => {
+    const r = await admin('stories')
     if (r.code !== 0) throw new Error(r.msg)
     const d = r.data.list[0]
     if (!Array.isArray(d.tags) || !d.author || !d.createdAt) throw new Error('形状不符: ' + JSON.stringify(Object.keys(d)))
@@ -83,7 +83,7 @@ async function run() {
   await test('kpi 五项指标齐全', async () => {
     const r = await admin('kpi')
     if (r.code !== 0) throw new Error(r.msg)
-    for (const k of ['users', 'members', 'diaries', 'interactions', 'revenue']) {
+    for (const k of ['users', 'members', 'stories', 'interactions', 'revenue']) {
       if (typeof r.data[k].value !== 'number') throw new Error(`${k}.value 缺失`)
     }
   })
@@ -100,62 +100,62 @@ async function run() {
     if (!r.data.length || !r.data[0].text || !r.data[0].type) throw new Error('形状不符')
   })
 
-  // 删除闭环：创建测试日记（含评论、点赞）→ admin 删除 → 校验联动清理
-  let diaryId = null
-  await test('deleteDiary 删除日记并联动清理互动数据', async () => {
-    const created = await callFn('createDiary', {
-      title: 'admin测试日记', content: '待删除', tags: [], permission: 'private',
+  // 删除闭环：创建测试故事（含评论、点赞）→ admin 删除 → 校验联动清理
+  let storyId = null
+  await test('deleteStory 删除故事并联动清理互动数据', async () => {
+    const created = await callFn('createStory', {
+      title: 'admin测试故事', content: '待删除', tags: [], publishStatus: 'draft',
     }, 'mock_yanqiu')
-    diaryId = created.data.id
-    await callFn('toggleLike', { diaryId }, 'mock_me')
-    await callFn('createComment', { diaryId, content: '测试评论' }, 'mock_me')
+    storyId = created.data.id
+    await callFn('toggleLike', { storyId }, 'mock_me')
+    await callFn('createComment', { storyId, content: '测试评论' }, 'mock_me')
 
-    const r = await admin('deleteDiary', { id: diaryId })
+    const r = await admin('deleteStory', { id: storyId })
     if (r.code !== 0) throw new Error(r.msg)
 
     const conn = await mysql.createConnection(DB)
-    const [[d]] = await conn.query('SELECT status FROM diaries WHERE id = ?', [diaryId])
-    const [[{ c: inter }]] = await conn.query("SELECT COUNT(*) c FROM interactions WHERE target_type='diary' AND target_id = ?", [diaryId])
-    const [[{ c: cmts }]] = await conn.query('SELECT COUNT(*) c FROM comments WHERE diary_id = ? AND is_deleted = 0', [diaryId])
-    const [[{ c: logs }]] = await conn.query("SELECT COUNT(*) c FROM admin_logs WHERE action='deleteDiary' AND target_id = ?", [String(diaryId)])
+    const [[d]] = await conn.query('SELECT status FROM stories WHERE id = ?', [storyId])
+    const [[{ c: inter }]] = await conn.query("SELECT COUNT(*) c FROM interactions WHERE target_type='story' AND target_id = ?", [storyId])
+    const [[{ c: cmts }]] = await conn.query('SELECT COUNT(*) c FROM comments WHERE story_id = ? AND is_deleted = 0', [storyId])
+    const [[{ c: logs }]] = await conn.query("SELECT COUNT(*) c FROM admin_logs WHERE action='deleteStory' AND target_id = ?", [String(storyId)])
     await conn.end()
-    if (d.status !== 'deleted') throw new Error('日记未删除')
+    if (d.status !== 'deleted') throw new Error('故事未删除')
     if (inter !== 0) throw new Error(`互动残留 ${inter} 条`)
     if (cmts !== 0) throw new Error(`评论残留 ${cmts} 条`)
     if (logs !== 1) throw new Error('admin_logs 未记录')
   })
 
-  // 批量删除闭环：创建 2 篇 → deleteDiaries（含一个无效 ID）→ 校验成败分账
+  // 批量删除闭环：创建 2 篇 → deleteStories（含一个无效 ID）→ 校验成败分账
   const batchIds = []
-  await test('deleteDiaries 批量删除并汇总成败', async () => {
+  await test('deleteStories 批量删除并汇总成败', async () => {
     for (let i = 0; i < 2; i++) {
-      const c = await callFn('createDiary', {
-        title: `admin批量测试${i}`, content: '待批量删除', tags: [], permission: 'private',
+      const c = await callFn('createStory', {
+        title: `admin批量测试${i}`, content: '待批量删除', tags: [], publishStatus: 'draft',
       }, 'mock_yanqiu')
       batchIds.push(c.data.id)
     }
-    const r = await admin('deleteDiaries', { ids: [...batchIds, 99999999] })
+    const r = await admin('deleteStories', { ids: [...batchIds, 99999999] })
     if (r.code !== 0) throw new Error(r.msg)
     if (r.data.deleted.length !== 2) throw new Error(`期望删除 2 篇，实际 ${r.data.deleted.length}`)
     if (r.data.failed.length !== 1) throw new Error(`期望失败 1 篇（无效ID），实际 ${r.data.failed.length}`)
     const conn = await mysql.createConnection(DB)
-    const [rows] = await conn.query('SELECT status FROM diaries WHERE id IN (?, ?)', batchIds)
+    const [rows] = await conn.query('SELECT status FROM stories WHERE id IN (?, ?)', batchIds)
     await conn.end()
-    if (rows.some(x => x.status !== 'deleted')) throw new Error('存在未删除的日记')
+    if (rows.some(x => x.status !== 'deleted')) throw new Error('存在未删除的故事')
   })
 
   // 硬删测试数据
   if (batchIds.length) {
     const conn = await mysql.createConnection(DB)
-    await conn.query('DELETE FROM diaries WHERE id IN (?, ?)', batchIds)
-    await conn.execute("DELETE FROM admin_logs WHERE action='deleteDiaries'")
+    await conn.query('DELETE FROM stories WHERE id IN (?, ?)', batchIds)
+    await conn.execute("DELETE FROM admin_logs WHERE action='deleteStories'")
     await conn.end()
   }
-  if (diaryId) {
+  if (storyId) {
     const conn = await mysql.createConnection(DB)
-    await conn.execute('DELETE FROM comments WHERE diary_id = ?', [diaryId])
-    await conn.execute('DELETE FROM diaries WHERE id = ?', [diaryId])
-    await conn.execute("DELETE FROM admin_logs WHERE action='deleteDiary' AND target_id = ?", [String(diaryId)])
+    await conn.execute('DELETE FROM comments WHERE story_id = ?', [storyId])
+    await conn.execute('DELETE FROM stories WHERE id = ?', [storyId])
+    await conn.execute("DELETE FROM admin_logs WHERE action='deleteStory' AND target_id = ?", [String(storyId)])
     await conn.end()
     console.log('\n  测试数据已清理')
   }

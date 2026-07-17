@@ -92,7 +92,11 @@
       "Bash(git commit -m 'chore: 开发者工具自动写入的编译选项（minifyWXML/swc/editorSetting 等） *)",
       "Bash(git commit -m 'docs: 新增醒书日记四方旅程图设计文档 *)",
       "Bash(git commit -m 'docs: M1.1/M1.2 完成 — 脏文件入库核验记录 + 头像上传核验关闭 *)",
-      "Bash(xargs grep -l 'createRouter')"
+      "Bash(xargs grep -l 'createRouter')",
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)",
+      "WebFetch(domain:lbs.qq.com)",
+      "Bash(node scripts/backup-db.js)"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",

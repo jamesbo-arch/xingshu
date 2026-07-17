@@ -2,7 +2,7 @@
   <view class="pp-box">
     <text class="pp-title serif">隐私保护提示</text>
     <view class="pp-body">
-      <text>为向你提供登录、发布日记、活动报名等服务，我们需要按</text>
+      <text>为向你提供登录、发布故事、活动报名等服务，我们需要按</text>
       <text class="pp-link" data-type="agreement" catchtap="onOpenDoc">《用户协议》</text>
       <text>与</text>
       <text class="pp-link" data-type="privacy" catchtap="onOpenDoc">《隐私政策》</text>

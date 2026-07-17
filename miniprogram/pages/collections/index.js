@@ -1,5 +1,5 @@
 const app = getApp()
-const diaryApi = require('../../api/diary')
+const storyApi = require('../../api/story')
 const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const filterUtil = require('../../utils/filter')
@@ -8,7 +8,7 @@ const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
 
 Page({
   data: {
-    diaries: [],
+    stories: [],
     refreshing: false,
     search: '',
     page: 1,
@@ -17,7 +17,7 @@ Page({
     showMemberGuard: false,
     showLoginSheet: false,
     showPosterSheet: false,
-    posterDiary: null,
+    posterStory: null,
     userIdentity: 'authed',
     filters: {
       tags: [], author: '', timeMode: 'quick', quickRange: 'all',
@@ -37,25 +37,25 @@ Page({
   },
 
   onShow() {
-    this._loadDiaries(true)
+    this._loadStories(true)
     this.setData({ userIdentity: (app.globalData.user || {}).identity || 'authed' })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 1 })
     }
   },
 
-  async _loadDiaries(reset) {
+  async _loadStories(reset) {
     const page = reset ? 1 : this.data.page
-    const data = await diaryApi.getList({
+    const data = await storyApi.getList({
       mode: 'collections', page,
       keyword: this.data.search || undefined,
       ...filterUtil.listQuery(this.data.filters),
     })
     if (data) {
       const active = this._isFiltersActive()
-      const mapped = data.list.map(mapper.diary)
+      const mapped = data.list.map(mapper.story)
       this.setData({
-        diaries: reset ? mapped : [...this.data.diaries, ...mapped],
+        stories: reset ? mapped : [...this.data.stories, ...mapped],
         page: page + 1, hasMore: data.list.length >= data.pageSize, filtersActive: active,
       })
     }
@@ -67,14 +67,14 @@ Page({
   },
 
   onSearchInput(e) { this.setData({ search: e.detail.value }) },
-  onSearchClear() { this.setData({ search: '' }, () => this._loadDiaries(true)) },
-  onSearchConfirm() { this._loadDiaries(true) },
+  onSearchClear() { this.setData({ search: '' }, () => this._loadStories(true)) },
+  onSearchConfirm() { this._loadStories(true) },
   _tabBar(hidden) { const tb = this.getTabBar && this.getTabBar(); if (tb) tb.setData({ hidden }) },
   onOpenFilter() { this.setData({ showFilterSheet: true, allTags: app.globalData.tags }); this._tabBar(true) },
   onCloseFilter() { this.setData({ showFilterSheet: false }); this._tabBar(false) },
-  onApplyFilter(e) { this._tabBar(false); this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
+  onApplyFilter(e) { this._tabBar(false); this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadStories(true)) },
 
-  // v2.1：会员日记直接进详情（非会员见 30% 渐隐），不再弹窗拦截
+  // v2.1：会员故事直接进详情（非会员见 30% 渐隐），不再弹窗拦截
   // v2.3：guest（含退出登录的曾会员）点卡片先拉起登录弹窗，与广场页口径一致
   onCardOpen(e) {
     const { id } = e.detail
@@ -121,21 +121,21 @@ Page({
   },
   onCardShare(e) {
     const { id } = e.detail
-    const diary = this.data.diaries.find(d => d.id === id)
-    if (diary) { this.setData({ showPosterSheet: true, posterDiary: diary }); this._tabBar(true) }
+    const story = this.data.stories.find(d => d.id === id)
+    if (story) { this.setData({ showPosterSheet: true, posterStory: story }); this._tabBar(true) }
   },
-  onClosePoster() { this.setData({ showPosterSheet: false, posterDiary: null }); this._tabBar(false) },
+  onClosePoster() { this.setData({ showPosterSheet: false, posterStory: null }); this._tabBar(false) },
   // 分享成功后列表卡片的分享数即时 +1（保留 share_count 兼容旧字段读取）
   onShared(e) {
     const { id, shares } = e.detail
     this.setData({
-      diaries: this.data.diaries.map(d => d.id === id ? { ...d, shares, share_count: shares } : d)
+      stories: this.data.stories.map(d => d.id === id ? { ...d, shares, share_count: shares } : d)
     })
   },
-  onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
+  onReachBottom() { if (this.data.hasMore) this._loadStories(false) },
 
   async onRefresh() {
     this.setData({ refreshing: true })
-    try { await this._loadDiaries(true) } finally { this.setData({ refreshing: false }) }
+    try { await this._loadStories(true) } finally { this.setData({ refreshing: false }) }
   },
 })

@@ -14,7 +14,8 @@
         <router-link to="/" class="nav-item" active-class="active" exact>数据概览</router-link>
         <router-link to="/orders" class="nav-item" active-class="active">会员订单</router-link>
         <router-link to="/users" class="nav-item" active-class="active">用户管理</router-link>
-        <router-link to="/diaries" class="nav-item" active-class="active">日记管理</router-link>
+        <router-link to="/stories" class="nav-item" active-class="active">故事管理</router-link>
+        <router-link to="/featured" class="nav-item" active-class="active">善选管理</router-link>
         <router-link to="/interactions" class="nav-item" active-class="active">互动数据</router-link>
         <router-link to="/activities" class="nav-item" active-class="active">活动管理</router-link>
       </nav>

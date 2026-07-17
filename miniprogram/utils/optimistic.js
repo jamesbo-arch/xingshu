@@ -16,42 +16,42 @@ function setFaved(list, id, favorited) {
 
 // 乐观点赞：立即翻转 → 调后台 → 失败回滚；服务端实际态与预期不同（并发等）以服务端为准
 async function optimisticLike(page, id) {
-  const cur = page.data.diaries.find(d => d.id === id)
+  const cur = page.data.stories.find(d => d.id === id)
   if (!cur) return
   const next = !cur.isLiked
-  page.setData({ diaries: setLiked(page.data.diaries, id, next) })
-  const result = await socialApi.toggleLike(id, 'diary')
-  if (!result) page.setData({ diaries: setLiked(page.data.diaries, id, !next) })
-  else if (result.liked !== next) page.setData({ diaries: setLiked(page.data.diaries, id, result.liked) })
+  page.setData({ stories: setLiked(page.data.stories, id, next) })
+  const result = await socialApi.toggleLike(id, 'story')
+  if (!result) page.setData({ stories: setLiked(page.data.stories, id, !next) })
+  else if (result.liked !== next) page.setData({ stories: setLiked(page.data.stories, id, result.liked) })
 }
 
 // 乐观收藏：removeOnUnfav=true（我的收藏页）时取消收藏立即移除卡片，失败原位恢复
 async function optimisticFav(page, id, { removeOnUnfav } = {}) {
-  const list = page.data.diaries
+  const list = page.data.stories
   const idx = list.findIndex(d => d.id === id)
   if (idx < 0) return
   const next = !list[idx].isFavorited
   const snapshot = list[idx]
   if (!next && removeOnUnfav) {
-    page.setData({ diaries: list.filter(d => d.id !== id) })
+    page.setData({ stories: list.filter(d => d.id !== id) })
   } else {
-    page.setData({ diaries: setFaved(list, id, next) })
+    page.setData({ stories: setFaved(list, id, next) })
   }
   wx.showToast({ title: next ? '已收藏' : '已取消收藏', icon: 'none', duration: 1500 })
   const result = await socialApi.toggleFav(id)
   if (!result) {
     if (!next && removeOnUnfav) {
-      const cur = [...page.data.diaries]
+      const cur = [...page.data.stories]
       cur.splice(Math.min(idx, cur.length), 0, snapshot)
-      page.setData({ diaries: cur })
+      page.setData({ stories: cur })
     } else {
-      page.setData({ diaries: setFaved(page.data.diaries, id, !next) })
+      page.setData({ stories: setFaved(page.data.stories, id, !next) })
     }
   } else if (result.favorited !== next) {
     if (removeOnUnfav && !result.favorited) {
-      page.setData({ diaries: page.data.diaries.filter(d => d.id !== id) })
+      page.setData({ stories: page.data.stories.filter(d => d.id !== id) })
     } else {
-      page.setData({ diaries: setFaved(page.data.diaries, id, result.favorited) })
+      page.setData({ stories: setFaved(page.data.stories, id, result.favorited) })
     }
   }
 }

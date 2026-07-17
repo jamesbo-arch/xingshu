@@ -2,7 +2,7 @@
   "navigationBarTitleText": "",
   "navigationStyle": "custom",
   "usingComponents": {
-    "diary-card": "/components/diary-card/index",
+    "story-card": "/components/story-card/index",
     "filter-sheet": "/components/filter-sheet/index",
     "login-sheet": "/components/login-sheet/index"
   }

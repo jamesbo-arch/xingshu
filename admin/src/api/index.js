@@ -81,18 +81,26 @@ export async function getActivity() { return call('activity') }
 export async function getTrend() { return call('trend') }
 export async function getUsers(params = {}) { return call('users', params) }
 export async function getUserDetail(id) { return call('userDetail', { id }) }
-export async function getDiaries(params = {}) { return call('diaries', params) }
-export async function getDiaryDetail(id) { return call('diaryDetail', { id }) }
-export async function deleteDiary(id) { return call('deleteDiary', { id }) }
-export async function deleteDiaries(ids) { return call('deleteDiaries', { ids }) }
+export async function getStories(params = {}) { return call('stories', params) }
+export async function getStoryDetail(id) { return call('storyDetail', { id }) }
+export async function deleteStory(id) { return call('deleteStory', { id }) }
+export async function deleteStories(ids) { return call('deleteStories', { ids }) }
 export async function deleteComment(id) { return call('deleteComment', { id }) }
 export async function getComments(params = {}) { return call('comments', params) }
 export async function updateReferrer(userId, referrerId) { return call('updateReferrer', { userId, referrerId }) }
-// B/C 档：编辑用户资料、编辑日记、后台代发日记、系统标签列表
+// B/C 档：编辑用户资料、编辑故事、后台代发故事、系统标签列表
 export async function updateUser(data) { return call('updateUser', data) }
-export async function updateDiary(data) { return call('updateDiary', data) }
-export async function createDiary(data) { return call('createDiary', data) }
+export async function updateStory(data) { return call('updateStory', data) }
+export async function createStory(data) { return call('createStory', data) }
 export async function getTagList() { return call('tagList') }
+
+// 善选故事：热度榜（可配权重）→ 人工纳入 → 副本修订/上下架（副本独立于原文，互动共享原故事）
+export async function getFeaturedRank(params = {}) { return call('featuredRank', params) }
+export async function addFeatured(storyId) { return call('featuredAdd', { storyId }) }
+export async function updateFeatured(data) { return call('featuredUpdate', data) }
+export async function toggleFeatured(id, status) { return call('featuredToggle', { id, status }) }
+export async function getFeaturedList(params = {}) { return call('featuredList', params) }
+export async function getFeaturedDetail(id) { return call('featuredDetail', { id }) }
 export async function getActivities() { return call('activityList') }
 export async function saveActivity(data) { return call('activitySave', data) }
 export async function getActivitySignups(id) { return call('activitySignups', { id }) }

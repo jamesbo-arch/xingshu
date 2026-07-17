@@ -30,24 +30,24 @@
     </view>
   </view>
 
-  <!-- Diary list -->
-  <scroll-view class="diary-list" scroll-y enhanced show-scrollbar="{{false}}"
+  <!-- Story list -->
+  <scroll-view class="story-list" scroll-y enhanced show-scrollbar="{{false}}"
     bindscrolltolower="onReachBottom" lower-threshold="150"
     refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
-    <view wx:if="{{diaries.length === 0}}" class="empty-state">
+    <view wx:if="{{stories.length === 0}}" class="empty-state">
       <text class="empty-icon">○</text>
-      <text class="empty-text">暂无日记</text>
+      <text class="empty-text">暂无故事</text>
     </view>
-    <diary-card
-      wx:for="{{diaries}}"
+    <story-card
+      wx:for="{{stories}}"
       wx:key="id"
-      diary="{{item}}"
+      story="{{item}}"
       show-actions="{{false}}"
       bind:open="onCardOpen"
       bind:like="onCardLike"
       bind:fav="onCardFav"
       bind:share="onCardShare"
-    ></diary-card>
+    ></story-card>
     <view class="list-bottom-pad {{actBannerCount ? 'pad-banner' : ''}}"></view>
   </scroll-view>
 
@@ -73,7 +73,7 @@
   <!-- Poster sheet -->
   <poster-sheet
     visible="{{showPosterSheet}}"
-    diary="{{posterDiary}}"
+    story="{{posterStory}}"
     bind:close="onClosePoster"
     bind:shared="onShared"
   ></poster-sheet>

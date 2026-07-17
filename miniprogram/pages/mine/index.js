@@ -1,5 +1,5 @@
 const app = getApp()
-const diaryApi = require('../../api/diary')
+const storyApi = require('../../api/story')
 const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const { lock, throttle } = require('../../utils/guard')
@@ -7,7 +7,7 @@ const { ensureLogin, ensureMember, handleLoginSuccess } = require('../../utils/a
 
 Page({
   data: {
-    diaries: [],
+    stories: [],
     refreshing: false,
     search: '',
     page: 1,
@@ -32,20 +32,20 @@ Page({
   },
 
   onShow() {
-    this._loadDiaries(true)
+    this._loadStories(true)
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().setData({ selected: 3 })
     }
   },
 
-  async _loadDiaries(reset) {
+  async _loadStories(reset) {
     const page = reset ? 1 : this.data.page
-    const data = await diaryApi.getList({ mode: 'mine', page, keyword: this.data.search || undefined })
+    const data = await storyApi.getList({ mode: 'mine', page, keyword: this.data.search || undefined })
     if (data) {
       const active = this._isFiltersActive()
-      const mapped = data.list.map(mapper.diary)
+      const mapped = data.list.map(mapper.story)
       this.setData({
-        diaries: reset ? mapped : [...this.data.diaries, ...mapped],
+        stories: reset ? mapped : [...this.data.stories, ...mapped],
         page: page + 1, hasMore: data.list.length >= data.pageSize, filtersActive: active,
       })
     }
@@ -57,11 +57,11 @@ Page({
   },
 
   onSearchInput(e) { this.setData({ search: e.detail.value }) },
-  onSearchClear() { this.setData({ search: '' }, () => this._loadDiaries(true)) },
-  onSearchConfirm() { this._loadDiaries(true) },
+  onSearchClear() { this.setData({ search: '' }, () => this._loadStories(true)) },
+  onSearchConfirm() { this._loadStories(true) },
   onOpenFilter() { this.setData({ showFilterSheet: true }) },
   onCloseFilter() { this.setData({ showFilterSheet: false }) },
-  onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadDiaries(true)) },
+  onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadStories(true)) },
 
   // v2.3：guest（含退出登录的曾会员）点卡片/互动先拉起登录弹窗，与广场页口径一致
   onCardOpen(e) {
@@ -89,25 +89,25 @@ Page({
     const { id } = e.detail
     return lock(this, 'fav' + id, () => optimisticFav(this, id))
   },
-  onCardEdit(e) { ensureMember(this, () => throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/compose/index?diaryId=' + e.detail.id }))) },
+  onCardEdit(e) { ensureMember(this, () => throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/compose/index?storyId=' + e.detail.id }))) },
   onCardDelete(e) {
     if (!ensureLogin(this, () => this.onCardDelete(e))) return
     const { id } = e.detail
     return lock(this, 'del' + id, async () => {
       const res = await new Promise(r => wx.showModal({ title: '确认删除', content: '删除后不可恢复', success: r }))
       if (res.confirm) {
-        await diaryApi.remove(id)
-        this.setData({ diaries: this.data.diaries.filter(d => d.id !== id) })
+        await storyApi.remove(id)
+        this.setData({ stories: this.data.stories.filter(d => d.id !== id) })
         wx.showToast({ title: '删除成功', icon: 'none', duration: 1500 })
       }
     })
   },
 
   onFabTap() { ensureMember(this, () => throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/compose/index' }))) },
-  onReachBottom() { if (this.data.hasMore) this._loadDiaries(false) },
+  onReachBottom() { if (this.data.hasMore) this._loadStories(false) },
 
   async onRefresh() {
     this.setData({ refreshing: true })
-    try { await this._loadDiaries(true) } finally { this.setData({ refreshing: false }) }
+    try { await this._loadStories(true) } finally { this.setData({ refreshing: false }) }
   },
 })

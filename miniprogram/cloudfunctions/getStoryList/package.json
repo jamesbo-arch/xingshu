@@ -1,5 +1,5 @@
 {
-  "name": "deleteDiary",
+  "name": "getStoryList",
   "version": "1.0.0",
   "main": "index.js",
   "dependencies": {

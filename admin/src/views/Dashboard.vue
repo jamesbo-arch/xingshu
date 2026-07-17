@@ -33,12 +33,12 @@ onMounted(async () => {
   kpis.value = [
     { label: '总用户数', value: data.users.value, delta: data.users.delta },
     { label: '会员数', value: data.members.value, delta: data.members.delta },
-    { label: '日记总数', value: data.diaries.value, delta: data.diaries.delta },
+    { label: '故事总数', value: data.stories.value, delta: data.stories.delta },
     { label: '总互动数', value: data.interactions.value, delta: data.interactions.delta },
     { label: '累计收入(元)', value: data.revenue.value, delta: data.revenue.delta },
   ]
   activity.value = await getActivity()
 })
 
-function typeLabel(t) { return { order:'订单', diary:'日记', warning:'提醒', user:'用户' }[t] || t }
+function typeLabel(t) { return { order:'订单', story:'故事', warning:'提醒', user:'用户' }[t] || t }
 </script>

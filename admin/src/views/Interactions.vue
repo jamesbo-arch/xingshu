@@ -9,12 +9,12 @@
     </div>
     <table class="data-table">
       <thead><tr>
-        <th>ID</th><th>日记</th><th>用户</th><th>内容</th><th>时间</th><th>操作</th>
+        <th>ID</th><th>故事</th><th>用户</th><th>内容</th><th>时间</th><th>操作</th>
       </tr></thead>
       <tbody>
         <tr v-for="c in filtered" :key="c.id">
           <td>{{ c.id }}</td>
-          <td>{{ c.diaryTitle }}</td>
+          <td>{{ c.storyTitle }}</td>
           <td>{{ c.user }}</td>
           <td>{{ c.content }}</td>
           <td>{{ c.time }}</td>

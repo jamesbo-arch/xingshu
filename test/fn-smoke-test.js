@@ -17,19 +17,21 @@ async function run() {
     if (!Array.isArray(r.data) || r.data.length < 20) throw new Error(`got ${r.data && r.data.length}`)
   })
 
-  await test('getDiaryList square 模式（游客）可见公众+会员卡片、无私密、全部摘要', async () => {
-    // v2.1 权限矩阵：guest 列表可见公众+会员的卡片（内容截断为摘要），私密不可见
-    const r = await callFn('getDiaryList', { mode: 'square', page: 1, pageSize: 10 }, '')
+  await test('getStoryList square 模式（游客）仅见善选故事、无暂存、全部摘要', async () => {
+    // v3.0 善选：guest 广场只见上架善选副本（内容截断为摘要），暂存不可见
+    const r = await callFn('getStoryList', { mode: 'square', page: 1, pageSize: 10 }, '')
     if (r.code !== 0) throw new Error(`code=${r.code}`)
     if (!Array.isArray(r.data.list)) throw new Error('data.list 不是数组')
-    const leak = r.data.list.find(d => d.permission === 'private')
-    if (leak) throw new Error(`游客看到了私密日记 id=${leak.id}`)
+    const leak = r.data.list.find(d => d.publish_status === 'draft')
+    if (leak) throw new Error(`游客看到了暂存故事 id=${leak.id}`)
+    const notFeatured = r.data.list.find(d => !d.is_featured)
+    if (notFeatured) throw new Error(`游客看到了非善选故事 id=${notFeatured.id}`)
     const notExcerpt = r.data.list.find(d => !d.excerpt)
     if (notExcerpt) throw new Error(`游客拿到了未截断内容 id=${notExcerpt.id}`)
   })
 
-  await test('getDiaryList mine 模式只返回本人日记', async () => {
-    const r = await callFn('getDiaryList', { mode: 'mine', page: 1, pageSize: 10 }, 'mock_me')
+  await test('getStoryList mine 模式只返回本人故事', async () => {
+    const r = await callFn('getStoryList', { mode: 'mine', page: 1, pageSize: 10 }, 'mock_me')
     if (r.code !== 0) throw new Error(`code=${r.code}`)
     if (!Array.isArray(r.data.list)) throw new Error('data.list 不是数组')
   })
@@ -38,9 +40,9 @@ async function run() {
     const r = await callFn('getUserInfo', {}, 'mock_me')
     if (r.code !== 0) throw new Error(`code=${r.code}（种子数据缺失？先运行 node test/seed.js）`)
     if (!r.data.nickname) throw new Error('缺少 nickname')
-    // 互动统计对象（按其日记实算，会员中心用）
+    // 互动统计对象（按其故事实算，会员中心用）
     const s = r.data.stats
-    if (!s || typeof s.diaries !== 'number' || typeof s.likes !== 'number') throw new Error('缺少 stats 互动统计')
+    if (!s || typeof s.stories !== 'number' || typeof s.likes !== 'number') throw new Error('缺少 stats 互动统计')
   })
 
   await test('getUserInfo 未注册 openid 返回 code=-1', async () => {

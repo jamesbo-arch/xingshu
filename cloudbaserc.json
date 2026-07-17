@@ -4,29 +4,173 @@
   "envId": "cloud1-xingshu-prd-d1cev0fcca864",
   "functionRoot": "miniprogram/cloudfunctions",
   "functions": [
-    { "name": "login", "timeout": 10 },
-    { "name": "getUserInfo", "timeout": 10 },
-    { "name": "checkMemberStatus", "timeout": 10 },
-    { "name": "updateUserProfile", "timeout": 10 },
-    { "name": "createDiary", "timeout": 10 },
-    { "name": "updateDiary", "timeout": 10 },
-    { "name": "deleteDiary", "timeout": 10 },
-    { "name": "getDiaryDetail", "timeout": 10 },
-    { "name": "getDiaryList", "timeout": 10 },
-    { "name": "createComment", "timeout": 10 },
-    { "name": "deleteComment", "timeout": 10 },
-    { "name": "getComments", "timeout": 10 },
-    { "name": "toggleLike", "timeout": 10 },
-    { "name": "toggleFavorite", "timeout": 10 },
-    { "name": "recordShare", "timeout": 10 },
-    { "name": "getTags", "timeout": 10 },
-    { "name": "addTag", "timeout": 10 },
-    { "name": "updateTag", "timeout": 10 },
-    { "name": "createOrder", "timeout": 10 },
-    { "name": "getOrderList", "timeout": 10 },
-    { "name": "activateMember", "timeout": 10 },
-    { "name": "generateMiniCode", "timeout": 10 },
-    { "name": "activity", "timeout": 10 },
-    { "name": "admin", "timeout": 15 }
+    {
+      "name": "login",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "getUserInfo",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "checkMemberStatus",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "updateUserProfile",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "createStory",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "updateStory",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "deleteStory",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "getStoryDetail",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "getStoryList",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "createComment",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "deleteComment",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "getComments",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "toggleLike",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "toggleFavorite",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "recordShare",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "getTags",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "addTag",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "updateTag",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "createOrder",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "getOrderList",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "activateMember",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "generateMiniCode",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "activity",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
+      "name": "admin",
+      "timeout": 15,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    }
   ]
 }

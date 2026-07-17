@@ -73,7 +73,7 @@ Page({
 
   // v2.3：活动详情需微信登录（轻授权），未登录先拉起登录弹窗。
   // 登录墙放 onReady（首渲染后）而非 onLoad：onLoad 同步置 visible=true 会成为组件初始属性，
-  // observer 不触发致弹窗不挂载（真机白屏）；onReady 时是 false→true 常规更新，必然触发（同日记详情路径）。
+  // observer 不触发致弹窗不挂载（真机白屏）；onReady 时是 false→true 常规更新，必然触发（同故事详情路径）。
   // needLogin 同时点亮未登录占位页（wxml wx:else 分支），自动弹窗失效也有可点的登录按钮，杜绝白屏。
   onReady() {
     if (!ensureLogin(this, () => this._load())) { this.setData({ needLogin: true }); return }

@@ -18,14 +18,14 @@ exports.main = async (event, context) => {
 
   if (existing.length) {
     await db.query('DELETE FROM interactions WHERE id = ?', [existing[0].id])
-    await db.query(`UPDATE ${targetType === 'diary' ? 'diaries' : 'comments'} SET like_count = GREATEST(like_count - 1, 0) WHERE id = ?`, [targetId])
+    await db.query(`UPDATE ${targetType === 'story' ? 'stories' : 'comments'} SET like_count = GREATEST(like_count - 1, 0) WHERE id = ?`, [targetId])
     return { code: 0, data: { liked: false } }
   } else {
     await db.query(
       'INSERT INTO interactions (user_id, target_type, target_id, action, created_by) VALUES (?, ?, ?, ?, ?)',
       [userId, targetType, targetId, 'like', userId]
     )
-    await db.query(`UPDATE ${targetType === 'diary' ? 'diaries' : 'comments'} SET like_count = like_count + 1 WHERE id = ?`, [targetId])
+    await db.query(`UPDATE ${targetType === 'story' ? 'stories' : 'comments'} SET like_count = like_count + 1 WHERE id = ?`, [targetId])
     return { code: 0, data: { liked: true } }
   }
 }

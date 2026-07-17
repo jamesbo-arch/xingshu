@@ -1,5 +1,5 @@
-// 日记列表时间筛选测试 — 对应 getDiaryList 的 quick/range/ym 三模式
-// 经 fn-harness 本地执行 getDiaryList。测试用户/日记以 test_flt_ 前缀，结束硬删
+// 故事列表时间筛选测试 — 对应 getStoryList 的 quick/range/ym 三模式
+// 经 fn-harness 本地执行 getStoryList。测试用户/故事以 test_flt_ 前缀，结束硬删
 const mysql = require('mysql2/promise')
 const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
@@ -7,7 +7,7 @@ const { callFn } = require('./fn-harness')
 const OPENID = 'test_flt_u1'
 
 async function run() {
-  console.log('=== 日记列表时间筛选测试 ===\n')
+  console.log('=== 故事列表时间筛选测试 ===\n')
   let passed = 0, failed = 0
   const conn = await mysql.createConnection(DB)
 
@@ -22,15 +22,15 @@ async function run() {
   const [[u]] = await conn.query('SELECT id FROM users WHERE openid = ?', [OPENID])
   // 今日一篇、400 天前一篇（跨年、超一年）
   const [rNew] = await conn.query(
-    "INSERT INTO diaries (user_id,title,content,permission,status,created_by,created_at) VALUES (?,?,?,'public','active',?,NOW())",
-    [u.id, 'flt今日', '今日日记', u.id])
+    "INSERT INTO stories (user_id,title,content,publish_status,status,created_by,created_at) VALUES (?,?,?,'published','active',?,NOW())",
+    [u.id, 'flt今日', '今日故事', u.id])
   const [rOld] = await conn.query(
-    "INSERT INTO diaries (user_id,title,content,permission,status,created_by,created_at) VALUES (?,?,?,'public','active',?,DATE_SUB(NOW(),INTERVAL 400 DAY))",
-    [u.id, 'flt去年', '去年日记', u.id])
+    "INSERT INTO stories (user_id,title,content,publish_status,status,created_by,created_at) VALUES (?,?,?,'published','active',?,DATE_SUB(NOW(),INTERVAL 400 DAY))",
+    [u.id, 'flt去年', '去年故事', u.id])
   const newId = rNew.insertId, oldId = rOld.insertId
 
   const ids = (r) => r.data.list.map(d => d.id)
-  const list = (payload) => callFn('getDiaryList', { mode: 'mine', pageSize: 100, ...payload }, OPENID)
+  const list = (payload) => callFn('getStoryList', { mode: 'mine', pageSize: 100, ...payload }, OPENID)
 
   await test('无时间筛选：两篇都在', async () => {
     const r = await list({})
@@ -68,8 +68,8 @@ async function run() {
     if (ids(r).includes(oldId)) throw new Error('不应含去年（400天前跨年）')
   })
 
-  await test('keyword 匹配作者昵称（非标题/正文）→ 命中该作者日记', async () => {
-    // '筛选' 仅出现在昵称「筛选测试」，不在任何标题(flt…)/正文(…日记)中
+  await test('keyword 匹配作者昵称（非标题/正文）→ 命中该作者故事', async () => {
+    // '筛选' 仅出现在昵称「筛选测试」，不在任何标题(flt…)/正文(…故事)中
     const r = await list({ keyword: '筛选' })
     if (!ids(r).includes(newId) || !ids(r).includes(oldId)) throw new Error('应按作者昵称命中两篇')
   })
@@ -79,7 +79,7 @@ async function run() {
     if (ids(r).length !== 0) throw new Error('应为空')
   })
 
-  await conn.query('DELETE FROM diaries WHERE id IN (?, ?)', [newId, oldId])
+  await conn.query('DELETE FROM stories WHERE id IN (?, ?)', [newId, oldId])
   await conn.query("DELETE FROM users WHERE openid = 'test_flt_u1'")
   await conn.end()
   console.log('\n  测试数据已清理')

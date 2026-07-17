@@ -5,7 +5,7 @@ const DB = require('../config/db')
 
 async function run() {
   const db = await mysql.createConnection(DB)
-  console.log('=== 醒书日记 API 集成测试 ===\n')
+  console.log('=== 醒书故事 API 集成测试 ===\n')
   let passed = 0, failed = 0
 
   async function test(name, fn) {
@@ -28,24 +28,24 @@ async function run() {
     console.log(`  → ${r[0].c} users`)
   })
 
-  // 2. Diaries table
-  console.log('[diaries]')
-  await test('diaries 表存在', async () => {
-    const [r] = await db.query("SHOW TABLES LIKE 'diaries'")
+  // 2. Stories table
+  console.log('[stories]')
+  await test('stories 表存在', async () => {
+    const [r] = await db.query("SHOW TABLES LIKE 'stories'")
     if (!r.length) throw new Error('missing')
   })
-  await test('diaries status 字段存在', async () => {
-    await db.query("SELECT status FROM diaries LIMIT 0")
+  await test('stories status 字段存在', async () => {
+    await db.query("SELECT status FROM stories LIMIT 0")
   })
-  await test('diaries images 字段存在', async () => {
-    await db.query("SELECT images FROM diaries LIMIT 0")
+  await test('stories images 字段存在', async () => {
+    await db.query("SELECT images FROM stories LIMIT 0")
   })
-  await test('diaries 热路径复合索引 (status, created_at)', async () => {
-    const [r] = await db.query("SHOW INDEX FROM diaries WHERE Key_name='idx_status_created'")
+  await test('stories 热路径复合索引 (status, created_at)', async () => {
+    const [r] = await db.query("SHOW INDEX FROM stories WHERE Key_name='idx_status_created'")
     if (r.length !== 2) throw new Error('idx_status_created missing')
   })
-  await test('diaries 外键约束', async () => {
-    const [r] = await db.query("SELECT REFERENCED_TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA='xingshu_dev' AND TABLE_NAME='diaries' AND COLUMN_NAME='user_id'")
+  await test('stories 外键约束', async () => {
+    const [r] = await db.query("SELECT REFERENCED_TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA='xingshu_dev' AND TABLE_NAME='stories' AND COLUMN_NAME='user_id'")
     if (r[0].REFERENCED_TABLE_NAME !== 'users') throw new Error('FK missing')
   })
 
@@ -77,15 +77,15 @@ async function run() {
     await db.query("SELECT plan, valid_from, valid_until, note FROM orders LIMIT 0")
   })
 
-  // 7. diary_tags
-  console.log('[diary_tags]')
-  await test('diary_tags 多对多关联表', async () => {
-    await db.query("SELECT diary_id, tag_id FROM diary_tags LIMIT 0")
+  // 7. story_tags
+  console.log('[story_tags]')
+  await test('story_tags 多对多关联表', async () => {
+    await db.query("SELECT story_id, tag_id FROM story_tags LIMIT 0")
   })
-  await test('diary_tags 两级外键', async () => {
-    const [r1] = await db.query("SELECT REFERENCED_TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA='xingshu_dev' AND TABLE_NAME='diary_tags' AND COLUMN_NAME='diary_id' AND REFERENCED_TABLE_NAME IS NOT NULL")
-    const [r2] = await db.query("SELECT REFERENCED_TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA='xingshu_dev' AND TABLE_NAME='diary_tags' AND COLUMN_NAME='tag_id' AND REFERENCED_TABLE_NAME IS NOT NULL")
-    if (r1[0].REFERENCED_TABLE_NAME !== 'diaries' || r2[0].REFERENCED_TABLE_NAME !== 'tags') throw new Error('FKs missing')
+  await test('story_tags 两级外键', async () => {
+    const [r1] = await db.query("SELECT REFERENCED_TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA='xingshu_dev' AND TABLE_NAME='story_tags' AND COLUMN_NAME='story_id' AND REFERENCED_TABLE_NAME IS NOT NULL")
+    const [r2] = await db.query("SELECT REFERENCED_TABLE_NAME FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA='xingshu_dev' AND TABLE_NAME='story_tags' AND COLUMN_NAME='tag_id' AND REFERENCED_TABLE_NAME IS NOT NULL")
+    if (r1[0].REFERENCED_TABLE_NAME !== 'stories' || r2[0].REFERENCED_TABLE_NAME !== 'tags') throw new Error('FKs missing')
   })
 
   // 8. admin_logs
@@ -96,8 +96,8 @@ async function run() {
 
   // 9. Soft delete check
   console.log('[软删除]')
-  await test('diaries 软删除 (status="deleted")', async () => {
-    await db.query("SELECT * FROM diaries WHERE status='deleted' LIMIT 0")
+  await test('stories 软删除 (status="deleted")', async () => {
+    await db.query("SELECT * FROM stories WHERE status='deleted' LIMIT 0")
   })
   await test('comments 软删除 (is_deleted=1)', async () => {
     await db.query('SELECT * FROM comments WHERE is_deleted=1 LIMIT 0')

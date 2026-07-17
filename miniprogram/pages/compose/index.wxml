@@ -6,7 +6,7 @@
     <view class="nav-back" bindtap="onBack">
       <view class="nav-back-icon ic-back"></view>
     </view>
-    <text class="nav-title serif">{{isEditing ? '编辑日记' : '新建日记'}}</text>
+    <text class="nav-title serif">{{isEditing ? '编辑故事' : '新建故事'}}</text>
     <view class="nav-back"></view>
   </view>
 
@@ -15,7 +15,7 @@
     <view class="title-wrap">
       <input
         class="title-input serif"
-        placeholder="日记标题"
+        placeholder="故事标题"
         placeholder-style="color: #D6D0C2; font-size: 44rpx; font-family: 'Songti SC','STSong','SimSun',serif;"
         value="{{title}}"
         bindinput="onTitleInput"
@@ -82,26 +82,9 @@
       </view>
     </view>
 
-    <!-- Permission selector -->
+    <!-- 发布说明：两态提交（暂存仅自己可见 / 发布面向会员，公众可见性由后台善选决定） -->
     <view class="section-block">
-      <text class="section-label">可见范围</text>
-      <view class="perm-options">
-        <view
-          wx:for="{{permOptions}}"
-          wx:key="key"
-          class="perm-option {{permission === item.key ? 'selected' : ''}} {{item.key === 'member' && !isMember ? 'perm-locked' : ''}}"
-          data-key="{{item.key}}"
-          bindtap="setPermission"
-        >
-          <view class="perm-option-icon {{item.ic}}"></view>
-          <view class="perm-option-info">
-            <text class="perm-option-label">{{item.label}}</text>
-            <text class="perm-option-desc">{{item.key === 'member' && !isMember ? '开通会员后可发布' : item.desc}}</text>
-          </view>
-          <view wx:if="{{item.key === 'member' && !isMember}}" class="perm-lock-tag">会员专属</view>
-          <view wx:elif="{{permission === item.key}}" class="perm-check ic-check-g"></view>
-        </view>
-      </view>
+      <text class="publish-hint">「暂存」仅自己可见；「发布」后面向会员开放，入选善选故事后对公众可见</text>
     </view>
 
     <view class="compose-bottom-pad"></view>
@@ -159,13 +142,19 @@
     </view>
   </view>
 
-  <!-- Bottom action bar（固定：取消 / 发布） -->
+  <!-- Bottom action bar（固定：取消 / 暂存 / 发布） -->
   <view class="compose-actionbar">
     <view class="action-cancel" bindtap="onCancel">取消</view>
     <view
+      class="action-draft {{title && content ? '' : 'disabled'}}"
+      data-status="draft"
+      bindtap="onSubmit"
+    >暂存</view>
+    <view
       class="action-publish {{title && content ? '' : 'disabled'}}"
-      bindtap="onPublish"
-    >{{isEditing ? '保存' : '发布'}}</view>
+      data-status="published"
+      bindtap="onSubmit"
+    >发布</view>
   </view>
 
   <!-- Tag picker sheet -->

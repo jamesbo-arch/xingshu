@@ -11,7 +11,7 @@ Component({
       type: Boolean,
       value: false,
     },
-    diary: {
+    story: {
       type: Object,
       value: null,
     },
@@ -36,7 +36,7 @@ Component({
         setTimeout(() => this.setData({ _mounted: false }), 320)
       }
     },
-    'diary': function(d) {
+    'story': function(d) {
       if (d) {
         const lines = (d.content || '').split('\n').filter(l => l.trim())
         const excerpt = lines.slice(0, 5).join('\n')
@@ -54,12 +54,12 @@ Component({
 
   methods: {
     // v2.2 带参小程序码：scene 携带日记 ID + 当前用户（分享人）ID，失败静默回退占位
-    async _loadQr(diaryId) {
+    async _loadQr(storyId) {
       try {
         const app = getApp()
         const sharerId = (app.globalData.user || {}).id
         // raw 取完整信封，失败时把服务端 msg 打出来便于定位
-        const res = await call('generateMiniCode', { diaryId, sharerId }, { raw: true })
+        const res = await call('generateMiniCode', { storyId, sharerId }, { raw: true })
         if (res && res.code === 0 && res.data && res.data.fileID) {
           this.setData({ qrFileID: res.data.fileID })
           const dl = await wx.cloud.downloadFile({ fileID: res.data.fileID })
@@ -109,7 +109,7 @@ Component({
     },
 
     _renderAndSave() {
-      const d = this.data.diary
+      const d = this.data.story
       if (!d) return
 
       const query = wx.createSelectorQuery().in(this)
@@ -339,9 +339,9 @@ Component({
 
     // 海报成功保存到相册 = 完成一次分享：后端累加 share_count，并把最新数字回抛给列表页更新
     async _recordShare() {
-      const d = this.data.diary
+      const d = this.data.story
       if (!d) return
-      const res = await call('recordShare', { diaryId: d.id }, { showError: false })
+      const res = await call('recordShare', { storyId: d.id }, { showError: false })
       if (res) this.triggerEvent('shared', { id: d.id, shares: res.shares })
     },
   },

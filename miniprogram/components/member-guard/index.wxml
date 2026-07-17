@@ -11,7 +11,7 @@
     </view>
 
     <text class="guard-title serif">会员专享内容</text>
-    <text class="guard-desc">此日记作者设为仅会员可见，开通会员后即可阅读全部内容。</text>
+    <text class="guard-desc">此故事为会员专享，开通会员后即可阅读全部内容。</text>
 
     <!-- Guest: authorize first, then join member -->
     <block wx:if="{{identity === 'guest'}}">

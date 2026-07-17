@@ -111,7 +111,7 @@ page { height: 100%; overflow: hidden; }
 }
 
 /* List */
-.diary-list {
+.story-list {
   flex: 1;
   min-height: 0;
   width: 100%;

@@ -21,7 +21,7 @@ const TAGS = [
   '正心修身', '絜矩之道', '生财有道', '以义为利',
 ]
 
-const DIARIES = [
+const STORIES = [
   { author: 'mock_yanqiu',     title: '晨起读《大学》三十分钟',   content: '今日五点半起床，泡一壶老白茶，翻开《大学》。\n\n"知止而后有定，定而后能静，静而后能安，安而后能虑，虑而后能得"。每读一次，体会更深一层。今日所悟：知止，并非止步不前，而是知所止——明确边界与方向。心若无止，则终日逐物，劳而无功。\n\n记下三件今日要事：写完季度复盘、与父母通话、整理书柜。先做要紧不紧急之事。', permission: 'public',  tags: ['修身为本','知止有定','要事第一'], likes: 48,  favorites: 12, comments: 6,  createdAt: '2026-05-14 06:42:00' },
   { author: 'mock_luminyuan',  title: '与同事一次艰难的谈话',     content: '今天和团队成员谈绩效问题。本想直接指出问题，但提醒自己——先理解，再被理解。\n\n听他讲了二十分钟，了解到家中情况的变化。后面的对话变得顺畅许多。最终我们一起制定了下一阶段的目标。\n\n移情聆听不是技巧，是修养。', permission: 'member', tags: ['移情聆听','双赢思维'], likes: 124, favorites: 38, comments: 21, createdAt: '2026-05-13 22:18:00' },
   { author: 'mock_yeqinghe',   title: '关于"慎独"的一点思考',   content: '《中庸》言："君子慎其独也"。独处时所为，最见心性。今日独自在家，本想刷一晚短视频，转念把手机放进抽屉，读完了搁置许久的《明史纪事本末》第三卷。\n\n慎独不在大事，而在不被看见的小事里。', permission: 'member', tags: ['君子慎独','修身为本'], likes: 86,  favorites: 24, comments: 11, createdAt: '2026-05-12 23:05:00' },
@@ -67,56 +67,56 @@ async function seed() {
   const tagIdMap = {}
   for (const row of tagRows) tagIdMap[row.name] = row.id
 
-  // 4. 插入日记 + diary_tags
-  console.log('[3/4] 写入日记...')
-  const diaryIds = []
-  for (const d of DIARIES) {
+  // 4. 插入故事 + story_tags
+  console.log('[3/4] 写入故事...')
+  const storyIds = []
+  for (const d of STORIES) {
     const userId = userIdMap[d.author]
     const [r] = await db.query(
-      `INSERT INTO diaries (user_id, title, content, permission, like_count, fav_count, comment_count, created_by, created_at, updated_at)
+      `INSERT INTO stories (user_id, title, content, permission, like_count, fav_count, comment_count, created_by, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [userId, d.title, d.content, d.permission, d.likes, d.favorites, d.comments, userId, d.createdAt, d.createdAt]
     )
-    const diaryId = r.insertId
-    diaryIds.push(diaryId)
+    const storyId = r.insertId
+    storyIds.push(storyId)
 
     for (const tagName of d.tags) {
       const tagId = tagIdMap[tagName]
       if (tagId) {
         await db.query(
-          'INSERT IGNORE INTO diary_tags (diary_id, tag_id, created_by) VALUES (?, ?, ?)',
-          [diaryId, tagId, userId]
+          'INSERT IGNORE INTO story_tags (story_id, tag_id, created_by) VALUES (?, ?, ?)',
+          [storyId, tagId, userId]
         )
         await db.query('UPDATE tags SET usage_count = usage_count + 1 WHERE id=?', [tagId])
       }
     }
-    console.log(`  ✓ 《${d.title}》(id=${diaryId})`)
+    console.log(`  ✓ 《${d.title}》(id=${storyId})`)
   }
 
-  // 5. 更新用户日记计数
-  console.log('[4/4] 更新用户日记计数...')
+  // 5. 更新用户故事计数
+  console.log('[4/4] 更新用户故事计数...')
   for (const openid of Object.keys(userIdMap)) {
     const uid = userIdMap[openid]
     await db.query(
-      'UPDATE users SET diary_count = (SELECT COUNT(*) FROM diaries WHERE user_id=? AND status="active") WHERE id=?',
+      'UPDATE users SET story_count = (SELECT COUNT(*) FROM stories WHERE user_id=? AND status="active") WHERE id=?',
       [uid, uid]
     )
   }
 
-  // 6. 插入评论（日记1的评论）
-  const diary1Id = diaryIds[0]
+  // 6. 插入评论（故事1的评论）
+  const story1Id = storyIds[0]
   const comment1UserId = userIdMap['mock_luminyuan']
   const [c1] = await db.query(
-    'INSERT INTO comments (user_id, diary_id, content, created_by, created_at) VALUES (?, ?, ?, ?, ?)',
-    [comment1UserId, diary1Id, '"虑而后能得"——今天读到这里也停了很久。', comment1UserId, '2026-05-14 08:30:00']
+    'INSERT INTO comments (user_id, story_id, content, created_by, created_at) VALUES (?, ?, ?, ?, ?)',
+    [comment1UserId, story1Id, '"虑而后能得"——今天读到这里也停了很久。', comment1UserId, '2026-05-14 08:30:00']
   )
   await db.query(
-    'INSERT INTO comments (user_id, diary_id, parent_id, content, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-    [userIdMap['mock_yanqiu'], diary1Id, c1.insertId, '同道。共勉。', userIdMap['mock_yanqiu'], '2026-05-14 09:15:00']
+    'INSERT INTO comments (user_id, story_id, parent_id, content, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [userIdMap['mock_yanqiu'], story1Id, c1.insertId, '同道。共勉。', userIdMap['mock_yanqiu'], '2026-05-14 09:15:00']
   )
   await db.query(
-    'INSERT INTO comments (user_id, diary_id, content, created_by, created_at) VALUES (?, ?, ?, ?, ?)',
-    [userIdMap['mock_yeqinghe'], diary1Id, '请问砚秋老师，老白茶是哪个山头的？', userIdMap['mock_yeqinghe'], '2026-05-14 10:00:00']
+    'INSERT INTO comments (user_id, story_id, content, created_by, created_at) VALUES (?, ?, ?, ?, ?)',
+    [userIdMap['mock_yeqinghe'], story1Id, '请问砚秋老师，老白茶是哪个山头的？', userIdMap['mock_yeqinghe'], '2026-05-14 10:00:00']
   )
   console.log('  ✓ 3 条评论')
 

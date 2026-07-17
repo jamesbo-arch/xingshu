@@ -71,34 +71,34 @@
 
 ## 项目概述
 
-"醒书日记"（Xingshu Diary）—— 一款带有社区互动和会员体系的微信小程序日记应用。最初在 `project/` 目录下以 HTML/CSS/JS 原型设计，然后在 `miniprogram/` 目录下实现。设计交接的聊天记录位于 `chats/chat1.md`。
+"醒书日记"（Xingshu Diary，产品品牌名）—— 一款带有社区互动和会员体系的微信小程序**故事**应用（内容实体于 2026-07-17 由「日记」全面改名「故事」，代码/表/云函数标识符均为 story）。最初在 `project/` 目录下以 HTML/CSS/JS 原型设计，然后在 `miniprogram/` 目录下实现。设计交接的聊天记录位于 `chats/chat1.md`。
 
-应用有三种用户身份等级（`guest`、`authed`、`member`）和三种日记权限（`public`、`member`、`private`）。后端采用腾讯 CloudBase 云函数（22 个）+ MySQL 数据库（9 张表，通过 cpolar 隧道 `33.tcp.cpolar.top:11028` 连接）。身份认证（PRD v2.3）：微信登录半屏弹窗（`components/login-sheet`）仅获取 openid/unionid，登录后升级为 `authed`，不涉及手机号；会员通过线下转账 + 管理员手动确认激活；会员中心可退出登录（回退 guest，重新登录恢复会员）。`data/mock.js` 仅保留作为设计参考，不再用于运行时数据。
+应用有三种用户身份等级（`guest`、`authed`、`member`）；故事只有**两态**（`publish_status`：`draft` 暂存仅自己可见 / `published` 发布后面向会员），公众可见性由后台**善选**（`featured_stories` 副本表 + `stories.is_featured` 标志）决定。后端采用腾讯 CloudBase 云函数（22 个小程序端 + admin）+ MySQL 数据库（经 cpolar 隧道 `33.tcp.cpolar.top:11028` 连接）。身份认证（PRD v2.3）：微信登录半屏弹窗（`components/login-sheet`）仅获取 openid/unionid，登录后升级为 `authed`，不涉及手机号；会员通过线下转账 + 管理员手动确认激活；会员中心可退出登录（回退 guest，重新登录恢复会员）。`data/mock.js` 仅保留作为设计参考，不再用于运行时数据。
 
-## 身份权限矩阵（前端功能差异）
+## 身份权限矩阵（前端功能差异，v3.0 善选版）
 
 三种身份的**实际功能差异**如下（以代码鉴权逻辑为准，改动鉴权时同步更新本表）：
 
 | 功能 | guest 未授权 | authed 已授权非会员 | member 会员 |
 |---|:---:|:---:|:---:|
-| 浏览广场列表（公众+会员卡片） | ✅ | ✅ | ✅ |
-| └ 列表内容展示 | 全部**摘要**(前80字) | 公众全文/会员摘要 | 全部**全文** |
-| 个人日记草稿进广场 | ❌（所有人均不进，仅「我的日记」可见） | ❌ | ❌ |
-| 打开日记详情 | ❌ 拉起登录弹窗 | ✅ | ✅ |
-| └ 读**会员专属**日记全文 | ❌ | ⚠️ 仅 30%（会员墙） | ✅ 全文 |
-| 点赞 / 收藏 / 评论 / 回复 | ❌ 触发登录 | ✅ | ✅ |
-| 写日记 / 编辑 | ❌ 会员专享，弹窗引导开通 | ❌ 会员专享，弹窗引导开通 | ✅ |
+| 浏览广场列表 | ✅ 仅**善选故事**（副本，摘要前80字） | ✅ 仅**善选故事**（副本，全文） | ✅ **全部已发布故事**（原文全文，善选带眼睛徽章） |
+| 暂存(draft)故事进广场 | ❌（所有人均不进，仅作者「我的故事」可见，他人访问按不存在处理） | ❌ | ❌ |
+| 打开故事详情 | ❌ 拉起登录弹窗（-3） | ✅ 善选→副本全文；未善选→**-2 会员专享**（全屏引导墙） | ✅ 原文全文 |
+| 点赞 / 收藏 / 评论 / 回复 | ❌ 触发登录 | ✅（善选故事的互动**落在原故事**，计数共享） | ✅ |
+| 写故事 / 编辑（暂存/发布两按钮） | ❌ 会员专享，弹窗引导开通 | ❌ 会员专享，弹窗引导开通 | ✅ |
 | 分享海报 / 转发好友 | ⚠️ 能转发，但不计分享数、无推荐人归属 | ✅ 含推荐人 | ✅ 含推荐人 |
 | 进活动详情 / 报名 | ❌ 进详情即需登录 | ✅ | ✅ |
 | 编辑个人资料（昵称/姓名/手机号/头像） | ❌ 触发登录 | ✅ | ✅ |
 | 会员状态 / 有效期 | — | 显示"开通引导" | ✅ 显示到期日 |
 
 **要点**：
-1. `guest → authed` 是最大门槛——游客几乎只能看摘要，任何**读全文/互动**都在那一刻由 `utils/auth-guard.js` 的 `ensureLogin()` 拉起微信登录，登录成功后自动续做原操作。（**写日记除外**，见下）
-2. `authed → member` 的**实质差异有二**：① 读**会员专属日记的全文**（非会员看会员日记有 30% 会员墙）；② **写 / 编辑日记**——写日记为会员专享，非会员（含 guest）点写日记/编辑由 `utils/auth-guard.js` 的 `ensureMember()` 弹窗引导至会员中心开通。其余互动（点赞/收藏/评论/分享/报名）authed 与 member **完全一致**。
-3. 卡片「金色底 / 会徽章」按**作者身份**渲染（非会员作者金色卡、会员作者「会」徽章），与**浏览者**身份无关，不属于浏览者的功能差异。
-4. 鉴权判定的代码来源：详情级 `getDiaryDetail`（guest 返回 `-3`、会员墙截断 30%）、列表级 `getDiaryList` 的 `canReadFull`（guest 全摘要 / authed 公众全文 / member 全文）、前端动作级 `utils/auth-guard.js` 的 `ensureLogin()`（读全文/互动，拦 guest）与 `ensureMember()`（写/编辑日记，拦所有非有效会员）。
-5. **身份两字段语义（2026-07-15 起）**：`users.identity` 只存**授权态**（`guest`=未登录/已退出，`authed`=已授权），**不再落库 `member`**；会员资格的唯一真相源是 `member_until`（`member_until >= 今天` 即有效会员，到期当天仍算）。对外 `identity` 一律为**派生值**，前端/admin 判断口径不变：小程序侧（权限口径）= 已授权且会员期有效 → `member`，guest 优先（退出登录的会员按 guest 拦截，重新登录即恢复 member）；admin 侧（资格口径）= 会员期有效即显示 `member`（含退出态，退费入口据此可用）。日记卡片的作者徽章（金卡/「会」徽章）按**作者 `member_until`** 派生，与作者登录态无关。原三处"自愈"改写库逻辑已删除（过期即派生回落，无需写库，`member_until` 保留作历史记录）；建单/退费/后台设会员只写 `member_from`/`member_until`，**不动授权态**。有效会员判定 SQL 统一为 `identity <> 'guest' AND member_until >= CURDATE()`（内容闸/发文守卫），**写/编辑日记本身即要求有效会员**。因此**每个会员都必须有 `member_until`**（管理后台建单/设会员时强制填写）。历史库存的 `identity='member'` 已迁移为 `authed`（prod 上线需执行 `UPDATE users SET identity='authed' WHERE identity='member'`）。
+1. `guest → authed` 门槛：任何**读详情/互动**由 `utils/auth-guard.js` 的 `ensureLogin()` 拉起微信登录，登录成功后自动续做原操作。（**写故事除外**，见下）
+2. `authed → member` 的**实质差异有二**：① 读**全部已发布故事的原文**（非会员只能看善选副本，未善选故事详情 -2；原 30% 会员墙已于 v3.0 下线）；② **写 / 编辑故事**——会员专享，非会员（含 guest）由 `ensureMember()` 弹窗引导至会员中心开通。其余互动（点赞/收藏/评论/分享/报名）authed 与 member **完全一致**。
+3. **善选机制（v3.0）**：管理员在后台「善选管理」按热度榜（`点赞*w1+收藏*w2+评论*w3`，权重可配默认 1/1/1，可设起止日期，排除已有副本的故事）人工勾选纳入善选——拷贝原文生成 `featured_stories` **副本**（可修订，不影响作者原文），并置 `stories.is_featured=1`。副本可上/下架（联动 is_featured）；作者删除或后台删除原故事时副本联动下架。善选故事的点赞/评论/收藏/计数**共享原故事**（target 均为原 story id）。会员端列表对已善选故事在星号徽章旁加**眼睛徽章**（ic-eye）。
+4. 卡片「金色底 / 会徽章」按**作者身份**渲染（非会员作者金色卡、会员作者「会」徽章），与**浏览者**身份无关。
+5. 鉴权判定的代码来源：详情级 `getStoryDetail`（guest `-3` → 不存在/draft 非作者 `-1` → 作者/member 原文 → authed 命中上架副本则副本覆盖内容、未命中 `-2`）、列表级 `getStoryList`（member/作者查 stories，guest/authed 查 `featured_stories JOIN stories`，guest 摘要 80 字）、前端动作级 `ensureLogin()`（读详情/互动，拦 guest）与 `ensureMember()`（写/编辑故事，拦所有非有效会员）；detail 页对 `-2` 渲染全屏会员引导墙。
+6. **身份两字段语义（2026-07-15 起）**：`users.identity` 只存**授权态**（`guest`=未登录/已退出，`authed`=已授权），**不再落库 `member`**；会员资格的唯一真相源是 `member_until`（`member_until >= 今天` 即有效会员，到期当天仍算）。对外 `identity` 一律为**派生值**，前端/admin 判断口径不变：小程序侧（权限口径）= 已授权且会员期有效 → `member`，guest 优先（退出登录的会员按 guest 拦截，重新登录即恢复 member）；admin 侧（资格口径）= 会员期有效即显示 `member`（含退出态，退费入口据此可用）。故事卡片的作者徽章（金卡/「会」徽章）按**作者 `member_until`** 派生，与作者登录态无关。建单/退费/后台设会员只写 `member_from`/`member_until`，**不动授权态**。有效会员判定 SQL 统一为 `identity <> 'guest' AND member_until >= CURDATE()`（内容闸/发文守卫），**写/编辑故事本身即要求有效会员**。因此**每个会员都必须有 `member_until`**（管理后台建单/设会员时强制填写）。历史库存的 `identity='member'` 已迁移为 `authed`（prod 上线需执行 `UPDATE users SET identity='authed' WHERE identity='member'`）。
+7. **日记→故事迁移（2026-07-17，破坏性发版）**：表 `diaries→stories`、`diary_tags→story_tags`，列 `comments.diary_id→story_id`、`users.diary_count→story_count`，`interactions.target_type` 枚举 `diary→story`；`permission` 三态列已删除（private→draft，其余→published，存量公众日记批量转会员可读）；新增 `featured_stories` 表与 `stories.publish_status/is_featured`。云函数改名：`createDiary/updateDiary/deleteDiary/getDiaryDetail/getDiaryList → createStory/updateStory/deleteStory/getStoryDetail/getStoryList`（入参 `diaryId→storyId`、`permission→publishStatus`）。**页面路由与 scene `d=` 前缀保留不改**（旧分享码/路径兼容）。dev 库已迁移；**prod 上线需执行 `XINGSHU_ENV_FILE=.env.prod node scripts/migrate-diary-to-story.js`（先 backup-db），且须在新版过审后、点发布前的窗口内完成迁移+全量部署云函数**，旧版小程序在窗口后不可用（app.js 已加 UpdateManager 强制更新）。
 
 ## 开发方式
 
