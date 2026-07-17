@@ -3308,3 +3308,13 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 - `miniprogram/components/poster-sheet/index.wxml/.wxss` — 预览区同步：原图 widthFix 展示 + 小程序码按百分比绝对定位覆盖原码区；删手绘 brand-bar 系列样式
 
 **验证**：node --check 通过。真机走查：保存海报确认底栏为原图观感、小程序码盖在原码位且可扫。
+
+### 2026-07-17 19:55 — 故事徽章含义对调：眼睛=已发布，金星=善选
+
+**类型**：前端
+**计划关联**：v3.1 收尾（用户要求星标与眼睛含义对调）
+**修改文件**：
+- `miniprogram/components/story-card/index.wxml` / `miniprogram/pages/detail/index.wxml` — 已发布故事显示眼睛徽章（ic-eye，绿），入选善选再加金星徽章（ic-star-gold，金）；暂存稿折角文档不变
+- `CLAUDE.md` / `doc/小程序用户操作指引.md` / `test/checklist.md` — 徽章口径描述同步
+
+**验证**：纯 wxml 条件对调，开发者工具查看会员视角列表：全部已发布卡片带眼睛，善选卡片再带金星。

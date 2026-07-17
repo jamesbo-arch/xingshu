@@ -20,11 +20,12 @@
       <view class="perm-ic ic-draft"></view>
     </view>
     <block wx:else>
-      <view class="perm-badge perm-member">
-        <view class="perm-ic ic-star-gold"></view>
-      </view>
-      <view wx:if="{{story.isFeatured}}" class="perm-badge perm-public">
+      <!-- 眼睛=已发布；金星=已入选善选 -->
+      <view class="perm-badge perm-public">
         <view class="perm-ic ic-eye"></view>
+      </view>
+      <view wx:if="{{story.isFeatured}}" class="perm-badge perm-member">
+        <view class="perm-ic ic-star-gold"></view>
       </view>
     </block>
   </view>
