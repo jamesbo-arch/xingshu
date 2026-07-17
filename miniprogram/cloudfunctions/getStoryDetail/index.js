@@ -5,9 +5,10 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 // 故事详情（v3.0 善选版）
 // 作者/member → 原文全文；非会员（含未登录 guest）→ 已善选（副本上架）用副本内容覆盖返回
 // （计数/评论/互动仍挂原故事，读全文无需授权），未善选 → -2 会员专享；暂存稿非作者 → -1
+// preferFeatured=true：会员/作者也取善选副本内容（分享海报用——海报面向公众，须用运营修订的副本全文），不计阅读
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { storyId } = event
+  const { storyId, preferFeatured } = event
   if (!storyId) return { code: -1, msg: '缺少故事ID' }
 
   // 用户与故事两条查询互相独立，并行执行
@@ -28,6 +29,8 @@ exports.main = async (event, context) => {
     : (users[0].validMember ? 'member' : 'authed')
   // 退出登录即回游客视角：作者特权与互动态一律按授权态取，退出态用户不认作者、不带出历史点赞
   const userId = (users.length && userIdentity !== 'guest') ? users[0].id : null
+  // 阅读记录用：无论授权态都记到实际 users 行（guest 也有 users 行）
+  const readerId = users.length ? users[0].id : null
 
   if (!stories.length) return { code: -1, msg: '故事不存在' }
 
@@ -38,19 +41,24 @@ exports.main = async (event, context) => {
   if (story.publish_status === 'draft' && !isAuthor) {
     return { code: -1, msg: '故事不存在' }
   }
-  // 非会员（含未登录 guest）只可读善选故事：命中上架副本则用副本内容覆盖（互动/计数仍挂原故事）
-  if (!isAuthor && userIdentity !== 'member') {
+  // 非会员（含未登录 guest）只可读善选故事：命中上架副本则用副本内容覆盖（互动/计数仍挂原故事）；
+  // preferFeatured 时会员/作者同样取副本（海报面向公众，用运营修订版），无副本则回落原文
+  const publicView = !isAuthor && userIdentity !== 'member'
+  let viaFeatured = false
+  if (publicView || preferFeatured) {
     const [featured] = await db.query(
       "SELECT title, content, content_rich, images FROM featured_stories WHERE story_id = ? AND status = 'online'",
       [storyId])
     if (!featured.length) {
-      return { code: -2, msg: '会员专享故事' }
+      if (publicView) return { code: -2, msg: '会员专享故事' }
+    } else {
+      const f = featured[0]
+      story.title = f.title
+      story.content = f.content
+      story.content_rich = f.content_rich
+      story.images = f.images
+      viaFeatured = true
     }
-    const f = featured[0]
-    story.title = f.title
-    story.content = f.content
-    story.content_rich = f.content_rich
-    story.images = f.images
   }
 
   // 标签必取；点赞/收藏态仅登录用户需要——三条并行（未登录用空结果占位）
@@ -70,6 +78,15 @@ exports.main = async (event, context) => {
   if (userId) {
     story.isLiked = liked.length > 0
     story.isFavorited = faved.length > 0
+  }
+
+  // 阅读记录：每次成功阅读落一行（作者自读、海报取副本 preferFeatured 不计），失败不影响正常返回
+  if (!isAuthor && !preferFeatured) {
+    try {
+      await db.query(
+        'INSERT INTO story_reads (story_id, user_id, identity, via_featured) VALUES (?, ?, ?, ?)',
+        [storyId, readerId, userIdentity, viaFeatured ? 1 : 0])
+    } catch (e) { console.warn('story_reads insert failed:', e.message) }
   }
 
   return { code: 0, data: story }

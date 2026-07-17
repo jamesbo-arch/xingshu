@@ -3,7 +3,7 @@
   <view class="sheet poster-sheet-wrap {{_show ? 'sheet-show' : ''}}" catchtap="onSheetTap">
     <view class="sheet-handle"></view>
 
-    <!-- Paper card -->
+    <!-- Paper card（预览：善选副本全文 + 品牌底栏，不展示作者名） -->
     <view class="poster-card">
       <!-- Corner ornaments -->
       <view class="corner corner-tl"></view>
@@ -13,14 +13,14 @@
 
       <!-- Header -->
       <view class="poster-header">
-        <text class="poster-brand serif">醒書日記</text>
+        <text class="poster-brand serif">醒書故事</text>
       </view>
 
       <!-- Title -->
-      <view class="poster-title serif">{{story.title}}</view>
+      <view class="poster-title serif">{{shareTitle}}</view>
 
-      <!-- Content excerpt -->
-      <view class="poster-content">{{contentExcerpt}}</view>
+      <!-- Content：善选副本全文 -->
+      <view class="poster-content">{{shareContent}}</view>
 
       <!-- Tags -->
       <view class="poster-tags" wx:if="{{story.tags && story.tags.length}}">
@@ -31,44 +31,36 @@
         >{{item}}</text>
       </view>
 
-      <!-- Divider -->
-      <view class="poster-divider">
-        <view class="divider-line"></view>
-        <text class="divider-dot">◆</text>
-        <view class="divider-line"></view>
-      </view>
-
-      <!-- Author row -->
-      <view class="poster-author-row">
-        <view class="poster-author-info">
-          <view class="avatar sm" style="background-color: {{avatarColor}};">
-            <text>{{avatarInitial}}</text>
+      <!-- 品牌底栏：醒书咨询（书本标 + 简介 + 带参小程序码） -->
+      <view class="brand-bar">
+        <view class="brand-left">
+          <view class="brand-book">
+            <view class="brand-book-page brand-book-l"></view>
+            <view class="brand-book-page brand-book-r"></view>
           </view>
-          <view>
-            <text class="poster-author-name">{{story.author}}</text>
-            <text class="poster-time">{{story.dateText}}</text>
-          </view>
+          <text class="brand-name serif">醒书咨询</text>
+          <text class="brand-en">XINGSHU CONSULTING</text>
+          <text class="brand-slogan serif">以 经 典 导 航</text>
         </view>
-        <!-- v2.2 带参小程序码（scene 携带日记 ID + 分享人 ID，加载失败回退占位） -->
-        <view class="qr-placeholder">
-          <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="qr-image" mode="aspectFit"/>
+        <view class="brand-sep"></view>
+        <view class="brand-intro">醒书咨询，一家专注经典文化与现代生活深度对话的机构，为中小企业和个人提供发展咨询服务。</view>
+        <view class="brand-qr">
+          <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="brand-qr-img" mode="aspectFit"/>
           <view wx:else class="qr-grid">
             <view wx:for="{{[0,1,2,3,4,5,6,7,8]}}" wx:key="*this" class="qr-dot {{item % 3 === 0 || item % 3 === 2 ? 'qr-dark' : 'qr-light'}}"></view>
           </view>
-          <text class="qr-label">扫码阅读</text>
         </view>
       </view>
     </view>
 
-    <!-- Action buttons -->
+    <!-- Action：仅保存图片（转发走小程序右上角原生菜单） -->
     <view class="poster-actions">
-      <view class="btn-ghost poster-btn" bindtap="onSaveImage">保存图片</view>
-      <view class="btn-primary poster-btn" bindtap="onShareWechat">分享到微信</view>
+      <view class="btn-primary poster-btn" bindtap="onSaveImage">保存图片</view>
     </view>
 
     <view class="safe-bottom"></view>
   </view>
 </view>
 
-<!-- Off-screen canvas for image export -->
+<!-- Off-screen canvas for image export（高度随全文动态计算） -->
 <canvas type="2d" id="poster-canvas" style="position:fixed;left:-9999px;top:-9999px;width:640px;height:960px;"></canvas>

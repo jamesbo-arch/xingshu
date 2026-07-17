@@ -138,6 +138,22 @@ async function main() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='善选故事（公众可见的修订副本）'`)
     console.log('  ✓ featured_stories 已就绪')
 
+    // ⑦ story_reads 故事阅读记录表（2026-07-17 追加）：详情每次成功阅读落一行（作者自读不记）
+    await c.query(`CREATE TABLE IF NOT EXISTS story_reads (
+      id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+      story_id INT NOT NULL COMMENT '被阅读的故事',
+      user_id INT NULL COMMENT '阅读者 users.id（用户被删后置 NULL 保留记录）',
+      identity ENUM('guest','authed','member') NOT NULL COMMENT '阅读时的派生身份',
+      via_featured TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否经善选副本阅读（公众视角）',
+      created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      KEY idx_story_time (story_id, created_at),
+      KEY idx_user (user_id),
+      CONSTRAINT fk_read_story FOREIGN KEY (story_id) REFERENCES stories(id) ON DELETE CASCADE,
+      CONSTRAINT fk_read_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='故事阅读记录'`)
+    console.log('  ✓ story_reads 已就绪')
+
     // 收尾校验
     const [ps] = await c.query(`SELECT publish_status, COUNT(*) n FROM stories GROUP BY publish_status`)
     const [it] = await c.query(`SELECT target_type, COUNT(*) n FROM interactions GROUP BY target_type`)

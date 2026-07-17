@@ -3267,3 +3267,24 @@ npm test 19 套件全绿（含新 FEAT 10 条与重写 PERM 12 条）+ npm run t
 
 **验证**：
 npm test 19 套件全绿（权限矩阵扩至 15 条，含新增退出态用例）；getStoryList/getStoryDetail 已 tcb CLI 部署至 dev（xingshu-prd）。真机待走查：未登录读善选全文 → 点赞弹登录 → 登录后赞自动生效；页签 3/4/5 随身份即时增减。
+
+### 2026-07-17 18:30 — 分享收敛至善选故事（海报全文+品牌栏）+ 故事阅读记录表
+
+**类型**：数据库 | 云函数 | 前端
+**计划关联**：v3.1（用户追加：①善选故事海报含副本全文、去作者名、底部醒书咨询品牌栏、去"分享到微信"按钮；②非善选故事列表/详情不提供分享按钮，仅右上角原生转发，非会员点开转发链接拉登录、仍非会员转广场；③新增故事阅读记录表）
+**修改文件**：
+- `scripts/migrate-diary-to-story.js` — 追加 ⑦ story_reads 表（story_id/user_id INT NULL/identity 枚举/via_featured/created_at；FK story CASCADE、user SET NULL；idx_story_time）；dev 已执行（user_id 用有符号 INT 匹配 users.id，UNSIGNED 建 FK 会报 incompatible）
+- `miniprogram/cloudfunctions/getStoryDetail/index.js` — ①每次成功阅读 INSERT story_reads（作者自读不记；readerId 取实际 users 行，guest 也记；try-catch 不影响正常返回）；②新增 preferFeatured 参数：会员/作者也取善选副本内容（海报面向公众须用运营修订版；无副本回落原文），该调用不计阅读
+- `miniprogram/components/poster-sheet/index.js/.wxml/.wxss` — 海报重绘：内容区改为**善选副本全文**（挂载时经 preferFeatured 拉副本，传入原文仅作占位）；删作者头像/姓名/日期行；底部新增**醒书咨询品牌栏**（驼色 #B3A188 底、上左/上右切角、书本标 + 醒书咨询/XINGSHU CONSULTING/以经典导航 + 品牌简介 + 白底衬托的带参小程序码）；画布高度随全文动态计算（两遍绘制：先测行数定高再重设尺寸绘制；>6000px 软上限截断加"扫码阅读全文"提示，防旧机型导出失败）；操作栏仅保留「保存图片」（删"分享到微信"按钮及 onShareWechat）
+- `miniprogram/components/story-card/index.wxml` — 分享按钮改 `wx:elif="{{story.isFeatured}}"`：非善选卡片无分享入口
+- `miniprogram/pages/detail/index.wxml/.js/.wxss` — 底栏分享按钮仅善选显示；-2 流程重做：guest → 拉登录窗（登录后按 _pendingId 重载，若仍非会员再次落入 -2 → toast「会员专享」+ switchTab 广场）；authed 非会员 → 直接 toast + 转广场；登录窗取消且无内容 → 转广场；**删除全屏会员引导墙**（wxml 块、memberWall data、onGoMember、墙系样式全清）
+- `test/fn-permission-test.js` — 新增 PERM-A14（阅读记录：guest 读善选 +1 via_featured=1、member 读原文 +1、作者自读与 -2 拒绝不记）、PERM-A15（preferFeatured 取副本且不计阅读），矩阵扩至 17 条
+- `CLAUDE.md` / `doc/小程序用户操作指引.md` — 分享口径（仅善选有海报按钮）、-2 新流程、story_reads 说明
+
+**变更说明**：
+分享体系按「善选=对外内容」收口：只有善选故事可生成海报，海报即完整的对外阅读物（副本全文 + 品牌栏 + 扫码入口），不再暴露作者名；非善选故事的传播只剩右上角原生转发，接收方非会员时引导登录（本是会员则直接读），否则回到广场消费善选内容——替代原全屏会员墙，转化路径更顺。阅读记录为后续运营分析预留（谁读/什么身份/是否经副本），作者自读与海报取副本不polluting统计。
+
+**验证**：
+npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev。真机待走查：善选故事保存海报（全文+品牌栏+码可扫）；非善选卡片/详情无分享按钮；未登录点非善选转发链接 → 登录窗 → 非会员登录后转广场；story_reads 表随阅读增长。
+
+**prod 注意**：上线窗口执行的 migrate-diary-to-story.js 已含 story_reads，无需额外步骤。

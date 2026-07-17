@@ -1,7 +1,10 @@
-const { hueToColor, getInitial } = require('../../utils/color')
 const toast = require('../../utils/toast')
 const { call } = require('../../api/request')
 const { throttle } = require('../../utils/guard')
+
+// v3.1 分享海报（仅善选故事可分享）：包含善选副本全文（运营修订版，面向公众），
+// 不展示作者名；底部为醒书咨询品牌栏（书本标 + 简介 + 带参小程序码）
+const BRAND_INTRO = '醒书咨询，一家专注经典文化与现代生活深度对话的机构，为中小企业和个人提供发展咨询服务。'
 
 Component({
   // 允许 app.wxss 全局类（seal-tag/btn-primary/btn-ghost）穿透组件样式隔离
@@ -20,9 +23,8 @@ Component({
   data: {
     _mounted: false,
     _show: false,
-    avatarColor: '#8B7A4A',
-    avatarInitial: '?',
-    contentExcerpt: '',
+    shareTitle: '',
+    shareContent: '',
     qrFileID: '',
   },
 
@@ -38,22 +40,25 @@ Component({
     },
     'story': function(d) {
       if (d) {
-        const lines = (d.content || '').split('\n').filter(l => l.trim())
-        const excerpt = lines.slice(0, 5).join('\n')
-        this.setData({
-          avatarColor: hueToColor(d.author_avatar_hue || d.avatarHue || 60),
-          avatarInitial: getInitial(d.author_name || d.author || '?'),
-          contentExcerpt: excerpt,
-          qrFileID: '',
-        })
+        // 先用传入内容占位，随后拉善选副本全文覆盖（会员/作者视角传入的是原文，海报须用公众可见的副本）
+        this.setData({ shareTitle: d.title || '', shareContent: d.content || '', qrFileID: '' })
         this._qrTempPath = ''
+        this._loadShareContent(d.id)
         this._loadQr(d.id)
       }
     },
   },
 
   methods: {
-    // v2.2 带参小程序码：scene 携带日记 ID + 当前用户（分享人）ID，失败静默回退占位
+    // 分享内容 = 善选副本全文（preferFeatured：任何身份都取副本，不计阅读记录）
+    async _loadShareContent(storyId) {
+      const res = await call('getStoryDetail', { storyId, preferFeatured: true }, { raw: true })
+      if (res && res.code === 0 && res.data) {
+        this.setData({ shareTitle: res.data.title || '', shareContent: res.data.content || '' })
+      }
+    },
+
+    // v2.2 带参小程序码：scene 携带故事 ID + 当前用户（分享人）ID，失败静默回退占位
     async _loadQr(storyId) {
       try {
         const app = getApp()
@@ -120,8 +125,32 @@ Component({
         }
         const canvas = res[0].node
         const ctx = canvas.getContext('2d')
-        const W = 640, H = 960
+        const W = 640
+        const FOOT_H = 210            // 底部品牌栏高
+        const MAX_H = 6000            // 画布高度软上限（极长文超限时截断，防旧机型导出失败）
+
+        // ── 第一遍：仅测量排版，算出动态高度 ──
         canvas.width = W
+        canvas.height = 100
+        ctx.font = 'bold 38px serif'
+        const titleLines = this._splitText(ctx, this.data.shareTitle || '', W - 120)
+        ctx.font = '27px sans-serif'
+        let contentLines = []
+        ;(this.data.shareContent || '').split('\n').filter(l => l.trim()).forEach(line => {
+          contentLines.push(...this._splitText(ctx, line, W - 120))
+        })
+        const tags = (d.tags || []).slice(0, 4)
+        const tagsH = tags.length ? 56 : 0
+        const contentTop = 130 + titleLines.length * 54 + 20
+        let H = contentTop + contentLines.length * 42 + 16 + tagsH + 30 + FOOT_H + 44
+        if (H > MAX_H) {
+          const keep = Math.floor((MAX_H - contentTop - 16 - tagsH - 30 - FOOT_H - 44) / 42) - 1
+          contentLines = contentLines.slice(0, Math.max(keep, 1))
+          contentLines.push('……（全文请扫码进入小程序阅读）')
+          H = contentTop + contentLines.length * 42 + 16 + tagsH + 30 + FOOT_H + 44
+        }
+
+        // ── 第二遍：按最终高度绘制（重设尺寸会清空画布与状态）──
         canvas.height = H
 
         // Background
@@ -131,7 +160,7 @@ Component({
         // Dot grid
         ctx.fillStyle = 'rgba(126,102,64,0.05)'
         for (let x = 18; x < W; x += 18) {
-          for (let y = 18; y < H; y += 18) {
+          for (let y = 18; y < H - FOOT_H; y += 18) {
             ctx.beginPath()
             ctx.arc(x, y, 1.5, 0, Math.PI * 2)
             ctx.fill()
@@ -165,39 +194,34 @@ Component({
         ctx.fillStyle = '#B6452F'
         ctx.font = 'bold 26px serif'
         ctx.textAlign = 'center'
-        ctx.fillText('醒書日記', W / 2, 100)
+        ctx.fillText('醒書故事', W / 2, 100)
 
         // Title
         ctx.fillStyle = '#2A2723'
         ctx.font = 'bold 38px serif'
         ctx.textAlign = 'center'
         let ty = 164
-        this._splitText(ctx, d.title || '', W - 120).forEach(line => {
+        titleLines.forEach(line => {
           ctx.fillText(line, W / 2, ty)
           ty += 54
         })
         ty += 20
 
-        // Content excerpt
+        // Content full text（善选副本全文）
         ctx.fillStyle = '#4A453E'
         ctx.font = '27px sans-serif'
         ctx.textAlign = 'left'
-        const rawLines = (this.data.contentExcerpt || '').split('\n').filter(l => l.trim())
-        const contentLines = []
-        rawLines.forEach(line => {
-          contentLines.push(...this._splitText(ctx, line, W - 120))
-        })
-        contentLines.slice(0, 7).forEach(line => {
+        contentLines.forEach(line => {
           ctx.fillText(line, 60, ty)
           ty += 42
         })
         ty += 16
 
         // Tags
-        if (d.tags && d.tags.length) {
+        if (tags.length) {
           ctx.font = '22px sans-serif'
           let tx = 60
-          d.tags.slice(0, 4).forEach(tag => {
+          tags.forEach(tag => {
             const tw = ctx.measureText(tag).width + 28
             ctx.fillStyle = 'rgba(126,102,64,0.08)'
             this._roundRect(ctx, tx, ty - 22, tw, 36, 6)
@@ -209,60 +233,89 @@ Component({
             ctx.fillText(tag, tx + 14, ty)
             tx += tw + 12
           })
-          ty += 40
         }
 
-        // Divider
-        ty += 16
-        ctx.strokeStyle = 'rgba(126,102,64,0.15)'
+        // ── 底部品牌栏（醒书咨询样式：驼色底 + 书本标 + 简介 + 小程序码）──
+        const fy = H - 34 - FOOT_H
+        const fx = 34, fw = W - 68
+        const notch = 20
+        ctx.fillStyle = '#B3A188'
+        ctx.beginPath()
+        ctx.moveTo(fx + notch, fy)                 // 左上切角
+        ctx.lineTo(fx + fw - notch, fy)            // 右上切角
+        ctx.lineTo(fx + fw, fy + notch)
+        ctx.lineTo(fx + fw, fy + FOOT_H)
+        ctx.lineTo(fx, fy + FOOT_H)
+        ctx.lineTo(fx, fy + notch)
+        ctx.closePath()
+        ctx.fill()
+
+        const ink = '#1E1A14'
+        // 书本标（展开的书：左右两页 + 中缝）
+        const bx = fx + 44, by = fy + 30, bw = 52, bh = 32
+        ctx.fillStyle = ink
+        ctx.beginPath()                            // 左页
+        ctx.moveTo(bx + bw / 2, by + 8)
+        ctx.lineTo(bx, by)
+        ctx.lineTo(bx, by + bh - 8)
+        ctx.lineTo(bx + bw / 2, by + bh)
+        ctx.closePath()
+        ctx.fill()
+        ctx.beginPath()                            // 右页
+        ctx.moveTo(bx + bw / 2, by + 8)
+        ctx.lineTo(bx + bw, by)
+        ctx.lineTo(bx + bw, by + bh - 8)
+        ctx.lineTo(bx + bw / 2, by + bh)
+        ctx.closePath()
+        ctx.fill()
+        ctx.strokeStyle = '#B3A188'                // 中缝（底色描出）
+        ctx.lineWidth = 3
+        ctx.beginPath()
+        ctx.moveTo(bx + bw / 2, by + 8)
+        ctx.lineTo(bx + bw / 2, by + bh)
+        ctx.stroke()
+
+        // 醒书咨询 + 英文 + 标语
+        ctx.fillStyle = ink
+        ctx.textAlign = 'left'
+        ctx.font = 'bold 30px serif'
+        ctx.fillText('醒书咨询', fx + 24, by + bh + 38)
+        ctx.font = '13px sans-serif'
+        ctx.fillText('XINGSHU CONSULTING', fx + 24, by + bh + 62)
+        ctx.font = '15px serif'
+        ctx.fillText('以 经 典 导 航', fx + 26, by + bh + 90)
+
+        // 竖分隔线
+        ctx.strokeStyle = 'rgba(30,26,20,0.5)'
         ctx.lineWidth = 1
         ctx.beginPath()
-        ctx.moveTo(60, ty)
-        ctx.lineTo(W - 60, ty)
+        ctx.moveTo(fx + 176, fy + 32)
+        ctx.lineTo(fx + 176, fy + FOOT_H - 32)
         ctx.stroke()
-        ctx.fillStyle = 'rgba(126,102,64,0.35)'
-        ctx.font = '18px sans-serif'
-        ctx.textAlign = 'center'
-        ctx.fillText('◆', W / 2, ty + 5)
-        ty += 40
 
-        // Avatar
-        ctx.fillStyle = this.data.avatarColor || '#8B7A4A'
-        ctx.beginPath()
-        ctx.arc(86, ty + 2, 26, 0, Math.PI * 2)
+        // 品牌简介
+        ctx.fillStyle = ink
+        ctx.font = '19px sans-serif'
+        const introLines = this._splitText(ctx, BRAND_INTRO, 220)
+        let iy = fy + 56
+        introLines.slice(0, 5).forEach(line => {
+          ctx.fillText(line, fx + 198, iy)
+          iy += 30
+        })
+
+        // 小程序码（白底衬托，扫码可进详情并带推荐人）
+        const qsize = 128
+        const qx = fx + fw - 36 - qsize
+        const qy = fy + (FOOT_H - qsize) / 2
+        ctx.fillStyle = '#FFFCF5'
+        this._roundRect(ctx, qx - 8, qy - 8, qsize + 16, qsize + 16, 10)
         ctx.fill()
-        ctx.fillStyle = '#fff'
-        ctx.font = 'bold 26px sans-serif'
-        ctx.textAlign = 'center'
-        ctx.fillText(this.data.avatarInitial || '?', 86, ty + 11)
-
-        // Author name + time
-        ctx.fillStyle = '#2A2723'
-        ctx.font = 'bold 26px sans-serif'
-        ctx.textAlign = 'left'
-        ctx.fillText(d.author_name || d.author || '', 128, ty)
-        ctx.fillStyle = '#A8A39B'
-        ctx.font = '21px sans-serif'
-        ctx.fillText(d.dateText || '', 128, ty + 30)
-
-        // QR：优先绘制真实带参小程序码（v2.2），失败回退占位块
-        // 放大到 130px（此前仅 54px，带 logo 的小程序码过小扫不出）；下方留白足够容纳
-        const qsize = 130
-        const qx = W - 54 - qsize
-        const qy = ty - 24
-        const qrLabel = () => {
-          ctx.fillStyle = '#A8A39B'
-          ctx.font = '17px sans-serif'
-          ctx.textAlign = 'center'
-          ctx.fillText('扫码阅读', qx + qsize / 2, qy + qsize + 22)
-        }
         const drawQrPlaceholder = () => {
-          ctx.fillStyle = '#2A2723'
+          ctx.fillStyle = ink
           const c = qsize / 3
           ;[[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]].forEach(([r, col]) => {
             ctx.fillRect(qx + col * c, qy + r * c, c - 3, c - 3)
           })
-          qrLabel()
         }
         const exportImage = () => {
           wx.canvasToTempFilePath({
@@ -292,7 +345,7 @@ Component({
 
         if (this._qrTempPath) {
           const img = canvas.createImage()
-          img.onload = () => { ctx.drawImage(img, qx, qy, qsize, qsize); qrLabel(); exportImage() }
+          img.onload = () => { ctx.drawImage(img, qx, qy, qsize, qsize); exportImage() }
           img.onerror = () => { drawQrPlaceholder(); exportImage() }
           img.src = this._qrTempPath
           return
@@ -331,10 +384,6 @@ Component({
       ctx.lineTo(x, y + r)
       ctx.arcTo(x, y, x + r, y, r)
       ctx.closePath()
-    },
-
-    onShareWechat() {
-      toast.info('请使用右上角分享', 2000)
     },
 
     // 海报成功保存到相册 = 完成一次分享：后端累加 share_count，并把最新数字回抛给列表页更新

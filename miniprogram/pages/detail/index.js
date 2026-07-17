@@ -18,7 +18,6 @@ Page({
     replyTo: null,
     showPosterSheet: false,
     showLoginSheet: false,
-    memberWall: false, // 非会员打开未善选故事：全屏会员引导
     userAvatarColor: '#8B7A4A',
     userAvatarInitial: '?',
   },
@@ -62,10 +61,17 @@ Page({
       storyApi.getDetailRaw(id),
       socialApi.getComments(id, 1),
     ])
-    // v3.0：非会员（含未登录）打开未善选的会员故事 → 全屏会员引导墙
+    // v3.1：非会员打开未善选的会员故事（右上角转发链接直达）——
+    // 未登录先拉起登录窗（可能本就是会员）；登录后仍非会员 → 提示并转广场看善选列表
     if (res.code === -2) {
-      this.setData({ memberWall: true, story: null })
-      wx.setNavigationBarTitle({ title: '故事' })
+      const identity = (app.globalData.user || {}).identity || 'guest'
+      if (identity === 'guest') {
+        this._pendingId = id
+        this.setData({ showLoginSheet: true })
+        return
+      }
+      wx.showToast({ title: '该故事为会员专享，先看看善选故事吧', icon: 'none', duration: 2000 })
+      setTimeout(() => wx.switchTab({ url: '/pages/square/index' }), 1600)
       return
     }
     if (res.code !== 0 || !res.data) {
@@ -94,8 +100,6 @@ Page({
     const images = this.data.story.images || []
     wx.previewImage({ current: images[e.currentTarget.dataset.index], urls: images })
   },
-
-  onGoMember() { throttle(this, 'nav', () => wx.switchTab({ url: '/pages/member/index' })) },
 
   // 以下互动均需授权：guest 可读善选全文，但点赞/收藏/评论/分享在点击那刻拉起登录，登录后自动续做
   onLike() {
@@ -204,17 +208,24 @@ Page({
     else wx.switchTab({ url: '/pages/square/index' })
   },
 
-  // 登录弹窗：guest 可继续浏览（取消登录不返回），仅互动被拦时拉起
+  // 登录弹窗关闭：有内容则继续浏览；-2 流程拉起的（无内容可看）转广场看善选列表
   onLoginClose() {
     this.setData({ showLoginSheet: false })
     this._pendingLoginAction = null
+    if (!this.data.story) {
+      this._pendingId = null
+      wx.switchTab({ url: '/pages/square/index' })
+    }
   },
-  // 先重载拿到本人互动态（isLiked/isFavorited），再续做被拦下的操作，避免续做基于陈旧状态
+  // 先重载拿到本人互动态（isLiked/isFavorited），再续做被拦下的操作，避免续做基于陈旧状态；
+  // -2 流程拉起的登录用 _pendingId 重载——若仍非会员，重载会再次落入 -2 分支并转广场
   async onLoginSuccess() {
     this.setData({ showLoginSheet: false })
     const action = this._pendingLoginAction
     this._pendingLoginAction = null
-    if (this.data.story) await this._loadStory(this.data.story.id)
+    const reloadId = this._pendingId || (this.data.story && this.data.story.id)
+    this._pendingId = null
+    if (reloadId) await this._loadStory(reloadId)
     if (typeof action === 'function') action()
   },
 

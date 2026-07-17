@@ -74,7 +74,8 @@
           <text>删除</text>
         </view>
       </view>
-      <view wx:else class="stat-item" catch:tap="onShare">
+      <!-- 分享仅善选故事提供（海报面向公众）；非善选只能走右上角原生转发 -->
+      <view wx:elif="{{story.isFeatured}}" class="stat-item" catch:tap="onShare">
         <view class="stat-icon ic-share"></view>
         <text class="stat-count">{{story.shares}}</text>
       </view>

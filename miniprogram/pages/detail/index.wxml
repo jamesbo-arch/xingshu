@@ -118,7 +118,8 @@
         <view class="bar-action-icon {{story.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
         <text class="bar-action-count {{story.isFavorited ? 'faved' : ''}}">{{story.favorites}}</text>
       </view>
-      <view class="bar-action" bindtap="onShare">
+      <!-- 分享海报仅善选故事提供；非善选只能走右上角原生转发 -->
+      <view wx:if="{{story.isFeatured}}" class="bar-action" bindtap="onShare">
         <view class="bar-action-icon ic-share"></view>
       </view>
     </view>
@@ -140,20 +141,7 @@
   </view>
 </view>
 
-<!-- v3.0 会员引导墙：非会员打开未善选的会员故事（分享/深链直达）时全屏展示 -->
-<view class="page-wrap paper-bg member-wall-page" wx:if="{{!story && memberWall}}">
-  <view class="wall-back" bindtap="onBack">
-    <view class="nav-back-icon ic-back"></view>
-  </view>
-  <view class="member-wall wall-center">
-    <view class="wall-seal serif">醒</view>
-    <text class="member-wall-text serif">这是一篇会员专享故事</text>
-    <text class="member-wall-hint">开通会员后即可阅读全部会员故事，也开始记录属于你自己的故事</text>
-    <view class="member-wall-btn" bindtap="onGoMember">了解会员</view>
-  </view>
-</view>
-
-<!-- v2.3 微信登录弹窗：未登录访问详情时在本页拉起（story 为空时也需可见，故置于根节点之外） -->
+<!-- 微信登录弹窗：互动被拦或会员专享故事（-2）时在本页拉起（story 为空时也需可见，故置于根节点之外） -->
 <login-sheet
   visible="{{showLoginSheet}}"
   subtitle="你刚刚被打动了，对吗？登录后为喜欢的文字点赞、收藏，也开始记录属于你自己的故事。"

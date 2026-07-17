@@ -15,7 +15,7 @@ const FEAT_TITLE = 'test_perm_featured_修订版标题'
 const FEAT_CONTENT = '这是管理员修订过的善选副本正文（与原文不同）'
 
 async function run() {
-  console.log('=== 故事权限矩阵测试（PERM-A01~A13 · 善选版）===\n')
+  console.log('=== 故事权限矩阵测试（PERM-A01~A15 · 善选版）===\n')
   let passed = 0, failed = 0
   const created = []
   const conn = await mysql.createConnection(DB)
@@ -194,7 +194,35 @@ async function run() {
     await conn.query('UPDATE stories SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?', [featStoryId])
   })
 
-  // 清理（featured_stories 由 stories 硬删级联删除）
+  await test('PERM-A14 阅读记录落表：guest/member 读各记一行，作者自读与 -2 拒绝不记', async () => {
+    const cnt = async () => (await conn.query(
+      'SELECT COUNT(*) c FROM story_reads WHERE story_id IN (?,?)', [featStoryId, pubOnlyId]))[0][0].c
+    const base = await cnt()
+    await detail(featStoryId, GUEST)     // guest 读善选 → +1（via_featured=1）
+    await detail(pubOnlyId, MEMBER)      // member 读原文 → +1（via_featured=0）
+    await detail(featStoryId, AUTHOR)    // 作者自读 → 不记
+    await detail(pubOnlyId, AUTHED)      // -2 拒绝 → 不记
+    const after = await cnt()
+    if (after !== base + 2) throw new Error(`期望 +2，实际 +${after - base}`)
+    const [[g]] = await conn.query(
+      "SELECT identity, via_featured FROM story_reads WHERE story_id = ? ORDER BY id DESC LIMIT 1", [featStoryId])
+    if (g.identity !== 'guest' || g.via_featured !== 1) throw new Error(`guest 记录异常 ${g.identity}/${g.via_featured}`)
+    const [[m]] = await conn.query(
+      "SELECT identity, via_featured FROM story_reads WHERE story_id = ? ORDER BY id DESC LIMIT 1", [pubOnlyId])
+    if (m.identity !== 'member' || m.via_featured !== 0) throw new Error(`member 记录异常 ${m.identity}/${m.via_featured}`)
+  })
+
+  await test('PERM-A15 preferFeatured：member 取善选副本（供分享海报）且不计阅读', async () => {
+    const cnt = async () => (await conn.query(
+      'SELECT COUNT(*) c FROM story_reads WHERE story_id = ?', [featStoryId]))[0][0].c
+    const base = await cnt()
+    const r = await callFn('getStoryDetail', { storyId: featStoryId, preferFeatured: true }, MEMBER)
+    if (r.code !== 0) throw new Error(r.msg)
+    if (r.data.title !== FEAT_TITLE || r.data.content !== FEAT_CONTENT) throw new Error('海报视角应返回善选副本')
+    if (await cnt() !== base) throw new Error('preferFeatured 不应计入阅读记录')
+  })
+
+  // 清理（featured_stories/story_reads 由 stories 硬删级联删除）
   if (created.length) {
     await conn.query(`DELETE FROM stories WHERE id IN (${created.map(() => '?').join(',')})`, created)
     await conn.query("UPDATE users SET story_count = GREATEST(story_count - 3, 0) WHERE openid = ?", [AUTHOR])

@@ -114,15 +114,12 @@
   text-align: center;
 }
 
-/* Content */
+/* Content：善选副本全文（预览区随 sheet 滚动） */
 .poster-content {
   font-size: 26rpx;
   color: #4A453E;
   line-height: 1.8;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 5;
-  overflow: hidden;
+  white-space: pre-wrap;
   margin-bottom: 18rpx;
 }
 
@@ -134,69 +131,6 @@
   gap: 8rpx;
   margin-bottom: 20rpx;
   justify-content: center;
-}
-
-/* Divider */
-.poster-divider {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 10rpx;
-  margin-bottom: 20rpx;
-}
-
-.divider-line {
-  flex: 1;
-  height: 1px;
-  background: rgba(126, 102, 64, 0.15);
-}
-
-.divider-dot {
-  font-size: 16rpx;
-  color: rgba(126, 102, 64, 0.35);
-}
-
-/* Author row */
-.poster-author-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.poster-author-info {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 12rpx;
-}
-
-.poster-author-name {
-  font-size: 26rpx;
-  font-weight: 600;
-  color: #2A2723;
-  display: block;
-}
-
-.poster-time {
-  font-size: 22rpx;
-  color: #A8A39B;
-  display: block;
-}
-
-/* QR placeholder */
-.qr-placeholder {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6rpx;
-}
-
-/* 预览小程序码尺寸（此前无此类，image 按原图尺寸铺满导致过大）*/
-.qr-image {
-  width: 104rpx;
-  height: 104rpx;
-  border-radius: 4rpx;
 }
 
 .qr-grid {
@@ -234,4 +168,94 @@
 .poster-btn {
   flex: 1;
   font-size: 28rpx;
+}
+
+/* ── 品牌底栏（醒书咨询样式）── */
+.brand-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+  background: #B3A188;
+  padding: 24rpx 20rpx;
+  margin-top: 8rpx;
+  clip-path: polygon(20rpx 0, calc(100% - 20rpx) 0, 100% 20rpx, 100% 100%, 0 100%, 0 20rpx);
+}
+
+.brand-left {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex-shrink: 0;
+  gap: 2rpx;
+}
+
+.brand-book {
+  display: flex;
+  flex-direction: row;
+  gap: 3rpx;
+  margin-bottom: 6rpx;
+}
+
+.brand-book-page {
+  width: 22rpx;
+  height: 26rpx;
+  background: #1E1A14;
+}
+
+.brand-book-l {
+  clip-path: polygon(0 0, 100% 25%, 100% 100%, 0 78%);
+}
+
+.brand-book-r {
+  clip-path: polygon(0 25%, 100% 0, 100% 78%, 0 100%);
+}
+
+.brand-name {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1E1A14;
+  letter-spacing: 2rpx;
+}
+
+.brand-en {
+  font-size: 13rpx;
+  color: #1E1A14;
+  letter-spacing: 1rpx;
+}
+
+.brand-slogan {
+  font-size: 16rpx;
+  color: #1E1A14;
+  letter-spacing: 4rpx;
+  margin-top: 2rpx;
+}
+
+.brand-sep {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(30, 26, 20, 0.5);
+  flex-shrink: 0;
+}
+
+.brand-intro {
+  flex: 1;
+  font-size: 19rpx;
+  color: #1E1A14;
+  line-height: 1.65;
+}
+
+.brand-qr {
+  flex-shrink: 0;
+  background: #FFFCF5;
+  border-radius: 8rpx;
+  padding: 6rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.brand-qr-img {
+  width: 108rpx;
+  height: 108rpx;
 }
