@@ -1,0 +1,27 @@
+<view wx:if="{{_mounted}}">
+  <view class="sheet-mask {{_show ? 'mask-show' : ''}}" bindtap="onClose"></view>
+  <view class="sheet audience-sheet {{_show ? 'sheet-show' : ''}}" catchtap="noop">
+    <view class="aud-handle"></view>
+    <view class="aud-header">
+      <text class="aud-title">{{title}}</text>
+      <text class="aud-count">{{total}}</text>
+    </view>
+    <scroll-view class="aud-list" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="onReachBottom" lower-threshold="80">
+      <view wx:if="{{list.length === 0 && !loading}}" class="aud-empty">暂无记录</view>
+      <view wx:for="{{list}}" wx:key="index" class="aud-item">
+        <view class="aud-avatar" style="background-color: {{item.avatarColor}};">
+          <text>{{item.avatarInitial}}</text>
+        </view>
+        <view class="aud-body">
+          <view class="aud-row1">
+            <text class="aud-name">{{item.displayName}}</text>
+            <text class="aud-time">{{item.timeText}}</text>
+          </view>
+          <text wx:if="{{item.content}}" class="aud-content">{{item.content}}</text>
+        </view>
+      </view>
+      <view wx:if="{{loading}}" class="aud-loading">加载中…</view>
+      <view class="aud-bottom-pad"></view>
+    </scroll-view>
+  </view>
+</view>

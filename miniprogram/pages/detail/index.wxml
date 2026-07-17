@@ -117,7 +117,6 @@
       </view>
       <view class="bar-action" bindtap="onFav">
         <view class="bar-action-icon {{story.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
-        <text class="bar-action-count {{story.isFavorited ? 'faved' : ''}}">{{story.favorites}}</text>
       </view>
       <!-- 分享海报仅善选故事提供；非善选只能走右上角原生转发 -->
       <view wx:if="{{story.isFeatured}}" class="bar-action" bindtap="onShare">

@@ -20,4 +20,8 @@ module.exports = {
   remove(storyId) {
     return call('deleteStory', { storyId })
   },
+  // 作者视角：查看某故事的阅读/点赞/收藏/评论人员清单（仅作者本人可查）
+  getAudience(storyId, type, page = 1, pageSize = 20) {
+    return call('getStoryAudience', { storyId, type, page, pageSize }, { retry: 1 })
+  },
 }

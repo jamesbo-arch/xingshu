@@ -51,7 +51,27 @@
 
   <!-- Stats row -->
   <view class="card-stats">
-    <view class="stats-left">
+    <!-- 作者数据视角（我的故事页）：点击统计项查看人员清单，不触发互动 -->
+    <view wx:if="{{ownerStats}}" class="stats-left">
+      <view class="stat-item" catch:tap="onViewRead">
+        <view class="stat-icon ic-eye"></view>
+        <text class="stat-count">{{story.readCount}}</text>
+      </view>
+      <view class="stat-item" catch:tap="onViewLike">
+        <view class="stat-icon ic-heart"></view>
+        <text class="stat-count">{{story.likes}}</text>
+      </view>
+      <view class="stat-item" catch:tap="onViewFav">
+        <view class="stat-icon ic-bookmark"></view>
+        <text class="stat-count">{{story.favorites}}</text>
+      </view>
+      <view class="stat-item" catch:tap="onViewComment">
+        <view class="stat-icon ic-comment"></view>
+        <text class="stat-count">{{story.comments}}</text>
+      </view>
+    </view>
+    <!-- 浏览视角：点赞/收藏可互动；收藏计数按需求不展示数字 -->
+    <view wx:else class="stats-left">
       <view class="stat-item like-wrap" catch:tap="onLike">
         <view class="stat-icon {{story.isLiked ? 'ic-heart-on' : 'ic-heart'}}"></view>
         <text class="stat-count {{story.isLiked ? 'liked' : ''}}">{{story.likes}}</text>
@@ -59,7 +79,6 @@
       </view>
       <view class="stat-item" catch:tap="onFav">
         <view class="stat-icon {{story.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
-        <text class="stat-count {{story.isFavorited ? 'faved' : ''}}">{{story.favorites}}</text>
       </view>
       <view class="stat-item">
         <view class="stat-icon ic-comment"></view>

@@ -10,6 +10,7 @@ function story(item) {
     favorites: item.fav_count != null ? item.fav_count : item.favorites,
     comments: item.comment_count != null ? item.comment_count : item.comments,
     shares: item.share_count != null ? item.share_count : item.shares,
+    readCount: item.read_count != null ? item.read_count : (item.readCount || 0),
     publishStatus: item.publish_status || item.publishStatus || 'published',
     isFeatured: !!(item.is_featured != null ? item.is_featured : item.isFeatured),
     time: item.created_at || item.time,

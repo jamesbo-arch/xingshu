@@ -12,6 +12,11 @@ Component({
       type: Boolean,
       value: false,
     },
+    // 作者数据视角（我的故事页）：统计项改为查看人员清单，不做互动
+    ownerStats: {
+      type: Boolean,
+      value: false,
+    },
   },
 
   computed: {},
@@ -50,6 +55,20 @@ Component({
 
     onShare() {
       this.triggerEvent('share', { id: this.data.story.id })
+    },
+
+    // 作者数据视角：查看阅读/点赞/收藏/评论人员清单（由 catch:tap 阻止冒泡到卡片 onTap）
+    onViewRead() {
+      this.triggerEvent('viewread', { id: this.data.story.id })
+    },
+    onViewLike() {
+      this.triggerEvent('viewlike', { id: this.data.story.id })
+    },
+    onViewFav() {
+      this.triggerEvent('viewfav', { id: this.data.story.id })
+    },
+    onViewComment() {
+      this.triggerEvent('viewcomment', { id: this.data.story.id })
     },
 
     getPermLabel(status) {

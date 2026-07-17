@@ -102,7 +102,10 @@ exports.main = async (event, context) => {
     ? `d.id, d.user_id, d.created_at, d.publish_status,
        d.like_count, d.fav_count, d.comment_count, d.share_count,
        f.title AS title, f.content AS content, f.images AS images, 1 AS is_featured,`
-    : 'd.*,'
+    : (mode === 'mine'
+        // 「我的故事」作者视角额外带阅读数（story_reads 计数），供卡片统计入口展示
+        ? "d.*, (SELECT COUNT(*) FROM story_reads WHERE story_id = d.id) AS read_count,"
+        : 'd.*,')
 
   const offset = (page - 1) * pageSize
   const [countRows] = await db.query(`SELECT COUNT(DISTINCT d.id) AS total FROM ${from} ${where}`, params)

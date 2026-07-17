@@ -3318,3 +3318,22 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 - `CLAUDE.md` / `doc/小程序用户操作指引.md` / `test/checklist.md` — 徽章口径描述同步
 
 **验证**：纯 wxml 条件对调，开发者工具查看会员视角列表：全部已发布卡片带眼睛，善选卡片再带金星。
+
+### 2026-07-17 20:20 — 我的故事页作者数据视角 + 隐藏浏览态收藏计数
+
+**类型**：前端 | 云函数
+**计划关联**：用户需求（收藏计数不展示 + 我的故事页统计项改看人员清单）
+**修改文件**：
+- `miniprogram/cloudfunctions/getStoryAudience/`（新建）— 读者/互动人员清单云函数，type：read/like/favorite/comment，仅作者本人可查（非作者/游客一律 -1）；read 取 story_reads（含匿名读者，LEFT JOIN users）、comment 取 comments（含二级回复平铺）、like/favorite 取 interactions；分页返回头像色相+昵称+时间（评论带内容）
+- `miniprogram/cloudfunctions/getStoryList/index.js` — mine 分支 SELECT 追加 `read_count`（story_reads 子查询）供作者卡片展示阅读数
+- `miniprogram/components/audience-sheet/`（新建）— 人员清单底部弹窗（_mounted/_show 双状态、滚动分页、匿名读者兜底「读」头像）
+- `miniprogram/components/story-card/` — 新增 `ownerStats` 属性：作者视角下统计区改为「阅读/点赞/收藏/评论」四项，点击触发 viewread/viewlike/viewfav/viewcomment 事件（catch:tap 阻止冒泡进详情），不做互动；浏览视角（广场/收藏）收藏按钮不再显示计数数字
+- `miniprogram/pages/mine/` — story-card 传 owner-stats，接入 audience-sheet，四个查看事件打开对应清单（tab 页底部弹层同步隐藏 custom-tab-bar）；移除随之失效的 onCardLike/onCardFav 与 optimistic 引用
+- `miniprogram/pages/detail/index.wxml` — 底栏收藏按钮去掉计数数字
+- `miniprogram/utils/mapper.js` — story() 增加 readCount 映射
+- `miniprogram/api/story.js` — 增加 getAudience(storyId, type)
+- `cloudbaserc.json` — 注册 getStoryAudience（timeout 10s）
+
+**变更说明**：需求一——广场/详情/收藏三处「浏览视角」的收藏按钮旁统计数字隐藏（收藏图标与操作保留）。需求二——「我的故事」页卡片改为作者数据视角：在点赞/收藏/评论三项前新增阅读数（眼睛图标），四项均可点击弹出人员清单（头像+昵称+时间，评论另带内容），不再触发互动或进详情。
+
+**验证**：test:unit 44 条通过；getStoryAudience 冒烟（造作者+故事+读/赞/藏/评各一条）四类清单 total/内容正确、非作者与游客均 -1，ALL PASS；getStoryAudience/getStoryList 已部署 xingshu-prd（体验槽位）。

@@ -39,11 +39,14 @@
       wx:key="id"
       story="{{item}}"
       show-actions="{{true}}"
+      owner-stats="{{true}}"
       bind:open="onCardOpen"
-      bind:like="onCardLike"
-      bind:fav="onCardFav"
       bind:edit="onCardEdit"
       bind:delete="onCardDelete"
+      bind:viewread="onViewRead"
+      bind:viewlike="onViewLike"
+      bind:viewfav="onViewFav"
+      bind:viewcomment="onViewComment"
     ></story-card>
     <view class="list-bottom-pad"></view>
   </scroll-view>
@@ -69,4 +72,13 @@
     bind:close="onLoginClose"
     bind:success="onLoginSuccess"
   ></login-sheet>
+
+  <!-- 作者数据视角：阅读/点赞/收藏/评论人员清单 -->
+  <audience-sheet
+    visible="{{audienceVisible}}"
+    title="{{audienceTitle}}"
+    type="{{audienceType}}"
+    story-id="{{audienceStoryId}}"
+    bind:close="onAudienceClose"
+  ></audience-sheet>
 </view>

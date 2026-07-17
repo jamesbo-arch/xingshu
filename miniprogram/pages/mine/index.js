@@ -1,6 +1,5 @@
 const app = getApp()
 const storyApi = require('../../api/story')
-const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const { lock, throttle } = require('../../utils/guard')
 const { ensureLogin, ensureMember, handleLoginSuccess } = require('../../utils/auth-guard')
@@ -14,6 +13,10 @@ Page({
     hasMore: true,
     showFilterSheet: false,
     showLoginSheet: false,
+    audienceVisible: false,
+    audienceType: 'read',
+    audienceTitle: '',
+    audienceStoryId: null,
     filters: {
       tags: [], author: '', timeMode: 'quick', quickRange: 'all',
       dateFrom: '', dateTo: '', years: [], months: [],
@@ -78,17 +81,22 @@ Page({
   },
   onLoginSuccess() { handleLoginSuccess(this) },
 
-  onCardLike(e) {
-    if (!ensureLogin(this, () => this.onCardLike(e))) return
-    const { id } = e.detail
-    // 乐观更新：立即翻转 UI，后台失败自动回滚
-    return lock(this, 'like' + id, () => optimisticLike(this, id))
+  // 作者数据视角：点击卡片统计项查看人员清单（不做互动）
+  _openAudience(type, title, id) {
+    this.setData({ audienceStoryId: id, audienceType: type, audienceTitle: title, audienceVisible: true })
+    const tb = this.getTabBar && this.getTabBar()
+    if (tb) tb.setData({ hidden: true }) // tab 页底部弹层须隐藏 custom-tab-bar（独立层遮挡）
   },
-  onCardFav(e) {
-    if (!ensureLogin(this, () => this.onCardFav(e))) return
-    const { id } = e.detail
-    return lock(this, 'fav' + id, () => optimisticFav(this, id))
+  onViewRead(e) { this._openAudience('read', '阅读的人', e.detail.id) },
+  onViewLike(e) { this._openAudience('like', '点赞的人', e.detail.id) },
+  onViewFav(e) { this._openAudience('favorite', '收藏的人', e.detail.id) },
+  onViewComment(e) { this._openAudience('comment', '评论', e.detail.id) },
+  onAudienceClose() {
+    this.setData({ audienceVisible: false })
+    const tb = this.getTabBar && this.getTabBar()
+    if (tb) tb.setData({ hidden: false })
   },
+
   onCardEdit(e) { ensureMember(this, () => throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/compose/index?storyId=' + e.detail.id }))) },
   onCardDelete(e) {
     if (!ensureLogin(this, () => this.onCardDelete(e))) return
