@@ -25,6 +25,7 @@ Component({
     _show: false,
     shareTitle: '',
     shareContent: '',
+    shareImages: [],
     qrFileID: '',
   },
 
@@ -41,7 +42,7 @@ Component({
     'story': function(d) {
       if (d) {
         // 先用传入内容占位，随后拉善选副本全文覆盖（会员/作者视角传入的是原文，海报须用公众可见的副本）
-        this.setData({ shareTitle: d.title || '', shareContent: d.content || '', qrFileID: '' })
+        this.setData({ shareTitle: d.title || '', shareContent: d.content || '', shareImages: d.images || [], qrFileID: '' })
         this._qrTempPath = ''
         this._loadShareContent(d.id)
         this._loadQr(d.id)
@@ -50,11 +51,15 @@ Component({
   },
 
   methods: {
-    // 分享内容 = 善选副本全文（preferFeatured：任何身份都取副本，不计阅读记录）
+    // 分享内容 = 善选副本全文 + 副本配图（preferFeatured：任何身份都取副本，不计阅读记录）
     async _loadShareContent(storyId) {
       const res = await call('getStoryDetail', { storyId, preferFeatured: true }, { raw: true })
       if (res && res.code === 0 && res.data) {
-        this.setData({ shareTitle: res.data.title || '', shareContent: res.data.content || '' })
+        this.setData({
+          shareTitle: res.data.title || '',
+          shareContent: res.data.content || '',
+          shareImages: res.data.images || [],
+        })
       }
     },
 
@@ -118,7 +123,7 @@ Component({
       if (!d) return
 
       const query = wx.createSelectorQuery().in(this)
-      query.select('#poster-canvas').fields({ node: true, size: true }).exec((res) => {
+      query.select('#poster-canvas').fields({ node: true, size: true }).exec(async (res) => {
         if (!res || !res[0] || !res[0].node) {
           toast.error('图片生成失败')
           return
@@ -127,7 +132,27 @@ Component({
         const ctx = canvas.getContext('2d')
         const W = 640
         const FOOT_H = 210            // 底部品牌栏高
-        const MAX_H = 6000            // 画布高度软上限（极长文超限时截断，防旧机型导出失败）
+        const MAX_H = 8000            // 画布高度软上限（超限时截断正文，防旧机型导出失败）
+        const CW = W - 120            // 内容区宽（正文/配图共用）
+
+        // 配图先行加载（cloud:// 下载临时路径 → createImage 取宽高），失败的静默跳过
+        wx.showLoading({ title: '生成海报中…', mask: true })
+        const posterImgs = (await Promise.all((this.data.shareImages || []).map(async (src) => {
+          try {
+            let path = src
+            if (/^cloud:\/\//.test(src)) {
+              const dl = await wx.cloud.downloadFile({ fileID: src })
+              path = dl.tempFilePath
+            }
+            const img = canvas.createImage()
+            await new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; img.src = path })
+            return img
+          } catch (e) {
+            console.warn('[poster] 配图加载失败，跳过：', src)
+            return null
+          }
+        }))).filter(Boolean)
+        wx.hideLoading()
 
         // ── 第一遍：仅测量排版，算出动态高度 ──
         canvas.width = W
@@ -139,15 +164,19 @@ Component({
         ;(this.data.shareContent || '').split('\n').filter(l => l.trim()).forEach(line => {
           contentLines.push(...this._splitText(ctx, line, W - 120))
         })
+        // 配图按内容区宽等比缩放，纵向排列在正文之下
+        const imgHeights = posterImgs.map(img => Math.round(CW * img.height / Math.max(img.width, 1)))
+        const imgsH = imgHeights.reduce((s, h) => s + h + 16, 0)
         const tags = (d.tags || []).slice(0, 4)
         const tagsH = tags.length ? 56 : 0
         const contentTop = 130 + titleLines.length * 54 + 20
-        let H = contentTop + contentLines.length * 42 + 16 + tagsH + 30 + FOOT_H + 44
+        const fixedH = 16 + imgsH + tagsH + 30 + FOOT_H + 44
+        let H = contentTop + contentLines.length * 42 + fixedH
         if (H > MAX_H) {
-          const keep = Math.floor((MAX_H - contentTop - 16 - tagsH - 30 - FOOT_H - 44) / 42) - 1
+          const keep = Math.floor((MAX_H - contentTop - fixedH) / 42) - 1
           contentLines = contentLines.slice(0, Math.max(keep, 1))
           contentLines.push('……（全文请扫码进入小程序阅读）')
-          H = contentTop + contentLines.length * 42 + 16 + tagsH + 30 + FOOT_H + 44
+          H = contentTop + contentLines.length * 42 + fixedH
         }
 
         // ── 第二遍：按最终高度绘制（重设尺寸会清空画布与状态）──
@@ -216,6 +245,12 @@ Component({
           ty += 42
         })
         ty += 16
+
+        // 配图（正文之下逐张等比绘制）
+        posterImgs.forEach((img, i) => {
+          ctx.drawImage(img, 60, ty, CW, imgHeights[i])
+          ty += imgHeights[i] + 16
+        })
 
         // Tags
         if (tags.length) {

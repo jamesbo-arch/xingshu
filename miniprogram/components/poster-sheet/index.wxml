@@ -22,6 +22,17 @@
       <!-- Content：善选副本全文 -->
       <view class="poster-content">{{shareContent}}</view>
 
+      <!-- 配图（副本配图，正文之下） -->
+      <view class="poster-images" wx:if="{{shareImages.length}}">
+        <image
+          wx:for="{{shareImages}}"
+          wx:key="*this"
+          src="{{item}}"
+          mode="widthFix"
+          class="poster-img"
+        />
+      </view>
+
       <!-- Tags -->
       <view class="poster-tags" wx:if="{{story.tags && story.tags.length}}">
         <text

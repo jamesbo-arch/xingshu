@@ -259,3 +259,17 @@
   width: 108rpx;
   height: 108rpx;
 }
+
+/* 配图（正文之下逐张全宽展示） */
+.poster-images {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+  margin-bottom: 18rpx;
+}
+
+.poster-img {
+  width: 100%;
+  border-radius: 8rpx;
+  display: block;
+}
