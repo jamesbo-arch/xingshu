@@ -42,20 +42,10 @@
         >{{item}}</text>
       </view>
 
-      <!-- 品牌底栏：醒书咨询（书本标 + 简介 + 带参小程序码） -->
-      <view class="brand-bar">
-        <view class="brand-left">
-          <view class="brand-book">
-            <view class="brand-book-page brand-book-l"></view>
-            <view class="brand-book-page brand-book-r"></view>
-          </view>
-          <text class="brand-name serif">醒书咨询</text>
-          <text class="brand-en">XINGSHU CONSULTING</text>
-          <text class="brand-slogan serif">以 经 典 导 航</text>
-        </view>
-        <view class="brand-sep"></view>
-        <view class="brand-intro">醒书咨询，一家专注经典文化与现代生活深度对话的机构，为中小企业和个人提供发展咨询服务。</view>
-        <view class="brand-qr">
+      <!-- 品牌底栏：醒书咨询原图，二维码区覆盖为带参小程序码 -->
+      <view class="brand-banner">
+        <image class="brand-banner-img" src="/images/consulting-banner.png" mode="widthFix"/>
+        <view class="brand-banner-qr">
           <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="brand-qr-img" mode="aspectFit"/>
           <view wx:else class="qr-grid">
             <view wx:for="{{[0,1,2,3,4,5,6,7,8]}}" wx:key="*this" class="qr-dot {{item % 3 === 0 || item % 3 === 2 ? 'qr-dark' : 'qr-light'}}"></view>

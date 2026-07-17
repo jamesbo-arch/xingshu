@@ -170,94 +170,36 @@
   font-size: 28rpx;
 }
 
-/* ── 品牌底栏（醒书咨询样式）── */
-.brand-bar {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 16rpx;
-  background: #B3A188;
-  padding: 24rpx 20rpx;
+/* ── 品牌底栏：醒书咨询原图 + 小程序码覆盖原码位（比例坐标对 413×141 原图实测）── */
+.brand-banner {
+  position: relative;
   margin-top: 8rpx;
-  clip-path: polygon(20rpx 0, calc(100% - 20rpx) 0, 100% 20rpx, 100% 100%, 0 100%, 0 20rpx);
+  font-size: 0;
 }
 
-.brand-left {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  flex-shrink: 0;
-  gap: 2rpx;
+.brand-banner-img {
+  width: 100%;
 }
 
-.brand-book {
-  display: flex;
-  flex-direction: row;
-  gap: 3rpx;
-  margin-bottom: 6rpx;
-}
-
-.brand-book-page {
-  width: 22rpx;
-  height: 26rpx;
-  background: #1E1A14;
-}
-
-.brand-book-l {
-  clip-path: polygon(0 0, 100% 25%, 100% 100%, 0 78%);
-}
-
-.brand-book-r {
-  clip-path: polygon(0 25%, 100% 0, 100% 78%, 0 100%);
-}
-
-.brand-name {
-  font-size: 30rpx;
-  font-weight: 700;
-  color: #1E1A14;
-  letter-spacing: 2rpx;
-}
-
-.brand-en {
-  font-size: 13rpx;
-  color: #1E1A14;
-  letter-spacing: 1rpx;
-}
-
-.brand-slogan {
-  font-size: 16rpx;
-  color: #1E1A14;
-  letter-spacing: 4rpx;
-  margin-top: 2rpx;
-}
-
-.brand-sep {
-  width: 1px;
-  align-self: stretch;
-  background: rgba(30, 26, 20, 0.5);
-  flex-shrink: 0;
-}
-
-.brand-intro {
-  flex: 1;
-  font-size: 19rpx;
-  color: #1E1A14;
-  line-height: 1.65;
-}
-
-.brand-qr {
-  flex-shrink: 0;
-  background: #FFFCF5;
-  border-radius: 8rpx;
-  padding: 6rpx;
+.brand-banner-qr {
+  position: absolute;
+  left: 78%;
+  top: 31%;
+  width: 19%;
+  height: 54%;
+  background: #BA9F88;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .brand-qr-img {
-  width: 108rpx;
-  height: 108rpx;
+  width: 96%;
+  height: 96%;
+  background: #fff;
+  border-radius: 6rpx;
+  padding: 2rpx;
+  box-sizing: border-box;
 }
 
 /* 配图（正文之下逐张全宽展示） */

@@ -3298,3 +3298,13 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 - `miniprogram/components/poster-sheet/index.wxml/.wxss` — 预览区正文下同步展示配图（widthFix 全宽、圆角）
 
 **验证**：node --check 通过；纯前端改动无云函数/库变更。真机走查：带图善选故事保存海报，确认配图在正文下方完整呈现、白图/竖图等比不变形。
+
+### 2026-07-17 19:40 — 海报品牌底栏改用醒书咨询原图（仅替换二维码）
+
+**类型**：前端
+**计划关联**：v3.1 分享收敛（用户提供 miniprogram/images/consulting-banner.png，要求底栏用原图、仅二维码区替换为带参小程序码）
+**修改文件**：
+- `miniprogram/components/poster-sheet/index.js` — 删除 canvas 手绘品牌栏（书本标/文案/简介），改为绘制 consulting-banner.png 原图（栏高按原图 413×141 比例随栏宽缩放）；原图二维码区经像素实测定位（比例坐标 x=0.7942 y=0.3688 w=0.1598 h=0.4397，常量 BANNER_QR），先用底色 #BA9F88 补丁盖住原码，再居中绘入白底圆角衬托的带参小程序码；banner 与配图并行加载，加载失败回退纯色底栏
+- `miniprogram/components/poster-sheet/index.wxml/.wxss` — 预览区同步：原图 widthFix 展示 + 小程序码按百分比绝对定位覆盖原码区；删手绘 brand-bar 系列样式
+
+**验证**：node --check 通过。真机走查：保存海报确认底栏为原图观感、小程序码盖在原码位且可扫。

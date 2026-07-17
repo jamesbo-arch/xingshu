@@ -3,8 +3,11 @@ const { call } = require('../../api/request')
 const { throttle } = require('../../utils/guard')
 
 // v3.1 分享海报（仅善选故事可分享）：包含善选副本全文（运营修订版，面向公众），
-// 不展示作者名；底部为醒书咨询品牌栏（书本标 + 简介 + 带参小程序码）
-const BRAND_INTRO = '醒书咨询，一家专注经典文化与现代生活深度对话的机构，为中小企业和个人提供发展咨询服务。'
+// 不展示作者名；底部为醒书咨询品牌栏（images/consulting-banner.png 原图，仅二维码区替换为带参小程序码）
+const BANNER_SRC = '/images/consulting-banner.png'
+// 原图二维码区在图内的比例坐标（对 413×141 原图实测），替换小程序码时按此定位
+const BANNER_QR = { x: 0.7942, y: 0.3688, w: 0.1598, h: 0.4397 }
+const BANNER_BG = '#BA9F88'
 
 Component({
   // 允许 app.wxss 全局类（seal-tag/btn-primary/btn-ghost）穿透组件样式隔离
@@ -131,13 +134,13 @@ Component({
         const canvas = res[0].node
         const ctx = canvas.getContext('2d')
         const W = 640
-        const FOOT_H = 210            // 底部品牌栏高
         const MAX_H = 8000            // 画布高度软上限（超限时截断正文，防旧机型导出失败）
         const CW = W - 120            // 内容区宽（正文/配图共用）
+        const fx = 34, fw = W - 68    // 品牌栏横向位置
 
-        // 配图先行加载（cloud:// 下载临时路径 → createImage 取宽高），失败的静默跳过
+        // 配图与品牌栏图先行加载（cloud:// 下载临时路径 → createImage 取宽高），失败的静默跳过
         wx.showLoading({ title: '生成海报中…', mask: true })
-        const posterImgs = (await Promise.all((this.data.shareImages || []).map(async (src) => {
+        const loadImage = async (src) => {
           try {
             let path = src
             if (/^cloud:\/\//.test(src)) {
@@ -148,11 +151,19 @@ Component({
             await new Promise((ok, bad) => { img.onload = ok; img.onerror = bad; img.src = path })
             return img
           } catch (e) {
-            console.warn('[poster] 配图加载失败，跳过：', src)
+            console.warn('[poster] 图片加载失败，跳过：', src)
             return null
           }
-        }))).filter(Boolean)
+        }
+        const [bannerImg, ...rawImgs] = await Promise.all([
+          loadImage(BANNER_SRC),
+          ...(this.data.shareImages || []).map(loadImage),
+        ])
+        const posterImgs = rawImgs.filter(Boolean)
         wx.hideLoading()
+
+        // 品牌栏高度按原图比例随栏宽缩放（图加载失败时用近似值兜底）
+        const FOOT_H = bannerImg ? Math.round(fw * bannerImg.height / bannerImg.width) : 195
 
         // ── 第一遍：仅测量排版，算出动态高度 ──
         canvas.width = W
@@ -270,83 +281,32 @@ Component({
           })
         }
 
-        // ── 底部品牌栏（醒书咨询样式：驼色底 + 书本标 + 简介 + 小程序码）──
+        // ── 底部品牌栏：醒书咨询原图，仅二维码区替换为带参小程序码 ──
         const fy = H - 34 - FOOT_H
-        const fx = 34, fw = W - 68
-        const notch = 20
-        ctx.fillStyle = '#B3A188'
-        ctx.beginPath()
-        ctx.moveTo(fx + notch, fy)                 // 左上切角
-        ctx.lineTo(fx + fw - notch, fy)            // 右上切角
-        ctx.lineTo(fx + fw, fy + notch)
-        ctx.lineTo(fx + fw, fy + FOOT_H)
-        ctx.lineTo(fx, fy + FOOT_H)
-        ctx.lineTo(fx, fy + notch)
-        ctx.closePath()
-        ctx.fill()
-
-        const ink = '#1E1A14'
-        // 书本标（展开的书：左右两页 + 中缝）
-        const bx = fx + 44, by = fy + 30, bw = 52, bh = 32
-        ctx.fillStyle = ink
-        ctx.beginPath()                            // 左页
-        ctx.moveTo(bx + bw / 2, by + 8)
-        ctx.lineTo(bx, by)
-        ctx.lineTo(bx, by + bh - 8)
-        ctx.lineTo(bx + bw / 2, by + bh)
-        ctx.closePath()
-        ctx.fill()
-        ctx.beginPath()                            // 右页
-        ctx.moveTo(bx + bw / 2, by + 8)
-        ctx.lineTo(bx + bw, by)
-        ctx.lineTo(bx + bw, by + bh - 8)
-        ctx.lineTo(bx + bw / 2, by + bh)
-        ctx.closePath()
-        ctx.fill()
-        ctx.strokeStyle = '#B3A188'                // 中缝（底色描出）
-        ctx.lineWidth = 3
-        ctx.beginPath()
-        ctx.moveTo(bx + bw / 2, by + 8)
-        ctx.lineTo(bx + bw / 2, by + bh)
-        ctx.stroke()
-
-        // 醒书咨询 + 英文 + 标语
-        ctx.fillStyle = ink
-        ctx.textAlign = 'left'
-        ctx.font = 'bold 30px serif'
-        ctx.fillText('醒书咨询', fx + 24, by + bh + 38)
-        ctx.font = '13px sans-serif'
-        ctx.fillText('XINGSHU CONSULTING', fx + 24, by + bh + 62)
-        ctx.font = '15px serif'
-        ctx.fillText('以 经 典 导 航', fx + 26, by + bh + 90)
-
-        // 竖分隔线
-        ctx.strokeStyle = 'rgba(30,26,20,0.5)'
-        ctx.lineWidth = 1
-        ctx.beginPath()
-        ctx.moveTo(fx + 176, fy + 32)
-        ctx.lineTo(fx + 176, fy + FOOT_H - 32)
-        ctx.stroke()
-
-        // 品牌简介
-        ctx.fillStyle = ink
-        ctx.font = '19px sans-serif'
-        const introLines = this._splitText(ctx, BRAND_INTRO, 220)
-        let iy = fy + 56
-        introLines.slice(0, 5).forEach(line => {
-          ctx.fillText(line, fx + 198, iy)
-          iy += 30
-        })
-
-        // 小程序码（白底衬托，扫码可进详情并带推荐人）
-        const qsize = 128
-        const qx = fx + fw - 36 - qsize
-        const qy = fy + (FOOT_H - qsize) / 2
-        ctx.fillStyle = '#FFFCF5'
-        this._roundRect(ctx, qx - 8, qy - 8, qsize + 16, qsize + 16, 10)
+        if (bannerImg) {
+          ctx.drawImage(bannerImg, fx, fy, fw, FOOT_H)
+        } else {
+          ctx.fillStyle = BANNER_BG
+          ctx.fillRect(fx, fy, fw, FOOT_H)
+        }
+        // 原图二维码区（比例坐标换算到画布），先用底色补丁盖住原码
+        const oq = {
+          x: fx + fw * BANNER_QR.x,
+          y: fy + FOOT_H * BANNER_QR.y,
+          w: fw * BANNER_QR.w,
+          h: FOOT_H * BANNER_QR.h,
+        }
+        ctx.fillStyle = BANNER_BG
+        ctx.fillRect(oq.x - 5, oq.y - 5, oq.w + 10, oq.h + 10)
+        // 带参小程序码居中盖上（白底圆角衬托保证识别率）
+        const qsize = Math.round(Math.max(oq.w, oq.h) * 1.1)
+        const qx = Math.round(oq.x + oq.w / 2 - qsize / 2)
+        const qy = Math.round(oq.y + oq.h / 2 - qsize / 2)
+        ctx.fillStyle = '#FFFFFF'
+        this._roundRect(ctx, qx - 4, qy - 4, qsize + 8, qsize + 8, 8)
         ctx.fill()
         const drawQrPlaceholder = () => {
-          ctx.fillStyle = ink
+          ctx.fillStyle = '#1E1A14'
           const c = qsize / 3
           ;[[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]].forEach(([r, col]) => {
             ctx.fillRect(qx + col * c, qy + r * c, c - 3, c - 3)
