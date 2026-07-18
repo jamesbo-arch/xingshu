@@ -3378,3 +3378,15 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 **变更说明**：修复图1《尚书》报名截止已过却仍显示「报名中/报名参加」的问题——引入 signupClosed 统一判定。detail 云函数 SELECT a.* 已含 price（活动收费迁移后），前端直接展示；started 由云函数 `(start_time<=NOW())` 计算列提供。组织方按需求去除。
 
 **验证**：node --check 通过；fn-activity-test 11 条全绿。纯前端改动，随小程序上传生效。
+
+### 2026-07-18 — 活动详情「分享现场」改相机浮窗 + canPost 态隐藏底部报名行
+
+**类型**：前端
+**计划关联**：用户需求（分享现场做成相机 FAB，出现时不再显示「已报名，期待相见」）
+**修改文件**：
+- `miniprogram/pages/activity-detail/index.wxml` — 移除現場分享区内的虚线「＋分享现场」按钮，改为右下角相机浮窗（.act-share-fab，wx:if canPost，bindtap onOpenPostSheet）；底部报名栏 wx:if 增 `&& !activity.canPost`，即可分享现场时整条底部栏（含「已报名，期待相见」）隐藏
+- `miniprogram/pages/activity-detail/index.wxss` — 删失效的 .post-entry/.post-entry-plus，新增 .act-share-fab/.act-share-fab-icon/.ic-camera-w（与醒书活动列表页分享 FAB 同款相机图标）
+
+**变更说明**：canPost（已报名且活动进行中）时，现场分享入口由页内虚线按钮改为固定右下角相机浮窗，与「醒书活动」列表页的分享 FAB 一致；此态下底部报名栏无实际操作（报名早关闭、无取消），故整条隐藏，由浮窗承担唯一入口。
+
+**验证**：布局 detail-scroll flex:1 撑满，隐藏底部栏无空洞；纯前端改动随小程序上传生效。

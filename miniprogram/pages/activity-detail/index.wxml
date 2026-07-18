@@ -69,10 +69,6 @@
       <!-- 現場分享：已报名者活动开始后可发（canPost），所有登录用户可看 -->
       <block wx:if="{{postsTotal > 0 || activity.canPost}}">
         <view id="postsAnchor" class="act-section-title serif" style="margin-top: 40rpx;">現場分享{{postsTotal ? ' · ' + postsTotal : ''}}</view>
-        <view wx:if="{{activity.canPost}}" class="post-entry" bindtap="onOpenPostSheet">
-          <text class="post-entry-plus">＋</text>
-          <text>分享现场</text>
-        </view>
         <view wx:for="{{posts}}" wx:key="id" class="post-item">
           <view class="post-head">
             <image wx:if="{{item.avatar_url}}" class="post-avatar-img" src="{{item.avatar_url}}" mode="aspectFill"/>
@@ -109,8 +105,13 @@
     </view>
   </scroll-view>
 
-  <!-- 底部报名栏（仅未结束活动） -->
-  <view wx:if="{{!isPast}}" class="act-signup-bar">
+  <!-- 现场分享相机浮窗：已报名且活动进行中（canPost）时出现，替代底部报名状态行 -->
+  <view wx:if="{{activity.canPost}}" class="act-share-fab" bindtap="onOpenPostSheet">
+    <view class="act-share-fab-icon ic-camera-w"></view>
+  </view>
+
+  <!-- 底部报名栏（未结束、且非「可分享现场」态时显示） -->
+  <view wx:if="{{!isPast && !activity.canPost}}" class="act-signup-bar">
     <block wx:if="{{activity.isSignedUp}}">
       <text class="act-signed-text">✓ 已报名，期待相见</text>
       <!-- 报名已关闭（过截止/已开始）则不再提供取消入口 -->
