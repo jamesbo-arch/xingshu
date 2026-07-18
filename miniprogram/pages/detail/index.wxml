@@ -36,9 +36,9 @@
     </view>
 
     <view class="detail-content">
-      <!-- 有样式版（富文本）用 rich-text 渲染；旧纯文本故事回退 text -->
-      <rich-text wx:if="{{story.contentRich}}" class="content-text" nodes="{{story.contentRich}}" user-select></rich-text>
-      <text wx:else class="content-text" user-select>{{story.content}}</text>
+      <!-- 有样式版（富文本）用 rich-text 渲染；旧纯文本故事回退 text。不加 user-select：禁止框选复制 -->
+      <rich-text wx:if="{{story.contentRich}}" class="content-text" nodes="{{story.contentRich}}"></rich-text>
+      <text wx:else class="content-text">{{story.content}}</text>
     </view>
 
     <view wx:if="{{story.images && story.images.length}}" class="detail-images">
