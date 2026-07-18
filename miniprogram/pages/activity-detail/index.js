@@ -22,6 +22,8 @@ Page({
     activity: null,
     isPast: false,
     isFull: false,
+    signupClosed: false,
+    feeText: '',
     pct: 0,
     statusBarHeight: 0,
     showSignup: false,
@@ -122,11 +124,21 @@ Page({
       setTimeout(() => this._goBack(), 1200)
       return
     }
+    // 报名是否已关闭：已结束 / 已开始 / 已过报名截止——任一成立即不再显示报名·取消按钮
+    const now = Date.now()
+    const parseTs = s => (s ? new Date(String(s).replace(/-/g, '/') + ':00').getTime() : null)
+    const deadlineTs = parseTs(a.signup_deadline)
+    const startTs = parseTs(a.start_time)
+    const deadlinePassed = deadlineTs ? now > deadlineTs : (startTs ? now > startTs : false)
+    const signupClosed = a.status === 'finished' || Number(a.started) === 1 || deadlinePassed
+    const price = Number(a.price) || 0
     this.setData({
       activity: a,
       isPast: a.status === 'finished',
       isFull: a.capacity > 0 && a.signup_count >= a.capacity && !a.isSignedUp,
       pct: a.capacity > 0 ? Math.min(100, Math.round(a.signup_count / a.capacity * 100)) : 0,
+      signupClosed,
+      feeText: price > 0 ? price + ' 元' : '免费',
       invite: this._buildInvite(a),
     })
     this._invPath = '' // 活动数据变化后邀请函图需重绘

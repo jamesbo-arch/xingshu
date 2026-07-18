@@ -13,18 +13,19 @@
         <text class="detail-title serif">{{activity.title}}</text>
         <text wx:if="{{isPast}}" class="title-badge act-badge-past">回顾</text>
         <text wx:elif="{{activity.isSignedUp}}" class="title-badge act-badge-signed" bindtap="onShowSignups">已报名 ›</text>
+        <text wx:elif="{{signupClosed}}" class="title-badge act-badge-past">报名已截止</text>
         <text wx:elif="{{isFull}}" class="title-badge act-badge-full">名额已满</text>
         <text wx:else class="title-badge act-badge-open">报名中</text>
       </view>
 
       <view class="act-info-card">
-        <view class="act-meta"><view class="act-meta-icon ic-calendar"></view><text>{{activity.start_time}}{{activity.end_time ? ' – ' + activity.end_time : ''}}</text></view>
+        <view class="act-meta"><view class="act-meta-icon ic-calendar"></view><text>{{invite.timeText}}</text></view>
         <view class="act-meta"><view class="act-meta-icon ic-pin"></view>
           <!-- 线上：会议号仅报名可见（后端掩码 + locationLocked 标记）；线下：有坐标时点击打开地图 -->
           <text wx:if="{{activity.type === 'online'}}">线上{{activity.locationLocked ? ' · 会议号报名后可见' : (activity.location ? ' · 腾讯会议 ' + activity.location : '')}}</text>
           <text wx:else class="{{activity.latitude ? 'act-addr-link' : ''}}" bindtap="onOpenMap">{{activity.city}} · {{activity.location}}{{activity.latitude ? ' ›' : ''}}</text>
         </view>
-        <view class="act-meta"><view class="act-meta-icon ic-users"></view><text>组织方：{{activity.organizer}}</text></view>
+        <view class="act-meta"><text class="act-meta-yen">¥</text><text>{{feeText}}</text></view>
         <view wx:if="{{!isPast}}" class="act-progress-row">
           <view class="act-progress"><view class="act-progress-fill" style="width: {{pct}}%"></view></view>
           <text class="act-count">已报名 {{activity.signup_count}}/{{activity.capacity}}</text>
@@ -112,8 +113,10 @@
   <view wx:if="{{!isPast}}" class="act-signup-bar">
     <block wx:if="{{activity.isSignedUp}}">
       <text class="act-signed-text">✓ 已报名，期待相见</text>
-      <view class="btn-ghost act-cancel-btn" bindtap="onCancelSignup">取消报名</view>
+      <!-- 报名已关闭（过截止/已开始）则不再提供取消入口 -->
+      <view wx:if="{{!signupClosed}}" class="btn-ghost act-cancel-btn" bindtap="onCancelSignup">取消报名</view>
     </block>
+    <view wx:elif="{{signupClosed}}" class="act-signup-btn disabled">报名已截止</view>
     <view wx:elif="{{isFull}}" class="act-signup-btn disabled">名额已满</view>
     <view wx:else class="act-signup-btn" bindtap="onOpenSignup">报名参加</view>
   </view>

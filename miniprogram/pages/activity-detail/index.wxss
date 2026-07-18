@@ -199,6 +199,7 @@
 }
 
 .act-meta-icon { width: 28rpx; height: 28rpx; flex-shrink: 0; background-repeat: no-repeat; background-position: center; background-size: contain; }
+.act-meta-yen { width: 28rpx; flex-shrink: 0; text-align: center; font-size: 26rpx; color: #B6452F; }
 
 .act-progress-row {
   display: flex;

@@ -3365,3 +3365,16 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 **验证**：dev 迁移已执行；fn-activity-test 11 条、fn-admin-test 13 条全绿；admin 前端 build 通过；admin 云函数与后台静态托管已部署 xingshu-prd。
 
 **prod 上线追加**：`XINGSHU_ENV_FILE=.env.prod node scripts/migrate-activity-price.js`（先 backup-db），随 admin 云函数与后台一并发。
+
+### 2026-07-18 — 活动详情页：报名关闭状态 + 去组织方 + 费用/时间格式对齐海报
+
+**类型**：前端
+**计划关联**：用户需求（结束/过截止的活动不再显示报名·取消按钮，补活动费用）
+**修改文件**：
+- `miniprogram/pages/activity-detail/index.js` — _load 派生 signupClosed（已结束 / 已开始 started / 已过报名截止 任一成立）与 feeText（price>0 显金额、否则「免费」）
+- `miniprogram/pages/activity-detail/index.wxml` — 时间行改用 invite.timeText（2026-08-01（周六） 8:30 ~ 9:30 格式，与海报一致）；删「组织方」行改为「¥ 费用」行；标题徽章增「报名已截止」态；底部栏 signupClosed 时不再出现「报名参加」「取消报名」按钮（未报名显示灰「报名已截止」，已报名仅显示「已报名，期待相见」无取消入口）
+- `miniprogram/pages/activity-detail/index.wxss` — 新增 .act-meta-yen（¥ 符号图标位）
+
+**变更说明**：修复图1《尚书》报名截止已过却仍显示「报名中/报名参加」的问题——引入 signupClosed 统一判定。detail 云函数 SELECT a.* 已含 price（活动收费迁移后），前端直接展示；started 由云函数 `(start_time<=NOW())` 计算列提供。组织方按需求去除。
+
+**验证**：node --check 通过；fn-activity-test 11 条全绿。纯前端改动，随小程序上传生效。
