@@ -257,7 +257,7 @@ Component({
 
         // 「醒書故事分享」标签框（左对齐，花边内顶部）
         ctx.textAlign = 'left'; ctx.font = '24px sans-serif'
-        const brandText = '醒書故事分享'
+        const brandText = '醒書故事'
         const brandTagW = ctx.measureText(brandText).width + 36
         ctx.strokeStyle = ACCENT; ctx.lineWidth = 2
         this._roundRect(ctx, PADX, lay.tagTop, brandTagW, 48, 7); ctx.stroke()
