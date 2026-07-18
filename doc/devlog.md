@@ -3414,3 +3414,16 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 **变更说明**：故事分享海报的字体、配色（暖米渐变+印章红accent）、排版、标题、CTA 与页尾全面对齐活动邀请函风格；二维码区文案按用户要求改为「长按识别小程序码 / 探索把经典走进你的生活」。consulting-banner.png 仍由会员中心页引用，保留。
 
 **验证**：node --check 通过；纯前端 canvas 渲染改动随小程序上传生效。
+
+### 2026-07-18 — 故事海报回调：上半沿用原样(花边框住文字)+下半活动风格+分享按钮
+
+**类型**：前端
+**计划关联**：用户修正（页头/标题/花边/底色沿用原故事海报，花边框住文字，花边下才是图片/二维码/页尾；弹窗按钮同活动）
+**修改文件**：
+- `miniprogram/components/poster-sheet/index.js` — canvas 改回 640 宽、米纸点阵底：花边（矩形边框+四角）按文字区高度动态框住「醒書故事」居中页头+居中标题+左对齐正文+标签；花边下依次绘配图、虚线二维码 CTA（长按识别小程序码/探索把经典走进你的生活）、手绘醒书咨询页尾；渲染逻辑拆分 _render(done)→保存/分享共用，新增 onShareImage（wx.showShareImageMenu）与 _saveToAlbum
+- `miniprogram/components/poster-sheet/index.wxml` — 预览改回花边框住文字结构，花边下配图/CTA/页尾；底部按钮加「分享给朋友」
+- `miniprogram/components/poster-sheet/index.wxss` — poster-card 恢复米纸点阵底；新增 pc-frame/corner 花边、pc-brand 居中页头、pc-title 居中标题、pc-content 原色正文；pc-foot 出血满宽
+
+**变更说明**：按用户修正，故事海报页头/标题/花边/底色字体颜色沿用原样，花边完整框住故事文字；花边下才是配图、二维码、页尾（二维码 CTA 与手绘页尾沿用活动风格）；弹窗结构与按钮与活动邀请函一致（保存图片 + 分享给朋友）。
+
+**验证**：node --check 通过；纯前端 canvas 渲染改动随小程序上传生效。

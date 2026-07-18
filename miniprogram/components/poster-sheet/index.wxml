@@ -3,34 +3,35 @@
   <view class="sheet poster-sheet-wrap {{_show ? 'sheet-show' : ''}}" catchtap="onSheetTap">
     <view class="sheet-handle"></view>
 
-    <!-- Paper card（预览：善选副本全文，风格同活动邀请函；不展示作者名） -->
+    <!-- Paper card（预览：米纸点阵底 + 花边框住故事文字，花边下为配图/二维码/页尾） -->
     <view class="poster-card">
-      <view class="pc-body">
-        <view class="pc-tag">醒書故事</view>
-        <view class="pc-kicker">X I N G S H U   S T O R Y</view>
+      <!-- 花边：角标 + 边框，完整框住页头/标题/正文/标签 -->
+      <view class="pc-frame">
+        <view class="corner corner-tl"></view>
+        <view class="corner corner-tr"></view>
+        <view class="corner corner-bl"></view>
+        <view class="corner corner-br"></view>
+        <view class="pc-brand serif">醒書故事</view>
         <view class="pc-title serif">{{shareTitle}}</view>
         <view class="pc-content">{{shareContent}}</view>
-
-        <!-- 配图（副本配图，正文之下） -->
-        <view class="pc-images" wx:if="{{shareImages.length}}">
-          <image wx:for="{{shareImages}}" wx:key="*this" src="{{item}}" mode="widthFix" class="pc-img"/>
-        </view>
-
-        <view class="pc-divider"></view>
-
         <view class="pc-tags" wx:if="{{story.tags && story.tags.length}}">
           <text wx:for="{{story.tags}}" wx:key="*this" class="seal-tag">{{item}}</text>
         </view>
+      </view>
 
-        <!-- CTA：虚线框 + 文案 + 带参小程序码 -->
-        <view class="pc-cta">
-          <view class="pc-cta-text">
-            <text>长按识别小程序码</text>
-            <text>探索把经典走进你的生活</text>
-          </view>
-          <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="pc-qr" mode="aspectFit"/>
-          <view wx:else class="pc-qr pc-qr-loading">生成中</view>
+      <!-- 花边下：配图 -->
+      <view class="pc-images" wx:if="{{shareImages.length}}">
+        <image wx:for="{{shareImages}}" wx:key="*this" src="{{item}}" mode="widthFix" class="pc-img"/>
+      </view>
+
+      <!-- 二维码 CTA：虚线框 + 文案 + 带参小程序码 -->
+      <view class="pc-cta">
+        <view class="pc-cta-text">
+          <text>长按识别小程序码</text>
+          <text>探索把经典走进你的生活</text>
         </view>
+        <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="pc-qr" mode="aspectFit"/>
+        <view wx:else class="pc-qr pc-qr-loading">生成中</view>
       </view>
 
       <!-- 页尾品牌栏（手绘醒书咨询，与活动邀请函一致） -->
@@ -43,9 +44,10 @@
       </view>
     </view>
 
-    <!-- Action：仅保存图片（转发走小程序右上角原生菜单） -->
+    <!-- Action：保存图片 + 分享给朋友（与活动邀请函一致） -->
     <view class="poster-actions">
-      <view class="btn-primary poster-btn" bindtap="onSaveImage">保存图片</view>
+      <view class="btn-ghost poster-btn" bindtap="onSaveImage">保存图片</view>
+      <view class="btn-primary poster-btn" bindtap="onShareImage">分享给朋友</view>
     </view>
 
     <view class="safe-bottom"></view>
