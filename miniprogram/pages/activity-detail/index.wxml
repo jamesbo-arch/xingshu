@@ -135,6 +135,9 @@
             <text class="inv-kicker">{{invite.kicker}}</text>
             <text class="inv-title serif">{{activity.title}}</text>
             <text class="inv-intro">{{invite.intro}}</text>
+            <view wx:if="{{activity.images && activity.images.length}}" class="inv-images">
+              <image wx:for="{{activity.images}}" wx:key="*this" src="{{item}}" mode="widthFix" class="inv-image"/>
+            </view>
             <view class="inv-info">
               <view class="inv-row"><text class="inv-b">活动时间</text><text class="inv-v">{{invite.timeText}}</text></view>
               <view class="inv-row"><text class="inv-b">参与方式</text><text class="inv-v">{{invite.joinText}}</text></view>
