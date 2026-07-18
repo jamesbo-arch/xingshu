@@ -158,7 +158,7 @@ Component({
         const ctx = canvas.getContext('2d')
         const W = 640, PADX = 60, CW = W - PADX * 2   // 沿用原故事海报尺寸
         const MAX_H = 8000            // 画布高度软上限（超限时截断正文，防旧机型导出失败）
-        const FRAME_L = 24, frameTop = 36             // 花边矩形（完整框住故事文字）
+        const FRAME_L = 24                            // 花边矩形（在「醒書故事」下方，框住标题+正文）
         const CTA_H = 150, FOOT_H = 100
         const ACCENT = '#B6452F', FOOT_BG = '#A08A63'
 
@@ -194,32 +194,30 @@ Component({
           .map(p => (p.trim() ? this._splitText(ctx, p.trim(), CW) : []))
         const imgHeights = posterImgs.map(img => Math.round(CW * img.height / Math.max(img.width, 1)))
         const imgsH = imgHeights.reduce((s, h) => s + h + 16, 0)
-        const tags = (d.tags || []).slice(0, 4)
-        const tagsH = tags.length ? 48 : 0
         const contentHof = (blocks) => {
           let ch = 0
           blocks.forEach((lines, i) => { ch += lines.length * 40; if (i < blocks.length - 1) ch += 12 })
           return ch
         }
         const measure = (blocks) => {
-          let yy = frameTop + 28
-          const tagTop = yy                    // 「醒書故事」标签框顶（左对齐）
-          yy += 48 + 22
-          const titleTop = yy                  // 标题区顶（左对齐）
+          let yy = 40
+          const brandTagTop = yy               // 「醒書故事」标签框（花边外上方）
+          yy += 48 + 20
+          const frameTop = yy                  // 花边上边（在「醒書故事」下方）
+          yy += 28
+          const titleTop = yy                  // 花边内：标题
           yy += titleLines.length * 54
           yy += 16
-          const contentTop = yy                // 正文区顶（左对齐）
+          const contentTop = yy                // 花边内：正文
           yy += contentHof(blocks)
-          let tagsTop = 0
-          if (tags.length) { yy += 12; tagsTop = yy; yy += tagsH }
           yy += 24
-          const frameBottom = yy               // 花边下边（框到此，完整框住文字）
+          const frameBottom = yy               // 花边下边（框住标题+正文）
           yy += 32
           const imgTop = yy                    // 花边下：配图
           yy += imgsH
           const ctaTop = yy                    // 二维码 CTA
           yy += CTA_H + 28
-          return { tagTop, titleTop, contentTop, tagsTop, frameBottom, imgTop, ctaTop, H: yy + FOOT_H }
+          return { brandTagTop, frameTop, titleTop, contentTop, frameBottom, imgTop, ctaTop, H: yy + FOOT_H }
         }
         let lay = measure(contentBlocks)
         if (lay.H > MAX_H) {
@@ -246,12 +244,12 @@ Component({
           }
         }
 
-        // 花边：矩形边框 + 四角 L 形（完整框住页头/标题/正文/标签）
+        // 花边：矩形边框 + 四角 L 形（在「醒書故事」下方，框住标题+正文）
         ctx.strokeStyle = 'rgba(126,102,64,0.2)'; ctx.lineWidth = 1
-        ctx.strokeRect(FRAME_L, frameTop, W - FRAME_L * 2, lay.frameBottom - frameTop)
+        ctx.strokeRect(FRAME_L, lay.frameTop, W - FRAME_L * 2, lay.frameBottom - lay.frameTop)
         const cm = 16
         ctx.strokeStyle = 'rgba(126,102,64,0.4)'; ctx.lineWidth = 1.5
-        const fL = FRAME_L + 12, fT = frameTop + 12, fR = W - FRAME_L - 12, fB = lay.frameBottom - 12
+        const fL = FRAME_L + 12, fT = lay.frameTop + 12, fR = W - FRAME_L - 12, fB = lay.frameBottom - 12
         ;[
           [[fL + cm, fT], [fL, fT], [fL, fT + cm]],
           [[fR - cm, fT], [fR, fT], [fR, fT + cm]],
@@ -259,13 +257,13 @@ Component({
           [[fR - cm, fB], [fR, fB], [fR, fB - cm]],
         ].forEach(([s, c, e]) => { ctx.beginPath(); ctx.moveTo(...s); ctx.lineTo(...c); ctx.lineTo(...e); ctx.stroke() })
 
-        // 页头「醒書故事」标签框（左对齐，活动海报样式）
+        // 页头「醒書故事」标签框（左对齐，花边外上方）
         ctx.textAlign = 'left'; ctx.font = '24px sans-serif'
         const brandText = '醒書故事'
         const brandTagW = ctx.measureText(brandText).width + 36
         ctx.strokeStyle = ACCENT; ctx.lineWidth = 2
-        this._roundRect(ctx, PADX, lay.tagTop, brandTagW, 48, 7); ctx.stroke()
-        ctx.fillStyle = ACCENT; ctx.fillText(brandText, PADX + 18, lay.tagTop + 32)
+        this._roundRect(ctx, PADX, lay.brandTagTop, brandTagW, 48, 7); ctx.stroke()
+        ctx.fillStyle = ACCENT; ctx.fillText(brandText, PADX + 18, lay.brandTagTop + 32)
 
         // 标题（左对齐衬线，活动字体色）
         ctx.fillStyle = '#43341F'; ctx.font = 'bold 38px serif'; ctx.textAlign = 'left'
@@ -279,20 +277,6 @@ Component({
           lines.forEach(line => { ctx.fillText(line, PADX, cy); cy += 40 })
           cy += 12
         })
-
-        // 标签（印章样式，框内正文之下）
-        if (tags.length) {
-          ctx.font = '22px sans-serif'
-          let tx = PADX
-          const tgy = lay.tagsTop
-          tags.forEach(tag => {
-            const tw = ctx.measureText(tag).width + 28
-            ctx.fillStyle = 'rgba(126,102,64,0.08)'; this._roundRect(ctx, tx, tgy, tw, 36, 6); ctx.fill()
-            ctx.strokeStyle = 'rgba(126,102,64,0.3)'; ctx.lineWidth = 1; ctx.stroke()
-            ctx.fillStyle = '#7E6640'; ctx.fillText(tag, tx + 14, tgy + 25)
-            tx += tw + 12
-          })
-        }
 
         // ── 花边下：配图（逐张等比） ──
         let imy = lay.imgTop
