@@ -8,14 +8,16 @@
     <scroll-view scroll-y class="poster-preview-scroll">
     <!-- Paper card（预览：米纸点阵底 + 花边框住故事文字，花边下为配图/二维码/页尾） -->
     <view class="poster-card">
-      <!-- 花边：角标 + 边框，框住「醒書故事分享」标签 + 标题 + 正文 -->
+      <!-- 「醒書故事」标签 + 英文（花边外上方） -->
+      <view class="pc-tag">醒書故事</view>
+      <view class="pc-kicker">X I N G S H U   S T O R Y</view>
+
+      <!-- 花边：角标 + 边框，在英文下方框住标题 + 正文 -->
       <view class="pc-frame">
         <view class="corner corner-tl"></view>
         <view class="corner corner-tr"></view>
         <view class="corner corner-bl"></view>
         <view class="corner corner-br"></view>
-        <view class="pc-tag">醒書故事</view>
-        <view class="pc-kicker">X I N G S H U   S T O R Y</view>
         <view class="pc-title serif">{{shareTitle}}</view>
         <view class="pc-content">{{shareContent}}</view>
       </view>
