@@ -3337,3 +3337,14 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 **变更说明**：需求一——广场/详情/收藏三处「浏览视角」的收藏按钮旁统计数字隐藏（收藏图标与操作保留）。需求二——「我的故事」页卡片改为作者数据视角：在点赞/收藏/评论三项前新增阅读数（眼睛图标），四项均可点击弹出人员清单（头像+昵称+时间，评论另带内容），不再触发互动或进详情。
 
 **验证**：test:unit 44 条通过；getStoryAudience 冒烟（造作者+故事+读/赞/藏/评各一条）四类清单 total/内容正确、非作者与游客均 -1，ALL PASS；getStoryAudience/getStoryList 已部署 xingshu-prd（体验槽位）。
+
+### 2026-07-18 — 管理后台改 hash 路由，修复静态托管刷新子路由 403
+
+**类型**：前端 | 部署
+**计划关联**：线上修复（COS 静态托管刷新 /login 等子路由返回 403 AccessDenied）
+**修改文件**：
+- `admin/src/router/index.js` — `createWebHistory()` 改 `createWebHashHistory()`
+
+**变更说明**：管理后台部署在 COS 静态托管，history 路由模式下刷新非根路由（如 /login）会向服务器请求不存在的对象，触发 403（地址栏被错误文档拼成 index.htmllogin）。改 hash 模式后 # 后路径不发往服务器，刷新任意页面只请求根 index.html，永不 404，且无需依赖 COS 错误文档配置。
+
+**验证**：npm run build 通过；已部署 xingshu-prd 静态托管。URL 形式变为 域名/#/login，刷新不再 403。

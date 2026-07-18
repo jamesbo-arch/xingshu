@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import { isLoggedIn } from '../api'
 
 const routes = [
@@ -17,7 +17,8 @@ const routes = [
   { path: '/activities', name: 'Activities', component: () => import('../views/Activities.vue') },
 ]
 
-const router = createRouter({ history: createWebHistory(), routes })
+// hash 模式：COS 静态托管刷新子路由不会 404（# 后路径不发往服务器）
+const router = createRouter({ history: createWebHashHistory(), routes })
 
 router.beforeEach((to) => {
   if (!to.meta.public && !isLoggedIn()) return { path: '/login' }
