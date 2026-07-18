@@ -149,18 +149,26 @@ Page({
       const d = new Date(String(s).replace(/-/g, '/'))
       return isNaN(d.getTime()) ? '' : '（周' + '日一二三四五六'[d.getDay()] + '）'
     }
-    // 同日活动结束时间只显示时分
-    const endPart = a.end_time
-      ? ' – ' + (String(a.end_time).slice(0, 10) === String(a.start_time).slice(0, 10)
-          ? String(a.end_time).slice(11, 16) : a.end_time)
-      : ''
-    const content = (a.content || '').replace(/\s+/g, ' ')
+    // 时分去掉前导 0（08:30 → 8:30）
+    const fmtHM = (s) => {
+      const m = String(s).match(/(\d{2}):(\d{2})/)
+      return m ? Number(m[1]) + ':' + m[2] : ''
+    }
+    // 格式：2026-08-01（周六） 8:30 ~ 9:30（跨日则结束带日期）
+    const datePart = String(a.start_time).slice(0, 10)
+    let timeText = `${datePart}${wd(a.start_time)} ${fmtHM(String(a.start_time).slice(11, 16))}`
+    if (a.end_time) {
+      const sameDay = String(a.end_time).slice(0, 10) === datePart
+      const endHM = fmtHM(String(a.end_time).slice(11, 16))
+      timeText += sameDay ? ` ~ ${endHM}` : ` ~ ${String(a.end_time).slice(0, 10)} ${endHM}`
+    }
+    const content = (a.content || '').replace(/\s+/g, ' ').trim()
     return {
       key,
       kicker: INV_THEMES[key].kicker,
       tagText: `${a.type_name || '醒書活動'} · ${a.type === 'online' ? '線上' : '線下'}`,
-      intro: content.slice(0, 100) + (content.length > 100 ? '…' : ''),
-      timeText: `${a.start_time}${wd(a.start_time)}${endPart}`,
+      intro: content,   // 海报完整展现介绍全文（画布高度动态）
+      timeText,
       // 线上不泄露会议号，口径与详情可见性规则一致
       joinText: a.type === 'online' ? '线上 · 腾讯会议（会议号报名后可见）' : `线下 · ${a.city || ''} · ${a.location || ''}`,
       quotaText: a.capacity > 0 ? `${a.capacity} 人 · 先到先得` : '不限名额',
@@ -518,7 +526,27 @@ Page({
     }))
   },
 
-  // 取邀请函成图（带缓存）：Canvas 2D 按主题绘制 750×1180，导出临时文件
+  // cloud:// / http(s) / 本地路径统一加载为可绘制 image（失败返回 null）
+  _loadImageForCanvas(canvas, src) {
+    return new Promise((resolve) => {
+      if (!src) return resolve(null)
+      const draw = (path) => {
+        const img = canvas.createImage()
+        img.onload = () => resolve(img)
+        img.onerror = () => resolve(null)
+        img.src = path
+      }
+      if (src.startsWith('cloud://')) {
+        wx.cloud.downloadFile({ fileID: src }).then(r => draw(r.tempFilePath)).catch(() => resolve(null))
+      } else if (/^https?:\/\//.test(src)) {
+        wx.downloadFile({ url: src, success: r => (r.statusCode === 200 ? draw(r.tempFilePath) : resolve(null)), fail: () => resolve(null) })
+      } else {
+        draw(src)
+      }
+    })
+  },
+
+  // 取邀请函成图（带缓存）：Canvas 2D 按主题绘制，高度随介绍全文 + 配图动态计算，导出临时文件
   _ensureInvite(cb) {
     if (this._invPath) { cb(this._invPath); return }
     const a = this.data.activity
@@ -526,144 +554,138 @@ Page({
     if (!a || !inv) { cb(''); return }
     wx.showLoading({ title: '生成邀请函…', mask: true })
     const query = wx.createSelectorQuery()
-    query.select('#inv-canvas').fields({ node: true }).exec((res) => {
+    query.select('#inv-canvas').fields({ node: true }).exec(async (res) => {
       if (!res || !res[0] || !res[0].node) { wx.hideLoading(); toast.error('图片生成失败'); cb(''); return }
       const canvas = res[0].node
       const ctx = canvas.getContext('2d')
       const t = INV_THEMES[inv.key]
-      const W = 750, H = 1180
+      const W = 750, PX = 56, CW = W - PX * 2
+
+      // ── 预加载配图（最多 6 张）与小程序码，拿真实尺寸供动态布局 ──
+      const imgSrcs = (a.images || []).slice(0, 6)
+      const imgs = await Promise.all(imgSrcs.map(s => this._loadImageForCanvas(canvas, s)))
+      const qrImg = this._qrTempPath ? await this._loadImageForCanvas(canvas, this._qrTempPath) : null
+
+      // ── 第一遍测量：算各区高度累加总高（measureText 只依赖 font，不依赖画布尺寸）──
+      ctx.font = 'bold 54px serif'
+      const titleLines = this._splitText(ctx, a.title || '', CW).slice(0, 3)
+      ctx.font = '28px sans-serif'
+      const introLines = this._splitText(ctx, inv.intro, CW)
+      const imgHeights = imgs.map(im => (im ? Math.round(CW * im.height / im.width) : 0))
+
+      let y = 60
+      y += 52 + 30                                   // tag
+      y += 34                                         // kicker
+      const titleTop = y
+      y = titleTop + titleLines.length * 72 + 28      // 标题
+      const introTop = y
+      y = introTop + introLines.length * 46 + 24      // 介绍全文
+      const imgTop = y
+      imgHeights.forEach(h => { if (h) y += h + 16 }) // 配图
+      y += 8
+      const dividerY = y
+      y += 44                                         // 分隔线后间距
+      const infoTop = y
+      y += 3 * 64 + 20                                // 信息区三行
+      const ctaY = y
+      const ctaH = 168
+      y = ctaY + ctaH + 40
+      const footH = 118
+      const H = y + footH
+
       canvas.width = W
       canvas.height = H
 
-      // 背景渐变
+      // ── 第二遍绘制 ──
       const g = ctx.createLinearGradient(0, 0, W * 0.3, H)
-      g.addColorStop(0, t.bg[0])
-      g.addColorStop(1, t.bg[1])
-      ctx.fillStyle = g
-      ctx.fillRect(0, 0, W, H)
+      g.addColorStop(0, t.bg[0]); g.addColorStop(1, t.bg[1])
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H)
+      ctx.textAlign = 'left'
 
-      const PX = 56
       // 类型印章标签
       ctx.font = '26px sans-serif'
-      ctx.textAlign = 'left'
       const tagW = ctx.measureText(inv.tagText).width + 44
-      ctx.strokeStyle = t.accent
-      ctx.lineWidth = 2.5
-      this._roundRect(ctx, PX, 60, tagW, 52, 8)
-      ctx.stroke()
-      ctx.fillStyle = t.accent
-      ctx.fillText(inv.tagText, PX + 22, 96)
+      ctx.strokeStyle = t.accent; ctx.lineWidth = 2.5
+      this._roundRect(ctx, PX, 60, tagW, 52, 8); ctx.stroke()
+      ctx.fillStyle = t.accent; ctx.fillText(inv.tagText, PX + 22, 94)
 
       // 英文小字
-      ctx.globalAlpha = 0.7
-      ctx.fillStyle = t.fg
-      ctx.font = '20px sans-serif'
-      ctx.fillText(inv.kicker.split('').join(' '), PX, 168)
+      ctx.globalAlpha = 0.7; ctx.fillStyle = t.fg; ctx.font = '20px sans-serif'
+      ctx.fillText(inv.kicker.split('').join(' '), PX, 150); ctx.globalAlpha = 1
+
+      // 主题标题（衬线）
+      ctx.fillStyle = t.fg; ctx.font = 'bold 54px serif'
+      let ty = titleTop + 54
+      titleLines.forEach(line => { ctx.fillText(line, PX, ty); ty += 72 })
+
+      // 活动介绍全文
+      ctx.globalAlpha = 0.9; ctx.font = '28px sans-serif'; ctx.fillStyle = t.fg
+      let iy = introTop + 28
+      introLines.forEach(line => { ctx.fillText(line, PX, iy); iy += 46 })
       ctx.globalAlpha = 1
 
-      // 主题标题（衬线，最多 2 行）
-      ctx.fillStyle = t.fg
-      ctx.font = 'bold 54px serif'
-      let y = 246
-      this._splitText(ctx, a.title || '', W - PX * 2).slice(0, 2).forEach(line => {
-        ctx.fillText(line, PX, y)
-        y += 76
+      // 配图（介绍下方逐张等比）
+      let imgy = imgTop
+      imgs.forEach((im, k) => {
+        if (im && imgHeights[k]) { ctx.drawImage(im, PX, imgy, CW, imgHeights[k]); imgy += imgHeights[k] + 16 }
       })
-
-      // 活动介绍（最多 4 行）
-      ctx.globalAlpha = 0.88
-      ctx.font = '28px sans-serif'
-      y = 430
-      this._splitText(ctx, inv.intro, W - PX * 2).slice(0, 4).forEach(line => {
-        ctx.fillText(line, PX, y)
-        y += 46
-      })
-      ctx.globalAlpha = 1
 
       // 分隔线
-      y = 640
-      ctx.globalAlpha = 0.28
-      ctx.strokeStyle = t.fg
-      ctx.lineWidth = 1.5
-      ctx.beginPath(); ctx.moveTo(PX, y); ctx.lineTo(W - PX, y); ctx.stroke()
-      ctx.globalAlpha = 1
+      ctx.globalAlpha = 0.28; ctx.strokeStyle = t.fg; ctx.lineWidth = 1.5
+      ctx.beginPath(); ctx.moveTo(PX, dividerY); ctx.lineTo(W - PX, dividerY); ctx.stroke(); ctx.globalAlpha = 1
 
-      // 信息区三行
-      y += 56
+      // 信息区三行（值自适应字号，保证单行不换行）
+      let infoY = infoTop + 20
       const rows = [['活动时间', inv.timeText], ['参与方式', inv.joinText], ['报名限额', inv.quotaText]]
+      const valX = 180, valMaxW = W - PX - valX
       rows.forEach(([label, val]) => {
-        ctx.globalAlpha = 0.72
-        ctx.font = '22px sans-serif'
-        ctx.fillStyle = t.fg
-        ctx.fillText(label, PX, y)
-        ctx.globalAlpha = 1
-        ctx.font = '28px sans-serif'
-        const lines = this._splitText(ctx, val, W - PX - 180 - PX).slice(0, 2)
-        lines.forEach((line, i) => ctx.fillText(line, 180, y + i * 40))
-        y += lines.length * 40 + 24
+        ctx.globalAlpha = 0.72; ctx.font = '22px sans-serif'; ctx.fillStyle = t.fg
+        ctx.fillText(label, PX, infoY + 22); ctx.globalAlpha = 1
+        let fs = 28
+        ctx.font = `${fs}px sans-serif`
+        while (ctx.measureText(val).width > valMaxW && fs > 17) { fs -= 1; ctx.font = `${fs}px sans-serif` }
+        ctx.fillText(val, valX, infoY + 22)
+        infoY += 64
       })
 
       // CTA：虚线框 + 文案 + 小程序码（白底）
-      const ctaY = 890, ctaH = 168
-      ctx.strokeStyle = t.accent
-      ctx.lineWidth = 2.5
-      ctx.setLineDash([10, 8])
-      this._roundRect(ctx, PX, ctaY, W - PX * 2, ctaH, 16)
-      ctx.stroke()
-      ctx.setLineDash([])
-      ctx.fillStyle = t.accent
-      ctx.font = '26px sans-serif'
+      ctx.strokeStyle = t.accent; ctx.lineWidth = 2.5; ctx.setLineDash([10, 8])
+      this._roundRect(ctx, PX, ctaY, CW, ctaH, 16); ctx.stroke(); ctx.setLineDash([])
+      ctx.fillStyle = t.accent; ctx.font = '26px sans-serif'
       ctx.fillText('长按识别小程序码', PX + 32, ctaY + 74)
       ctx.fillText('报名参加', PX + 32, ctaY + 116)
       const qsize = 128
       const qx = W - PX - 32 - qsize, qy = ctaY + (ctaH - qsize) / 2
       ctx.fillStyle = '#FFFFFF'
-      this._roundRect(ctx, qx - 8, qy - 8, qsize + 16, qsize + 16, 10)
-      ctx.fill()
-
-      // 品牌页脚
-      const fy = H - 118
-      ctx.fillStyle = '#A08A63'
-      ctx.fillRect(0, fy, W, 118)
-      ctx.fillStyle = '#FDF9F0'
-      ctx.font = 'bold 30px serif'
-      ctx.fillText('醒书咨询', PX, fy + 56)
-      ctx.font = '12px sans-serif'
-      ctx.globalAlpha = 0.85
-      ctx.fillText('XINGSHU CONSULTING', PX, fy + 84)
-      ctx.globalAlpha = 0.35
-      ctx.fillRect(228, fy + 26, 2, 66)
-      ctx.globalAlpha = 0.92
-      ctx.font = '19px sans-serif'
-      const desc = '醒书咨询，一家专注经典文化与现代生活深度对话的机构，为中小企业和个人提供发展咨询服务。'
-      this._splitText(ctx, desc, W - 254 - PX).slice(0, 3).forEach((line, i) => {
-        ctx.fillText(line, 254, fy + 44 + i * 30)
-      })
-      ctx.globalAlpha = 1
-
-      const exportImage = () => {
-        wx.canvasToTempFilePath({
-          canvas,
-          success: (r) => { wx.hideLoading(); this._invPath = r.tempFilePath; cb(r.tempFilePath) },
-          fail: () => { wx.hideLoading(); toast.error('图片生成失败'); cb('') },
-        }, this)
-      }
-      const drawQrPlaceholder = () => {
+      this._roundRect(ctx, qx - 8, qy - 8, qsize + 16, qsize + 16, 10); ctx.fill()
+      if (qrImg) {
+        ctx.drawImage(qrImg, qx, qy, qsize, qsize)
+      } else {
         ctx.fillStyle = '#2A2723'
         const c = qsize / 3
         ;[[0,0],[0,1],[0,2],[1,0],[1,2],[2,0],[2,1],[2,2]].forEach(([r, col]) => {
           ctx.fillRect(qx + col * c, qy + r * c, c - 3, c - 3)
         })
       }
-      if (this._qrTempPath) {
-        const img = canvas.createImage()
-        img.onload = () => { ctx.drawImage(img, qx, qy, qsize, qsize); exportImage() }
-        img.onerror = () => { drawQrPlaceholder(); exportImage() }
-        img.src = this._qrTempPath
-      } else {
-        drawQrPlaceholder()
-        exportImage()
-      }
+
+      // 品牌页脚
+      const fy = H - footH
+      ctx.fillStyle = '#A08A63'; ctx.fillRect(0, fy, W, footH)
+      ctx.fillStyle = '#FDF9F0'; ctx.font = 'bold 30px serif'; ctx.fillText('醒书咨询', PX, fy + 56)
+      ctx.font = '12px sans-serif'; ctx.globalAlpha = 0.85; ctx.fillText('XINGSHU CONSULTING', PX, fy + 84)
+      ctx.globalAlpha = 0.35; ctx.fillRect(228, fy + 26, 2, 66)
+      ctx.globalAlpha = 0.92; ctx.font = '19px sans-serif'
+      const desc = '醒书咨询，一家专注经典文化与现代生活深度对话的机构，为中小企业和个人提供发展咨询服务。'
+      this._splitText(ctx, desc, W - 254 - PX).slice(0, 3).forEach((line, i) => {
+        ctx.fillText(line, 254, fy + 44 + i * 30)
+      })
+      ctx.globalAlpha = 1
+
+      wx.canvasToTempFilePath({
+        canvas,
+        success: (r) => { wx.hideLoading(); this._invPath = r.tempFilePath; cb(r.tempFilePath) },
+        fail: () => { wx.hideLoading(); toast.error('图片生成失败'); cb('') },
+      }, this)
     })
   },
 

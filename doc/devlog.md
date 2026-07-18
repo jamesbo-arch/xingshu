@@ -3348,3 +3348,20 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 **变更说明**：管理后台部署在 COS 静态托管，history 路由模式下刷新非根路由（如 /login）会向服务器请求不存在的对象，触发 403（地址栏被错误文档拼成 index.htmllogin）。改 hash 模式后 # 后路径不发往服务器，刷新任意页面只请求根 index.html，永不 404，且无需依赖 COS 错误文档配置。
 
 **验证**：npm run build 通过；已部署 xingshu-prd 静态托管。URL 形式变为 域名/#/login，刷新不再 403。
+
+### 2026-07-18 — 醒书活动改造：时长输入/配图/收费标记 + 海报完整化
+
+**类型**：数据库 | 云函数 | 前端
+**计划关联**：用户需求（活动定义增强 + 海报完整展现）
+**修改文件**：
+- `scripts/migrate-activity-price.js`（新建，幂等）— activities 加 price DECIMAL(8,2)、activity_signups 加 paid TINYINT(1)
+- `miniprogram/cloudfunctions/admin/index.js` — activityList/activitySave 读写 price + 返回 images；activitySignups 返回 paid + 活动 price；attendanceSave 扩展一次事务覆盖存 attended+paid；新增 activityUpload（base64→cloud.uploadFile 存云存储返回 fileID）
+- `admin/src/api/index.js` — saveAttendance 加 paidIds 参数；新增 uploadActivityImage
+- `admin/src/views/Activities.vue` — 结束时间改「时长（小时，0.5 步进）」输入自动算 end_time（编辑回填由起止反算时长）；活动介绍下新增配图上传控件（缩略图+删除，走服务端上传）；新增「活动价格」输入；报名名单弹窗价格>0 时显示「已收费」勾选列并随参与名单一起保存
+- `miniprogram/pages/activity-detail/index.js` — 海报 _buildInvite 时间格式改为「2026-08-01（周六） 8:30 ~ 9:30」（时分去前导0、同日只显结束时分）、介绍改全文；_ensureInvite 重构为动态高度两遍绘制：介绍全文完整展现 + 配图逐张贴介绍下方（cloud:///http 统一 _loadImageForCanvas 加载）+ 信息区值自适应字号保证单行不换行；新增 _loadImageForCanvas
+
+**变更说明**：按用户需求——①结束时间改由开始时间+时长（小时）自动计算；②活动支持配图上传（后台）；③新增活动价格 + 报名人员「已收费」后台手动标记（线下收费口径，不接支付）；④海报介绍完整展现、配图一并生成到介绍下、时间格式与参与方式单行修正。地图配额问题本轮未动（导航 wx.openLocation 已就绪，待 key 提额后生效）。
+
+**验证**：dev 迁移已执行；fn-activity-test 11 条、fn-admin-test 13 条全绿；admin 前端 build 通过；admin 云函数与后台静态托管已部署 xingshu-prd。
+
+**prod 上线追加**：`XINGSHU_ENV_FILE=.env.prod node scripts/migrate-activity-price.js`（先 backup-db），随 admin 云函数与后台一并发。

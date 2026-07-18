@@ -110,8 +110,10 @@ export async function getActivityTypes() { return call('typeList') }
 export async function saveActivityType(data) { return call('typeSave', data) }
 export async function getActivityPosts(activityId, page = 1) { return call('postListAdmin', { activityId, page, pageSize: 20 }) }
 export async function deleteActivityPost(id) { return call('postDeleteAdmin', { id }) }
-// 实际参与名单：整场覆盖式保存勾选的报名 ID
-export async function saveAttendance(activityId, attendedIds) { return call('attendanceSave', { activityId, attendedIds }) }
+// 实际参与 + 已收费名单：整场覆盖式保存两组勾选的报名 ID
+export async function saveAttendance(activityId, attendedIds, paidIds = []) { return call('attendanceSave', { activityId, attendedIds, paidIds }) }
+// 活动介绍配图上传：base64 → 服务端存云存储，返回 fileID
+export async function uploadActivityImage(base64, ext) { return call('activityUpload', { base64, ext }) }
 // 邀请函：该活动的带参小程序码（dataURL，直供 canvas 出图）
 export async function getInviteQr(activityId) { return call('inviteQr', { activityId }) }
 

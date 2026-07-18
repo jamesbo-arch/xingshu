@@ -44,7 +44,10 @@
             </select>
           </label>
           <label>开始时间 *<input v-model="form.start_time" type="datetime-local" class="input-full" /></label>
-          <label>结束时间<input v-model="form.end_time" type="datetime-local" class="input-full" /></label>
+          <label>时长（小时）
+            <input v-model.number="form.duration_hours" type="number" min="0" step="0.5" class="input-full" placeholder="如 1.5，自动算结束时间" />
+            <span v-if="computedEndText" class="addr-coord">结束：{{ computedEndText }}</span>
+          </label>
           <label>报名截止<input v-model="form.signup_deadline" type="datetime-local" class="input-full" /></label>
           <label>活动形式{{ form.type_id ? '（随类型自动）' : '' }}
             <select v-model="form.type" class="input-full" :disabled="!!form.type_id">
@@ -65,6 +68,7 @@
             </label>
           </template>
           <label>名额上限<input v-model.number="form.capacity" type="number" class="input-full" /></label>
+          <label>活动价格（元）<input v-model.number="form.price" type="number" min="0" step="0.01" class="input-full" placeholder="0 = 免费" /></label>
           <label>状态
             <select v-model="form.status" class="input-full">
               <option value="draft">草稿（不可见）</option>
@@ -86,6 +90,19 @@
         </div>
         <p v-if="repeatPreview" class="repeat-hint">{{ repeatPreview }}</p>
         <label class="block-label">活动介绍<textarea v-model="form.content" class="textarea" rows="5" /></label>
+        <div class="block-label">
+          活动配图（海报会依次贴在介绍下方）
+          <div class="img-grid">
+            <div v-for="(fid, i) in (form.images || [])" :key="fid" class="img-thumb">
+              <img :src="imgUrls[fid] || ''" />
+              <span class="img-del" @click="removeImage(i)">×</span>
+            </div>
+            <label class="img-add" :class="{ 'img-uploading': imgUploading }">
+              <span>{{ imgUploading ? '上传中…' : '+ 添加' }}</span>
+              <input type="file" accept="image/*" multiple :disabled="imgUploading" @change="onPickImages" hidden />
+            </label>
+          </div>
+        </div>
         <label v-if="form.status === 'finished'" class="block-label">回顾图文<textarea v-model="form.review_content" class="textarea" rows="4" placeholder="活动结束后的图文回顾" /></label>
         <div class="modal-actions">
           <button class="btn btn-ghost" @click="showForm = false">取消</button>
@@ -162,12 +179,13 @@
     <!-- 报名名单弹窗 -->
     <div v-if="showSignups" class="modal-mask" @click.self="showSignups = false">
       <div class="modal">
-        <h2 class="modal-title">报名名单 · {{ signupsActivity.title }}（{{ signups.length }} 人 · 实际参与 {{ attendCount }} 人）</h2>
+        <h2 class="modal-title">报名名单 · {{ signupsActivity.title }}（{{ signups.length }} 人 · 实际参与 {{ attendCount }} 人<template v-if="signupPrice > 0"> · 价格 {{ signupPrice }} 元 · 已收费 {{ paidCount }} 人</template>）</h2>
         <table class="data-table">
-          <thead><tr><th>实际参与</th><th>称呼</th><th>联系方式</th><th>昵称</th><th>手机号</th><th>报名时间</th></tr></thead>
+          <thead><tr><th>实际参与</th><th v-if="signupPrice > 0">已收费</th><th>称呼</th><th>联系方式</th><th>昵称</th><th>手机号</th><th>报名时间</th></tr></thead>
           <tbody>
             <tr v-for="s in signups" :key="s.id">
               <td><input type="checkbox" class="attend-check" v-model="attendSet[s.id]" /></td>
+              <td v-if="signupPrice > 0"><input type="checkbox" class="attend-check" v-model="paidSet[s.id]" /></td>
               <td>{{ s.name }}</td><td>{{ s.contact || '-' }}</td>
               <td>{{ s.nickname }}</td><td>{{ s.phone || '-' }}</td><td>{{ s.signedAt }}</td>
             </tr>
@@ -259,6 +277,7 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import {
   getActivities, saveActivity, getActivitySignups, saveAttendance, getInviteQr,
   getActivityTypes, saveActivityType, getActivityPosts, deleteActivityPost, resolveFileUrls,
+  uploadActivityImage,
 } from '../api/index.js'
 
 const list = ref([])
@@ -362,7 +381,10 @@ function closeMap() {
 }
 const showSignups = ref(false), signups = ref([]), signupsActivity = ref({})
 const attendSet = ref({}), attendSaving = ref(false)
+const paidSet = ref({}), signupPrice = ref(0)
+const imgUploading = ref(false)
 const attendCount = computed(() => Object.values(attendSet.value).filter(Boolean).length)
+const paidCount = computed(() => Object.values(paidSet.value).filter(Boolean).length)
 // 邀请函
 const showInvite = ref(false), inviteAct = ref({}), inviteQr = ref(''), inviteSaving = ref(false)
 const inviteRef = ref(null)
@@ -400,6 +422,67 @@ const formTypeOptions = computed(() => {
 function toLocal(s) { return s ? String(s).replace(' ', 'T').slice(0, 16) : '' }
 function fromLocal(v) { return v ? v.replace('T', ' ') + ':00' : null }
 
+// 时长（小时）↔ 结束时间：开始时间 + 时长 → 结束；编辑回填时由起止反算时长（归整到 0.5）
+function endFromDuration(startLocal, hours, withSec) {
+  if (!startLocal || !(hours > 0)) return null
+  const d = new Date(startLocal)
+  if (isNaN(d.getTime())) return null
+  d.setTime(d.getTime() + hours * 3600 * 1000)
+  const p = n => String(n).padStart(2, '0')
+  const base = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+  return withSec ? base + ':00' : base
+}
+function durationBetween(startLocal, endLocal) {
+  if (!startLocal || !endLocal) return null
+  const s = new Date(startLocal), e = new Date(endLocal)
+  if (isNaN(s.getTime()) || isNaN(e.getTime())) return null
+  const h = (e.getTime() - s.getTime()) / 3600000
+  return h > 0 ? Math.round(h * 2) / 2 : null
+}
+const computedEndText = computed(() => endFromDuration(form.value.start_time, form.value.duration_hours, false) || '')
+
+// images 列可能是数组或 JSON 字符串（mysql2 视驱动而定），统一成数组
+function normImgs(v) {
+  if (Array.isArray(v)) return v
+  if (!v) return []
+  try { const p = JSON.parse(v); return Array.isArray(p) ? p : [] } catch { return [] }
+}
+// 活动配图缩略图换链（编辑回填 form.images 时触发）
+async function loadFormImages() {
+  const ids = (form.value.images || []).filter(x => x && !imgUrls.value[x])
+  if (ids.length) {
+    const map = await resolveFileUrls(ids)
+    imgUrls.value = { ...imgUrls.value, ...map }
+  }
+}
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader()
+    r.onload = () => res(r.result)
+    r.onerror = rej
+    r.readAsDataURL(file)
+  })
+}
+async function onPickImages(e) {
+  const files = Array.from(e.target.files || [])
+  e.target.value = ''
+  if (!files.length) return
+  imgUploading.value = true
+  try {
+    for (const file of files) {
+      if (file.size > 5 * 1024 * 1024) { alert(`${file.name} 超过 5MB，请压缩后再传`); continue }
+      const base64 = await fileToBase64(file)
+      const ext = (file.name.split('.').pop() || 'png').toLowerCase()
+      const { fileID } = await uploadActivityImage(base64, ext)
+      if (!form.value.images) form.value.images = []
+      form.value.images.push(fileID)
+      const map = await resolveFileUrls([fileID])
+      imgUrls.value = { ...imgUrls.value, ...map }
+    }
+  } catch (err) { alert('图片上传失败：' + err.message) } finally { imgUploading.value = false }
+}
+function removeImage(i) { form.value.images.splice(i, 1) }
+
 // 生效形式：关联类型时随类型渠道，否则取表单所选（控制会议号/地址字段切换）
 const effectiveType = computed(() => {
   if (form.value.type_id) {
@@ -417,16 +500,21 @@ watch(() => form.value.type_id, (id) => {
 })
 
 function openForm(a) {
+  const startLocal = a ? toLocal(a.startTime) : ''
   form.value = a
-    ? { id: a.id, title: a.title, start_time: toLocal(a.startTime), end_time: toLocal(a.endTime),
+    ? { id: a.id, title: a.title, start_time: startLocal,
+        duration_hours: durationBetween(startLocal, toLocal(a.endTime)) ?? 2,
         signup_deadline: toLocal(a.deadline),
-        type: a.type, type_id: a.type_id || null, city: a.city, capacity: a.capacity, status: a.status,
+        type: a.type, type_id: a.type_id || null, city: a.city, capacity: a.capacity,
+        price: Number(a.price) || 0, status: a.status,
         location: a.location || '', latitude: a.latitude || null, longitude: a.longitude || null,
-        organizer: a.organizer || '醒书运营组',
+        organizer: a.organizer || '醒书运营组', images: normImgs(a.images),
         content: a.content || '', review_content: a.review_content || '', cover_url: a.cover_url || '' }
-    : { type: 'offline', type_id: null, status: 'draft', capacity: 12, organizer: '醒书运营组',
+    : { type: 'offline', type_id: null, status: 'draft', capacity: 12, price: 0, duration_hours: 2,
+        organizer: '醒书运营组', images: [],
         latitude: null, longitude: null, repeat: '', repeat_until: '' }
   showForm.value = true
+  loadFormImages()
 }
 
 // ── 循环活动：每周同星期 / 每月第 N 个星期 X（均取自开始时间），生成到重复截止日 ──
@@ -479,9 +567,9 @@ async function onSave() {
   saving.value = true
   try {
     const payload = { ...f }
-    delete payload.repeat; delete payload.repeat_until
+    delete payload.repeat; delete payload.repeat_until; delete payload.duration_hours
     payload.start_time = fromLocal(f.start_time)
-    payload.end_time = fromLocal(f.end_time)
+    payload.end_time = endFromDuration(f.start_time, f.duration_hours, true)
     payload.signup_deadline = fromLocal(f.signup_deadline)
     if (f.id || !f.repeat) {
       await saveActivity(payload)
@@ -517,11 +605,14 @@ async function onSave() {
 
 async function openSignups(a) {
   signupsActivity.value = a
-  signups.value = (await getActivitySignups(a.id)).list
-  // 勾选态从库内 attended 回显
-  const set = {}
-  for (const s of signups.value) set[s.id] = !!s.attended
+  const res = await getActivitySignups(a.id)
+  signups.value = res.list
+  signupPrice.value = Number(res.price) || 0
+  // 勾选态从库内 attended / paid 回显
+  const set = {}, pset = {}
+  for (const s of signups.value) { set[s.id] = !!s.attended; pset[s.id] = !!s.paid }
   attendSet.value = set
+  paidSet.value = pset
   showSignups.value = true
 }
 
@@ -531,8 +622,9 @@ async function onSaveAttendance() {
   attendSaving.value = true
   try {
     const ids = signups.value.filter(s => attendSet.value[s.id]).map(s => s.id)
-    const r = await saveAttendance(signupsActivity.value.id, ids)
-    alert(`已保存：实际参与 ${r.attended} 人`)
+    const paidIds = signups.value.filter(s => paidSet.value[s.id]).map(s => s.id)
+    const r = await saveAttendance(signupsActivity.value.id, ids, paidIds)
+    alert(`已保存：实际参与 ${r.attended} 人` + (signupPrice.value > 0 ? ` · 已收费 ${r.paid} 人` : ''))
   } catch (e) {
     alert('保存失败：' + e.message)
   } finally {
@@ -712,4 +804,12 @@ async function onDeletePost(p) {
 .map-pin { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -100%); pointer-events: none; z-index: 5; }
 .map-pin::before { content: ''; position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 16px; height: 16px; background: #E5574A; border: 2px solid #fff; border-radius: 50% 50% 50% 0; rotate: -45deg; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
 .map-addr { font-size: 13px; color: var(--ink-2); padding: 10px 2px 0; min-height: 20px; }
+
+/* 活动配图上传 */
+.img-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+.img-thumb { position: relative; width: 84px; height: 84px; border-radius: 8px; overflow: hidden; border: 0.5px solid var(--tbl-border); }
+.img-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.img-del { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; line-height: 18px; text-align: center; background: rgba(0,0,0,.55); color: #fff; border-radius: 50%; cursor: pointer; font-size: 14px; }
+.img-add { display: flex; align-items: center; justify-content: center; width: 84px; height: 84px; border: 1px dashed var(--tbl-border); border-radius: 8px; cursor: pointer; color: var(--ink-4); font-size: 13px; text-align: center; }
+.img-add.img-uploading { opacity: .6; cursor: default; }
 </style>

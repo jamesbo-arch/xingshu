@@ -650,8 +650,8 @@ const handlers = {
     const [rows] = await db.query(
       `SELECT a.id, a.title, a.type, a.type_id, t.name AS typeName,
               a.city, a.location, a.latitude, a.longitude,
-              a.organizer, a.capacity, a.signup_count AS signedUp, a.status,
-              a.content, a.cover_url, a.review_content,
+              a.organizer, a.capacity, a.price, a.signup_count AS signedUp, a.status,
+              a.content, a.cover_url, a.images, a.review_content,
               DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') AS startTime,
               DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') AS endTime,
               DATE_FORMAT(a.signup_deadline, '%Y-%m-%d %H:%i') AS deadline
@@ -663,9 +663,10 @@ const handlers = {
   async activitySave({ id, title, cover_url = '', content = '', images = [], start_time, end_time = null,
                        type = 'offline', type_id = null, city = '', location = '', organizer = '醒书运营组',
                        latitude = null, longitude = null,
-                       capacity = 0, signup_deadline = null, status = 'draft',
+                       capacity = 0, price = 0, signup_deadline = null, status = 'draft',
                        review_content = null, review_images = null } = {}) {
     if (!title || !start_time) throw new Error('标题与开始时间必填')
+    price = Math.max(0, Number(price) || 0)
     // 关联分类时以分类的渠道覆写 type（冗余同步的唯一写点）；不关联则沿用提交值（兼容历史）
     if (type_id) {
       const [t] = await db.query('SELECT channel FROM activity_types WHERE id = ?', [type_id])
@@ -679,32 +680,33 @@ const handlers = {
     if (id) {
       await db.query(
         `UPDATE activities SET title=?, cover_url=?, content=?, images=?, start_time=?, end_time=?,
-         type=?, type_id=?, city=?, location=?, latitude=?, longitude=?, organizer=?, capacity=?,
+         type=?, type_id=?, city=?, location=?, latitude=?, longitude=?, organizer=?, capacity=?, price=?,
          signup_deadline=?, status=?,
          review_content=?, review_images=?, updated_by=NULL WHERE id=?`,
         [title, cover_url, content, imagesJson, start_time, end_time, type, type_id, city, location,
-         latitude, longitude, organizer, capacity, signup_deadline, status, review_content, reviewImagesJson, id])
+         latitude, longitude, organizer, capacity, price, signup_deadline, status, review_content, reviewImagesJson, id])
       await auditLog('activityUpdate', 'activity', id, { title, status })
       return { id }
     }
     const [r] = await db.query(
       `INSERT INTO activities (title, cover_url, content, images, start_time, end_time, type, type_id, city,
-        location, latitude, longitude, organizer, capacity, signup_deadline, status,
+        location, latitude, longitude, organizer, capacity, price, signup_deadline, status,
         review_content, review_images)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [title, cover_url, content, imagesJson, start_time, end_time, type, type_id, city, location,
-       latitude, longitude, organizer, capacity, signup_deadline, status, review_content, reviewImagesJson])
+       latitude, longitude, organizer, capacity, price, signup_deadline, status, review_content, reviewImagesJson])
     await auditLog('activityCreate', 'activity', r.insertId, { title, status })
     return { id: r.insertId }
   },
 
   async activitySignups({ id } = {}) {
     const [rows] = await db.query(
-      `SELECT s.id, s.name, s.contact, s.attended, u.nickname, u.phone,
+      `SELECT s.id, s.name, s.contact, s.attended, s.paid, u.nickname, u.phone,
               DATE_FORMAT(s.created_at, '%Y-%m-%d %H:%i') AS signedAt
        FROM activity_signups s JOIN users u ON s.user_id = u.id
        WHERE s.activity_id = ? ORDER BY s.created_at ASC`, [id])
-    return { list: rows, total: rows.length }
+    const [[a]] = await db.query('SELECT price FROM activities WHERE id = ?', [id])
+    return { list: rows, total: rows.length, price: a ? a.price : 0 }
   },
 
   // ── 活动现场分享（管理端全量含已删行，利于审计追溯）──
@@ -737,20 +739,27 @@ const handlers = {
     return map
   },
 
-  // 实际参与名单：整场覆盖式保存勾选结果；ID 按 activity_id 约束，只能勾本活动的报名者
-  async attendanceSave({ activityId, attendedIds = [] } = {}) {
+  // 实际参与 + 已收费名单：整场覆盖式保存勾选结果（前端一次提交两组全量 ID）；
+  // ID 按 activity_id 约束，只能勾本活动的报名者
+  async attendanceSave({ activityId, attendedIds = [], paidIds = [] } = {}) {
     if (!activityId) throw new Error('缺少活动 ID')
     const [act] = await db.query('SELECT id FROM activities WHERE id = ?', [activityId])
     if (!act.length) throw new Error('活动不存在')
     const conn = await db.getConnection()
     try {
       await conn.beginTransaction()
-      await conn.query('UPDATE activity_signups SET attended = 0 WHERE activity_id = ?', [activityId])
+      await conn.query('UPDATE activity_signups SET attended = 0, paid = 0 WHERE activity_id = ?', [activityId])
       if (attendedIds.length) {
         const ph = attendedIds.map(() => '?').join(',')
         await conn.query(
           `UPDATE activity_signups SET attended = 1 WHERE activity_id = ? AND id IN (${ph})`,
           [activityId, ...attendedIds])
+      }
+      if (paidIds.length) {
+        const ph = paidIds.map(() => '?').join(',')
+        await conn.query(
+          `UPDATE activity_signups SET paid = 1 WHERE activity_id = ? AND id IN (${ph})`,
+          [activityId, ...paidIds])
       }
       await conn.commit()
     } catch (err) {
@@ -759,10 +768,26 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('attendanceSave', 'activity', activityId, { attendedCount: attendedIds.length })
+    await auditLog('attendanceSave', 'activity', activityId, { attendedCount: attendedIds.length, paidCount: paidIds.length })
     const [[{ c }]] = await db.query(
       'SELECT COUNT(*) c FROM activity_signups WHERE activity_id = ? AND attended = 1', [activityId])
-    return { attended: c }
+    const [[{ p }]] = await db.query(
+      'SELECT COUNT(*) p FROM activity_signups WHERE activity_id = ? AND paid = 1', [activityId])
+    return { attended: c, paid: p }
+  },
+
+  // 活动介绍配图上传：Web 端 base64 → 服务端 cloud.uploadFile 存云存储，返回 fileID
+  // （服务端上传规避 Web 匿名登录写云存储的 ACL 限制，与 fileUrls 换链同思路）
+  async activityUpload({ base64 = '', ext = 'png' } = {}) {
+    if (!base64) throw new Error('缺少图片数据')
+    const safeExt = /^(jpe?g|png|webp|gif)$/i.test(ext) ? ext.toLowerCase() : 'png'
+    const buf = Buffer.from(base64.replace(/^data:image\/\w+;base64,/, ''), 'base64')
+    if (buf.length > 5 * 1024 * 1024) throw new Error('图片过大，请压缩到 5MB 内')
+    const cloud = require('wx-server-sdk')
+    cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+    const cloudPath = `activities/${Date.now()}-${Math.floor(Math.random() * 1e6)}.${safeExt}`
+    const res = await cloud.uploadFile({ cloudPath, fileContent: buf })
+    return { fileID: res.fileID }
   },
 
   async postListAdmin({ activityId, page = 1, pageSize = 20 } = {}) {
