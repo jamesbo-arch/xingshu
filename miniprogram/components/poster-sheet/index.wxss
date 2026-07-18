@@ -35,6 +35,20 @@
 
 .poster-sheet-wrap {
   padding: 24rpx 32rpx 20rpx;
+  overflow: hidden;   /* 整体不滚，海报嵌在中间 scroll-view 内滚动 */
+}
+
+.poster-sheet-title {
+  display: block;
+  font-size: 34rpx;
+  letter-spacing: 4rpx;
+  color: #2A2723;
+  margin-bottom: 20rpx;
+}
+
+.poster-preview-scroll {
+  max-height: 54vh;
+  margin-bottom: 20rpx;
 }
 
 .sheet-handle {

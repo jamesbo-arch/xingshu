@@ -2,7 +2,10 @@
   <view class="sheet-mask {{_show ? 'mask-show' : ''}}" bindtap="onMaskTap"></view>
   <view class="sheet poster-sheet-wrap {{_show ? 'sheet-show' : ''}}" catchtap="onSheetTap">
     <view class="sheet-handle"></view>
+    <text class="poster-sheet-title serif">故事分享</text>
 
+    <!-- 海报预览嵌在中间滚动窗口（标题与按钮固定，与活动邀请函一致） -->
+    <scroll-view scroll-y class="poster-preview-scroll">
     <!-- Paper card（预览：米纸点阵底 + 花边框住故事文字，花边下为配图/二维码/页尾） -->
     <view class="poster-card">
       <!-- 花边：角标 + 边框，完整框住页头/标题/正文/标签 -->
@@ -43,6 +46,7 @@
         <text class="pcf-desc">醒书咨询，一家专注经典文化与现代生活深度对话的机构，为中小企业和个人提供发展咨询服务。</text>
       </view>
     </view>
+    </scroll-view>
 
     <!-- Action：保存图片 + 分享给朋友（与活动邀请函一致） -->
     <view class="poster-actions">

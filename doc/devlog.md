@@ -3427,3 +3427,15 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 **变更说明**：按用户修正，故事海报页头/标题/花边/底色字体颜色沿用原样，花边完整框住故事文字；花边下才是配图、二维码、页尾（二维码 CTA 与手绘页尾沿用活动风格）；弹窗结构与按钮与活动邀请函一致（保存图片 + 分享给朋友）。
 
 **验证**：node --check 通过；纯前端 canvas 渲染改动随小程序上传生效。
+
+### 2026-07-18 — 故事分享弹窗结构对齐活动邀请函（标题+滚动海报+固定按钮）
+
+**类型**：前端
+**计划关联**：用户需求（故事分享弹窗完全参照活动邀请函弹窗样式）
+**修改文件**：
+- `miniprogram/components/poster-sheet/index.wxml` — 加弹窗标题「故事分享」，海报预览包进 scroll-view（poster-preview-scroll）；按钮保持底部固定
+- `miniprogram/components/poster-sheet/index.wxss` — poster-sheet-wrap 加 overflow:hidden（整体不滚）；新增 poster-sheet-title（同活动 signup-title）与 poster-preview-scroll（max-height 54vh）
+
+**变更说明**：故事分享弹窗从「整体滚动」改为与活动邀请函一致的三段式：顶部固定标题、中间海报嵌在 54vh 滚动窗口、底部固定「保存图片/分享给朋友」按钮。
+
+**验证**：纯前端结构调整，随小程序上传生效。
