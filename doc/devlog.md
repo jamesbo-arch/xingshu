@@ -3448,3 +3448,88 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 - `miniprogram/pages/detail/index.wxml` — 正文 rich-text / text 去掉 user-select 属性（去掉后长按不再可选择复制；标题与评论本就无 user-select）
 
 **验证**：真机长按正文不再弹出选择/复制。纯前端改动随小程序上传生效。
+
+### 2026-07-18 — 后台多运营角色权限体系 + 活动主理人/工作人员移动端报名数据查看
+
+**类型**：后端 | 云函数 | 数据库 | 前端 | 测试 | 部署
+**计划关联**：用户需求（4 角色运营权限 + 手机号登录 + 活动数据范围授权 + 移动端报名数据页）
+**修改文件**：
+- `scripts/migrate-admin-roles.js` — 新建幂等迁移：`admin_accounts`（运营账号：phone uk / scrypt 密码哈希 / role 四枚举 / 绑定 user_id）、`activity_staff`（活动工作人员白名单，activity_id+user_id uk）、`activities.owner_user_id`（主理人）+ idx_owner
+- `miniprogram/cloudfunctions/admin/index.js` — 鉴权重构：token 改三段式 `exp.base64url({uid,role}).sig`（首段保留过期戳，部署窗口期旧 Web 本地判过期不被破坏；旧两段式 token 签名必失败 -401 自然消化）；login 双模式（带 phone=运营账号 scrypt+timingSafeEqual 校验，否则原全局密码超管）；每请求回查 admin_accounts 构造 ctx（禁用/改角色即时生效）；新增 ACL 矩阵（super 全量 / content 故事·善选·互动+用户只读 / activity 仅活动且 owner 过滤 / member 用户·订单不含退费；越权 -403）；auditLog 写真实操作者（super / au:<id>）；assertActivityScope 守卫（activityList/Save/Signups/inviteQr/attendanceSave/postListAdmin/postDeleteAdmin/staff*）；activitySave 支持 ownerUserId（仅 super 生效，activity 角色新建自动落绑定会员）；新增 action：accountList/accountSave/accountDisable/accountResetPwd（仅 super）、memberSearch、staffList/staffAdd/staffRemove
+- `miniprogram/cloudfunctions/activity/index.js` — 新增 `statsGet`（主理人/工作人员专用：报名全量字段 + 到场/收费 + LEFT JOIN 推荐人昵称/ID + stats 聚合，只读）；`detail` 增补 `is_stats_viewer`
+- `admin/src/api/index.js` — login 双模式 + getRole()（解析 token 第二段）+ call() -403 分支（提示不踢登录）+ account*/memberSearch/staff* 封装；expireSession 跳 `#/login`（修复 hash 模式下直跳 /login 静态托管 404）
+- `admin/src/router/index.js` — meta.roles 页面级守卫 + ROLE_HOME 角色首页重定向；新增 /accounts
+- `admin/src/App.vue` — 侧边栏按角色过滤（NAV 配置数组）
+- `admin/src/views/Login.vue` — 双 Tab：运营账号（手机号+密码）/ 超管密码
+- `admin/src/views/Accounts.vue` — 新建：账号 CRUD（角色徽章/启停/重置密码/activity 角色强制绑定会员搜索）
+- `admin/src/views/Activities.vue` — 列表加主理人列；编辑表单加主理人选择（仅 super 可改）；新增「工作人员」管理弹窗（搜索添加/移除）；类型管理按钮仅 super 可见
+- `miniprogram/pages/activity-stats/*`（新页面 4 件套）+ `app.json` 注册 — 报名数据页：统计头（报名/到场/已收费）+ 名单全量（称呼/联系方式/报名时间/到场收费徽章/推荐人「昵称 · ID」）+ 无权限/未登录空态；onShareAppMessage 转发入口（打开仍走身份鉴权）
+- `miniprogram/pages/activity-detail/*` — info 卡加「报名数据（工作人员）」入口（is_stats_viewer 控制）
+- `miniprogram/api/activity.js` — getStats（raw 模式，无权限渲染空态）
+- `test/fn-admin-roles-test.js`（新增 15 条）/ `test/fn-activity-stats-test.js`（新增 6 条）— 已入 npm test 链
+- `package.json` — test 链追加两个新测试
+
+**变更说明**：
+从零建立后台多角色权限体系：运营用户本身是小程序会员（users 行），后台账号存独立 `admin_accounts` 表经 user_id 关联（不污染 C 端表，identity 语义不动）。4 角色：super（全部含退费）/content（内容域）/activity（仅自己主理的活动）/member（用户订单不含退费）。活动场景：super 指定活动主理人，主理人在后台管理该活动的工作人员白名单；工作人员登录小程序后凭身份在活动详情页进「报名数据」页（只读，含推荐人信息），转发链接只是入口、鉴权全靠白名单。
+
+**验证**：
+`npm test` 全量 22 套件全绿（含新增 21 条：双模式登录/scrypt/ACL 矩阵/owner 过滤/账号 CRUD/staff 幂等/token 兼容/审计操作者/statsGet 三态鉴权/推荐人字段）。dev 库迁移幂等验证（连跑两遍）。已部署 dev：admin+activity 云函数 + admin Web 静态托管。
+
+**待办（prod 上线时）**：`XINGSHU_ENV_FILE=.env.prod node scripts/backup-db.js && XINGSHU_ENV_FILE=.env.prod node scripts/migrate-admin-roles.js` → prod 云函数（admin/activity）+ admin Web → 超管建运营账号、为存量活动补主理人/工作人员 → 小程序新页面 activity-stats 随下一版发布过审。
+
+### 2026-07-19 — 后台当前登录者展示 + 角色变更保存体验修复
+
+**类型**：前端 | 云函数 | 部署
+**计划关联**：用户反馈（登录后不知当前身份；改角色报「请求失败」但实际已生效；菜单需重登才更新）
+**修改文件**：
+- `miniprogram/cloudfunctions/admin/index.js` — login 返回 `name`（账号姓名 / 超管固定「超级管理员」）
+- `admin/src/api/index.js` — ① cloudbase.init 加 `timeout: 30000`（隧道冷透时写入已成功但 15s 内未返回，被误报「请求失败」）；② login 存 profile（姓名）；③ 新增 `getUid()`/`getProfile()`（token 解析抽 `tokenPayload()`）；logout 一并清 profile
+- `admin/src/App.vue` — 侧边栏底部显示「当前登录：姓名 · 角色」
+- `admin/src/views/Accounts.vue` — 保存流程拆分：保存成功后列表刷新失败不再误报「保存失败」；改**自己**的角色 → 提示并强制重新登录；改他人角色 → 提示「权限即时生效，对方重新登录后菜单才按新角色显示」
+
+**变更说明**：
+菜单不即时变化是设计使然——前端菜单读登录 token 内的 role，服务端权限则每请求回查 DB 即时生效；本次不改 token 机制，改为明确提示 + 自改角色强制重登。「请求失败但已生效」定位为 js-sdk 15s 客户端超时遇隧道慢，提到 30s 并解耦保存与列表刷新的错误提示。
+
+**验证**：
+fn-admin-roles-test 15/15 通过；admin 云函数 + 静态托管已重新部署 dev。
+
+### 2026-07-19 — 内容运营去掉用户管理菜单
+
+**类型**：前端 | 部署
+**计划关联**：用户反馈（内容运营角色不应见用户管理）
+**修改文件**：
+- `admin/src/App.vue` — NAV 用户管理 roles 收窄为 super/member
+- `admin/src/router/index.js` — /users、/users/:id 的 meta.roles 同步收窄（content 越权访问将被守卫重定向回 /stories）
+
+**变更说明**：
+仅收窄菜单与页面路由；服务端 ACL 保留 content 对 users/userDetail 的只读访问（代发故事选作者的 API 依赖，无页面入口）。
+
+**验证**：admin Web 重建并发布 dev 静态托管；content 账号登录侧边栏无「用户管理」，直输 #/users 被重定向。
+
+### 2026-07-19 — 运营账号支持多角色（一人可同时授多个角色）
+
+**类型**：后端 | 云函数 | 前端 | 数据库 | 测试 | 部署
+**计划关联**：用户需求（一个用户可同时被授权多个角色）
+**修改文件**：
+- `scripts/migrate-admin-roles.js` — 追加第 ④ 步：`admin_accounts.role` ENUM → VARCHAR(64)（逗号分隔多值，幂等判 COLUMN_TYPE）；dev 已执行
+- `miniprogram/cloudfunctions/admin/index.js` — `normRoles()` 规整（数组/CSV → 按固定顺序去重合法数组）；buildCtx 返回 `roles[]`+`isSuper`；ACL 判定改「任一角色命中即放行」；owner 守卫/activitySave/activityList 的 super 判断改 `ctx.isSuper`；accountSave 收 `roles` 数组（兼容旧 `role` 字符串）落 CSV，含 activity 角色必绑会员；accountList 返回 `roles` 数组；login token payload 的 role 为 CSV 原样携带
+- `admin/src/api/index.js` — `getRole()` → `getRoles()`/`hasRole()`（按逗号拆）
+- `admin/src/router/index.js` — `homeFor(roles)` 按 super>content>activity>member 优先级取首页；守卫改任一角色命中放行
+- `admin/src/App.vue` — 菜单按多角色并集过滤；「当前登录」多角色以「/」相连
+- `admin/src/views/Login.vue` — 跳转改 homeFor；`admin/src/views/Activities.vue` — isSuper 改 hasRole
+- `admin/src/views/Accounts.vue` — 角色单选下拉改**多选复选框**；列表徽章逐角色渲染；保存传 roles 数组；角色变更比较改集合比较
+- `test/fn-admin-roles-test.js` — 新增多角色用例（content+member 可同时访问故事与订单、仍拒退费、token CSV 顺序）
+
+**变更说明**：
+权限模型从单角色枚举升级为多角色集合：菜单/路由/ACL 均按「任一角色命中即放行」取并集；活动域的数据范围仍按是否含 super 收窄。存量单角色数据天然兼容（CSV 单值）。
+
+**验证**：fn-admin-roles-test 16/16 通过；admin 云函数 + admin Web 已重新部署 dev。prod 上线时同一迁移脚本幂等覆盖。
+
+### 2026-07-19 — 故事分享海报：配图高清导出 + 标题单行自适应
+
+**类型**：前端
+**计划关联**：用户反馈（海报配图分辨率太低；标题在海报里换行而预览弹窗不换行）
+**修改文件**：
+- `miniprogram/components/poster-sheet/index.js` — ① 高清导出：绘制阶段画布像素尺寸放大 `scale` 倍（最高 2×，即 1280px 宽）并 `setTransform` 缩放坐标系，配图以原图分辨率绘入不再压糊；超长海报按已验证的 8000px 像素高上限反算 scale（防旧机型画布超限导出失败）。② 标题单行自适应：38px 起逐级缩小至 26px 使标题尽量一行放下（与预览弹窗观感一致），行高/基线随字号联动；仍超宽才折行。
+
+**验证**：node --check 通过；纯前端 canvas 渲染改动，微信开发者工具/真机生成海报验证清晰度与标题单行。
