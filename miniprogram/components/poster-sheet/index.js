@@ -186,8 +186,15 @@ Component({
         // ── 第一遍：测量排版，算出动态高度（花边框住文字，花边下为图片/二维码/页尾）──
         canvas.width = W
         canvas.height = 100
-        ctx.font = 'bold 38px serif'
+        // 标题尽量单行（同预览弹窗观感）：38px 起逐级缩小至 26px，仍超宽才折行
+        let titleSize = 38
+        ctx.font = `bold ${titleSize}px serif`
+        while (titleSize > 26 && ctx.measureText(this.data.shareTitle || '').width > CW) {
+          titleSize -= 2
+          ctx.font = `bold ${titleSize}px serif`
+        }
         const titleLines = this._splitText(ctx, this.data.shareTitle || '', CW)
+        const titleLineH = titleSize + 16
         ctx.font = '27px sans-serif'
         // 正文按原文段落（\n）分段，每段独立折行、段间留间距
         let contentBlocks = String(this.data.shareContent || '').split('\n')
@@ -208,7 +215,7 @@ Component({
           const frameTop = yy                  // 花边上边（英文下方）
           yy += 28
           const titleTop = yy                  // 花边内：标题（居中）
-          yy += titleLines.length * 54
+          yy += titleLines.length * titleLineH
           yy += 16
           const contentTop = yy                // 花边内：正文（左对齐）
           yy += contentHof(blocks)
@@ -233,8 +240,13 @@ Component({
         }
 
         // ── 第二遍：按最终高度绘制（重设尺寸会清空画布与状态）──
+        // 高清导出：像素尺寸放大 scale 倍（配图不再被压到 520px 变糊，用原图分辨率绘制）；
+        // 超长海报按已验证的 8000px 像素高上限反算 scale，防旧机型画布超限导出失败
         const H = lay.H
-        canvas.height = H
+        const scale = Math.min(2, Math.max(1, MAX_H / H))
+        canvas.width = Math.round(W * scale)
+        canvas.height = Math.round(H * scale)
+        ctx.setTransform(scale, 0, 0, scale, 0, 0)
 
         // 底色（原米纸）+ 点阵（至页尾前）
         ctx.fillStyle = '#FFFCF5'
@@ -271,10 +283,10 @@ Component({
         ctx.globalAlpha = 0.6; ctx.fillStyle = TAG_COLOR; ctx.font = '18px sans-serif'
         ctx.fillText('X I N G S H U   S T O R Y', PADX, lay.kickerTop + 18); ctx.globalAlpha = 1
 
-        // 故事标题（居中衬线，活动字体色）
-        ctx.fillStyle = '#43341F'; ctx.font = 'bold 38px serif'; ctx.textAlign = 'center'
-        let ty = lay.titleTop + 40
-        titleLines.forEach(line => { ctx.fillText(line, W / 2, ty); ty += 54 })
+        // 故事标题（居中衬线，活动字体色；字号为单行自适应结果）
+        ctx.fillStyle = '#43341F'; ctx.font = `bold ${titleSize}px serif`; ctx.textAlign = 'center'
+        let ty = lay.titleTop + titleSize + 2
+        titleLines.forEach(line => { ctx.fillText(line, W / 2, ty); ty += titleLineH })
 
         // 正文全文（左对齐，活动字体色，分段）
         ctx.fillStyle = 'rgba(67,52,31,0.9)'; ctx.font = '27px sans-serif'; ctx.textAlign = 'left'
