@@ -139,6 +139,7 @@
               <view class="inv-row"><text class="inv-b">活动时间</text><text class="inv-v">{{invite.timeText}}</text></view>
               <view class="inv-row"><text class="inv-b">参与方式</text><text class="inv-v">{{invite.joinText}}</text></view>
               <view class="inv-row"><text class="inv-b">报名限额</text><text class="inv-v">{{invite.quotaText}}</text></view>
+              <view class="inv-row"><text class="inv-b">活动费用</text><text class="inv-v">{{invite.feeText}}</text></view>
             </view>
             <view class="inv-cta">
               <view class="inv-cta-text"><text>长按识别小程序码</text><text>报名参加</text></view>

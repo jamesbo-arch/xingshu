@@ -3390,3 +3390,15 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 **变更说明**：canPost（已报名且活动进行中）时，现场分享入口由页内虚线按钮改为固定右下角相机浮窗，与「醒书活动」列表页的分享 FAB 一致；此态下底部报名栏无实际操作（报名早关闭、无取消），故整条隐藏，由浮窗承担唯一入口。
 
 **验证**：布局 detail-scroll flex:1 撑满，隐藏底部栏无空洞；纯前端改动随小程序上传生效。
+
+### 2026-07-18 — 活动海报：介绍按原文分段 + 信息区加活动费用
+
+**类型**：前端
+**计划关联**：用户需求（海报介绍分段显示、费用列出）
+**修改文件**：
+- `miniprogram/pages/activity-detail/index.js` — _buildInvite 介绍不再压平空白、保留原文段落（
+），新增 feeText（price>0 金额 / 免费）；_ensureInvite canvas 介绍按段落分段绘制（每段独立折行+段间距，画布高度按分段累加）、信息区 rows 增「活动费用」行
+- `miniprogram/pages/activity-detail/index.wxml` — 海报预览 inv-info 增活动费用行
+- `miniprogram/pages/activity-detail/index.wxss` — inv-intro 加 white-space: pre-wrap 保留预览分段
+
+**验证**：node --check 通过；纯前端改动随小程序上传生效。

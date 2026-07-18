@@ -484,6 +484,7 @@
   line-height: 1.85;
   opacity: 0.9;
   margin-bottom: 28rpx;
+  white-space: pre-wrap;  /* 保留原文分段换行 */
 }
 
 .inv-info {

@@ -174,16 +174,19 @@ Page({
       const endHM = fmtHM(String(a.end_time).slice(11, 16))
       timeText += sameDay ? ` ~ ${endHM}` : ` ~ ${String(a.end_time).slice(0, 10)} ${endHM}`
     }
-    const content = (a.content || '').replace(/\s+/g, ' ').trim()
+    // 保留原文分段（\n）：行内多空格压一个、连续空行压成一个，仅去首尾空白
+    const content = (a.content || '').replace(/\r\n/g, '\n').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
+    const price = Number(a.price) || 0
     return {
       key,
       kicker: INV_THEMES[key].kicker,
       tagText: `${a.type_name || '醒書活動'} · ${a.type === 'online' ? '線上' : '線下'}`,
-      intro: content,   // 海报完整展现介绍全文（画布高度动态）
+      intro: content,   // 海报完整展现介绍全文（按段落，画布高度动态）
       timeText,
       // 线上不泄露会议号，口径与详情可见性规则一致
       joinText: a.type === 'online' ? '线上 · 腾讯会议（会议号报名后可见）' : `线下 · ${a.city || ''} · ${a.location || ''}`,
       quotaText: a.capacity > 0 ? `${a.capacity} 人 · 先到先得` : '不限名额',
+      feeText: price > 0 ? price + ' 元' : '免费',
     }
   },
 
@@ -582,8 +585,12 @@ Page({
       ctx.font = 'bold 54px serif'
       const titleLines = this._splitText(ctx, a.title || '', CW).slice(0, 3)
       ctx.font = '28px sans-serif'
-      const introLines = this._splitText(ctx, inv.intro, CW)
+      // 介绍按原文段落（\n）分段，每段独立折行、段间留间距
+      const introBlocks = String(inv.intro).split('\n').map(p => (p.trim() ? this._splitText(ctx, p.trim(), CW) : []))
+      let introH = 0
+      introBlocks.forEach((lines, i) => { introH += lines.length * 46; if (i < introBlocks.length - 1) introH += 16 })
       const imgHeights = imgs.map(im => (im ? Math.round(CW * im.height / im.width) : 0))
+      const rows = [['活动时间', inv.timeText], ['参与方式', inv.joinText], ['报名限额', inv.quotaText], ['活动费用', inv.feeText]]
 
       let y = 60
       y += 52 + 30                                   // tag
@@ -591,14 +598,14 @@ Page({
       const titleTop = y
       y = titleTop + titleLines.length * 72 + 28      // 标题
       const introTop = y
-      y = introTop + introLines.length * 46 + 24      // 介绍全文
+      y = introTop + introH + 24                      // 介绍全文（分段）
       const imgTop = y
       imgHeights.forEach(h => { if (h) y += h + 16 }) // 配图
       y += 8
       const dividerY = y
       y += 44                                         // 分隔线后间距
       const infoTop = y
-      y += 3 * 64 + 20                                // 信息区三行
+      y += rows.length * 64 + 20                       // 信息区
       const ctaY = y
       const ctaH = 168
       y = ctaY + ctaH + 40
@@ -630,10 +637,13 @@ Page({
       let ty = titleTop + 54
       titleLines.forEach(line => { ctx.fillText(line, PX, ty); ty += 72 })
 
-      // 活动介绍全文
+      // 活动介绍全文（按段落绘制，段间留间距）
       ctx.globalAlpha = 0.9; ctx.font = '28px sans-serif'; ctx.fillStyle = t.fg
       let iy = introTop + 28
-      introLines.forEach(line => { ctx.fillText(line, PX, iy); iy += 46 })
+      introBlocks.forEach(lines => {
+        lines.forEach(line => { ctx.fillText(line, PX, iy); iy += 46 })
+        iy += 16
+      })
       ctx.globalAlpha = 1
 
       // 配图（介绍下方逐张等比）
@@ -648,7 +658,6 @@ Page({
 
       // 信息区三行（值自适应字号，保证单行不换行）
       let infoY = infoTop + 20
-      const rows = [['活动时间', inv.timeText], ['参与方式', inv.joinText], ['报名限额', inv.quotaText]]
       const valX = 180, valMaxW = W - PX - valX
       rows.forEach(([label, val]) => {
         ctx.globalAlpha = 0.72; ctx.font = '22px sans-serif'; ctx.fillStyle = t.fg
