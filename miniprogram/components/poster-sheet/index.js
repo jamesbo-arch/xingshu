@@ -203,9 +203,9 @@ Component({
         }
         const measure = (blocks) => {
           let yy = frameTop + 28
-          const brandBase = yy + 30            // 页头「醒書故事」基线（居中）
-          yy = brandBase + 20
-          const titleTop = yy                  // 标题区顶（居中）
+          const tagTop = yy                    // 「醒書故事」标签框顶（左对齐）
+          yy += 48 + 22
+          const titleTop = yy                  // 标题区顶（左对齐）
           yy += titleLines.length * 54
           yy += 16
           const contentTop = yy                // 正文区顶（左对齐）
@@ -219,7 +219,7 @@ Component({
           yy += imgsH
           const ctaTop = yy                    // 二维码 CTA
           yy += CTA_H + 28
-          return { brandBase, titleTop, contentTop, tagsTop, frameBottom, imgTop, ctaTop, H: yy + FOOT_H }
+          return { tagTop, titleTop, contentTop, tagsTop, frameBottom, imgTop, ctaTop, H: yy + FOOT_H }
         }
         let lay = measure(contentBlocks)
         if (lay.H > MAX_H) {
@@ -259,17 +259,21 @@ Component({
           [[fR - cm, fB], [fR, fB], [fR, fB - cm]],
         ].forEach(([s, c, e]) => { ctx.beginPath(); ctx.moveTo(...s); ctx.lineTo(...c); ctx.lineTo(...e); ctx.stroke() })
 
-        // 页头「醒書故事」（居中红字，原样）
-        ctx.fillStyle = '#B6452F'; ctx.font = 'bold 26px serif'; ctx.textAlign = 'center'
-        ctx.fillText('醒書故事', W / 2, lay.brandBase)
+        // 页头「醒書故事」标签框（左对齐，活动海报样式）
+        ctx.textAlign = 'left'; ctx.font = '24px sans-serif'
+        const brandText = '醒書故事'
+        const brandTagW = ctx.measureText(brandText).width + 36
+        ctx.strokeStyle = ACCENT; ctx.lineWidth = 2
+        this._roundRect(ctx, PADX, lay.tagTop, brandTagW, 48, 7); ctx.stroke()
+        ctx.fillStyle = ACCENT; ctx.fillText(brandText, PADX + 18, lay.tagTop + 32)
 
-        // 标题（居中衬线，原样）
-        ctx.fillStyle = '#2A2723'; ctx.font = 'bold 38px serif'; ctx.textAlign = 'center'
+        // 标题（左对齐衬线，活动字体色）
+        ctx.fillStyle = '#43341F'; ctx.font = 'bold 38px serif'; ctx.textAlign = 'left'
         let ty = lay.titleTop + 40
-        titleLines.forEach(line => { ctx.fillText(line, W / 2, ty); ty += 54 })
+        titleLines.forEach(line => { ctx.fillText(line, PADX, ty); ty += 54 })
 
-        // 正文全文（左对齐，原色，分段）
-        ctx.fillStyle = '#4A453E'; ctx.font = '27px sans-serif'; ctx.textAlign = 'left'
+        // 正文全文（左对齐，活动字体色，分段）
+        ctx.fillStyle = 'rgba(67,52,31,0.9)'; ctx.font = '27px sans-serif'; ctx.textAlign = 'left'
         let cy = lay.contentTop + 30
         contentBlocks.forEach(lines => {
           lines.forEach(line => { ctx.fillText(line, PADX, cy); cy += 40 })

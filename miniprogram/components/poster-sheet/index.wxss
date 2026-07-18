@@ -71,28 +71,36 @@
 .corner-bl { bottom: 8rpx; left: 8rpx; border-bottom: 1.5px solid rgba(126, 102, 64, 0.4); border-left: 1.5px solid rgba(126, 102, 64, 0.4); }
 .corner-br { bottom: 8rpx; right: 8rpx; border-bottom: 1.5px solid rgba(126, 102, 64, 0.4); border-right: 1.5px solid rgba(126, 102, 64, 0.4); }
 
-/* 页头（居中红字，原样） */
-.pc-brand { display: block; text-align: center; font-size: 28rpx; color: #B6452F; letter-spacing: 4px; margin-bottom: 18rpx; }
+/* 页头「醒書故事」标签框（左对齐，活动海报样式） */
+.pc-tag {
+  display: inline-block;
+  font-size: 24rpx;
+  color: #B6452F;
+  border: 1.5px solid #B6452F;
+  border-radius: 6rpx;
+  padding: 6rpx 18rpx;
+  margin-bottom: 20rpx;
+}
 
-/* 标题（居中衬线，原样） */
+/* 标题（左对齐衬线，活动字体色） */
 .pc-title {
-  font-size: 36rpx;
+  font-size: 38rpx;
   font-weight: 700;
-  color: #2A2723;
-  line-height: 1.45;
-  text-align: center;
+  color: #43341F;
+  line-height: 1.4;
+  text-align: left;
   margin-bottom: 18rpx;
 }
 
-/* 正文（左对齐，原色，保留分段） */
+/* 正文（左对齐，活动字体色，保留分段） */
 .pc-content {
   font-size: 26rpx;
-  color: #4A453E;
+  color: rgba(67, 52, 31, 0.9);
   line-height: 1.8;
   white-space: pre-wrap;
 }
 
-.pc-tags { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 16rpx; justify-content: center; }
+.pc-tags { display: flex; flex-wrap: wrap; gap: 8rpx; margin-top: 16rpx; justify-content: flex-start; }
 
 /* 花边下：配图 */
 .pc-images { display: flex; flex-direction: column; gap: 12rpx; margin-top: 24rpx; }
