@@ -85,15 +85,23 @@
 .corner-bl { bottom: 8rpx; left: 8rpx; border-bottom: 1.5px solid rgba(126, 102, 64, 0.4); border-left: 1.5px solid rgba(126, 102, 64, 0.4); }
 .corner-br { bottom: 8rpx; right: 8rpx; border-bottom: 1.5px solid rgba(126, 102, 64, 0.4); border-right: 1.5px solid rgba(126, 102, 64, 0.4); }
 
-/* 页头「醒書故事」标签框（左对齐，活动海报样式） */
+/* 页头「醒書故事」标签框（左对齐，边框色同活动标签） */
 .pc-tag {
   display: inline-block;
   font-size: 24rpx;
-  color: #B6452F;
-  border: 1.5px solid #B6452F;
+  color: #8A6E4B;
+  border: 1.5px solid #8A6E4B;
   border-radius: 6rpx;
   padding: 6rpx 18rpx;
-  margin-bottom: 20rpx;
+  margin-bottom: 12rpx;
+}
+
+/* 英文小字 kicker（同活动海报） */
+.pc-kicker {
+  font-size: 18rpx;
+  letter-spacing: 2rpx;
+  color: rgba(138, 110, 75, 0.7);
+  margin-bottom: 12rpx;
 }
 
 /* 故事标题（居中衬线，活动字体色） */

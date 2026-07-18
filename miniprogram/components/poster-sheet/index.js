@@ -160,7 +160,7 @@ Component({
         const MAX_H = 8000            // 画布高度软上限（超限时截断正文，防旧机型导出失败）
         const FRAME_L = 24, frameTop = 36             // 花边矩形（框住「醒書故事分享」标签+标题+正文）
         const CTA_H = 150, FOOT_H = 100
-        const ACCENT = '#B6452F', FOOT_BG = '#A08A63'
+        const ACCENT = '#B6452F', FOOT_BG = '#A08A63', TAG_COLOR = '#8A6E4B'  // 标签色同活动海报
 
         // 配图与品牌栏图先行加载（cloud:// 下载临时路径 → createImage 取宽高），失败的静默跳过
         wx.showLoading({ title: '生成海报中…', mask: true })
@@ -201,21 +201,23 @@ Component({
         }
         const measure = (blocks) => {
           let yy = frameTop + 28
-          const tagTop = yy                    // 「醒書故事分享」标签框（花边内顶部，左对齐）
-          yy += 48 + 22
+          const tagTop = yy                    // 「醒書故事」标签框（花边内顶部，左对齐）
+          yy += 48 + 14
+          const kickerTop = yy                 // 英文小字 XINGSHU STORY
+          yy += 30
           const titleTop = yy                  // 标题（居中）
           yy += titleLines.length * 54
           yy += 16
           const contentTop = yy                // 正文（左对齐）
           yy += contentHof(blocks)
           yy += 24
-          const frameBottom = yy               // 花边下边（框住标签+标题+正文）
+          const frameBottom = yy               // 花边下边（框住标签+kicker+标题+正文）
           yy += 32
           const imgTop = yy                    // 花边下：配图
           yy += imgsH
           const ctaTop = yy                    // 二维码 CTA
           yy += CTA_H + 28
-          return { tagTop, titleTop, contentTop, frameBottom, imgTop, ctaTop, H: yy + FOOT_H }
+          return { tagTop, kickerTop, titleTop, contentTop, frameBottom, imgTop, ctaTop, H: yy + FOOT_H }
         }
         let lay = measure(contentBlocks)
         if (lay.H > MAX_H) {
@@ -255,13 +257,17 @@ Component({
           [[fR - cm, fB], [fR, fB], [fR, fB - cm]],
         ].forEach(([s, c, e]) => { ctx.beginPath(); ctx.moveTo(...s); ctx.lineTo(...c); ctx.lineTo(...e); ctx.stroke() })
 
-        // 「醒書故事分享」标签框（左对齐，花边内顶部）
+        // 「醒書故事」标签框（左对齐，花边内顶部，边框色同活动标签）
         ctx.textAlign = 'left'; ctx.font = '24px sans-serif'
         const brandText = '醒書故事'
         const brandTagW = ctx.measureText(brandText).width + 36
-        ctx.strokeStyle = ACCENT; ctx.lineWidth = 2
+        ctx.strokeStyle = TAG_COLOR; ctx.lineWidth = 2
         this._roundRect(ctx, PADX, lay.tagTop, brandTagW, 48, 7); ctx.stroke()
-        ctx.fillStyle = ACCENT; ctx.fillText(brandText, PADX + 18, lay.tagTop + 32)
+        ctx.fillStyle = TAG_COLOR; ctx.fillText(brandText, PADX + 18, lay.tagTop + 32)
+
+        // 英文小字 kicker（同活动海报 SATURDAY MORNING COFFEE 位置）
+        ctx.globalAlpha = 0.6; ctx.fillStyle = TAG_COLOR; ctx.font = '18px sans-serif'
+        ctx.fillText('X I N G S H U   S T O R Y', PADX, lay.kickerTop + 18); ctx.globalAlpha = 1
 
         // 故事标题（居中衬线，活动字体色）
         ctx.fillStyle = '#43341F'; ctx.font = 'bold 38px serif'; ctx.textAlign = 'center'

@@ -15,6 +15,7 @@
         <view class="corner corner-bl"></view>
         <view class="corner corner-br"></view>
         <view class="pc-tag">醒書故事</view>
+        <view class="pc-kicker">X I N G S H U   S T O R Y</view>
         <view class="pc-title serif">{{shareTitle}}</view>
         <view class="pc-content">{{shareContent}}</view>
       </view>
