@@ -158,7 +158,7 @@ Component({
         const ctx = canvas.getContext('2d')
         const W = 640, PADX = 60, CW = W - PADX * 2   // 沿用原故事海报尺寸
         const MAX_H = 8000            // 画布高度软上限（超限时截断正文，防旧机型导出失败）
-        const FRAME_L = 24                            // 花边矩形（在「醒書故事」下方，框住标题+正文）
+        const FRAME_L = 24, frameTop = 36             // 花边矩形（框住「醒書故事分享」标签+标题+正文）
         const CTA_H = 150, FOOT_H = 100
         const ACCENT = '#B6452F', FOOT_BG = '#A08A63'
 
@@ -200,24 +200,22 @@ Component({
           return ch
         }
         const measure = (blocks) => {
-          let yy = 40
-          const brandTagTop = yy               // 「醒書故事」标签框（花边外上方）
-          yy += 48 + 20
-          const frameTop = yy                  // 花边上边（在「醒書故事」下方）
-          yy += 28
-          const titleTop = yy                  // 花边内：标题
+          let yy = frameTop + 28
+          const tagTop = yy                    // 「醒書故事分享」标签框（花边内顶部，左对齐）
+          yy += 48 + 22
+          const titleTop = yy                  // 标题（居中）
           yy += titleLines.length * 54
           yy += 16
-          const contentTop = yy                // 花边内：正文
+          const contentTop = yy                // 正文（左对齐）
           yy += contentHof(blocks)
           yy += 24
-          const frameBottom = yy               // 花边下边（框住标题+正文）
+          const frameBottom = yy               // 花边下边（框住标签+标题+正文）
           yy += 32
           const imgTop = yy                    // 花边下：配图
           yy += imgsH
           const ctaTop = yy                    // 二维码 CTA
           yy += CTA_H + 28
-          return { brandTagTop, frameTop, titleTop, contentTop, frameBottom, imgTop, ctaTop, H: yy + FOOT_H }
+          return { tagTop, titleTop, contentTop, frameBottom, imgTop, ctaTop, H: yy + FOOT_H }
         }
         let lay = measure(contentBlocks)
         if (lay.H > MAX_H) {
@@ -244,12 +242,12 @@ Component({
           }
         }
 
-        // 花边：矩形边框 + 四角 L 形（在「醒書故事」下方，框住标题+正文）
+        // 花边：矩形边框 + 四角 L 形（框住「醒書故事分享」标签+标题+正文）
         ctx.strokeStyle = 'rgba(126,102,64,0.2)'; ctx.lineWidth = 1
-        ctx.strokeRect(FRAME_L, lay.frameTop, W - FRAME_L * 2, lay.frameBottom - lay.frameTop)
+        ctx.strokeRect(FRAME_L, frameTop, W - FRAME_L * 2, lay.frameBottom - frameTop)
         const cm = 16
         ctx.strokeStyle = 'rgba(126,102,64,0.4)'; ctx.lineWidth = 1.5
-        const fL = FRAME_L + 12, fT = lay.frameTop + 12, fR = W - FRAME_L - 12, fB = lay.frameBottom - 12
+        const fL = FRAME_L + 12, fT = frameTop + 12, fR = W - FRAME_L - 12, fB = lay.frameBottom - 12
         ;[
           [[fL + cm, fT], [fL, fT], [fL, fT + cm]],
           [[fR - cm, fT], [fR, fT], [fR, fT + cm]],
@@ -257,18 +255,18 @@ Component({
           [[fR - cm, fB], [fR, fB], [fR, fB - cm]],
         ].forEach(([s, c, e]) => { ctx.beginPath(); ctx.moveTo(...s); ctx.lineTo(...c); ctx.lineTo(...e); ctx.stroke() })
 
-        // 页头「醒書故事」标签框（左对齐，花边外上方）
+        // 「醒書故事分享」标签框（左对齐，花边内顶部）
         ctx.textAlign = 'left'; ctx.font = '24px sans-serif'
-        const brandText = '醒書故事'
+        const brandText = '醒書故事分享'
         const brandTagW = ctx.measureText(brandText).width + 36
         ctx.strokeStyle = ACCENT; ctx.lineWidth = 2
-        this._roundRect(ctx, PADX, lay.brandTagTop, brandTagW, 48, 7); ctx.stroke()
-        ctx.fillStyle = ACCENT; ctx.fillText(brandText, PADX + 18, lay.brandTagTop + 32)
+        this._roundRect(ctx, PADX, lay.tagTop, brandTagW, 48, 7); ctx.stroke()
+        ctx.fillStyle = ACCENT; ctx.fillText(brandText, PADX + 18, lay.tagTop + 32)
 
-        // 标题（左对齐衬线，活动字体色）
-        ctx.fillStyle = '#43341F'; ctx.font = 'bold 38px serif'; ctx.textAlign = 'left'
+        // 故事标题（居中衬线，活动字体色）
+        ctx.fillStyle = '#43341F'; ctx.font = 'bold 38px serif'; ctx.textAlign = 'center'
         let ty = lay.titleTop + 40
-        titleLines.forEach(line => { ctx.fillText(line, PADX, ty); ty += 54 })
+        titleLines.forEach(line => { ctx.fillText(line, W / 2, ty); ty += 54 })
 
         // 正文全文（左对齐，活动字体色，分段）
         ctx.fillStyle = 'rgba(67,52,31,0.9)'; ctx.font = '27px sans-serif'; ctx.textAlign = 'left'
