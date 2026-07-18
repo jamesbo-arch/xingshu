@@ -50,8 +50,8 @@
 
     <!-- Action：保存图片 + 分享给朋友（与活动邀请函一致） -->
     <view class="poster-actions">
-      <view class="btn-ghost poster-btn" bindtap="onSaveImage">保存图片</view>
-      <view class="btn-primary poster-btn" bindtap="onShareImage">分享给朋友</view>
+      <view class="poster-btn poster-btn-ghost" bindtap="onSaveImage">保存图片</view>
+      <view class="poster-btn poster-btn-share" bindtap="onShareImage">分享给朋友</view>
     </view>
 
     <view class="safe-bottom"></view>

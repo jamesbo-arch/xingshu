@@ -151,10 +151,17 @@
   gap: 16rpx;
 }
 
+/* 保存/分享按钮：胶囊样式，与活动分享一致 */
 .poster-btn {
   flex: 1;
+  text-align: center;
+  padding: 22rpx;
+  border-radius: 999rpx;
   font-size: 28rpx;
 }
+
+.poster-btn-ghost { border: 1rpx solid rgba(126, 102, 64, 0.3); color: #7A746A; }
+.poster-btn-share { background: #B6452F; color: #fff; letter-spacing: 4rpx; }
 
 /* ── 页尾品牌栏（手绘醒书咨询，出血满宽，与活动邀请函一致）── */
 .pc-foot {
