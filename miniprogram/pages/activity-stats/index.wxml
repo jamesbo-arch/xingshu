@@ -1,0 +1,83 @@
+<view class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
+  <view class="detail-nav">
+    <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
+    <text class="nav-title serif">報名數據</text>
+  </view>
+
+  <!-- 加载中 -->
+  <view wx:if="{{loading}}" class="stats-wall">
+    <text class="stats-wall-hint">加载中…</text>
+  </view>
+
+  <!-- 未登录占位 -->
+  <view wx:elif="{{needLogin}}" class="stats-wall">
+    <text class="stats-wall-icon serif">醒</text>
+    <text class="stats-wall-title">登录后查看报名数据</text>
+    <text class="stats-wall-hint">仅活动主理人与工作人员可见</text>
+    <view class="stats-wall-btn" bindtap="onWallLogin">微信登录</view>
+  </view>
+
+  <!-- 无权限空态（不在主理人/工作人员名单） -->
+  <view wx:elif="{{noAccess}}" class="stats-wall">
+    <text class="stats-wall-icon serif">醒</text>
+    <text class="stats-wall-title">{{errMsg || '你不是该活动的工作人员'}}</text>
+    <text class="stats-wall-hint">报名数据仅活动主理人与工作人员可查看，如需权限请联系活动主理人</text>
+  </view>
+
+  <scroll-view wx:else class="stats-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="stats-body">
+      <text class="stats-act-title serif">{{activity.title}}</text>
+      <text class="stats-act-time">{{activity.startTime}} · {{feeText}}</text>
+
+      <!-- 统计头 -->
+      <view class="stats-head">
+        <view class="stats-cell">
+          <text class="stats-num">{{stats.total}}</text>
+          <text class="stats-label">已报名{{activity.capacity > 0 ? ' / ' + activity.capacity : ''}}</text>
+        </view>
+        <view class="stats-cell">
+          <text class="stats-num">{{stats.attended}}</text>
+          <text class="stats-label">已到场</text>
+        </view>
+        <view class="stats-cell">
+          <text class="stats-num">{{stats.paid}}</text>
+          <text class="stats-label">已收费</text>
+        </view>
+      </view>
+
+      <!-- 名单 -->
+      <view class="stats-list-title serif">报名名单</view>
+      <view wx:if="{{!list.length}}" class="stats-empty">还没有人报名</view>
+      <view wx:for="{{list}}" wx:key="signupId" class="stats-row">
+        <view class="stats-ava" style="background-color: {{item.avatarColor}};"><text>{{item.initial}}</text></view>
+        <view class="stats-row-main">
+          <view class="stats-row-line1">
+            <text class="stats-name">{{item.name}}</text>
+            <text class="stats-nick">{{item.nickname}} · ID {{item.userId}}</text>
+          </view>
+          <text wx:if="{{item.contact}}" class="stats-contact">{{item.contact}}</text>
+          <text class="stats-time">{{item.signedAt}} 报名</text>
+          <text wx:if="{{item.referrerText}}" class="stats-referrer">推荐人：{{item.referrerText}}</text>
+        </view>
+        <view class="stats-badges">
+          <text class="stats-badge {{item.attended ? 'on' : ''}}">{{item.attended ? '已到场' : '未到场'}}</text>
+          <text class="stats-badge {{item.paid ? 'on-paid' : ''}}">{{item.paid ? '已收费' : '未收费'}}</text>
+        </view>
+      </view>
+
+      <text class="stats-foot-hint">数据只读；到场 / 收费状态由运营在管理后台勾选</text>
+      <view class="stats-bottom-pad"></view>
+    </view>
+  </scroll-view>
+</view>
+
+<!-- 微信登录弹窗（未登录经分享链接进入时拉起） -->
+<login-sheet
+  visible="{{showLoginSheet}}"
+  subtitle="登录后即可查看你参与组织的活动报名数据。"
+  bind:close="onLoginClose"
+  bind:success="onLoginSuccess"
+></login-sheet>
+
+<privacy-popup></privacy-popup>

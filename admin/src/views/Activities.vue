@@ -3,11 +3,12 @@
     <h1 class="page-title">活动管理</h1>
     <div class="filter-bar">
       <button class="btn btn-primary" @click="openForm()">+ 发布活动</button>
-      <button class="btn btn-ghost" @click="openTypes">类型管理</button>
+      <!-- 分类是全局配置，仅超管可管（typeSave 服务端亦仅 super） -->
+      <button v-if="isSuper" class="btn btn-ghost" @click="openTypes">类型管理</button>
     </div>
     <table class="data-table">
       <thead><tr>
-        <th>ID</th><th>标题</th><th>类型</th><th>时间</th><th>形式</th><th>报名</th><th>状态</th><th>操作</th>
+        <th>ID</th><th>标题</th><th>类型</th><th>时间</th><th>形式</th><th>主理人</th><th>报名</th><th>状态</th><th>操作</th>
       </tr></thead>
       <tbody>
         <tr v-for="a in list" :key="a.id">
@@ -16,11 +17,13 @@
           <td>{{ a.typeName || '-' }}</td>
           <td>{{ a.startTime }}</td>
           <td>{{ a.type === 'online' ? '线上' : '线下·' + a.city }}</td>
+          <td>{{ a.ownerNickname || '—' }}</td>
           <td><a class="link" @click="openSignups(a)">{{ a.signedUp }}/{{ a.capacity }}</a></td>
           <td><span class="act-st" :class="'st-' + actState(a).cls">{{ actState(a).label }}</span></td>
           <td>
             <div class="act-ops">
               <button class="btn btn-ghost" @click="openForm(a)">编辑</button>
+              <a class="link" @click="openStaff(a)">工作人员</a>
               <a class="link" @click="openPosts(a)">现场分享</a>
               <a class="link" @click="openInvite(a)">邀请函</a>
             </div>
@@ -69,6 +72,25 @@
           </template>
           <label>名额上限<input v-model.number="form.capacity" type="number" class="input-full" /></label>
           <label>活动价格（元）<input v-model.number="form.price" type="number" min="0" step="0.01" class="input-full" placeholder="0 = 免费" /></label>
+          <label>主理人{{ isSuper ? '' : '（仅超管可改）' }}
+            <template v-if="isSuper">
+              <span v-if="form.ownerUserId" class="owner-current">
+                {{ form.ownerNickname || '?' }}（ID {{ form.ownerUserId }}）
+                <a class="link" @click="form.ownerUserId = null; form.ownerNickname = ''">清除</a>
+              </span>
+              <span v-else class="owner-box">
+                <input v-model="ownerKw" class="input-full" placeholder="搜昵称/手机号/ID 指定主理人" @input="onOwnerSearch" />
+                <span v-if="ownerList.length" class="owner-drop">
+                  <span v-for="u in ownerList" :key="u.id" class="owner-item" @click="pickOwner(u)">
+                    {{ u.nickname }}（ID {{ u.id }}{{ u.phone ? ' · ' + u.phone : '' }}）
+                  </span>
+                </span>
+              </span>
+            </template>
+            <span v-else class="addr-coord">
+              {{ form.ownerUserId ? (form.ownerNickname || '?') + '（ID ' + form.ownerUserId + '）' : '新建时自动设为本账号绑定会员' }}
+            </span>
+          </label>
           <label>状态
             <select v-model="form.status" class="input-full">
               <option value="draft">草稿（不可见）</option>
@@ -239,6 +261,38 @@
       </div>
     </div>
 
+    <!-- 工作人员弹窗：白名单成员可在小程序端查看该活动报名数据 -->
+    <div v-if="showStaff" class="modal-mask" @click.self="showStaff = false">
+      <div class="modal">
+        <h2 class="modal-title">工作人员 · {{ staffActivity.title }}（{{ staff.length }} 人）</h2>
+        <p class="staff-hint">名单内成员登录小程序后，可在该活动详情页打开「报名数据」查看报名/到场/收费情况（只读）。主理人无需添加，天然可见。</p>
+        <div class="owner-box staff-add">
+          <input v-model="staffKw" class="input-full" placeholder="搜昵称/手机号/姓名/ID 添加工作人员" @input="onStaffSearch" />
+          <span v-if="staffSearchList.length" class="owner-drop">
+            <span v-for="u in staffSearchList" :key="u.id" class="owner-item" @click="onAddStaff(u)">
+              {{ u.nickname }}（ID {{ u.id }}{{ u.phone ? ' · ' + u.phone : '' }}{{ u.isMember ? ' · 会员' : '' }}）
+            </span>
+          </span>
+        </div>
+        <table class="data-table">
+          <thead><tr><th>昵称</th><th>手机号</th><th>添加时间</th><th>添加人</th><th>操作</th></tr></thead>
+          <tbody>
+            <tr v-for="s in staff" :key="s.userId">
+              <td>{{ s.nickname }}</td>
+              <td>{{ s.phone || '-' }}</td>
+              <td>{{ s.createdAt }}</td>
+              <td class="dim-cell">{{ s.addedBy || '-' }}</td>
+              <td><a class="link" @click="onRemoveStaff(s)">移除</a></td>
+            </tr>
+            <tr v-if="!staff.length"><td colspan="5" style="text-align:center;color:#999;">暂无工作人员，上方搜索添加</td></tr>
+          </tbody>
+        </table>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" @click="showStaff = false">关闭</button>
+        </div>
+      </div>
+    </div>
+
     <!-- 现场分享弹窗 -->
     <div v-if="showPosts" class="modal-mask" @click.self="showPosts = false">
       <div class="modal">
@@ -277,8 +331,10 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import {
   getActivities, saveActivity, getActivitySignups, saveAttendance, getInviteQr,
   getActivityTypes, saveActivityType, getActivityPosts, deleteActivityPost, resolveFileUrls,
-  uploadActivityImage,
+  uploadActivityImage, hasRole, searchMembers, getStaffList, addStaff, removeStaff,
 } from '../api/index.js'
+
+const isSuper = hasRole('super')
 
 const list = ref([])
 const types = ref([])
@@ -391,6 +447,54 @@ const inviteRef = ref(null)
 const showTypes = ref(false), typeForm = ref({ channel: 'offline', sort: 0 })
 const showPosts = ref(false), posts = ref([]), postsActivity = ref({}), postsTotal = ref(0), postsPage = ref(1)
 const imgUrls = ref({})
+// 主理人搜索（表单内，仅超管）与工作人员管理
+const ownerKw = ref(''), ownerList = ref([])
+const showStaff = ref(false), staff = ref([]), staffActivity = ref({})
+const staffKw = ref(''), staffSearchList = ref([])
+let ownerTimer = null, staffTimer = null
+
+function onOwnerSearch() {
+  clearTimeout(ownerTimer)
+  ownerTimer = setTimeout(async () => {
+    const kw = ownerKw.value.trim()
+    if (!kw) { ownerList.value = []; return }
+    ownerList.value = (await searchMembers(kw, { pageSize: 8 })).list
+  }, 300)
+}
+function pickOwner(u) {
+  form.value.ownerUserId = u.id
+  form.value.ownerNickname = u.nickname
+  ownerKw.value = ''; ownerList.value = []
+}
+
+async function openStaff(a) {
+  staffActivity.value = a
+  staffKw.value = ''; staffSearchList.value = []
+  staff.value = (await getStaffList(a.id)).list
+  showStaff.value = true
+}
+function onStaffSearch() {
+  clearTimeout(staffTimer)
+  staffTimer = setTimeout(async () => {
+    const kw = staffKw.value.trim()
+    if (!kw) { staffSearchList.value = []; return }
+    staffSearchList.value = (await searchMembers(kw, { pageSize: 8 })).list
+  }, 300)
+}
+async function onAddStaff(u) {
+  staffKw.value = ''; staffSearchList.value = []
+  try {
+    await addStaff(staffActivity.value.id, u.id)
+    staff.value = (await getStaffList(staffActivity.value.id)).list
+  } catch (e) { alert(e.message || '添加失败') }
+}
+async function onRemoveStaff(s) {
+  if (!confirm(`确认移除工作人员「${s.nickname}」？移除后其小程序端立即不可再查看报名数据。`)) return
+  try {
+    await removeStaff(staffActivity.value.id, s.userId)
+    staff.value = (await getStaffList(staffActivity.value.id)).list
+  } catch (e) { alert(e.message || '移除失败') }
+}
 
 onMounted(async () => { await Promise.all([load(), loadTypes()]) })
 async function load() { list.value = (await getActivities()).list }
@@ -509,10 +613,12 @@ function openForm(a) {
         price: Number(a.price) || 0, status: a.status,
         location: a.location || '', latitude: a.latitude || null, longitude: a.longitude || null,
         organizer: a.organizer || '醒书运营组', images: normImgs(a.images),
+        ownerUserId: a.ownerUserId || null, ownerNickname: a.ownerNickname || '',
         content: a.content || '', review_content: a.review_content || '', cover_url: a.cover_url || '' }
     : { type: 'offline', type_id: null, status: 'draft', capacity: 12, price: 0, duration_hours: 2,
-        organizer: '醒书运营组', images: [],
+        organizer: '醒书运营组', images: [], ownerUserId: null, ownerNickname: '',
         latitude: null, longitude: null, repeat: '', repeat_until: '' }
+  ownerKw.value = ''; ownerList.value = []
   showForm.value = true
   loadFormImages()
 }
@@ -568,6 +674,9 @@ async function onSave() {
   try {
     const payload = { ...f }
     delete payload.repeat; delete payload.repeat_until; delete payload.duration_hours
+    delete payload.ownerNickname
+    // 主理人字段仅超管提交（服务端亦仅 super 生效；activity 角色新建时服务端自动落自己）
+    if (!isSuper) delete payload.ownerUserId
     payload.start_time = fromLocal(f.start_time)
     payload.end_time = endFromDuration(f.start_time, f.duration_hours, true)
     payload.signup_deadline = fromLocal(f.signup_deadline)
@@ -804,6 +913,20 @@ async function onDeletePost(p) {
 .map-pin { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -100%); pointer-events: none; z-index: 5; }
 .map-pin::before { content: ''; position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 16px; height: 16px; background: #E5574A; border: 2px solid #fff; border-radius: 50% 50% 50% 0; rotate: -45deg; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
 .map-addr { font-size: 13px; color: var(--ink-2); padding: 10px 2px 0; min-height: 20px; }
+
+/* 主理人/工作人员：搜索下拉与当前项 */
+.owner-box { position: relative; display: block; }
+.owner-current { display: inline-flex; align-items: center; gap: 10px; padding: 6px 0; font-size: 13px; }
+.owner-drop {
+  position: absolute; left: 0; right: 0; top: 100%; z-index: 20; display: block;
+  background: var(--bg-content, #fff); border: 0.5px solid var(--tbl-border);
+  border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); max-height: 220px; overflow-y: auto;
+}
+.owner-item { display: block; padding: 8px 12px; font-size: 13px; cursor: pointer; }
+.owner-item:hover { background: rgba(53, 120, 246, 0.06); }
+.staff-hint { font-size: 12px; color: var(--ink-3); margin: 0 0 12px; }
+.staff-add { margin-bottom: 12px; }
+.dim-cell { color: var(--ink-4); font-size: 12px; }
 
 /* 活动配图上传 */
 .img-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }

@@ -17,6 +17,15 @@ async function findUser(openid) {
   return rows.length ? rows[0] : null
 }
 
+// 报名数据可见权：活动主理人（owner_user_id）或该活动工作人员（activity_staff 白名单，后台管理）
+async function isStatsViewer(activityId, ownerUserId, userId) {
+  if (!userId) return false
+  if (ownerUserId && Number(ownerUserId) === Number(userId)) return true
+  const [rows] = await db.query(
+    'SELECT id FROM activity_staff WHERE activity_id = ? AND user_id = ?', [activityId, userId])
+  return rows.length > 0
+}
+
 // 当前用户对一批分享的点赞集合（游客/未注册返回空集）
 async function likedPostIds(user, rows) {
   if (!user || !rows.length) return new Set()
@@ -88,6 +97,8 @@ const handlers = {
     // 现场分享发布权：已报名 + 活动已开始（服务端 NOW() 判定，避免设备时钟/时区问题）
     a.canPost = a.isSignedUp && !!a.started
     delete a.started
+    // 报名数据入口：主理人或工作人员可见（详情页「报名数据」按钮）
+    a.is_stats_viewer = user && (await isStatsViewer(a.id, a.owner_user_id, user.id)) ? 1 : 0
     // 线上活动 location 存腾讯会议号：仅报名用户可见，未报名掩码并标记（前端展示「报名后可见」）
     if (a.type === 'online' && !a.isSignedUp) {
       a.location = ''
@@ -137,6 +148,37 @@ const handlers = {
        FROM activity_signups s JOIN users u ON s.user_id = u.id
        WHERE s.activity_id = ? ORDER BY s.id`, [id])
     return rows
+  },
+
+  // 报名数据（主理人/工作人员专用，只读）：全量报名信息 + 到场/收费状态 + 推荐人。
+  // 鉴权凭 user_id 身份（owner 或 activity_staff 白名单），分享链接只是入口不授权
+  async statsGet({ id } = {}, openid) {
+    const user = await findUser(openid)
+    if (!user) throw new Error('user not found')
+    const [acts] = await db.query(
+      `SELECT a.id, a.title, a.owner_user_id, a.capacity, a.price,
+              DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') AS start_time
+       FROM activities a WHERE a.id = ? AND a.status != 'draft'`, [id])
+    if (!acts.length) throw new Error('活动不存在')
+    const a = acts[0]
+    if (!(await isStatsViewer(a.id, a.owner_user_id, user.id))) throw new Error('你不是该活动的工作人员')
+    const [rows] = await db.query(
+      `SELECT s.id AS signup_id, s.name, s.contact, s.attended, s.paid,
+              DATE_FORMAT(s.created_at, '%Y-%m-%d %H:%i') AS signed_at,
+              u.id AS user_id, u.nickname, u.avatar_hue,
+              r.id AS referrer_id, r.nickname AS referrer_nickname
+       FROM activity_signups s JOIN users u ON s.user_id = u.id
+       LEFT JOIN users r ON u.referrer_user_id = r.id
+       WHERE s.activity_id = ? ORDER BY s.id ASC`, [id])
+    return {
+      activity: { id: a.id, title: a.title, start_time: a.start_time, capacity: a.capacity, price: a.price },
+      stats: {
+        total: rows.length,
+        attended: rows.filter(x => x.attended).length,
+        paid: rows.filter(x => x.paid).length,
+      },
+      list: rows,
+    }
   },
 
   async cancelSignup({ id } = {}, openid) {

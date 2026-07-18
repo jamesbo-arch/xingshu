@@ -7,27 +7,126 @@ const { ADMIN_PASSWORD } = require('./secret')
 
 const TOKEN_TTL = 12 * 3600 * 1000
 
-function sign(exp) {
-  return crypto.createHmac('sha256', ADMIN_PASSWORD).update(String(exp)).digest('hex')
+// token = exp.base64url(JSON{uid,role}).sig —— 首段保留过期戳（Web 端本地判过期读 split('.')[0]，
+// 部署窗口期旧 Web 不被破坏）。uid=0 为全局密码超管；uid>0 为 admin_accounts.id。
+// 密钥沿用 ADMIN_PASSWORD：改密码即全部 token 失效（改密全员下线）。旧两段式 token 签名必失败 → -401 重登。
+function sign(data) {
+  return crypto.createHmac('sha256', ADMIN_PASSWORD).update(data).digest('hex')
 }
 
-function issueToken() {
+// base64url 手工实现（兼容旧 Node 运行时，不依赖 'base64url' 编码名）
+const b64u = {
+  enc: s => Buffer.from(s).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+  dec: s => Buffer.from(String(s).replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString(),
+}
+
+function issueToken(uid, role) {
   const exp = Date.now() + TOKEN_TTL
-  return exp + '.' + sign(exp)
+  const payload = b64u.enc(JSON.stringify({ uid, role }))
+  return exp + '.' + payload + '.' + sign(exp + '.' + payload)
 }
 
+// 通过返回 {uid, role}，失败返回 null
 function verifyToken(token) {
-  const [exp, sig] = String(token || '').split('.')
-  if (!exp || !sig || Number(exp) < Date.now()) return false
-  const expect = sign(exp)
-  return sig.length === expect.length &&
-    crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect))
+  const parts = String(token || '').split('.')
+  if (parts.length !== 3) return null
+  const [exp, payload, sig] = parts
+  if (Number(exp) < Date.now()) return null
+  const expect = sign(exp + '.' + payload)
+  if (sig.length !== expect.length ||
+      !crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect))) return null
+  try {
+    const { uid, role } = JSON.parse(b64u.dec(payload))
+    return { uid: Number(uid) || 0, role }
+  } catch (e) { return null }
 }
 
-async function auditLog(action, targetType, targetId, detail) {
+// 密码哈希：scrypt$<salt hex>$<hash hex>（Node 内置 crypto，不引第三方）
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex')
+  return 'scrypt$' + salt + '$' + crypto.scryptSync(String(password), salt, 64).toString('hex')
+}
+
+function checkPassword(password, stored) {
+  const [algo, salt, hash] = String(stored || '').split('$')
+  if (algo !== 'scrypt' || !salt || !hash) return false
+  const calc = crypto.scryptSync(String(password), salt, 64).toString('hex')
+  return calc.length === hash.length &&
+    crypto.timingSafeEqual(Buffer.from(calc), Buffer.from(hash))
+}
+
+const VALID_ROLES = ['super', 'content', 'activity', 'member']
+
+// 角色入参规整：数组或逗号分隔字符串 → 去重合法数组（顺序按 VALID_ROLES）
+function normRoles(v) {
+  const arr = Array.isArray(v) ? v : String(v || '').split(',')
+  const set = new Set(arr.map(s => String(s).trim()).filter(Boolean))
+  for (const r of set) if (!VALID_ROLES.includes(r)) throw new Error('角色取值非法: ' + r)
+  return VALID_ROLES.filter(r => set.has(r))
+}
+
+// 每请求回查账号构造操作上下文：禁用/改角色即时生效（token 内 role 仅供前端展示，服务端以 DB 为准）
+// 一个账号可同时持多个角色（role 列逗号分隔）；scopeUserId = 绑定会员 users.id（activity 域主理人匹配依据）
+async function buildCtx(auth) {
+  if (!auth.uid) return { uid: 0, roles: ['super'], isSuper: true, scopeUserId: null, operator: 'super' }
+  const [rows] = await db.query(
+    'SELECT id, user_id, role FROM admin_accounts WHERE id = ? AND is_active = 1', [auth.uid])
+  if (!rows.length) return null
+  const roles = String(rows[0].role || '').split(',').map(s => s.trim()).filter(Boolean)
+  return { uid: rows[0].id, roles, isSuper: roles.includes('super'), scopeUserId: rows[0].user_id, operator: 'au:' + rows[0].id }
+}
+
+// 活动数据范围守卫：super 全量；activity 角色仅可操作自己主理（owner_user_id = 绑定会员）的活动
+async function assertActivityScope(activityId, ctx) {
+  if (!activityId) throw new Error('缺少活动 ID')
+  const [rows] = await db.query('SELECT owner_user_id FROM activities WHERE id = ?', [activityId])
+  if (!rows.length) throw new Error('活动不存在')
+  if (ctx.isSuper) return
+  if (!ctx.scopeUserId || Number(rows[0].owner_user_id) !== Number(ctx.scopeUserId)) throw new Error('无权操作该活动')
+}
+
+// action → 可用角色白名单（不在表内的 action 视为未知）。
+// activity 角色的活动域 action 另经 assertActivityScope 收窄数据范围到自己主理的活动。
+const ROLE_ALL = ['super', 'content', 'activity', 'member']
+const ACL = {
+  // 看板（全站数据含营收）仅超管
+  kpi: ['super'], activity: ['super'], trend: ['super'],
+  // 用户：content 只读（代发故事选作者用）
+  users: ['super', 'content', 'member'], userDetail: ['super', 'content', 'member'],
+  updateUser: ['super', 'member'], updateReferrer: ['super', 'member'],
+  // 故事 / 善选 / 互动
+  stories: ['super', 'content'], storyDetail: ['super', 'content'],
+  updateStory: ['super', 'content'], createStory: ['super', 'content'],
+  deleteStory: ['super', 'content'], deleteStories: ['super', 'content'],
+  tagList: ['super', 'content'],
+  featuredRank: ['super', 'content'], featuredAdd: ['super', 'content'],
+  featuredUpdate: ['super', 'content'], featuredToggle: ['super', 'content'],
+  featuredList: ['super', 'content'], featuredDetail: ['super', 'content'],
+  comments: ['super', 'content'], deleteComment: ['super', 'content'],
+  // 活动（typeSave 是全局配置仅超管）
+  typeList: ['super', 'activity'], typeSave: ['super'],
+  activityList: ['super', 'activity'], activitySave: ['super', 'activity'],
+  activitySignups: ['super', 'activity'], inviteQr: ['super', 'activity'],
+  attendanceSave: ['super', 'activity'], activityUpload: ['super', 'activity'],
+  postListAdmin: ['super', 'activity'], postDeleteAdmin: ['super', 'activity'],
+  // 公共
+  fileUrls: ROLE_ALL,
+  // 订单（member 不含退费）
+  orderList: ['super', 'member'], orderDetail: ['super', 'member'],
+  userOrders: ['super', 'member'], createOrder: ['super', 'member'],
+  refundPreview: ['super'], refundOrder: ['super'],
+  // 运营账号管理（仅超管）
+  accountList: ['super'], accountSave: ['super'],
+  accountDisable: ['super'], accountResetPwd: ['super'],
+  // 搜会员（选主理人/加工作人员）与活动工作人员白名单
+  memberSearch: ['super', 'activity'],
+  staffList: ['super', 'activity'], staffAdd: ['super', 'activity'], staffRemove: ['super', 'activity'],
+}
+
+async function auditLog(action, targetType, targetId, detail, operator = 'admin-web') {
   await db.query(
     'INSERT INTO admin_logs (admin_openid, action, target_type, target_id, detail, created_by) VALUES (?,?,?,?,?,?)',
-    ['admin-web', action, targetType, String(targetId), JSON.stringify(detail || {}), 'admin-web']
+    [operator, action, targetType, String(targetId), JSON.stringify(detail || {}), operator]
   )
 }
 
@@ -231,7 +330,7 @@ const handlers = {
 
   // B 档：管理员编辑用户资料（昵称/真实姓名/手机号 + 会员身份/有效期），写审计
   // identity 传入时同步会员期：改为 member 须带 memberFrom/memberUntil；改为非 member 则清空会员期。
-  async updateUser({ userId, nickname, realName, phone, gender, identity, memberFrom, memberUntil } = {}) {
+  async updateUser({ userId, nickname, realName, phone, gender, identity, memberFrom, memberUntil } = {}, ctx) {
     if (!userId) throw new Error('缺少用户 ID')
     const [users] = await db.query(
       `SELECT nickname, real_name AS realName, phone, COALESCE(gender,'') AS gender, identity,
@@ -262,13 +361,13 @@ const handlers = {
     if (!fields.length) throw new Error('无可更新字段')
     values.push(userId)
     await db.query(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values)
-    await auditLog('updateUser', 'user', userId, { before, after: { nickname, realName, phone, gender, identity, memberFrom, memberUntil } })
+    await auditLog('updateUser', 'user', userId, { before, after: { nickname, realName, phone, gender, identity, memberFrom, memberUntil } }, ctx.operator)
     const [after] = await db.query(`${USER_SELECT} WHERE u.id = ?`, [userId])
     return { user: after[0] }
   },
 
   // B 档：管理员编辑故事（标题/正文/发布状态/标签），置 content_edited_at，写审计
-  async updateStory({ id, title, content, publishStatus, tags } = {}) {
+  async updateStory({ id, title, content, publishStatus, tags } = {}, ctx) {
     if (!id) throw new Error('缺少故事 ID')
     if (publishStatus !== undefined && !['draft', 'published'].includes(publishStatus)) throw new Error('发布状态非法')
     const [rows] = await db.query("SELECT id FROM stories WHERE id = ? AND status = 'active'", [id])
@@ -304,13 +403,13 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('updateStory', 'story', id, { title, publishStatus })
+    await auditLog('updateStory', 'story', id, { title, publishStatus }, ctx.operator)
     const [d] = await db.query(`${STORY_SELECT} WHERE d.id = ?`, [id])
     return { story: rowToStory(d[0]) }
   },
 
   // C 档：后台代发故事（以指定用户身份发布），写审计
-  async createStory({ authorId, title, content, publishStatus = 'published', tags = [] } = {}) {
+  async createStory({ authorId, title, content, publishStatus = 'published', tags = [] } = {}, ctx) {
     if (!authorId) throw new Error('缺少作者 ID')
     if (!title || !content) throw new Error('标题和内容不能为空')
     if (!['draft', 'published'].includes(publishStatus)) throw new Error('发布状态非法')
@@ -339,13 +438,13 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('createStory', 'story', storyId, { authorId, title })
+    await auditLog('createStory', 'story', storyId, { authorId, title }, ctx.operator)
     const [d] = await db.query(`${STORY_SELECT} WHERE d.id = ?`, [storyId])
     return { story: rowToStory(d[0]) }
   },
 
   // v2.2 管理员修改推荐人：非本人、不得互为推荐循环，写审计（旧值→新值）
-  async updateReferrer({ userId, referrerId = null } = {}) {
+  async updateReferrer({ userId, referrerId = null } = {}, ctx) {
     if (!userId) throw new Error('缺少用户 ID')
     const [users] = await db.query('SELECT id, referrer_user_id FROM users WHERE id = ?', [userId])
     if (!users.length) throw new Error('用户不存在')
@@ -358,7 +457,7 @@ const handlers = {
       }
     }
     await db.query('UPDATE users SET referrer_user_id = ? WHERE id = ?', [referrerId, userId])
-    await auditLog('updateReferrer', 'user', userId, { from: users[0].referrer_user_id, to: referrerId })
+    await auditLog('updateReferrer', 'user', userId, { from: users[0].referrer_user_id, to: referrerId }, ctx.operator)
     return true
   },
 
@@ -478,21 +577,21 @@ const handlers = {
     return out
   },
 
-  async deleteStory({ id } = {}) {
+  async deleteStory({ id } = {}, ctx) {
     await deleteStoryById(id)
-    await auditLog('deleteStory', 'story', id, {})
+    await auditLog('deleteStory', 'story', id, {}, ctx.operator)
     return true
   },
 
   // 批量删除：逐条独立事务，单条失败不影响其余；汇总写一条审计
-  async deleteStories({ ids } = {}) {
+  async deleteStories({ ids } = {}, ctx) {
     if (!Array.isArray(ids) || !ids.length) throw new Error('缺少故事 ID 列表')
     const deleted = [], failed = []
     for (const id of ids) {
       try { await deleteStoryById(id); deleted.push(id) }
       catch (err) { failed.push({ id, msg: err.message }) }
     }
-    await auditLog('deleteStories', 'story', ids.join(','), { deleted, failed })
+    await auditLog('deleteStories', 'story', ids.join(','), { deleted, failed }, ctx.operator)
     return { deleted, failed }
   },
 
@@ -523,7 +622,7 @@ const handlers = {
   },
 
   // 纳入善选：拷贝原文建副本（管理员可再修订），原故事标记 is_featured
-  async featuredAdd({ storyId } = {}) {
+  async featuredAdd({ storyId } = {}, ctx) {
     if (!storyId) throw new Error('缺少故事 ID')
     const conn = await db.getConnection()
     let featuredId
@@ -544,12 +643,12 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('featuredAdd', 'featured', featuredId, { storyId })
+    await auditLog('featuredAdd', 'featured', featuredId, { storyId }, ctx.operator)
     return { id: featuredId }
   },
 
   // 修订副本：只动 featured_stories，不影响原作者故事原文
-  async featuredUpdate({ id, title, content, contentRich, images } = {}) {
+  async featuredUpdate({ id, title, content, contentRich, images } = {}, ctx) {
     if (!id) throw new Error('缺少善选 ID')
     const fields = [], values = []
     if (title !== undefined) { fields.push('title = ?'); values.push(title) }
@@ -564,12 +663,12 @@ const handlers = {
     values.push(id)
     const [r] = await db.query(`UPDATE featured_stories SET ${fields.join(', ')} WHERE id = ?`, values)
     if (!r.affectedRows) throw new Error('善选故事不存在')
-    await auditLog('featuredUpdate', 'featured', id, { title })
+    await auditLog('featuredUpdate', 'featured', id, { title }, ctx.operator)
     return true
   },
 
   // 上/下架：offline 后公众侧消失，原故事 is_featured 同步（会员端眼睛徽章随之隐藏）
-  async featuredToggle({ id, status } = {}) {
+  async featuredToggle({ id, status } = {}, ctx) {
     if (!id) throw new Error('缺少善选 ID')
     if (!['online', 'offline'].includes(status)) throw new Error('状态须为 online/offline')
     const [rows] = await db.query('SELECT story_id FROM featured_stories WHERE id = ?', [id])
@@ -586,7 +685,7 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('featuredToggle', 'featured', id, { storyId: rows[0].story_id, status })
+    await auditLog('featuredToggle', 'featured', id, { storyId: rows[0].story_id, status }, ctx.operator)
     return true
   },
 
@@ -627,44 +726,50 @@ const handlers = {
     return rows
   },
 
-  async typeSave({ id, name, channel, schedule_hint = '', sort = 0, is_active = 1 } = {}) {
+  async typeSave({ id, name, channel, schedule_hint = '', sort = 0, is_active = 1 } = {}, ctx) {
     if (!name || !String(name).trim()) throw new Error('类型名称必填')
     if (!['online', 'offline'].includes(channel)) throw new Error('渠道须为 online/offline')
     if (id) {
       await db.query(
         'UPDATE activity_types SET name=?, channel=?, schedule_hint=?, sort=?, is_active=? WHERE id=?',
         [String(name).trim(), channel, schedule_hint, sort, is_active ? 1 : 0, id])
-      await auditLog('typeUpdate', 'activityType', id, { name, channel, is_active })
+      await auditLog('typeUpdate', 'activityType', id, { name, channel, is_active }, ctx.operator)
       return { id }
     }
     // created_by 统一存用户表 id：管理后台操作非小程序用户，置 NULL（审计走 admin_logs）
     const [r] = await db.query(
       'INSERT INTO activity_types (name, channel, schedule_hint, sort, is_active) VALUES (?,?,?,?,?)',
       [String(name).trim(), channel, schedule_hint, sort, is_active ? 1 : 0])
-    await auditLog('typeCreate', 'activityType', r.insertId, { name, channel })
+    await auditLog('typeCreate', 'activityType', r.insertId, { name, channel }, ctx.operator)
     return { id: r.insertId }
   },
 
   // ── 活动管理（M1.5.1 MVP）──
-  async activityList() {
+  // activity 角色仅见/仅管自己主理（owner_user_id = 绑定会员）的活动；super 全量
+  async activityList(_, ctx) {
+    const where = [], params = []
+    if (!ctx.isSuper) { where.push('a.owner_user_id = ?'); params.push(ctx.scopeUserId || 0) }
+    const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : ''
     const [rows] = await db.query(
       `SELECT a.id, a.title, a.type, a.type_id, t.name AS typeName,
               a.city, a.location, a.latitude, a.longitude,
-              a.organizer, a.capacity, a.price, a.signup_count AS signedUp, a.status,
+              a.organizer, a.owner_user_id AS ownerUserId, ou.nickname AS ownerNickname,
+              a.capacity, a.price, a.signup_count AS signedUp, a.status,
               a.content, a.cover_url, a.images, a.review_content,
               DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') AS startTime,
               DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') AS endTime,
               DATE_FORMAT(a.signup_deadline, '%Y-%m-%d %H:%i') AS deadline
        FROM activities a LEFT JOIN activity_types t ON a.type_id = t.id
-       ORDER BY a.created_at DESC`)
+       LEFT JOIN users ou ON a.owner_user_id = ou.id
+       ${whereSql} ORDER BY a.created_at DESC`, params)
     return { list: rows, total: rows.length }
   },
 
   async activitySave({ id, title, cover_url = '', content = '', images = [], start_time, end_time = null,
                        type = 'offline', type_id = null, city = '', location = '', organizer = '醒书运营组',
-                       latitude = null, longitude = null,
+                       ownerUserId, latitude = null, longitude = null,
                        capacity = 0, price = 0, signup_deadline = null, status = 'draft',
-                       review_content = null, review_images = null } = {}) {
+                       review_content = null, review_images = null } = {}, ctx) {
     if (!title || !start_time) throw new Error('标题与开始时间必填')
     price = Math.max(0, Number(price) || 0)
     // 关联分类时以分类的渠道覆写 type（冗余同步的唯一写点）；不关联则沿用提交值（兼容历史）
@@ -675,31 +780,43 @@ const handlers = {
     } else {
       type_id = null
     }
+    if (ownerUserId) {
+      const [u] = await db.query('SELECT id FROM users WHERE id = ?', [ownerUserId])
+      if (!u.length) throw new Error('主理人用户不存在')
+    }
     const imagesJson = images && images.length ? JSON.stringify(images) : null
     const reviewImagesJson = review_images && review_images.length ? JSON.stringify(review_images) : null
     if (id) {
+      await assertActivityScope(id, ctx)
+      // 主理人字段仅 super 可改（activity 角色传入忽略，防转移归属）
+      const ownerSet = ctx.isSuper && ownerUserId !== undefined ? ', owner_user_id=?' : ''
+      const ownerVal = ownerSet ? [ownerUserId || null] : []
       await db.query(
         `UPDATE activities SET title=?, cover_url=?, content=?, images=?, start_time=?, end_time=?,
          type=?, type_id=?, city=?, location=?, latitude=?, longitude=?, organizer=?, capacity=?, price=?,
          signup_deadline=?, status=?,
-         review_content=?, review_images=?, updated_by=NULL WHERE id=?`,
+         review_content=?, review_images=?, updated_by=NULL${ownerSet} WHERE id=?`,
         [title, cover_url, content, imagesJson, start_time, end_time, type, type_id, city, location,
-         latitude, longitude, organizer, capacity, price, signup_deadline, status, review_content, reviewImagesJson, id])
-      await auditLog('activityUpdate', 'activity', id, { title, status })
+         latitude, longitude, organizer, capacity, price, signup_deadline, status, review_content, reviewImagesJson,
+         ...ownerVal, id])
+      await auditLog('activityUpdate', 'activity', id, { title, status }, ctx.operator)
       return { id }
     }
+    // 新建：super 可显式指定主理人；activity 角色自动落自己绑定的会员
+    const owner = ctx.isSuper ? (ownerUserId || null) : ctx.scopeUserId
     const [r] = await db.query(
       `INSERT INTO activities (title, cover_url, content, images, start_time, end_time, type, type_id, city,
-        location, latitude, longitude, organizer, capacity, price, signup_deadline, status,
+        location, latitude, longitude, organizer, owner_user_id, capacity, price, signup_deadline, status,
         review_content, review_images)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
       [title, cover_url, content, imagesJson, start_time, end_time, type, type_id, city, location,
-       latitude, longitude, organizer, capacity, price, signup_deadline, status, review_content, reviewImagesJson])
-    await auditLog('activityCreate', 'activity', r.insertId, { title, status })
+       latitude, longitude, organizer, owner, capacity, price, signup_deadline, status, review_content, reviewImagesJson])
+    await auditLog('activityCreate', 'activity', r.insertId, { title, status }, ctx.operator)
     return { id: r.insertId }
   },
 
-  async activitySignups({ id } = {}) {
+  async activitySignups({ id } = {}, ctx) {
+    await assertActivityScope(id, ctx)
     const [rows] = await db.query(
       `SELECT s.id, s.name, s.contact, s.attended, s.paid, u.nickname, u.phone,
               DATE_FORMAT(s.created_at, '%Y-%m-%d %H:%i') AS signedAt
@@ -712,10 +829,8 @@ const handlers = {
   // ── 活动现场分享（管理端全量含已删行，利于审计追溯）──
   // 邀请函二维码：生成该活动的带参小程序码（scene "a=<id>"，同 generateMiniCode 约定），
   // 以 base64 dataURL 直接返回——Web 端 canvas 出图无跨域问题，也不落云存储
-  async inviteQr({ activityId } = {}) {
-    if (!activityId) throw new Error('缺少活动 ID')
-    const [rows] = await db.query('SELECT id FROM activities WHERE id = ?', [activityId])
-    if (!rows.length) throw new Error('活动不存在')
+  async inviteQr({ activityId } = {}, ctx) {
+    await assertActivityScope(activityId, ctx)
     const cloud = require('wx-server-sdk')
     cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
     const result = await cloud.openapi.wxacode.getUnlimited({
@@ -741,10 +856,8 @@ const handlers = {
 
   // 实际参与 + 已收费名单：整场覆盖式保存勾选结果（前端一次提交两组全量 ID）；
   // ID 按 activity_id 约束，只能勾本活动的报名者
-  async attendanceSave({ activityId, attendedIds = [], paidIds = [] } = {}) {
-    if (!activityId) throw new Error('缺少活动 ID')
-    const [act] = await db.query('SELECT id FROM activities WHERE id = ?', [activityId])
-    if (!act.length) throw new Error('活动不存在')
+  async attendanceSave({ activityId, attendedIds = [], paidIds = [] } = {}, ctx) {
+    await assertActivityScope(activityId, ctx)
     const conn = await db.getConnection()
     try {
       await conn.beginTransaction()
@@ -768,7 +881,7 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('attendanceSave', 'activity', activityId, { attendedCount: attendedIds.length, paidCount: paidIds.length })
+    await auditLog('attendanceSave', 'activity', activityId, { attendedCount: attendedIds.length, paidCount: paidIds.length }, ctx.operator)
     const [[{ c }]] = await db.query(
       'SELECT COUNT(*) c FROM activity_signups WHERE activity_id = ? AND attended = 1', [activityId])
     const [[{ p }]] = await db.query(
@@ -790,8 +903,8 @@ const handlers = {
     return { fileID: res.fileID }
   },
 
-  async postListAdmin({ activityId, page = 1, pageSize = 20 } = {}) {
-    if (!activityId) throw new Error('缺少活动 ID')
+  async postListAdmin({ activityId, page = 1, pageSize = 20 } = {}, ctx) {
+    await assertActivityScope(activityId, ctx)
     page = Math.max(1, parseInt(page, 10) || 1)
     pageSize = Math.min(100, Math.max(1, parseInt(pageSize, 10) || 20))
     const [[{ total }]] = await db.query(
@@ -805,20 +918,21 @@ const handlers = {
     return { list: rows.map(p => ({ ...p, images: p.images || [] })), total, page, pageSize }
   },
 
-  async postDeleteAdmin({ id } = {}) {
+  async postDeleteAdmin({ id } = {}, ctx) {
     const [rows] = await db.query("SELECT activity_id FROM activity_posts WHERE id = ? AND status = 'active'", [id])
     if (!rows.length) throw new Error('分享不存在或已删除')
+    await assertActivityScope(rows[0].activity_id, ctx)
     await db.query("UPDATE activity_posts SET status = 'deleted' WHERE id = ?", [id])
-    await auditLog('deletePost', 'activityPost', id, { activityId: rows[0].activity_id })
+    await auditLog('deletePost', 'activityPost', id, { activityId: rows[0].activity_id }, ctx.operator)
     return true
   },
 
-  async deleteComment({ id } = {}) {
+  async deleteComment({ id } = {}, ctx) {
     const [rows] = await db.query('SELECT story_id FROM comments WHERE id = ? AND is_deleted = 0', [id])
     if (!rows.length) throw new Error('评论不存在或已删除')
     await db.query('UPDATE comments SET is_deleted = 1 WHERE id = ?', [id])
     await db.query('UPDATE stories SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?', [rows[0].story_id])
-    await auditLog('deleteComment', 'comment', id, { storyId: rows[0].story_id })
+    await auditLog('deleteComment', 'comment', id, { storyId: rows[0].story_id }, ctx.operator)
     return true
   },
 
@@ -865,7 +979,7 @@ const handlers = {
   // 未传时回退为自动计算——现会员从原到期日顺延（时长叠加），否则今日起 +memberDays。
   async createOrder({ userId, amount, plan = '年度会员', method = 'offline',
                       memberDays = 365, paymentTime = null, note = '', proofUrl = null,
-                      validFrom = null, validUntil = null } = {}) {
+                      validFrom = null, validUntil = null } = {}, ctx) {
     if (!userId) throw new Error('缺少用户 ID')
     const amt = Number(amount)
     if (!amt || isNaN(amt) || amt <= 0) throw new Error('金额无效')
@@ -931,7 +1045,7 @@ const handlers = {
     } finally {
       conn.release()
     }
-    await auditLog('createOrder', 'order', orderId, { userId, amount: amt, validUntil: vUntil, renew: !!user.isMember })
+    await auditLog('createOrder', 'order', orderId, { userId, amount: amt, validUntil: vUntil, renew: !!user.isMember }, ctx.operator)
     const [orderRows] = await db.query(`${ORDER_SELECT} WHERE o.id = ?`, [orderId])
     return { order: rowToOrder(orderRows[0]), validUntil: vUntil }
   },
@@ -943,7 +1057,7 @@ const handlers = {
 
   // 会员退费：服务端重算金额（不信任前端传值），事务内建退款单（关联原缴费单）+ 会员即时失效。
   // 小程序权限同步依赖既有机制：内容闸/发文守卫实时读 DB（member_until 已清即拒），前端缓存下次启动 login 自愈。
-  async refundOrder({ userId } = {}) {
+  async refundOrder({ userId } = {}, ctx) {
     const calc = await refundCalc(userId)
     const todayStr = bjNow().toISOString().slice(0, 10)
     const now = bjNow().toISOString().slice(0, 19).replace('T', ' ')
@@ -974,9 +1088,132 @@ const handlers = {
       conn.release()
     }
     await auditLog('refundOrder', 'order', refundId,
-      { userId, relatedOrderId: calc.order.id, refundAmount: calc.refundAmount, rule: calc.rule })
+      { userId, relatedOrderId: calc.order.id, refundAmount: calc.refundAmount, rule: calc.rule }, ctx.operator)
     const [rows] = await db.query(`${ORDER_SELECT} WHERE o.id = ?`, [refundId])
     return { order: rowToOrder(rows[0]), refundAmount: calc.refundAmount, rule: calc.rule }
+  },
+
+  // ── 运营账号管理（仅超管）──
+  async accountList({ keyword, page, pageSize } = {}) {
+    const where = [], params = []
+    if (keyword) { where.push('(a.name LIKE ? OR a.phone LIKE ?)'); params.push(`%${keyword}%`, `%${keyword}%`) }
+    const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : ''
+    const [[{ total }]] = await db.query(`SELECT COUNT(*) total FROM admin_accounts a ${whereSql}`, params)
+    const { limit, offset, page: p, pageSize: ps } = pageArgs({ page, pageSize })
+    const [rows] = await db.query(
+      `SELECT a.id, a.name, a.phone, a.role, a.user_id AS userId, u.nickname AS userNickname,
+              a.is_active AS isActive,
+              DATE_FORMAT(a.last_login_at, '%Y-%m-%d %H:%i') AS lastLoginAt,
+              DATE_FORMAT(a.created_at, '%Y-%m-%d') AS createdAt
+       FROM admin_accounts a LEFT JOIN users u ON a.user_id = u.id
+       ${whereSql} ORDER BY a.id DESC LIMIT ? OFFSET ?`, [...params, limit, offset])
+    // role CSV → roles 数组（前端徽章逐个渲染）
+    const list = rows.map(r => ({ ...r, roles: String(r.role || '').split(',').filter(Boolean) }))
+    return { list, total, page: p, pageSize: ps }
+  },
+
+  // 新建/编辑账号：role 支持多值（数组或逗号分隔，落库 CSV）；含 activity 角色必绑会员（主理人匹配依据）；
+  // 编辑不传 password 则不改密
+  async accountSave({ id, name, phone, role, roles, userId = null, password } = {}, ctx) {
+    if (!name || !String(name).trim()) throw new Error('姓名必填')
+    if (!/^1\d{10}$/.test(String(phone || ''))) throw new Error('手机号格式无效')
+    const roleList = normRoles(roles !== undefined ? roles : role)
+    if (!roleList.length) throw new Error('至少选择一个角色')
+    if (roleList.includes('activity') && !userId) throw new Error('含活动运营角色须绑定会员用户（主理人匹配用）')
+    if (userId) {
+      const [u] = await db.query('SELECT id FROM users WHERE id = ?', [userId])
+      if (!u.length) throw new Error('绑定的会员用户不存在')
+    }
+    const roleCsv = roleList.join(',')
+    try {
+      if (id) {
+        const fields = ['name = ?', 'phone = ?', 'role = ?', 'user_id = ?']
+        const values = [String(name).trim(), phone, roleCsv, userId]
+        if (password) {
+          if (String(password).length < 6) throw new Error('密码至少 6 位')
+          fields.push('password_hash = ?'); values.push(hashPassword(password))
+        }
+        values.push(id)
+        const [r] = await db.query(`UPDATE admin_accounts SET ${fields.join(', ')} WHERE id = ?`, values)
+        if (!r.affectedRows) throw new Error('账号不存在')
+        await auditLog('accountUpdate', 'adminAccount', id, { name, phone, roles: roleCsv, userId }, ctx.operator)
+        return { id }
+      }
+      if (!password || String(password).length < 6) throw new Error('初始密码至少 6 位')
+      const [r] = await db.query(
+        'INSERT INTO admin_accounts (name, phone, password_hash, role, user_id, created_by) VALUES (?,?,?,?,?,?)',
+        [String(name).trim(), phone, hashPassword(password), roleCsv, userId, ctx.operator])
+      await auditLog('accountCreate', 'adminAccount', r.insertId, { name, phone, roles: roleCsv, userId }, ctx.operator)
+      return { id: r.insertId }
+    } catch (err) {
+      if (err.code === 'ER_DUP_ENTRY') throw new Error('该手机号已有账号')
+      throw err
+    }
+  },
+
+  async accountDisable({ id, isActive } = {}, ctx) {
+    if (!id) throw new Error('缺少账号 ID')
+    const [r] = await db.query('UPDATE admin_accounts SET is_active = ? WHERE id = ?', [isActive ? 1 : 0, id])
+    if (!r.affectedRows) throw new Error('账号不存在')
+    await auditLog('accountDisable', 'adminAccount', id, { isActive: !!isActive }, ctx.operator)
+    return { id, isActive: !!isActive }
+  },
+
+  async accountResetPwd({ id, password } = {}, ctx) {
+    if (!id) throw new Error('缺少账号 ID')
+    if (!password || String(password).length < 6) throw new Error('新密码至少 6 位')
+    const [r] = await db.query('UPDATE admin_accounts SET password_hash = ? WHERE id = ?', [hashPassword(password), id])
+    if (!r.affectedRows) throw new Error('账号不存在')
+    await auditLog('accountResetPwd', 'adminAccount', id, {}, ctx.operator)
+    return { id }
+  },
+
+  // 搜用户（选主理人/加工作人员）：手机号/昵称/姓名模糊或 id 精确，仅返回基本信息
+  async memberSearch({ keyword, page, pageSize } = {}) {
+    if (!keyword || !String(keyword).trim()) return { list: [], total: 0 }
+    const kw = `%${String(keyword).trim()}%`
+    const params = [kw, kw, kw, Number(keyword) || 0]
+    const whereSql = 'WHERE (u.nickname LIKE ? OR u.phone LIKE ? OR u.real_name LIKE ? OR u.id = ?)'
+    const [[{ total }]] = await db.query(`SELECT COUNT(*) total FROM users u ${whereSql}`, params)
+    const { limit, offset } = pageArgs({ page, pageSize })
+    const [rows] = await db.query(
+      `SELECT u.id, u.nickname, COALESCE(u.real_name,'') AS realName, COALESCE(u.phone,'') AS phone,
+              u.avatar_hue AS avatarHue,
+              (u.member_until IS NOT NULL AND u.member_until >= CURDATE()) AS isMember
+       FROM users u ${whereSql} ORDER BY u.id DESC LIMIT ? OFFSET ?`, [...params, limit, offset])
+    return { list: rows, total }
+  },
+
+  // ── 活动工作人员白名单（移动端报名数据查看授权；super 或该活动主理人可管）──
+  async staffList({ activityId } = {}, ctx) {
+    await assertActivityScope(activityId, ctx)
+    const [rows] = await db.query(
+      `SELECT s.user_id AS userId, u.nickname, COALESCE(u.phone,'') AS phone, u.avatar_hue AS avatarHue,
+              s.added_by AS addedBy, DATE_FORMAT(s.created_at, '%Y-%m-%d %H:%i') AS createdAt
+       FROM activity_staff s JOIN users u ON s.user_id = u.id
+       WHERE s.activity_id = ? ORDER BY s.id ASC`, [activityId])
+    return { list: rows, total: rows.length }
+  },
+
+  async staffAdd({ activityId, userId } = {}, ctx) {
+    await assertActivityScope(activityId, ctx)
+    if (!userId) throw new Error('缺少用户 ID')
+    const [u] = await db.query('SELECT id FROM users WHERE id = ?', [userId])
+    if (!u.length) throw new Error('用户不存在')
+    // 重复添加幂等（uk_activity_user）
+    await db.query(
+      'INSERT IGNORE INTO activity_staff (activity_id, user_id, added_by) VALUES (?,?,?)',
+      [activityId, userId, ctx.operator])
+    await auditLog('staffAdd', 'activity', activityId, { userId }, ctx.operator)
+    return true
+  },
+
+  async staffRemove({ activityId, userId } = {}, ctx) {
+    await assertActivityScope(activityId, ctx)
+    if (!userId) throw new Error('缺少用户 ID')
+    await db.query('DELETE FROM activity_staff WHERE activity_id = ? AND user_id = ?', [activityId, userId])
+    await auditLog('staffRemove', 'activity', activityId, { userId }, ctx.operator)
+    return true
   },
 }
 
@@ -984,13 +1221,30 @@ exports.main = async (event) => {
   const { action, token, payload = {} } = event || {}
   try {
     if (action === 'login') {
+      // 账号模式：payload 带 phone → 手机号+密码（admin_accounts）；否则原全局密码超管模式
+      if (payload.phone) {
+        const [accts] = await db.query(
+          'SELECT id, name, role, password_hash FROM admin_accounts WHERE phone = ? AND is_active = 1', [payload.phone])
+        if (!accts.length || !checkPassword(payload.password, accts[0].password_hash)) {
+          return { code: -1, msg: '手机号或密码错误' }
+        }
+        await db.query('UPDATE admin_accounts SET last_login_at = NOW() WHERE id = ?', [accts[0].id])
+        // role 为逗号分隔多值，原样进 token payload 与返回（前端按逗号拆）
+        return { code: 0, data: { token: issueToken(accts[0].id, accts[0].role), role: accts[0].role, name: accts[0].name } }
+      }
       if (!ADMIN_PASSWORD || payload.password !== ADMIN_PASSWORD) return { code: -1, msg: '密码错误' }
-      return { code: 0, data: { token: issueToken() } }
+      return { code: 0, data: { token: issueToken(0, 'super'), role: 'super', name: '超级管理员' } }
     }
-    if (!verifyToken(token)) return { code: -401, msg: '未登录或登录已过期' }
+    const auth = verifyToken(token)
+    if (!auth) return { code: -401, msg: '未登录或登录已过期' }
+    const ctx = await buildCtx(auth)
+    if (!ctx) return { code: -401, msg: '账号已停用或不存在' }
     const handler = handlers[action]
     if (!handler) return { code: -1, msg: `未知操作: ${action}` }
-    return { code: 0, data: await handler(payload) }
+    const allow = ACL[action]
+    // 多角色：账号任一角色命中 action 白名单即放行
+    if (!allow || !allow.some(r => ctx.roles.includes(r))) return { code: -403, msg: '无权限操作' }
+    return { code: 0, data: await handler(payload, ctx) }
   } catch (err) {
     return { code: -1, msg: err.message }
   }

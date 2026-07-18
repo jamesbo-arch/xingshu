@@ -97,6 +97,11 @@ Page({
       path: `/pages/activity-detail/index?id=${this._id}${sharerId ? '&s=' + sharerId : ''}`,
     }
   },
+  // 报名数据页（主理人/工作人员专用，后端二次鉴权）
+  onOpenStats() {
+    wx.navigateTo({ url: '/pages/activity-stats/index?id=' + this._id })
+  },
+
   onShareTimeline() {
     const a = this.data.activity || {}
     const sharerId = (getApp().globalData.user || {}).id

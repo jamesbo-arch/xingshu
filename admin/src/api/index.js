@@ -9,7 +9,9 @@ export const ENV_LABEL = import.meta.env.VITE_ENV_LABEL || '开发'
 export const IS_PROD = ENV_LABEL === '正式'
 const TOKEN_KEY = 'xs_admin_token'
 
-const app = cloudbase.init({ env: ENV_ID })
+// timeout 提到 30s：cpolar 隧道冷透时云函数写入已成功但默认 15s 内未及返回，
+// 会被误报「请求失败」（实际已生效）
+const app = cloudbase.init({ env: ENV_ID, timeout: 30000 })
 let signInPromise = null
 
 // TCB 匿名登录（需在控制台开启），兼容 js-sdk v1/v2 API
@@ -29,9 +31,35 @@ function ensureSignIn() {
 const EXPIRED_KEY = 'xs_admin_expired'
 let handlingExpiry = false
 
+const PROFILE_KEY = 'xs_admin_profile'
+
 export function getToken() { return localStorage.getItem(TOKEN_KEY) || '' }
 export function isLoggedIn() { return !!getToken() }
-export function logout() { localStorage.removeItem(TOKEN_KEY) }
+export function logout() {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(PROFILE_KEY)
+}
+
+// token 第二段 base64url(JSON{uid,role})；旧两段式 token 兜底 super/uid 0（12h 内自然过期）
+function tokenPayload() {
+  const parts = String(getToken()).split('.')
+  if (parts.length < 3) return {}
+  try {
+    return JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/'))) || {}
+  } catch (e) { return {} }
+}
+// 一个账号可持多角色：token 的 role 为逗号分隔多值
+export function getRoles() {
+  const r = tokenPayload().role
+  return r ? String(r).split(',').filter(Boolean) : ['super']
+}
+export function hasRole(role) { return getRoles().includes(role) }
+// 当前登录的 admin_accounts.id（0 = 全局密码超管）
+export function getUid() { return Number(tokenPayload().uid) || 0 }
+// 登录时存的展示信息 { name }（侧边栏「当前登录」用）
+export function getProfile() {
+  try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || {} } catch (e) { return {} }
+}
 // 登录页读取并清除"超时"标记（call 在过期/-401 时置位）
 export function consumeExpiredNotice() {
   const v = sessionStorage.getItem(EXPIRED_KEY)
@@ -50,7 +78,9 @@ function expireSession() {
   if (!handlingExpiry) {
     handlingExpiry = true
     sessionStorage.setItem(EXPIRED_KEY, '1')
-    window.location.href = '/login'
+    // hash 路由：跳 #/login（直跳 /login 在静态托管会 404）
+    window.location.href = '#/login'
+    window.location.reload()
   }
   throw new Error('登录已超时')
 }
@@ -62,18 +92,22 @@ async function call(action, payload = {}) {
   await ensureSignIn()
   const res = await app.callFunction({ name: 'admin', data: { action, token, payload } })
   const r = res.result || {}
-  if (r.code === -401) return expireSession()  // 服务端判失效（如签名不符）兜底
+  if (r.code === -401) return expireSession()  // 服务端判失效（如签名不符、账号被停用）兜底
+  if (r.code === -403) throw new Error(r.msg || '无权限操作')  // 越权仅提示，不踢登录
   if (r.code !== 0) throw new Error(r.msg || '请求失败')
   return r.data
 }
 
-export async function login(password) {
+// 双模式登录：带 phone = 运营账号（手机号+密码）；不带 = 超管全局密码
+export async function login(password, phone) {
   await ensureSignIn()
-  const res = await app.callFunction({ name: 'admin', data: { action: 'login', payload: { password } } })
+  const payload = phone ? { phone, password } : { password }
+  const res = await app.callFunction({ name: 'admin', data: { action: 'login', payload } })
   const r = res.result || {}
   if (r.code !== 0) throw new Error(r.msg || '登录失败')
   localStorage.setItem(TOKEN_KEY, r.data.token)
-  return true
+  localStorage.setItem(PROFILE_KEY, JSON.stringify({ name: r.data.name || '管理员' }))
+  return r.data.role || 'super'
 }
 
 export async function getKpi() { return call('kpi') }
@@ -133,6 +167,18 @@ export async function createOrder(data) { return call('createOrder', data) }
 // 会员退费：preview 试算（最近缴费单 + 规则 + 应退金额），refund 执行（服务端重算，退费后会员即时失效）
 export async function getRefundPreview(userId) { return call('refundPreview', { userId }) }
 export async function refundOrder(userId) { return call('refundOrder', { userId }) }
+
+// 运营账号管理（仅超管）
+export async function getAccounts(params = {}) { return call('accountList', params) }
+export async function saveAccount(data) { return call('accountSave', data) }
+export async function disableAccount(id, isActive) { return call('accountDisable', { id, isActive }) }
+export async function resetAccountPwd(id, password) { return call('accountResetPwd', { id, password }) }
+// 搜用户（选主理人/加工作人员）
+export async function searchMembers(keyword, params = {}) { return call('memberSearch', { keyword, ...params }) }
+// 活动工作人员白名单（super 或该活动主理人可管）
+export async function getStaffList(activityId) { return call('staffList', { activityId }) }
+export async function addStaff(activityId, userId) { return call('staffAdd', { activityId, userId }) }
+export async function removeStaff(activityId, userId) { return call('staffRemove', { activityId, userId }) }
 
 // 支付凭证：客户端等比缩放到 ≤1280px 并转 JPEG dataURL，随建单经鉴权云函数写入 DB。
 // 不走云存储（匿名登录无写权限，且会绕过密码鉴权），dataURL 直接可 <img src> 展示。

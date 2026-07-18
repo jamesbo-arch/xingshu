@@ -28,6 +28,10 @@ module.exports = {
   cancelSignup(id) {
     return call('activity', { action: 'cancelSignup', payload: { id } })
   },
+  // 报名数据（主理人/工作人员专用，后端按 owner/白名单鉴权）。raw：无权限时页面渲染空态而非裸 toast
+  getStats(id) {
+    return call('activity', { action: 'statsGet', payload: { id } }, { raw: true, retry: 1 })
+  },
   // 现场分享
   getPosts(id, page) {
     return call('activity', { action: 'postList', payload: { id, page, pageSize: 10 } }, { retry: 1 })

@@ -31,6 +31,10 @@
           <text class="act-count">已报名 {{activity.signup_count}}/{{activity.capacity}}</text>
         </view>
         <text wx:if="{{!isPast && activity.signup_deadline}}" class="act-deadline">{{activity.signup_deadline}} 报名截止</text>
+        <!-- 报名数据入口：仅主理人/工作人员可见（后端 is_stats_viewer） -->
+        <view wx:if="{{activity.is_stats_viewer}}" class="act-stats-entry" bindtap="onOpenStats">
+          <text>报名数据（工作人员）</text><text class="act-stats-arrow">›</text>
+        </view>
       </view>
 
       <block wx:if="{{!isPast}}">
