@@ -3402,3 +3402,15 @@ npm test 19 套件全绿（权限矩阵 17 条）；getStoryDetail 已部署 dev
 - `miniprogram/pages/activity-detail/index.wxss` — inv-intro 加 white-space: pre-wrap 保留预览分段
 
 **验证**：node --check 通过；纯前端改动随小程序上传生效。
+
+### 2026-07-18 — 故事分享海报改版：视觉统一到活动邀请函风格
+
+**类型**：前端
+**计划关联**：用户需求（故事海报字体/颜色/排版/标题/页尾参考活动分享，CTA 文案改「探索把经典走进你的生活」）
+**修改文件**：
+- `miniprogram/components/poster-sheet/index.js` — canvas 重构（W 640→750）：暖色渐变底 + 「醒書故事」标签框 + kicker 英文 + 左对齐衬线标题 + 分段正文 + 配图 + 分隔线 + 印章标签 + 虚线 CTA 框（长按识别小程序码 / 探索把经典走进你的生活 + 带参小程序码）+ 手绘醒书咨询页尾；删除 consulting-banner.png 方案与相关常量；正文按段落绘制、超长截断提示扫码
+- `miniprogram/components/poster-sheet/index.wxml/.wxss` — 预览同步重写为 pc-* 结构（标签框/标题/正文/配图/分隔线/标签/虚线CTA/手绘页尾），删旧 corner/brand-banner/qr-grid
+
+**变更说明**：故事分享海报的字体、配色（暖米渐变+印章红accent）、排版、标题、CTA 与页尾全面对齐活动邀请函风格；二维码区文案按用户要求改为「长按识别小程序码 / 探索把经典走进你的生活」。consulting-banner.png 仍由会员中心页引用，保留。
+
+**验证**：node --check 通过；纯前端 canvas 渲染改动随小程序上传生效。

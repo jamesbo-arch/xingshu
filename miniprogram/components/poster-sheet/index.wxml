@@ -3,54 +3,43 @@
   <view class="sheet poster-sheet-wrap {{_show ? 'sheet-show' : ''}}" catchtap="onSheetTap">
     <view class="sheet-handle"></view>
 
-    <!-- Paper card（预览：善选副本全文 + 品牌底栏，不展示作者名） -->
+    <!-- Paper card（预览：善选副本全文，风格同活动邀请函；不展示作者名） -->
     <view class="poster-card">
-      <!-- Corner ornaments -->
-      <view class="corner corner-tl"></view>
-      <view class="corner corner-tr"></view>
-      <view class="corner corner-bl"></view>
-      <view class="corner corner-br"></view>
+      <view class="pc-body">
+        <view class="pc-tag">醒書故事</view>
+        <view class="pc-kicker">X I N G S H U   S T O R Y</view>
+        <view class="pc-title serif">{{shareTitle}}</view>
+        <view class="pc-content">{{shareContent}}</view>
 
-      <!-- Header -->
-      <view class="poster-header">
-        <text class="poster-brand serif">醒書故事</text>
-      </view>
-
-      <!-- Title -->
-      <view class="poster-title serif">{{shareTitle}}</view>
-
-      <!-- Content：善选副本全文 -->
-      <view class="poster-content">{{shareContent}}</view>
-
-      <!-- 配图（副本配图，正文之下） -->
-      <view class="poster-images" wx:if="{{shareImages.length}}">
-        <image
-          wx:for="{{shareImages}}"
-          wx:key="*this"
-          src="{{item}}"
-          mode="widthFix"
-          class="poster-img"
-        />
-      </view>
-
-      <!-- Tags -->
-      <view class="poster-tags" wx:if="{{story.tags && story.tags.length}}">
-        <text
-          wx:for="{{story.tags}}"
-          wx:key="*this"
-          class="seal-tag"
-        >{{item}}</text>
-      </view>
-
-      <!-- 品牌底栏：醒书咨询原图，二维码区覆盖为带参小程序码 -->
-      <view class="brand-banner">
-        <image class="brand-banner-img" src="/images/consulting-banner.png" mode="widthFix"/>
-        <view class="brand-banner-qr">
-          <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="brand-qr-img" mode="aspectFit"/>
-          <view wx:else class="qr-grid">
-            <view wx:for="{{[0,1,2,3,4,5,6,7,8]}}" wx:key="*this" class="qr-dot {{item % 3 === 0 || item % 3 === 2 ? 'qr-dark' : 'qr-light'}}"></view>
-          </view>
+        <!-- 配图（副本配图，正文之下） -->
+        <view class="pc-images" wx:if="{{shareImages.length}}">
+          <image wx:for="{{shareImages}}" wx:key="*this" src="{{item}}" mode="widthFix" class="pc-img"/>
         </view>
+
+        <view class="pc-divider"></view>
+
+        <view class="pc-tags" wx:if="{{story.tags && story.tags.length}}">
+          <text wx:for="{{story.tags}}" wx:key="*this" class="seal-tag">{{item}}</text>
+        </view>
+
+        <!-- CTA：虚线框 + 文案 + 带参小程序码 -->
+        <view class="pc-cta">
+          <view class="pc-cta-text">
+            <text>长按识别小程序码</text>
+            <text>探索把经典走进你的生活</text>
+          </view>
+          <image wx:if="{{qrFileID}}" src="{{qrFileID}}" class="pc-qr" mode="aspectFit"/>
+          <view wx:else class="pc-qr pc-qr-loading">生成中</view>
+        </view>
+      </view>
+
+      <!-- 页尾品牌栏（手绘醒书咨询，与活动邀请函一致） -->
+      <view class="pc-foot">
+        <view class="pcf-logo">
+          <text class="pcf-name serif">醒书咨询</text>
+          <text class="pcf-en">XINGSHU CONSULTING</text>
+        </view>
+        <text class="pcf-desc">醒书咨询，一家专注经典文化与现代生活深度对话的机构，为中小企业和个人提供发展咨询服务。</text>
       </view>
     </view>
 
@@ -64,4 +53,4 @@
 </view>
 
 <!-- Off-screen canvas for image export（高度随全文动态计算） -->
-<canvas type="2d" id="poster-canvas" style="position:fixed;left:-9999px;top:-9999px;width:640px;height:960px;"></canvas>
+<canvas type="2d" id="poster-canvas" style="position:fixed;left:-9999px;top:-9999px;width:750px;height:1200px;"></canvas>

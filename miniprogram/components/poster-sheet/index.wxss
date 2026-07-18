@@ -45,118 +45,73 @@
   margin: 0 auto 24rpx;
 }
 
-/* Poster card */
+/* Poster card（暖色渐变，风格同活动邀请函） */
 .poster-card {
   position: relative;
-  background: #FFFCF5;
-  background-image: radial-gradient(rgba(126, 102, 64, 0.04) 1px, transparent 1px);
-  background-size: 18px 18px;
-  border: 1px solid rgba(126, 102, 64, 0.2);
-  border-radius: 8px;
-  padding: 36rpx 32rpx;
+  border-radius: 12rpx;
+  overflow: hidden;
   margin-bottom: 24rpx;
+  background: linear-gradient(160deg, #F7EFE0, #EAD9B8);
 }
 
-/* Corners */
-.corner {
-  position: absolute;
-  width: 20rpx;
-  height: 20rpx;
-}
+.pc-body { padding: 40rpx 36rpx 32rpx; }
 
-.corner-tl {
-  top: 12rpx;
-  left: 12rpx;
-  border-top: 1.5px solid rgba(126, 102, 64, 0.4);
-  border-left: 1.5px solid rgba(126, 102, 64, 0.4);
-}
-
-.corner-tr {
-  top: 12rpx;
-  right: 12rpx;
-  border-top: 1.5px solid rgba(126, 102, 64, 0.4);
-  border-right: 1.5px solid rgba(126, 102, 64, 0.4);
-}
-
-.corner-bl {
-  bottom: 12rpx;
-  left: 12rpx;
-  border-bottom: 1.5px solid rgba(126, 102, 64, 0.4);
-  border-left: 1.5px solid rgba(126, 102, 64, 0.4);
-}
-
-.corner-br {
-  bottom: 12rpx;
-  right: 12rpx;
-  border-bottom: 1.5px solid rgba(126, 102, 64, 0.4);
-  border-right: 1.5px solid rgba(126, 102, 64, 0.4);
-}
-
-/* Header */
-.poster-header {
-  text-align: center;
-  margin-bottom: 20rpx;
-}
-
-.poster-brand {
-  font-size: 28rpx;
+.pc-tag {
+  display: inline-block;
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
   color: #B6452F;
-  letter-spacing: 4px;
+  border: 1.5px solid #B6452F;
+  border-radius: 6rpx;
+  padding: 6rpx 16rpx;
 }
 
-/* Title */
-.poster-title {
-  font-size: 36rpx;
-  font-weight: 700;
-  color: #2A2723;
-  line-height: 1.45;
-  margin-bottom: 18rpx;
-  text-align: center;
-}
-
-/* Content：善选副本全文（预览区随 sheet 滚动） */
-.poster-content {
-  font-size: 26rpx;
-  color: #4A453E;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  margin-bottom: 18rpx;
-}
-
-/* Tags */
-.poster-tags {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 8rpx;
-  margin-bottom: 20rpx;
-  justify-content: center;
-}
-
-.qr-grid {
-  width: 52rpx;
-  height: 52rpx;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 2rpx;
-}
-
-.qr-dot {
-  border-radius: 1px;
-}
-
-.qr-dark {
-  background: #2A2723;
-}
-
-.qr-light {
-  background: #D6D0C2;
-}
-
-.qr-label {
+.pc-kicker {
   font-size: 18rpx;
-  color: #A8A39B;
+  letter-spacing: 3rpx;
+  color: rgba(67, 52, 31, 0.5);
+  margin: 20rpx 0 10rpx;
 }
+
+.pc-title {
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #43341F;
+  line-height: 1.4;
+  letter-spacing: 1rpx;
+  margin-bottom: 20rpx;
+}
+
+.pc-content {
+  font-size: 25rpx;
+  color: rgba(67, 52, 31, 0.9);
+  line-height: 1.85;
+  white-space: pre-wrap;
+  margin-bottom: 20rpx;
+}
+
+.pc-images { display: flex; flex-direction: column; gap: 12rpx; margin-bottom: 20rpx; }
+.pc-img { width: 100%; border-radius: 8rpx; display: block; }
+
+.pc-divider { height: 1rpx; background: rgba(67, 52, 31, 0.25); margin: 6rpx 0 20rpx; }
+
+.pc-tags { display: flex; flex-wrap: wrap; gap: 10rpx; margin-bottom: 22rpx; }
+
+.pc-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  border: 1.5px dashed #B6452F;
+  border-radius: 14rpx;
+  padding: 20rpx 24rpx;
+}
+
+.pc-cta-text { display: flex; flex-direction: column; gap: 10rpx; color: #B6452F; font-size: 24rpx; letter-spacing: 1rpx; }
+
+.pc-qr { width: 120rpx; height: 120rpx; border-radius: 8rpx; background: #fff; flex-shrink: 0; }
+
+.pc-qr-loading { display: flex; align-items: center; justify-content: center; font-size: 18rpx; color: rgba(67, 52, 31, 0.5); }
 
 /* Action buttons */
 .poster-actions {
@@ -170,48 +125,24 @@
   font-size: 28rpx;
 }
 
-/* ── 品牌底栏：醒书咨询原图 + 小程序码覆盖原码位（比例坐标对 413×141 原图实测）── */
-.brand-banner {
-  position: relative;
-  margin-top: 8rpx;
-  font-size: 0;
-}
-
-.brand-banner-img {
-  width: 100%;
-}
-
-.brand-banner-qr {
-  position: absolute;
-  left: 78%;
-  top: 31%;
-  width: 19%;
-  height: 54%;
-  background: #BA9F88;
+/* ── 页尾品牌栏（手绘醒书咨询，与活动邀请函一致）── */
+.pc-foot {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 20rpx;
+  background: #A08A63;
+  padding: 22rpx 36rpx;
 }
 
-.brand-qr-img {
-  width: 96%;
-  height: 96%;
-  background: #fff;
-  border-radius: 6rpx;
-  padding: 2rpx;
-  box-sizing: border-box;
-}
+.pcf-logo { flex-shrink: 0; display: flex; flex-direction: column; gap: 4rpx; }
+.pcf-name { font-size: 28rpx; font-weight: 700; color: #FDF9F0; letter-spacing: 2rpx; }
+.pcf-en { font-size: 14rpx; color: rgba(253, 249, 240, 0.85); letter-spacing: 1rpx; }
 
-/* 配图（正文之下逐张全宽展示） */
-.poster-images {
-  display: flex;
-  flex-direction: column;
-  gap: 12rpx;
-  margin-bottom: 18rpx;
-}
-
-.poster-img {
-  width: 100%;
-  border-radius: 8rpx;
-  display: block;
+.pcf-desc {
+  flex: 1;
+  font-size: 18rpx;
+  line-height: 1.65;
+  color: rgba(253, 249, 240, 0.92);
+  border-left: 1rpx solid rgba(253, 249, 240, 0.35);
+  padding-left: 20rpx;
 }
