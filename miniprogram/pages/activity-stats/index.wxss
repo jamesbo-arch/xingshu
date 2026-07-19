@@ -20,6 +20,15 @@
   justify-content: center;
 }
 
+/* ic-back 为 app.wxss 背景图类，尺寸须由页面显式给定（同 activity-detail），否则 0×0 不可见 */
+.nav-back-icon {
+  width: 40rpx;
+  height: 40rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
 .nav-title {
   flex: 1;
   text-align: center;
