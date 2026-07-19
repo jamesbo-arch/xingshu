@@ -354,7 +354,7 @@ Page({
     if (remaining <= 0) return
     const hasImages = this.data.postImages.length > 0
     wx.chooseMedia({
-      count: hasImages ? remaining : 1,
+      count: remaining,   // 一次可多选（朋友圈式）；mix 模式下选到视频仅取 1 段
       mediaType: hasImages ? ['image'] : ['mix'],
       maxDuration: 60,
       sourceType: ['album', 'camera'],

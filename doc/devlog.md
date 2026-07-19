@@ -3594,3 +3594,15 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 **变更说明**：转发/朋友圈卡片标题统一为品牌词，不再带具体内容标题；path/query 的 id 与推荐人参数 s= 不变。
 
 **验证**：node --check 通过；真机右上角「…」转发验证卡片标题。
+
+### 2026-07-19 — 活动分享选图支持一次多选（朋友圈式）
+
+**类型**：前端
+**计划关联**：用户反馈（上传图片支持一次选多张，参照朋友圈）
+**修改文件**：
+- `miniprogram/pages/activities/index.js`、`miniprogram/pages/activity-detail/index.js` — onAddPostImage 首次选择的 count 由 1 改为 remaining（9 - 已选），mix 模式下一次可多选照片；选到视频仍仅取 1 段（success 处理不变）
+
+**变更说明**：
+此前为兼容「首次可选视频」把首次选择 count 限为 1，导致只能逐张选图。mix 模式支持 count>1 多选，改回 remaining 即可一次多选；视频分支（files[0] 为 video 取 1 段、照片视频互斥）逻辑不变。
+
+**验证**：node --check 通过；真机验证两个发布入口一次多选照片、以及仍可选单视频。
