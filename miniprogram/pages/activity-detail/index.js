@@ -92,10 +92,11 @@ Page({
   // 微信「…」菜单转发/分享朋友圈：分享当前活动，带分享人 ID（s=）延续推荐人机制
   onShareAppMessage() {
     const sharerId = (getApp().globalData.user || {}).id
-    // 转发卡片标题统一为品牌词「醒书活动」（不用活动标题）
+    // 转发卡片标题统一为品牌词「醒书活动」（不用活动标题）；imageUrl 显式指定，避免自动截屏发白
     return {
       title: '醒书活动',
       path: `/pages/activity-detail/index?id=${this._id}${sharerId ? '&s=' + sharerId : ''}`,
+      imageUrl: this._shareImg || '/images/consulting-banner.png',
     }
   },
   // 报名数据页（主理人/工作人员专用，后端二次鉴权）
@@ -107,6 +108,7 @@ Page({
     const sharerId = (getApp().globalData.user || {}).id
     return {
       title: '醒书活动',
+      imageUrl: this._shareImg || '/images/consulting-banner.png',
       query: `id=${this._id}${sharerId ? '&s=' + sharerId : ''}`,
     }
   },
@@ -147,7 +149,24 @@ Page({
       invite: this._buildInvite(a),
     })
     this._invPath = '' // 活动数据变化后邀请函图需重绘
+    this._resolveShareImg(a)
     this._loadPosts(true)
+  },
+
+  // 转发卡片缩略图：未显式指定时微信自动截屏，可能截到空白区致卡片发白。
+  // 取封面/首图（cloud:// → 临时链），失败回退本地品牌图，保证卡片有图。
+  async _resolveShareImg(a) {
+    this._shareImg = '/images/consulting-banner.png'  // 兜底：本地品牌图（永不发白）
+    const src = a.cover_url || (a.images && a.images[0]) || ''
+    if (!src) return
+    if (/^https?:\/\//.test(src)) { this._shareImg = src; return }
+    if (/^cloud:\/\//.test(src)) {
+      try {
+        const r = await wx.cloud.getTempFileURL({ fileList: [src] })
+        const url = r.fileList && r.fileList[0] && r.fileList[0].tempFileURL
+        if (url) this._shareImg = url
+      } catch (e) { /* 保持本地兜底图 */ }
+    }
   },
 
   // ── 邀请函：主题映射与展示数据 ──

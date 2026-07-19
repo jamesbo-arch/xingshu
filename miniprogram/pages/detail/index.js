@@ -40,10 +40,11 @@ Page({
   onShareAppMessage() {
     const d = this.data.story || {}
     const sharerId = (app.globalData.user || {}).id
-    // 转发卡片标题统一为品牌词「醒书故事」（不用故事标题）
+    // 转发卡片标题统一为品牌词「醒书故事」；imageUrl 显式指定，避免自动截屏发白
     return {
       title: '醒书故事',
       path: `/pages/detail/index?id=${d.id}${sharerId ? '&s=' + sharerId : ''}`,
+      imageUrl: this._shareImg || '/images/consulting-banner.png',
     }
   },
   // 分享到朋友圈
@@ -53,6 +54,7 @@ Page({
     return {
       title: '醒书故事',
       query: `id=${d.id}${sharerId ? '&s=' + sharerId : ''}`,
+      imageUrl: this._shareImg || '/images/consulting-banner.png',
     }
   },
 
@@ -95,6 +97,23 @@ Page({
       userAvatarInitial: getInitial(user.nickname || '?'),
     })
     wx.setNavigationBarTitle({ title: '故事' })
+    this._resolveShareImg(story)
+  },
+
+  // 转发卡片缩略图：显式指定避免微信自动截屏截到空白发白。取首图（cloud:// → 临时链），
+  // 失败或无图回退本地品牌图，保证卡片有图。
+  async _resolveShareImg(story) {
+    this._shareImg = '/images/consulting-banner.png'
+    const src = (story.images && story.images[0]) || ''
+    if (!src) return
+    if (/^https?:\/\//.test(src)) { this._shareImg = src; return }
+    if (/^cloud:\/\//.test(src)) {
+      try {
+        const r = await wx.cloud.getTempFileURL({ fileList: [src] })
+        const url = r.fileList && r.fileList[0] && r.fileList[0].tempFileURL
+        if (url) this._shareImg = url
+      } catch (e) { /* 保持本地兜底图 */ }
+    }
   },
 
   onPreviewImage(e) {

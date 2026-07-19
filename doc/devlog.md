@@ -3645,3 +3645,16 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 **变更说明**：4 张单独走田字（与朋友圈一致），单元格尺寸与 3 列九宫格相同；其余张数不变。
 
 **验证**：node --check 通过；真机验证 4 张为 2×2。
+
+### 2026-07-19 — 转发卡片显式指定缩略图，修复内容发白
+
+**类型**：前端
+**计划关联**：用户反馈（活动详情页转发卡片内容有时发白）
+**修改文件**：
+- `miniprogram/pages/activity-detail/index.js` — _load 时 _resolveShareImg：取封面/首图（cloud:// → getTempFileURL 临时链），失败/无图回退本地 `/images/consulting-banner.png`；onShareAppMessage/onShareTimeline 加 imageUrl
+- `miniprogram/pages/detail/index.js` — 故事详情同款处理（取故事首图，兜底品牌图）
+
+**变更说明**：
+此前分享未设 imageUrl，微信自动截取页面 5:4 区域作缩略图，截到空白/未渲染区就发白。改为显式指定：优先内容图（临时链），永远有本地品牌图兜底，卡片不再发白。
+
+**验证**：node --check 通过；真机转发活动/故事详情验证卡片缩略图。
