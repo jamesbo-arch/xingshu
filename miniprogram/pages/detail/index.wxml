@@ -125,7 +125,7 @@
     </view>
   </view>
 
-  <poster-sheet visible="{{showPosterSheet}}" story="{{story}}" bind:close="onPosterClose"></poster-sheet>
+  <poster-sheet id="posterSheet" visible="{{showPosterSheet}}" story="{{story}}" bind:close="onPosterClose"></poster-sheet>
 
   <view wx:if="{{showCommentInput}}" class="comment-overlay">
     <view class="comment-overlay-mask" bindtap="onHideCommentInput"></view>

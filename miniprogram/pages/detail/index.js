@@ -100,20 +100,26 @@ Page({
     this._resolveShareImg(story)
   },
 
-  // 转发卡片缩略图：显式指定避免微信自动截屏截到空白发白。取首图（cloud:// → 临时链），
-  // 失败或无图回退本地品牌图，保证卡片有图。
+  // 转发卡片缩略图：用故事海报的生成样式（未显式指定时微信自动截屏会发白）。
+  // 先给首图或本地品牌图兜底（不发白、分享即时可用），再后台静默生成海报覆盖为最终缩略图。
   async _resolveShareImg(story) {
+    // 1) 兜底缩略图
     this._shareImg = '/images/consulting-banner.png'
     const src = (story.images && story.images[0]) || ''
-    if (!src) return
-    if (/^https?:\/\//.test(src)) { this._shareImg = src; return }
-    if (/^cloud:\/\//.test(src)) {
+    if (/^https?:\/\//.test(src)) this._shareImg = src
+    else if (/^cloud:\/\//.test(src)) {
       try {
         const r = await wx.cloud.getTempFileURL({ fileList: [src] })
         const url = r.fileList && r.fileList[0] && r.fileList[0].tempFileURL
         if (url) this._shareImg = url
       } catch (e) { /* 保持本地兜底图 */ }
     }
+    // 2) 后台静默生成故事海报（poster-sheet 组件已在 story 就绪时预载副本全文+小程序码），
+    //    就绪后作为最终转发缩略图；失败保留兜底
+    setTimeout(() => {
+      const ps = this.selectComponent('#posterSheet')
+      if (ps && ps.genShareImage) ps.genShareImage((path) => { if (path) this._shareImg = path })
+    }, 1500)
   },
 
   onPreviewImage(e) {

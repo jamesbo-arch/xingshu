@@ -153,20 +153,26 @@ Page({
     this._loadPosts(true)
   },
 
-  // 转发卡片缩略图：未显式指定时微信自动截屏，可能截到空白区致卡片发白。
-  // 取封面/首图（cloud:// → 临时链），失败回退本地品牌图，保证卡片有图。
+  // 转发卡片缩略图：用活动邀请函的生成样式（未显式指定时微信自动截屏会发白）。
+  // 先给封面/首图或本地品牌图兜底（保证不发白且分享即时可用），再后台静默生成邀请函覆盖为最终缩略图。
   async _resolveShareImg(a) {
-    this._shareImg = '/images/consulting-banner.png'  // 兜底：本地品牌图（永不发白）
+    // 1) 兜底缩略图（永不发白、分享即时可用）
+    this._shareImg = '/images/consulting-banner.png'
     const src = a.cover_url || (a.images && a.images[0]) || ''
-    if (!src) return
-    if (/^https?:\/\//.test(src)) { this._shareImg = src; return }
-    if (/^cloud:\/\//.test(src)) {
+    if (/^https?:\/\//.test(src)) this._shareImg = src
+    else if (/^cloud:\/\//.test(src)) {
       try {
         const r = await wx.cloud.getTempFileURL({ fileList: [src] })
         const url = r.fileList && r.fileList[0] && r.fileList[0].tempFileURL
         if (url) this._shareImg = url
       } catch (e) { /* 保持本地兜底图 */ }
     }
+    // 2) 后台静默生成邀请函（含小程序码），就绪后作为最终转发缩略图；失败保留兜底
+    setTimeout(() => {
+      this._ensureQr().then(() => {
+        this._ensureInvite((path) => { if (path) this._shareImg = path }, true)
+      })
+    }, 1200)
   },
 
   // ── 邀请函：主题映射与展示数据 ──
@@ -521,18 +527,22 @@ Page({
   async onOpenPoster() {
     this.setData({ showPoster: true })
     setTimeout(() => this.setData({ _posterShow: true }), 20)
-    if (!this.data.qrFileID) {
-      const app = getApp()
-      const sharerId = (app.globalData.user || {}).id
-      const res = await call('generateMiniCode', { activityId: this._id, sharerId }, { showError: false })
-      if (res && res.fileID) {
-        this.setData({ qrFileID: res.fileID })
-        try {
-          const dl = await wx.cloud.downloadFile({ fileID: res.fileID })
-          this._qrTempPath = dl.tempFilePath
-          this._invPath = '' // 码就绪后重绘
-        } catch (e) { /* 码下载失败时画占位块 */ }
-      }
+    await this._ensureQr()
+  },
+
+  // 带参小程序码（scene 含活动+分享人），下载临时路径供邀请函画布用；已就绪则直接返回
+  async _ensureQr() {
+    if (this._qrTempPath) return
+    if (this.data.qrFileID) return
+    const sharerId = (getApp().globalData.user || {}).id
+    const res = await call('generateMiniCode', { activityId: this._id, sharerId }, { showError: false })
+    if (res && res.fileID) {
+      this.setData({ qrFileID: res.fileID })
+      try {
+        const dl = await wx.cloud.downloadFile({ fileID: res.fileID })
+        this._qrTempPath = dl.tempFilePath
+        this._invPath = '' // 码就绪后重绘
+      } catch (e) { /* 码下载失败时画占位块 */ }
     }
   },
   onClosePoster() {
@@ -618,15 +628,15 @@ Page({
   },
 
   // 取邀请函成图（带缓存）：Canvas 2D 按主题绘制，高度随介绍全文 + 配图动态计算，导出临时文件
-  _ensureInvite(cb) {
+  _ensureInvite(cb, silent) {
     if (this._invPath) { cb(this._invPath); return }
     const a = this.data.activity
     const inv = this.data.invite
     if (!a || !inv) { cb(''); return }
-    wx.showLoading({ title: '生成邀请函…', mask: true })
+    if (!silent) wx.showLoading({ title: '生成邀请函…', mask: true })
     const query = wx.createSelectorQuery()
     query.select('#inv-canvas').fields({ node: true }).exec(async (res) => {
-      if (!res || !res[0] || !res[0].node) { wx.hideLoading(); toast.error('图片生成失败'); cb(''); return }
+      if (!res || !res[0] || !res[0].node) { if (!silent) { wx.hideLoading(); toast.error('图片生成失败') } cb(''); return }
       const canvas = res[0].node
       const ctx = canvas.getContext('2d')
       const t = INV_THEMES[inv.key]
@@ -760,8 +770,8 @@ Page({
 
       wx.canvasToTempFilePath({
         canvas,
-        success: (r) => { wx.hideLoading(); this._invPath = r.tempFilePath; cb(r.tempFilePath) },
-        fail: () => { wx.hideLoading(); toast.error('图片生成失败'); cb('') },
+        success: (r) => { if (!silent) wx.hideLoading(); this._invPath = r.tempFilePath; cb(r.tempFilePath) },
+        fail: () => { if (!silent) { wx.hideLoading(); toast.error('图片生成失败') } cb('') },
       }, this)
     })
   },

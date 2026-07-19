@@ -116,6 +116,11 @@ Component({
       }), 2000)
     },
 
+    // 供宿主页（故事详情）静默生成海报，用作转发卡片缩略图；不弹 loading/错误提示
+    genShareImage(cb) {
+      this._render(cb, { silent: true })
+    },
+
     _saveToAlbum(path) {
       wx.saveImageToPhotosAlbum({
         filePath: path,
@@ -142,15 +147,16 @@ Component({
       })
     },
 
-    // 渲染海报到临时文件，done(tempFilePath|null)；保存与分享共用
-    _render(done) {
+    // 渲染海报到临时文件，done(tempFilePath|null)；保存与分享共用。opts.silent 静默（转发缩略图用）
+    _render(done, opts = {}) {
+      const silent = !!opts.silent
       const d = this.data.story
       if (!d) { done && done(null); return }
 
       const query = wx.createSelectorQuery().in(this)
       query.select('#poster-canvas').fields({ node: true, size: true }).exec(async (res) => {
         if (!res || !res[0] || !res[0].node) {
-          toast.error('图片生成失败')
+          if (!silent) toast.error('图片生成失败')
           done && done(null)
           return
         }
@@ -163,7 +169,7 @@ Component({
         const ACCENT = '#B6452F', FOOT_BG = '#A08A63', TAG_COLOR = '#8A6E4B'  // 标签色同活动海报
 
         // 配图与品牌栏图先行加载（cloud:// 下载临时路径 → createImage 取宽高），失败的静默跳过
-        wx.showLoading({ title: '生成海报中…', mask: true })
+        if (!silent) wx.showLoading({ title: '生成海报中…', mask: true })
         const loadImage = async (src) => {
           try {
             let path = src
@@ -181,7 +187,7 @@ Component({
         }
         const posterImgs = (await Promise.all((this.data.shareImages || []).map(loadImage))).filter(Boolean)
         const qrImg = this._qrTempPath ? await loadImage(this._qrTempPath) : null
-        wx.hideLoading()
+        if (!silent) wx.hideLoading()
 
         // ── 第一遍：测量排版，算出动态高度（花边框住文字，花边下为图片/二维码/页尾）──
         canvas.width = W
@@ -343,7 +349,7 @@ Component({
           success: (r) => done && done(r.tempFilePath),
           fail: (err) => {
             console.error('[poster] canvasToTempFilePath fail:', (err && err.errMsg) || err)
-            toast.error('图片生成失败')
+            if (!silent) toast.error('图片生成失败')
             done && done(null)
           },
         }, this)

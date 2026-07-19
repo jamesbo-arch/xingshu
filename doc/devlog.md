@@ -3658,3 +3658,18 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 此前分享未设 imageUrl，微信自动截取页面 5:4 区域作缩略图，截到空白/未渲染区就发白。改为显式指定：优先内容图（临时链），永远有本地品牌图兜底，卡片不再发白。
 
 **验证**：node --check 通过；真机转发活动/故事详情验证卡片缩略图。
+
+### 2026-07-19 — 转发缩略图改用故事海报/活动邀请函生成样式
+
+**类型**：前端
+**计划关联**：用户反馈（分享缩略图用当前故事海报、活动邀请函对应生成样式）
+**修改文件**：
+- `miniprogram/components/poster-sheet/index.js` — _render 加 opts.silent（静默：不弹 loading/错误 toast）；新增公开方法 genShareImage(cb) 供宿主页静默出图
+- `miniprogram/pages/detail/index.js` — _resolveShareImg 保留首图/品牌图兜底后，延时 1.5s 调 selectComponent('#posterSheet').genShareImage 生成故事海报作最终转发缩略图
+- `miniprogram/pages/detail/index.wxml` — poster-sheet 加 id=posterSheet 供 selectComponent
+- `miniprogram/pages/activity-detail/index.js` — QR 加载抽 _ensureQr()（onOpenPoster 复用）；_ensureInvite 加 silent 参数；_resolveShareImg 后台静默生成邀请函作最终缩略图；onShareAppMessage/onShareTimeline 用 _shareImg
+
+**变更说明**：
+转发 imageUrl 改为海报/邀请函生成图。因组件出图需下载配图+小程序码+canvas 渲染，较重且首次未必即时，故：先用首图/品牌图兜底（保证不发白、分享即时可用），页面加载后 1.2~1.5s 后台静默生成海报覆盖 _shareImg；就绪前分享用兜底图，就绪后为海报样式。注：微信转发卡片按 5:4 裁切，展示海报顶部品牌头区。
+
+**验证**：node --check 通过；真机转发故事/活动详情验证缩略图为海报样式。
