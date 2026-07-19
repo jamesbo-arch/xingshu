@@ -3569,3 +3569,16 @@ fn-admin-roles-test 15/15 通过；admin 云函数 + 静态托管已重新部署
 fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；activity/admin 云函数 + 后台已部署 dev。真机需验证选视频→上传→详情/瀑布流播放。
 
 **待办（prod 上线时）**：`XINGSHU_ENV_FILE=.env.prod node scripts/migrate-post-video.js` → 部署 activity/admin 云函数与后台；小程序随下版过审发布。
+
+### 2026-07-19 — 活动分享列表 FAB 发布入口补齐视频上传
+
+**类型**：前端
+**计划关联**：用户反馈（活动分享的新增入口即活动列表页右下 FAB 发布弹层，仍只支持照片）
+**修改文件**：
+- `miniprogram/pages/activities/index.js` — FAB 发布弹层的 onAddPostImage 改媒体二选一（mix 选择、视频取 1 段限 3min/100MB）、加 postVideo 状态与 onRemovePostVideo、onSubmitPost 上传视频换 fileID 并透传（与 activity-detail 发布弹层逻辑一致）
+- `miniprogram/pages/activities/index.wxml` — 发布弹层加视频预览格、按钮文案随媒体状态切换
+
+**变更说明**：
+上一提交只改了活动详情页的发布弹层；活动分享列表页（首页 tab）的 FAB 发布入口是**独立的第二套发布弹层**，本次补齐同款视频支持。云函数 postCreate 已支持 video，无需再改后端。
+
+**验证**：node --check 通过；真机验证 FAB 发布视频 → 上传 → 瀑布流/详情播放。
