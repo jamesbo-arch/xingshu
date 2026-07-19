@@ -3582,3 +3582,15 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 上一提交只改了活动详情页的发布弹层；活动分享列表页（首页 tab）的 FAB 发布入口是**独立的第二套发布弹层**，本次补齐同款视频支持。云函数 postCreate 已支持 video，无需再改后端。
 
 **验证**：node --check 通过；真机验证 FAB 发布视频 → 上传 → 瀑布流/详情播放。
+
+### 2026-07-19 — 转发卡片标题统一为品牌词
+
+**类型**：前端
+**计划关联**：用户反馈（故事详情转发标题固定「醒书故事」，活动详情转发标题固定「醒书活动」）
+**修改文件**：
+- `miniprogram/pages/detail/index.js` — onShareAppMessage/onShareTimeline 标题由故事标题改固定「醒书故事」
+- `miniprogram/pages/activity-detail/index.js` — onShareAppMessage/onShareTimeline 标题由活动标题改固定「醒书活动」
+
+**变更说明**：转发/朋友圈卡片标题统一为品牌词，不再带具体内容标题；path/query 的 id 与推荐人参数 s= 不变。
+
+**验证**：node --check 通过；真机右上角「…」转发验证卡片标题。

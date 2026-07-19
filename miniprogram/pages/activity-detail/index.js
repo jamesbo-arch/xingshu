@@ -91,10 +91,10 @@ Page({
 
   // 微信「…」菜单转发/分享朋友圈：分享当前活动，带分享人 ID（s=）延续推荐人机制
   onShareAppMessage() {
-    const a = this.data.activity || {}
     const sharerId = (getApp().globalData.user || {}).id
+    // 转发卡片标题统一为品牌词「醒书活动」（不用活动标题）
     return {
-      title: a.title || '醒书活动',
+      title: '醒书活动',
       path: `/pages/activity-detail/index?id=${this._id}${sharerId ? '&s=' + sharerId : ''}`,
     }
   },
@@ -104,10 +104,9 @@ Page({
   },
 
   onShareTimeline() {
-    const a = this.data.activity || {}
     const sharerId = (getApp().globalData.user || {}).id
     return {
-      title: a.title || '醒书活动',
+      title: '醒书活动',
       query: `id=${this._id}${sharerId ? '&s=' + sharerId : ''}`,
     }
   },

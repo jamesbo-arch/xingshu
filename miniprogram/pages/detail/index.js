@@ -40,8 +40,9 @@ Page({
   onShareAppMessage() {
     const d = this.data.story || {}
     const sharerId = (app.globalData.user || {}).id
+    // 转发卡片标题统一为品牌词「醒书故事」（不用故事标题）
     return {
-      title: d.title || '醒书故事',
+      title: '醒书故事',
       path: `/pages/detail/index?id=${d.id}${sharerId ? '&s=' + sharerId : ''}`,
     }
   },
@@ -50,7 +51,7 @@ Page({
     const d = this.data.story || {}
     const sharerId = (app.globalData.user || {}).id
     return {
-      title: d.title || '醒书故事',
+      title: '醒书故事',
       query: `id=${d.id}${sharerId ? '&s=' + sharerId : ''}`,
     }
   },
