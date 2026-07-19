@@ -87,6 +87,8 @@
             <text wx:if="{{item.isMine}}" class="post-del" data-id="{{item.id}}" catchtap="onDeletePost">删除</text>
           </view>
           <text wx:if="{{item.content}}" class="post-content" user-select>{{item.content}}</text>
+          <!-- 视频分享：云存储 CDN 链接支持 Range，video 组件即流式边下边播 -->
+          <video wx:if="{{item.video}}" class="post-video" src="{{item.video}}" controls object-fit="contain" show-center-play-btn/>
           <view wx:if="{{item.images.length}}" class="act-photo-grid post-grid">
             <image
               wx:for="{{item.images}}"
@@ -226,9 +228,14 @@
           <image class="post-pick-thumb" src="{{item}}" mode="aspectFill" data-index="{{index}}" bindtap="onPreviewPickImage"/>
           <view class="post-pick-remove" data-index="{{index}}" catchtap="onRemovePostImage"><text>×</text></view>
         </view>
-        <view wx:if="{{postImages.length < 9}}" class="post-pick-add" bindtap="onAddPostImage">
+        <!-- 已选视频：预览格（与照片互斥） -->
+        <view wx:if="{{postVideo}}" class="post-pick-cell post-pick-video">
+          <video class="post-pick-thumb" src="{{postVideo}}" object-fit="cover" controls="{{false}}" muted autoplay loop/>
+          <view class="post-pick-remove" catchtap="onRemovePostVideo"><text>×</text></view>
+        </view>
+        <view wx:if="{{!postVideo && postImages.length < 9}}" class="post-pick-add" bindtap="onAddPostImage">
           <text class="post-pick-add-icon">+</text>
-          <text class="post-pick-add-text">照片</text>
+          <text class="post-pick-add-text">{{postImages.length ? '照片' : '照片/视频'}}</text>
         </view>
       </view>
       <view class="act-signup-btn signup-submit" bindtap="onSubmitPost">发布</view>

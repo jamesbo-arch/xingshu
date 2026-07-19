@@ -922,12 +922,12 @@ const handlers = {
     const [[{ total }]] = await db.query(
       'SELECT COUNT(*) AS total FROM activity_posts WHERE activity_id = ?', [activityId])
     const [rows] = await db.query(
-      `SELECT p.id, p.content, p.images, p.status, u.nickname,
+      `SELECT p.id, p.content, p.images, p.video, p.status, u.nickname,
               DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS createdAt
        FROM activity_posts p JOIN users u ON p.user_id = u.id
        WHERE p.activity_id = ? ORDER BY p.id DESC LIMIT ? OFFSET ?`,
       [activityId, pageSize, (page - 1) * pageSize])
-    return { list: rows.map(p => ({ ...p, images: p.images || [] })), total, page, pageSize }
+    return { list: rows.map(p => ({ ...p, images: p.images || [], video: p.video || '' })), total, page, pageSize }
   },
 
   async postDeleteAdmin({ id } = {}, ctx) {

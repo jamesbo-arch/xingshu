@@ -23,11 +23,15 @@
       <view class="feed-col">
         <block wx:for="{{colL}}" wx:key="id">
           <view class="m-card" data-aid="{{item.activityId}}" bindtap="onOpenPost">
-            <view wx:if="{{item.image}}" class="m-cover" style="height: {{item.imgH}}rpx;">
+            <!-- 视频卡：catchtap 包裹避免点播放冒泡进详情；CDN 链接流式边下边播 -->
+            <view wx:if="{{item.video}}" class="m-cover m-video-wrap" catchtap="noop">
+              <video class="m-video" src="{{item.video}}" controls object-fit="contain" />
+            </view>
+            <view wx:elif="{{item.image}}" class="m-cover" style="height: {{item.imgH}}rpx;">
               <image class="m-img" src="{{item.image}}" mode="aspectFill" lazy-load />
               <text wx:if="{{item.imgCount > 1}}" class="m-imgcount">{{item.imgCount}} 图</text>
             </view>
-            <text wx:if="{{item.text}}" class="m-text {{item.image ? '' : 'm-text-solo'}}">{{item.text}}</text>
+            <text wx:if="{{item.text}}" class="m-text {{(item.image || item.video) ? '' : 'm-text-solo'}}">{{item.text}}</text>
             <view class="m-actline"><text class="m-act">{{item.actLabel}}</text><text wx:if="{{item.actDate}}" class="m-actdate">{{item.actDate}}</text></view>
             <view class="m-foot">
               <image wx:if="{{item.avatarUrl}}" class="m-ava-img" src="{{item.avatarUrl}}" mode="aspectFill" />
@@ -43,11 +47,14 @@
       <view class="feed-col">
         <block wx:for="{{colR}}" wx:key="id">
           <view class="m-card" data-aid="{{item.activityId}}" bindtap="onOpenPost">
-            <view wx:if="{{item.image}}" class="m-cover" style="height: {{item.imgH}}rpx;">
+            <view wx:if="{{item.video}}" class="m-cover m-video-wrap" catchtap="noop">
+              <video class="m-video" src="{{item.video}}" controls object-fit="contain" />
+            </view>
+            <view wx:elif="{{item.image}}" class="m-cover" style="height: {{item.imgH}}rpx;">
               <image class="m-img" src="{{item.image}}" mode="aspectFill" lazy-load />
               <text wx:if="{{item.imgCount > 1}}" class="m-imgcount">{{item.imgCount}} 图</text>
             </view>
-            <text wx:if="{{item.text}}" class="m-text {{item.image ? '' : 'm-text-solo'}}">{{item.text}}</text>
+            <text wx:if="{{item.text}}" class="m-text {{(item.image || item.video) ? '' : 'm-text-solo'}}">{{item.text}}</text>
             <view class="m-actline"><text class="m-act">{{item.actLabel}}</text><text wx:if="{{item.actDate}}" class="m-actdate">{{item.actDate}}</text></view>
             <view class="m-foot">
               <image wx:if="{{item.avatarUrl}}" class="m-ava-img" src="{{item.avatarUrl}}" mode="aspectFill" />

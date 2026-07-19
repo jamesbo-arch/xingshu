@@ -768,6 +768,15 @@
 
 .post-grid { margin-top: 16rpx; }
 
+/* 视频分享（流式播放，宽度撑满内容区） */
+.post-video {
+  width: 100%;
+  height: 400rpx;
+  margin-top: 16rpx;
+  border-radius: 12rpx;
+  background: #1E1A14;
+}
+
 .post-more {
   text-align: center;
   padding: 16rpx;

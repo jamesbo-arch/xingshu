@@ -91,6 +91,26 @@ async function run() {
     if (r2.code !== 0) throw new Error('纯图应可发: ' + r2.msg)
   })
 
+  await test('POST-A13 视频分享：单视频可发、与照片互斥、非 cloud:// 拒', async () => {
+    // 独立活动，避免扰动 A08 对 startedId 的计数
+    const vid = await makeActivity()
+    await act('signup', { id: vid, name: '砚秋' })
+    const r1 = await act('postCreate', { id: vid, content: '现场视频', video: 'cloud://fake/v1.mp4' })
+    if (r1.code !== 0) throw new Error('单视频应可发: ' + r1.msg)
+    const [[row]] = await conn.query('SELECT video FROM activity_posts WHERE id=?', [r1.data.id])
+    if (row.video !== 'cloud://fake/v1.mp4') throw new Error('video 未落库: ' + row.video)
+    // postList 回带 video 字段
+    const list = await act('postList', { id: vid, page: 1, pageSize: 5 })
+    const found = list.data.list.find(p => p.id === r1.data.id)
+    if (!found || found.video !== 'cloud://fake/v1.mp4') throw new Error('postList 未回带 video')
+    // 照片 + 视频同发 → 拒
+    const r2 = await act('postCreate', { id: vid, content: 'x', images: ['cloud://fake/p.jpg'], video: 'cloud://fake/v2.mp4' })
+    if (r2.code === 0) throw new Error('照片与视频同发不应通过')
+    // 非 cloud:// 视频 → 拒
+    const r3 = await act('postCreate', { id: vid, video: 'http://evil/x.mp4' })
+    if (r3.code === 0) throw new Error('非 cloud:// 视频不应通过')
+  })
+
   await test('POST-A07 draft 活动拒发', async () => {
     const draftId = await makeActivity({ status: 'draft' })
     await conn.query('INSERT INTO activity_signups (activity_id, user_id, name) SELECT ?, id, \'预埋\' FROM users WHERE openid=?', [draftId, SIGNED])

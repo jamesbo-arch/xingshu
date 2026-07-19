@@ -131,6 +131,7 @@ Page({
       id: p.id,
       activityId: p.activity_id,
       image: images[0] || '',
+      video: p.video || '',
       // 图卡高度取三档（按 id 稳定散布），瀑布流有节奏且估高准确
       imgH: [260, 320, 380][p.id % 3],
       imgCount: images.length,
@@ -169,11 +170,15 @@ Page({
     if (Object.keys(patch).length) this.setData(patch)
   },
 
+  // 视频卡 catchtap 占位：拦截冒泡防误入详情（播放交互交给 video 组件自身）
+  noop() {},
+
   _estHeight(p) {
     let h = 90 // 底部作者栏 + 边距
-    if (p.image) h += p.imgH
+    if (p.video) h += 320
+    else if (p.image) h += p.imgH
     if (p.text) {
-      const lines = Math.min(Math.ceil(p.text.length / 13), p.image ? 2 : 6)
+      const lines = Math.min(Math.ceil(p.text.length / 13), (p.image || p.video) ? 2 : 6)
       h += lines * 34 + 20
     }
     return h

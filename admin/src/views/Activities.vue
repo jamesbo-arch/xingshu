@@ -298,7 +298,7 @@
       <div class="modal">
         <h2 class="modal-title">现场分享 · {{ postsActivity.title }}（{{ postsTotal }} 条）</h2>
         <table class="data-table">
-          <thead><tr><th>昵称</th><th>内容</th><th>照片</th><th>时间</th><th>状态</th><th>操作</th></tr></thead>
+          <thead><tr><th>昵称</th><th>内容</th><th>媒体</th><th>时间</th><th>状态</th><th>操作</th></tr></thead>
           <tbody>
             <tr v-for="p in posts" :key="p.id" :style="p.status === 'deleted' ? 'opacity:.45' : ''">
               <td>{{ p.nickname }}</td>
@@ -307,7 +307,8 @@
                 <a v-for="(img, i) in p.images" :key="i" :href="imgUrls[img] || '#'" target="_blank">
                   <img :src="imgUrls[img]" style="width:44px;height:44px;object-fit:cover;border-radius:4px;margin-right:4px;" />
                 </a>
-                <span v-if="!p.images.length">-</span>
+                <a v-if="p.video" :href="imgUrls[p.video] || '#'" target="_blank" class="link">▶ 视频</a>
+                <span v-if="!p.images.length && !p.video">-</span>
               </td>
               <td>{{ p.createdAt }}</td>
               <td><span class="badge" :class="p.status === 'active' ? 'badge-online' : 'badge-draft'">{{ p.status === 'active' ? '正常' : '已删' }}</span></td>
@@ -831,8 +832,8 @@ async function loadPosts(page) {
   posts.value = r.list
   postsTotal.value = r.total
   postsPage.value = r.page
-  // cloud:// fileID 批量换临时 URL
-  const ids = [...new Set(r.list.flatMap(p => p.images))].filter(x => x && !imgUrls.value[x])
+  // cloud:// fileID 批量换临时 URL（照片 + 视频）
+  const ids = [...new Set(r.list.flatMap(p => [...(p.images || []), p.video]))].filter(x => x && !imgUrls.value[x])
   if (ids.length) {
     const map = await resolveFileUrls(ids)
     imgUrls.value = { ...imgUrls.value, ...map }

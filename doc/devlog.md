@@ -3546,3 +3546,26 @@ fn-admin-roles-test 15/15 通过；admin 云函数 + 静态托管已重新部署
 展示与筛选对齐两字段语义：授权态与会员资格独立呈现，退出登录的会员在列表可直观看到「未授权 + 会员」的组合态。
 
 **验证**：fn-admin-test 13/13 通过；admin 云函数与后台已重新部署 dev。
+
+### 2026-07-19 — 活动现场分享支持视频上传与流式播放
+
+**类型**：数据库 | 云函数 | 前端 | 测试 | 部署
+**计划关联**：用户需求（活动分享内容支持视频上传，在线流式播放）
+**修改文件**：
+- `scripts/migrate-post-video.js`（新建，幂等）— activity_posts 加 `video VARCHAR(512)`（云存储 fileID，与 images 互斥）；dev 已执行
+- `miniprogram/cloudfunctions/activity/index.js` — postCreate 收 video 参数（校验：与照片互斥、必须 cloud://、二选一）；postList/postFeed 回带 video
+- `miniprogram/cloudfunctions/admin/index.js` — postListAdmin 回带 video
+- `miniprogram/api/activity.js` — createPost 透传 video
+- `miniprogram/pages/activity-detail/index.js` — 媒体二选一选择逻辑（chooseMedia mediaType 'mix'，视频取 1 段、限时长 3min/大小 100MB）；postVideo 状态与移除；上传视频换 fileID
+- `miniprogram/pages/activity-detail/index.wxml/.wxss` — 分享详情用 `<video>` 流式播放；发布弹层视频预览格
+- `miniprogram/pages/activities/index.js/.wxml/.wxss` — 瀑布流视频卡（catchtap 拦截冒泡 + 估高 320）
+- `admin/src/views/Activities.vue` — 现场分享列表「照片」列改「媒体」，视频换链后「▶ 视频」链接
+- `test/fn-activity-post-test.js` — 新增 POST-A13（视频发布/照片互斥/非 cloud:// 拒/postList 回带）
+
+**变更说明**：
+一条分享 = 最多 9 图 或 1 段视频（朋友圈惯例）。视频存 CloudBase 云存储，其 CDN 临时链接原生支持 HTTP Range，小程序 `<video>` 组件即边下边播（流式），无需额外接视频点播服务。
+
+**验证**：
+fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；activity/admin 云函数 + 后台已部署 dev。真机需验证选视频→上传→详情/瀑布流播放。
+
+**待办（prod 上线时）**：`XINGSHU_ENV_FILE=.env.prod node scripts/migrate-post-video.js` → 部署 activity/admin 云函数与后台；小程序随下版过审发布。

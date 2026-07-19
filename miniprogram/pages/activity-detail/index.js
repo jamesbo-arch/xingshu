@@ -45,6 +45,7 @@ Page({
     _postShow: false,
     postContent: '',
     postImages: [],
+    postVideo: '',   // 本地视频临时路径（与照片互斥，最多 1 段）
     scrollInto: '', // 定位锚点（feed 跳入时滚到現場分享区）
     invite: null,   // 邀请函展示数据（主题/标签/时间/参与方式/限额）
     // 报名名单弹层
@@ -294,23 +295,42 @@ Page({
     setTimeout(() => this.setData({ showPostSheet: false }), 300)
   },
   onPostInput(e) { this.setData({ postContent: e.detail.value }) },
+  // 媒体二选一：最多 9 张照片 或 1 段视频。未选任何媒体时可挑照片或视频；已有照片则只能续加照片
   onAddPostImage() {
+    if (this.data.postVideo) return
     const remaining = 9 - this.data.postImages.length
     if (remaining <= 0) return
+    const hasImages = this.data.postImages.length > 0
     wx.chooseMedia({
-      count: remaining,
-      mediaType: ['image'],
+      count: hasImages ? remaining : 1,
+      mediaType: hasImages ? ['image'] : ['mix'],
+      maxDuration: 60,
       sourceType: ['album', 'camera'],
       success: res => {
-        const paths = res.tempFiles.map(f => f.tempFilePath)
-        this.setData({ postImages: [...this.data.postImages, ...paths] })
+        const files = res.tempFiles || []
+        if (!files.length) return
+        // mix 选择下按首个文件类型分流：视频仅取 1 段并校验时长/大小
+        if (!hasImages && files[0].fileType === 'video') {
+          const v = files[0]
+          if (v.duration && v.duration > 181) { toast.info('视频不超过 3 分钟', 2000); return }
+          if (v.size && v.size > 100 * 1024 * 1024) { toast.info('视频不超过 100MB，请压缩后再传', 2000); return }
+          this.setData({ postVideo: v.tempFilePath })
+          return
+        }
+        const paths = files.filter(f => f.fileType !== 'video').map(f => f.tempFilePath)
+        if (paths.length < files.length) toast.info('照片与视频不能混发', 2000)
+        if (paths.length) this.setData({ postImages: [...this.data.postImages, ...paths].slice(0, 9) })
       },
     })
   },
+  // mix 首选后续加照片（照片模式下的追加按钮）
   onRemovePostImage(e) {
     const images = [...this.data.postImages]
     images.splice(Number(e.currentTarget.dataset.index), 1)
     this.setData({ postImages: images })
+  },
+  onRemovePostVideo() {
+    this.setData({ postVideo: '' })
   },
   onPreviewPickImage(e) {
     wx.previewImage({
@@ -322,9 +342,9 @@ Page({
   async onSubmitPost() {
     return lock(this, 'submitPost', async () => {
       const content = this.data.postContent.trim()
-      if (!content && !this.data.postImages.length) { toast.info('写点文字或选张照片吧'); return }
-      // 本地图上传云存储换 fileID（同 compose 模式，前缀 activity-posts/）
-      let images = []
+      if (!content && !this.data.postImages.length && !this.data.postVideo) { toast.info('写点文字、选张照片或视频吧'); return }
+      // 本地媒体上传云存储换 fileID（同 compose 模式，前缀 activity-posts/）
+      let images = [], video = ''
       try {
         if (this.data.postImages.length) wx.showLoading({ title: '上传照片中…', mask: true })
         for (const img of this.data.postImages) {
@@ -335,16 +355,24 @@ Page({
           const res = await wx.cloud.uploadFile({ cloudPath, filePath: img })
           images.push(res.fileID)
         }
+        if (this.data.postVideo) {
+          wx.showLoading({ title: '上传视频中…', mask: true })
+          const extMatch = this.data.postVideo.match(/\.(\w+)$/)
+          const ext = extMatch ? extMatch[1] : 'mp4'
+          const cloudPath = `activity-posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+          const res = await wx.cloud.uploadFile({ cloudPath, filePath: this.data.postVideo })
+          video = res.fileID
+        }
       } catch (err) {
         wx.hideLoading()
-        toast.error('照片上传失败，请重试')
+        toast.error('媒体上传失败，请重试')
         return
       }
-      if (this.data.postImages.length) wx.hideLoading()
-      const r = await activityApi.createPost(this._id, { content, images })
+      if (this.data.postImages.length || this.data.postVideo) wx.hideLoading()
+      const r = await activityApi.createPost(this._id, { content, images, video })
       if (r) {
         toast.success('已分享')
-        this.setData({ postContent: '', postImages: [] })
+        this.setData({ postContent: '', postImages: [], postVideo: '' })
         this.onClosePostSheet()
         this._loadPosts(true)
       }
