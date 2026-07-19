@@ -3533,3 +3533,16 @@ fn-admin-roles-test 15/15 通过；admin 云函数 + 静态托管已重新部署
 - `miniprogram/components/poster-sheet/index.js` — ① 高清导出：绘制阶段画布像素尺寸放大 `scale` 倍（最高 2×，即 1280px 宽）并 `setTransform` 缩放坐标系，配图以原图分辨率绘入不再压糊；超长海报按已验证的 8000px 像素高上限反算 scale（防旧机型画布超限导出失败）。② 标题单行自适应：38px 起逐级缩小至 26px 使标题尽量一行放下（与预览弹窗观感一致），行高/基线随字号联动；仍超宽才折行。
 
 **验证**：node --check 通过；纯前端 canvas 渲染改动，微信开发者工具/真机生成海报验证清晰度与标题单行。
+
+### 2026-07-19 — 后台用户管理拆分「授权登录 × 会员」两状态
+
+**类型**：前端 | 云函数 | 部署
+**计划关联**：用户反馈（用户列表的身份列仍把授权态与会员资格混为一个派生值，与 2026-07-15 两字段语义设计不符）
+**修改文件**：
+- `miniprogram/cloudfunctions/admin/index.js` — USER_SELECT 增补 `authState`（users.identity 原值 guest/authed）与 `isMember`（member_until >= 今天派生）；users 筛选新增 authState × member 两轴独立参数（可组合，如「未授权 + 会员」= 退出登录的会员）；旧派生 identity 字段与筛选口径保留兼容（fn-admin-test 及 UserDetail 等消费方不动）
+- `admin/src/views/Users.vue` — 「身份」单列拆为「授权登录」（未授权/已授权徽章）与「会员」（会员徽章/—）两列；单下拉筛选改双下拉；CSV 导出列同步
+
+**变更说明**：
+展示与筛选对齐两字段语义：授权态与会员资格独立呈现，退出登录的会员在列表可直观看到「未授权 + 会员」的组合态。
+
+**验证**：fn-admin-test 13/13 通过；admin 云函数与后台已重新部署 dev。
