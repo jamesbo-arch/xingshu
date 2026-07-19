@@ -138,6 +138,8 @@ const USER_SELECT = `
          u.avatar_hue AS avatarHue,
          CASE WHEN u.member_until IS NOT NULL AND u.member_until >= CURDATE() THEN 'member'
               WHEN u.identity = 'guest' THEN 'guest' ELSE 'authed' END AS identity,
+         u.identity AS authState,
+         (u.member_until IS NOT NULL AND u.member_until >= CURDATE()) AS isMember,
          DATE_FORMAT(u.member_from, '%Y-%m-%d') AS memberFrom,
          DATE_FORMAT(u.member_until, '%Y-%m-%d') AS memberUntil,
          GREATEST(COALESCE(DATEDIFF(u.member_until, CURDATE()), 0), 0) AS daysLeft,
@@ -287,9 +289,19 @@ async function deleteStoryById(id) {
 // ---- action 处理器 ----
 
 const handlers = {
-  async users({ identity, keyword, page, pageSize } = {}) {
+  async users({ identity, authState, member, keyword, page, pageSize } = {}) {
     const where = [], params = []
-    // 两字段语义：identity 列只存授权态，会员按 member_until 派生——筛选口径与列表展示的派生值一致
+    // 两字段语义：identity 列只存授权态，会员按 member_until 派生。
+    // 新口径（Users 页两轴筛选）：authState 筛授权态原值、member 筛会员资格，二者独立可组合
+    if (authState === 'guest' || authState === 'authed') {
+      where.push('u.identity = ?'); params.push(authState)
+    }
+    if (member === '1' || member === 1) {
+      where.push('u.member_until IS NOT NULL AND u.member_until >= CURDATE()')
+    } else if (member === '0' || member === 0) {
+      where.push('(u.member_until IS NULL OR u.member_until < CURDATE())')
+    }
+    // 旧口径（派生三态互斥）保留兼容
     if (identity === 'member') {
       where.push('u.member_until IS NOT NULL AND u.member_until >= CURDATE()')
     } else if (identity === 'authed') {
