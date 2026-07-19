@@ -207,8 +207,8 @@ Page({
         const n = (p.images || []).length
         return {
           ...p,
-          // 朋友圈式宫格：1 张大图、4 张田字、其余 3 列九宫格
-          gridClass: n === 1 ? 'pg1' : (n === 4 ? 'pg4' : 'pg3'),
+          // 宫格：1 张大图，其余一律 3 列等大缩略图（6 张即 2×3，与朋友圈一致）
+          gridClass: n === 1 ? 'pg1' : 'pg3',
           timeText: formatTime(p.created_at) || p.created_at,
           avatarColor: hueToColor(p.avatar_hue),
           initial: getInitial(p.nickname),
