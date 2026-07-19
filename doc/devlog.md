@@ -3606,3 +3606,17 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 此前为兼容「首次可选视频」把首次选择 count 限为 1，导致只能逐张选图。mix 模式支持 count>1 多选，改回 remaining 即可一次多选；视频分支（files[0] 为 video 取 1 段、照片视频互斥）逻辑不变。
 
 **验证**：node --check 通过；真机验证两个发布入口一次多选照片、以及仍可选单视频。
+
+### 2026-07-19 — 现场分享图片改朋友圈式宫格
+
+**类型**：前端
+**计划关联**：用户反馈（分享图片列表参照朋友圈九宫格/四宫格展现）
+**修改文件**：
+- `miniprogram/pages/activity-detail/index.js` — _loadPosts 映射按图片张数算 gridClass（1 张 pg1 大图 / 4 张 pg4 田字 / 其余 pg3 三列九宫格）
+- `miniprogram/pages/activity-detail/index.wxml` — 现场分享图片容器改 post-grid + gridClass，单元格类 pg-cell
+- `miniprogram/pages/activity-detail/index.wxss` — 固定 216rpx 方格 + 8rpx gap；pg3 限宽 664rpx（3 列）、pg4 限宽 440rpx（2×2）、pg1 单张 440rpx 大图
+
+**变更说明**：
+现场分享图片此前用活动介绍同款 2 列布局，改为朋友圈式：1 张大图、4 张田字、2/3/5~9 张三列九宫格。活动介绍/回顾配图仍用原 act-photo 布局，不受影响。
+
+**验证**：node --check 通过；真机验证 1/2/3/4/5~9 张各排布。

@@ -203,14 +203,19 @@ Page({
       const page = reset ? 1 : this.data.postsPage
       const data = await activityApi.getPosts(this._id, page)
       if (!data) return
-      const mapped = data.list.map(p => ({
-        ...p,
-        timeText: formatTime(p.created_at) || p.created_at,
-        avatarColor: hueToColor(p.avatar_hue),
-        initial: getInitial(p.nickname),
-        likeCount: p.like_count || 0,
-        isLiked: !!p.isLiked,
-      }))
+      const mapped = data.list.map(p => {
+        const n = (p.images || []).length
+        return {
+          ...p,
+          // 朋友圈式宫格：1 张大图、4 张田字、其余 3 列九宫格
+          gridClass: n === 1 ? 'pg1' : (n === 4 ? 'pg4' : 'pg3'),
+          timeText: formatTime(p.created_at) || p.created_at,
+          avatarColor: hueToColor(p.avatar_hue),
+          initial: getInitial(p.nickname),
+          likeCount: p.like_count || 0,
+          isLiked: !!p.isLiked,
+        }
+      })
       this.setData({
         posts: reset ? mapped : [...this.data.posts, ...mapped],
         postsTotal: data.total,
