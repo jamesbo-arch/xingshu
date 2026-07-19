@@ -105,6 +105,8 @@
           </view>
         </view>
         <view wx:if="{{postsHasMore}}" class="post-more" bindtap="onPostsMore">加载更多</view>
+        <!-- 发布后滚动定位锚点（新分享在末尾） -->
+        <view id="postsBottom"></view>
       </block>
 
       <view class="act-bottom-pad"></view>

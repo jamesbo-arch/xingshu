@@ -313,6 +313,15 @@ Page({
     if (this.data.postsHasMore) this._loadPosts(false)
   },
 
+  // 发布后：加载全部分享（时序正序，新分享在末尾），再滚动到底部看到刚发的
+  async _reloadPostsToBottom() {
+    await this._loadPosts(true)
+    // 全部加载（现场分享条数通常不多；每页 10 条循环拉完）
+    while (this.data.postsHasMore) await this._loadPosts(false)
+    this.setData({ scrollInto: '' })   // 先清空，保证再次设为同值也能触发定位
+    setTimeout(() => this.setData({ scrollInto: 'postsBottom' }), 250)
+  },
+
   onPreviewPostImage(e) {
     const { pidx, idx } = e.currentTarget.dataset
     const images = (this.data.posts[Number(pidx)] || {}).images || []
@@ -455,7 +464,7 @@ Page({
         toast.success('已分享')
         this.setData({ postContent: '', postImages: [], postVideo: '' })
         this.onClosePostSheet()
-        this._loadPosts(true)
+        this._reloadPostsToBottom()
       }
     })
   },

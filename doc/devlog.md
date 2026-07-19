@@ -3700,3 +3700,16 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 仅改活动详情页的现场分享（postList），跨活动的活动分享瀑布流（postFeed）仍为最新在前，不变。admin 后台 postListAdmin 亦保持不变。
 
 **验证**：fn-activity-post-test 13/13 通过；activity 云函数已部署 dev。
+
+### 2026-07-19 — 现场分享发布后自动滚动到底部看到新分享
+
+**类型**：前端
+**计划关联**：用户反馈（时序正序后，发完自动滚到底部看到新分享）
+**修改文件**：
+- `miniprogram/pages/activity-detail/index.wxml` — 分享列表末尾加 `#postsBottom` 定位锚点
+- `miniprogram/pages/activity-detail/index.js` — 新增 _reloadPostsToBottom()：重置加载并循环拉完全部分页（新分享在末尾），再 scroll-into 到 postsBottom；onSubmitPost 成功后由 _loadPosts(true) 改调之
+
+**变更说明**：
+时序正序下新分享排最末，发完需定位到底部才能看到。发布成功后加载全部分享（每页 10 条循环拉完，条数通常不多）并滚动到底部锚点。仅活动详情页内「分享现场」；FAB（活动列表页）发布仍回瀑布流不受影响。
+
+**验证**：node --check 通过；真机在有多屏分享的活动发一条，验证发完自动滚到底部并看到新分享。
