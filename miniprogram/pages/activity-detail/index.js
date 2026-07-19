@@ -167,12 +167,64 @@ Page({
         if (url) this._shareImg = url
       } catch (e) { /* 保持本地兜底图 */ }
     }
-    // 2) 后台静默生成邀请函（含小程序码），就绪后作为最终转发缩略图；失败保留兜底
-    setTimeout(() => {
-      this._ensureQr().then(() => {
-        this._ensureInvite((path) => { if (path) this._shareImg = path }, true)
-      })
-    }, 1200)
+    // 2) 后台静默生成 5:4 邀请函样式缩略图（主题配色 + 标题 + 时间，无小程序码/不下载配图，轻量），
+    //    就绪后作为最终转发缩略图；失败保留兜底
+    setTimeout(() => this._genShareThumb((path) => { if (path) this._shareImg = path }), 1200)
+  },
+
+  // 5:4 邀请函样式转发缩略图：复用邀请函主题配色，不含小程序码、不下载配图
+  _genShareThumb(cb) {
+    const a = this.data.activity, inv = this.data.invite
+    if (!a || !inv) { cb && cb(null); return }
+    const t = INV_THEMES[inv.key] || INV_THEMES.story
+    const query = wx.createSelectorQuery()
+    query.select('#inv-canvas').fields({ node: true }).exec((res) => {
+      if (!res || !res[0] || !res[0].node) { cb && cb(null); return }
+      const canvas = res[0].node
+      const ctx = canvas.getContext('2d')
+      const W = 750, H = 600, PADX = 60, CW = W - PADX * 2
+      canvas.width = W; canvas.height = H
+
+      // 主题渐变底
+      const g = ctx.createLinearGradient(0, 0, W, H)
+      g.addColorStop(0, t.bg[0]); g.addColorStop(1, t.bg[1])
+      ctx.fillStyle = g; ctx.fillRect(0, 0, W, H)
+
+      // 标签框（主题点缀色边框）
+      ctx.textAlign = 'left'; ctx.font = '28px sans-serif'
+      const tagW = ctx.measureText(inv.tagText).width + 44
+      ctx.strokeStyle = t.accent; ctx.lineWidth = 2
+      this._roundRect(ctx, PADX, 70, tagW, 56, 8); ctx.stroke()
+      ctx.fillStyle = t.accent; ctx.fillText(inv.tagText, PADX + 22, 107)
+      // 英文小字
+      ctx.globalAlpha = 0.7; ctx.font = '20px sans-serif'
+      ctx.fillText(t.kicker, PADX, 160); ctx.globalAlpha = 1
+
+      // 标题（衬线，主题前景色，自适应最多 2 行）
+      let ts = 54
+      ctx.textAlign = 'center'
+      const fit = () => { ctx.font = `bold ${ts}px serif`; return this._splitText(ctx, a.title || '', CW) }
+      let lines = fit()
+      while (ts > 34 && lines.length > 2) { ts -= 3; lines = fit() }
+      lines = lines.slice(0, 2)
+      ctx.fillStyle = t.fg
+      let ty = 270
+      lines.forEach(l => { ctx.fillText(l, W / 2, ty); ty += ts + 14 })
+
+      // 活动时间
+      ctx.globalAlpha = 0.9; ctx.font = '26px sans-serif'
+      ctx.fillText(inv.timeText, W / 2, ty + 30); ctx.globalAlpha = 1
+
+      // 底部品牌小字
+      ctx.globalAlpha = 0.75; ctx.font = '20px sans-serif'
+      ctx.fillText('醒书咨询 · 邀你共赴', W / 2, H - 44); ctx.globalAlpha = 1
+
+      wx.canvasToTempFilePath({
+        canvas,
+        success: (r) => cb && cb(r.tempFilePath),
+        fail: () => cb && cb(null),
+      }, this)
+    })
   },
 
   // ── 邀请函：主题映射与展示数据 ──
@@ -628,15 +680,15 @@ Page({
   },
 
   // 取邀请函成图（带缓存）：Canvas 2D 按主题绘制，高度随介绍全文 + 配图动态计算，导出临时文件
-  _ensureInvite(cb, silent) {
+  _ensureInvite(cb) {
     if (this._invPath) { cb(this._invPath); return }
     const a = this.data.activity
     const inv = this.data.invite
     if (!a || !inv) { cb(''); return }
-    if (!silent) wx.showLoading({ title: '生成邀请函…', mask: true })
+    wx.showLoading({ title: '生成邀请函…', mask: true })
     const query = wx.createSelectorQuery()
     query.select('#inv-canvas').fields({ node: true }).exec(async (res) => {
-      if (!res || !res[0] || !res[0].node) { if (!silent) { wx.hideLoading(); toast.error('图片生成失败') } cb(''); return }
+      if (!res || !res[0] || !res[0].node) { wx.hideLoading(); toast.error('图片生成失败'); cb(''); return }
       const canvas = res[0].node
       const ctx = canvas.getContext('2d')
       const t = INV_THEMES[inv.key]
@@ -770,8 +822,8 @@ Page({
 
       wx.canvasToTempFilePath({
         canvas,
-        success: (r) => { if (!silent) wx.hideLoading(); this._invPath = r.tempFilePath; cb(r.tempFilePath) },
-        fail: () => { if (!silent) { wx.hideLoading(); toast.error('图片生成失败') } cb('') },
+        success: (r) => { wx.hideLoading(); this._invPath = r.tempFilePath; cb(r.tempFilePath) },
+        fail: () => { wx.hideLoading(); toast.error('图片生成失败'); cb('') },
       }, this)
     })
   },

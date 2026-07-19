@@ -3673,3 +3673,17 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 转发 imageUrl 改为海报/邀请函生成图。因组件出图需下载配图+小程序码+canvas 渲染，较重且首次未必即时，故：先用首图/品牌图兜底（保证不发白、分享即时可用），页面加载后 1.2~1.5s 后台静默生成海报覆盖 _shareImg；就绪前分享用兜底图，就绪后为海报样式。注：微信转发卡片按 5:4 裁切，展示海报顶部品牌头区。
 
 **验证**：node --check 通过；真机转发故事/活动详情验证缩略图为海报样式。
+
+### 2026-07-19 — 转发缩略图改专用 5:4 海报样式（去小程序码，轻量）
+
+**类型**：前端
+**计划关联**：用户反馈（专门生成 5:4 海报样式缩略图；减少后台开销，不生成小程序码）
+**修改文件**：
+- `miniprogram/components/poster-sheet/index.js` — 新增 genShareThumb(cb)：单次 canvas 渲染 750×600 5:4 卡片（米纸底+点阵、「醒書故事」标签+英文、标题自适应、摘要 3 行、驼色品牌页尾），无小程序码、不下载配图；移除上版临时的 genShareImage 与 _render 的 silent 分支
+- `miniprogram/pages/detail/index.js` — _resolveShareImg 改调 genShareThumb（1.2s 后台）
+- `miniprogram/pages/activity-detail/index.js` — 新增 _genShareThumb(cb)：5:4 主题配色卡片（渐变底+标签+标题+时间+品牌小字），无小程序码/不下载配图；_resolveShareImg 改调之，去掉 _ensureQr 依赖；_ensureInvite 恢复无 silent（QR 抽出的 _ensureQr 仍供 onOpenPoster 用）
+
+**变更说明**：
+转发缩略图不再用整张竖长海报（微信按 5:4 裁切只显顶部），改为专门渲染一张 5:4 海报样式卡片。同时按需求去掉小程序码生成、不下载正文配图，后台开销大幅降低（仅文字排版 + 单次 canvas 导出）。仍保留首图/品牌图兜底，生成前分享即时可用、不发白。
+
+**验证**：node --check 通过；真机转发故事/活动详情验证 5:4 缩略图完整显示海报样式。

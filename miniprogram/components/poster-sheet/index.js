@@ -116,9 +116,70 @@ Component({
       }), 2000)
     },
 
-    // 供宿主页（故事详情）静默生成海报，用作转发卡片缩略图；不弹 loading/错误提示
-    genShareImage(cb) {
-      this._render(cb, { silent: true })
+    // 供宿主页（故事详情）静默生成转发缩略图（5:4 海报样式，品牌头 + 标题 + 摘要，
+    // 不含小程序码、不下载配图——轻量、单次 canvas 渲染。失败回调 null（宿主保留兜底图）
+    genShareThumb(cb) {
+      const title = this.data.shareTitle || ''
+      const content = (this.data.shareContent || '').replace(/\s+/g, ' ').trim()
+      const query = wx.createSelectorQuery().in(this)
+      query.select('#poster-canvas').fields({ node: true }).exec((res) => {
+        if (!res || !res[0] || !res[0].node) { cb && cb(null); return }
+        const canvas = res[0].node
+        const ctx = canvas.getContext('2d')
+        const W = 750, H = 600, PADX = 60, CW = W - PADX * 2
+        const TAG = '#8A6E4B', FOOT_BG = '#A08A63'
+        canvas.width = W; canvas.height = H
+
+        // 米纸底 + 点阵
+        ctx.fillStyle = '#FFFCF5'; ctx.fillRect(0, 0, W, H)
+        ctx.fillStyle = 'rgba(126,102,64,0.05)'
+        for (let x = 20; x < W; x += 20) for (let y = 20; y < H - 90; y += 20) {
+          ctx.beginPath(); ctx.arc(x, y, 1.6, 0, Math.PI * 2); ctx.fill()
+        }
+
+        // 「醒書故事」标签框（左上，驼色边框）
+        ctx.textAlign = 'left'; ctx.font = '30px sans-serif'
+        const tagText = '醒書故事', tagW = ctx.measureText(tagText).width + 44
+        ctx.strokeStyle = TAG; ctx.lineWidth = 2
+        this._roundRect(ctx, PADX, 64, tagW, 58, 8); ctx.stroke()
+        ctx.fillStyle = TAG; ctx.fillText(tagText, PADX + 22, 103)
+        // 英文小字
+        ctx.globalAlpha = 0.6; ctx.font = '20px sans-serif'
+        ctx.fillText('X I N G S H U   S T O R Y', PADX, 156); ctx.globalAlpha = 1
+
+        // 标题（居中衬线，自适应字号，最多 2 行）
+        let ts = 52
+        ctx.textAlign = 'center'
+        const fitTitle = () => { ctx.font = `bold ${ts}px serif`; return this._splitText(ctx, title, CW) }
+        let titleLines = fitTitle()
+        while (ts > 34 && titleLines.length > 2) { ts -= 3; titleLines = fitTitle() }
+        titleLines = titleLines.slice(0, 2)
+        ctx.fillStyle = '#43341F'
+        let ty = 250
+        titleLines.forEach(l => { ctx.fillText(l, W / 2, ty); ty += ts + 14 })
+
+        // 摘要（居中，最多 3 行，末行截断加省略号）
+        ctx.font = '28px sans-serif'; ctx.fillStyle = 'rgba(67,52,31,0.7)'
+        const cLines = this._splitText(ctx, content, CW).slice(0, 3)
+        let cy = ty + 24
+        cLines.forEach((l, i) => {
+          const text = (i === 2 && content.length > cLines.join('').length) ? l.slice(0, -1) + '…' : l
+          ctx.fillText(text, W / 2, cy); cy += 42
+        })
+
+        // 页尾品牌栏（驼色）
+        ctx.fillStyle = FOOT_BG; ctx.fillRect(0, H - 90, W, 90)
+        ctx.fillStyle = '#FDF9F0'; ctx.textAlign = 'center'
+        ctx.font = 'bold 28px serif'; ctx.fillText('醒书咨询', W / 2, H - 50)
+        ctx.font = '18px sans-serif'; ctx.globalAlpha = 0.85
+        ctx.fillText('经典文化 · 现代生活', W / 2, H - 24); ctx.globalAlpha = 1
+
+        wx.canvasToTempFilePath({
+          canvas,
+          success: (r) => cb && cb(r.tempFilePath),
+          fail: () => cb && cb(null),
+        }, this)
+      })
     },
 
     _saveToAlbum(path) {
@@ -147,16 +208,15 @@ Component({
       })
     },
 
-    // 渲染海报到临时文件，done(tempFilePath|null)；保存与分享共用。opts.silent 静默（转发缩略图用）
-    _render(done, opts = {}) {
-      const silent = !!opts.silent
+    // 渲染海报到临时文件，done(tempFilePath|null)；保存与分享共用
+    _render(done) {
       const d = this.data.story
       if (!d) { done && done(null); return }
 
       const query = wx.createSelectorQuery().in(this)
       query.select('#poster-canvas').fields({ node: true, size: true }).exec(async (res) => {
         if (!res || !res[0] || !res[0].node) {
-          if (!silent) toast.error('图片生成失败')
+          toast.error('图片生成失败')
           done && done(null)
           return
         }
@@ -169,7 +229,7 @@ Component({
         const ACCENT = '#B6452F', FOOT_BG = '#A08A63', TAG_COLOR = '#8A6E4B'  // 标签色同活动海报
 
         // 配图与品牌栏图先行加载（cloud:// 下载临时路径 → createImage 取宽高），失败的静默跳过
-        if (!silent) wx.showLoading({ title: '生成海报中…', mask: true })
+        wx.showLoading({ title: '生成海报中…', mask: true })
         const loadImage = async (src) => {
           try {
             let path = src
@@ -187,7 +247,7 @@ Component({
         }
         const posterImgs = (await Promise.all((this.data.shareImages || []).map(loadImage))).filter(Boolean)
         const qrImg = this._qrTempPath ? await loadImage(this._qrTempPath) : null
-        if (!silent) wx.hideLoading()
+        wx.hideLoading()
 
         // ── 第一遍：测量排版，算出动态高度（花边框住文字，花边下为图片/二维码/页尾）──
         canvas.width = W
@@ -349,7 +409,7 @@ Component({
           success: (r) => done && done(r.tempFilePath),
           fail: (err) => {
             console.error('[poster] canvasToTempFilePath fail:', (err && err.errMsg) || err)
-            if (!silent) toast.error('图片生成失败')
+            toast.error('图片生成失败')
             done && done(null)
           },
         }, this)

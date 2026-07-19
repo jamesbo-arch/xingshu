@@ -114,12 +114,12 @@ Page({
         if (url) this._shareImg = url
       } catch (e) { /* 保持本地兜底图 */ }
     }
-    // 2) 后台静默生成故事海报（poster-sheet 组件已在 story 就绪时预载副本全文+小程序码），
+    // 2) 后台静默生成 5:4 海报样式缩略图（品牌头+标题+摘要，无小程序码/不下载配图，轻量），
     //    就绪后作为最终转发缩略图；失败保留兜底
     setTimeout(() => {
       const ps = this.selectComponent('#posterSheet')
-      if (ps && ps.genShareImage) ps.genShareImage((path) => { if (path) this._shareImg = path })
-    }, 1500)
+      if (ps && ps.genShareThumb) ps.genShareThumb((path) => { if (path) this._shareImg = path })
+    }, 1200)
   },
 
   onPreviewImage(e) {
