@@ -3633,3 +3633,15 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 内容区宽固定 638rpx（750 − detail-body 64 − post-item 48），故用 206rpx 方格保证恒 3 列。除单张放大外所有张数等大：2 张=2 格、6 张=2×3、9 张=3×3。
 
 **验证**：node --check 通过；真机验证 2/4/6/9 张排布。
+
+### 2026-07-19 — 4 张现场分享改田字 2×2（格同九宫格）
+
+**类型**：前端
+**计划关联**：用户反馈（4 张两行两列，缩略图仍九宫格大小）
+**修改文件**：
+- `miniprogram/pages/activity-detail/index.js` — gridClass 恢复 4 张 pg4
+- `miniprogram/pages/activity-detail/index.wxss` — pg4 限宽 420rpx（2*206+8），格仍 206rpx，换成 2×2
+
+**变更说明**：4 张单独走田字（与朋友圈一致），单元格尺寸与 3 列九宫格相同；其余张数不变。
+
+**验证**：node --check 通过；真机验证 4 张为 2×2。
