@@ -118,12 +118,12 @@ async function run() {
     if (r.code === 0) throw new Error('draft 不应能发')
   })
 
-  await test('POST-A08 postList 分页（倒序 + total + 第二页）', async () => {
+  await test('POST-A08 postList 分页（时序正序 + total + 第二页）', async () => {
     // 此时 startedId 名下已有 3 条（A04/A05/A06 各 1）
     const p1 = await act('postList', { id: startedId, page: 1, pageSize: 2 })
     if (p1.code !== 0) throw new Error(p1.msg)
     if (p1.data.total !== 3 || p1.data.list.length !== 2) throw new Error(`total=${p1.data.total} len=${p1.data.list.length}`)
-    if (p1.data.list[0].id < p1.data.list[1].id) throw new Error('未按倒序')
+    if (p1.data.list[0].id > p1.data.list[1].id) throw new Error('未按时序正序')
     for (const k of ['nickname', 'avatar_hue', 'content', 'images', 'created_at', 'isMine']) {
       if (!(k in p1.data.list[0])) throw new Error(`缺字段 ${k}`)
     }

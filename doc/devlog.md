@@ -3687,3 +3687,16 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 转发缩略图不再用整张竖长海报（微信按 5:4 裁切只显顶部），改为专门渲染一张 5:4 海报样式卡片。同时按需求去掉小程序码生成、不下载正文配图，后台开销大幅降低（仅文字排版 + 单次 canvas 导出）。仍保留首图/品牌图兜底，生成前分享即时可用、不发白。
 
 **验证**：node --check 通过；真机转发故事/活动详情验证 5:4 缩略图完整显示海报样式。
+
+### 2026-07-19 — 活动详情现场分享改分享时序正序
+
+**类型**：云函数 | 测试 | 部署
+**计划关联**：用户反馈（活动详情页现场分享按分享时序排序，旧在前）
+**修改文件**：
+- `miniprogram/cloudfunctions/activity/index.js` — postList 由 `ORDER BY p.id DESC` 改 `ASC`（旧在前）；前端 _loadPosts 分页向下追加，恰按发生顺序展现（备材→过程→成品）
+- `test/fn-activity-post-test.js` — POST-A08 断言由倒序改时序正序
+
+**变更说明**：
+仅改活动详情页的现场分享（postList），跨活动的活动分享瀑布流（postFeed）仍为最新在前，不变。admin 后台 postListAdmin 亦保持不变。
+
+**验证**：fn-activity-post-test 13/13 通过；activity 云函数已部署 dev。

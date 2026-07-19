@@ -215,7 +215,8 @@ const handlers = {
     return { id: r.insertId }
   },
 
-  // 分享列表：所有登录用户可看（详情页本身有登录门槛），分页同 getStoryList 形状
+  // 分享列表：所有登录用户可看（详情页本身有登录门槛）；按分享时序正序（旧在前），
+  // 前端分页向下追加即按发生顺序展现（备材→过程→成品）
   async postList({ id, page = 1, pageSize = 10 } = {}, openid) {
     page = Math.max(1, parseInt(page, 10) || 1)
     pageSize = Math.min(50, Math.max(1, parseInt(pageSize, 10) || 10))
@@ -226,7 +227,7 @@ const handlers = {
               DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS created_at
        FROM activity_posts p JOIN users u ON p.user_id = u.id
        WHERE p.activity_id = ? AND p.status = 'active'
-       ORDER BY p.id DESC LIMIT ? OFFSET ?`, [id, pageSize, (page - 1) * pageSize])
+       ORDER BY p.id ASC LIMIT ? OFFSET ?`, [id, pageSize, (page - 1) * pageSize])
     const user = await findUser(openid)
     const likedSet = await likedPostIds(user, rows)
     const list = rows.map(p => ({
