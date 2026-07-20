@@ -36,8 +36,8 @@ module.exports = {
   getPosts(id, page) {
     return call('activity', { action: 'postList', payload: { id, page, pageSize: 10 } }, { retry: 1 })
   },
-  createPost(id, { content, images, video }) {
-    return call('activity', { action: 'postCreate', payload: { id, content, images, video } })
+  createPost(id, { content, images, video, videoPoster }) {
+    return call('activity', { action: 'postCreate', payload: { id, content, images, video, videoPoster } })
   },
   deletePost(id) {
     return call('activity', { action: 'postDelete', payload: { id } })

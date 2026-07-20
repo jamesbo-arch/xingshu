@@ -143,6 +143,7 @@ Page({
       activityId: p.activity_id,
       image: images[0] || '',
       video: p.video || '',
+      videoPoster: p.video_poster || '',
       // 图卡高度取三档（按 id 稳定散布），瀑布流有节奏且估高准确
       imgH: [260, 320, 380][p.id % 3],
       imgCount: images.length,
@@ -375,6 +376,8 @@ Page({
           const v = files[0]
           if (v.duration && v.duration > 181) { toast.info('视频不超过 3 分钟', 2000); return }
           if (v.size && v.size > 100 * 1024 * 1024) { toast.info('视频不超过 100MB，请压缩后再传', 2000); return }
+          // thumbTempFilePath 为微信给出的视频首帧缩略图，随视频一并上传作封面
+          this._postVideoThumb = v.thumbTempFilePath || ''
           this.setData({ postVideo: v.tempFilePath })
           return
         }
@@ -390,6 +393,7 @@ Page({
     this.setData({ postImages: images })
   },
   onRemovePostVideo() {
+    this._postVideoThumb = ''
     this.setData({ postVideo: '' })
   },
   onPreviewPickImage(e) {
@@ -406,7 +410,7 @@ Page({
       const content = this.data.postContent.trim()
       if (!content && !this.data.postImages.length && !this.data.postVideo) { toast.info('写点文字、选张照片或视频吧'); return }
       // 本地媒体上传云存储换 fileID（同活动详情发布弹层，前缀 activity-posts/）
-      let images = [], video = ''
+      let images = [], video = '', videoPoster = ''
       try {
         if (this.data.postImages.length) wx.showLoading({ title: '上传照片中…', mask: true })
         for (const img of this.data.postImages) {
@@ -424,6 +428,14 @@ Page({
           const cloudPath = `activity-posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
           const res = await wx.cloud.uploadFile({ cloudPath, filePath: this.data.postVideo })
           video = res.fileID
+          // 首帧封面（失败不影响发布，前端回退占位块）
+          if (this._postVideoThumb) {
+            try {
+              const tp = `activity-posts/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-poster.jpg`
+              const tr = await wx.cloud.uploadFile({ cloudPath: tp, filePath: this._postVideoThumb })
+              videoPoster = tr.fileID
+            } catch (e) { console.warn('[post] 视频封面上传失败，跳过') }
+          }
         }
       } catch (err) {
         wx.hideLoading()
@@ -431,7 +443,7 @@ Page({
         return
       }
       if (this.data.postImages.length || this.data.postVideo) wx.hideLoading()
-      const r = await activityApi.createPost(act.id, { content, images, video })
+      const r = await activityApi.createPost(act.id, { content, images, video, videoPoster })
       if (r) {
         toast.success('已分享')
         this.onClosePostSheet()

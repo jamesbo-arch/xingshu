@@ -3740,3 +3740,20 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 video 是原生组件，覆盖一层 view 未必能拦住点击，故未授权时**根本不渲染 video**，改为占位块统一走登录引导；登录成功后 _syncGuest 刷新，视频即可播放。与图片卡的登录口径一致。
 
 **验证**：node --check 通过；两列均已改（grep 2 处）。真机以未授权身份进瀑布流验证：视频卡显示占位、点击拉登录、登录后可播放。
+
+### 2026-07-20 — 视频分享增加首帧封面
+
+**类型**：数据库 | 云函数 | 前端 | 部署
+**计划关联**：用户反馈（未授权视频占位块希望展示视频首图）
+**修改文件**：
+- `scripts/migrate-post-video.js` — 幂等扩展：activity_posts 加 `video_poster`（视频首帧封面 fileID）；dev 已执行
+- `miniprogram/cloudfunctions/activity/index.js` — postCreate 收 videoPoster（仅在有 video 时落库）；postList/postFeed 返回 video_poster
+- `miniprogram/api/activity.js` — createPost 透传 videoPoster
+- `miniprogram/pages/activity-detail/index.js`、`miniprogram/pages/activities/index.js` — 选视频时暂存 `wx.chooseMedia` 返回的 `thumbTempFilePath`，发布时随视频一并上传为封面（失败静默跳过，不影响发布）；移除视频/发布成功时清空
+- `miniprogram/pages/activities/index.wxml/.wxss` — 未授权占位改为「首帧封面 + 半透明遮罩 + 播放图标 + 登录提示」；已授权 `<video poster>` 播放前也显示首帧
+- `miniprogram/pages/activity-detail/index.wxml` — 现场分享 `<video poster>` 同步
+
+**变更说明**：
+首帧取自微信 `chooseMedia` 的 `thumbTempFilePath`（选视频时即给出），上传云存储后存 `video_poster`。**仅对本次改动后新发的视频生效**；存量视频无封面，回退原深色占位块（wx:if 兜底）。
+
+**验证**：fn-activity-post-test 13/13、fn-activity-feed-test 12/12 通过；activity 云函数已部署 dev。真机需验证：发视频→瀑布流未授权见首帧占位、已授权播放前见首帧。

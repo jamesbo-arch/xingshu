@@ -193,11 +193,12 @@ const handlers = {
 
   // ── 现场分享：仅已报名用户可发，活动开始后开放（含结束后补发）；先发后删 ──
   // 媒体二选一：最多 9 张照片 或 1 段视频（video 为云存储 fileID，CDN 临时链接支持 Range 流式播放）
-  async postCreate({ id, content = '', images = [], video = '' } = {}, openid) {
+  async postCreate({ id, content = '', images = [], video = '', videoPoster = '' } = {}, openid) {
     const user = await findUser(openid)
     if (!user) throw new Error('user not found')
     content = String(content || '').trim()
     video = String(video || '').trim()
+    videoPoster = String(videoPoster || '').trim()
     if (!content && (!images || !images.length) && !video) throw new Error('写点文字、选张照片或视频吧')
     if (content.length > 1000) throw new Error('分享内容不超过 1000 字')
     if (images && images.length > 9) throw new Error('最多 9 张照片')
@@ -210,8 +211,9 @@ const handlers = {
       'SELECT id FROM activity_signups WHERE activity_id = ? AND user_id = ?', [id, user.id])
     if (!signed.length) throw new Error('报名参加后才能分享现场')
     const [r] = await db.query(
-      'INSERT INTO activity_posts (activity_id, user_id, content, images, video, created_by) VALUES (?,?,?,?,?,?)',
-      [id, user.id, content, images && images.length ? JSON.stringify(images) : null, video || null, user.id])
+      'INSERT INTO activity_posts (activity_id, user_id, content, images, video, video_poster, created_by) VALUES (?,?,?,?,?,?,?)',
+      [id, user.id, content, images && images.length ? JSON.stringify(images) : null,
+       video || null, (video && videoPoster) ? videoPoster : null, user.id])
     return { id: r.insertId }
   },
 
@@ -223,7 +225,8 @@ const handlers = {
     const [[{ total }]] = await db.query(
       "SELECT COUNT(*) AS total FROM activity_posts WHERE activity_id = ? AND status = 'active'", [id])
     const [rows] = await db.query(
-      `SELECT p.id, p.user_id, p.content, p.images, p.video, p.like_count, u.nickname, u.avatar_hue, u.avatar_url,
+      `SELECT p.id, p.user_id, p.content, p.images, p.video, p.video_poster, p.like_count,
+              u.nickname, u.avatar_hue, u.avatar_url,
               DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS created_at
        FROM activity_posts p JOIN users u ON p.user_id = u.id
        WHERE p.activity_id = ? AND p.status = 'active'
@@ -234,6 +237,7 @@ const handlers = {
       ...p,
       images: p.images || [],
       video: p.video || '',
+      video_poster: p.video_poster || '',
       isMine: !!user && p.user_id === user.id,
       isLiked: likedSet.has(p.id) ? 1 : 0,
     }))
@@ -274,7 +278,7 @@ const handlers = {
       `SELECT COUNT(*) AS total FROM activity_posts p JOIN activities a ON p.activity_id = a.id
        WHERE p.status = 'active' AND a.status != 'draft'`)
     const [rows] = await db.query(
-      `SELECT p.id, p.activity_id, p.content, p.images, p.video, p.like_count,
+      `SELECT p.id, p.activity_id, p.content, p.images, p.video, p.video_poster, p.like_count,
               DATE_FORMAT(p.created_at, '%Y-%m-%d %H:%i') AS created_at,
               u.nickname, u.avatar_hue, u.avatar_url,
               a.title AS activity_title, t.name AS type_name, a.type AS activity_channel,
@@ -287,7 +291,7 @@ const handlers = {
        ORDER BY p.id DESC LIMIT ? OFFSET ?`, [pageSize, (page - 1) * pageSize])
     const user = await findUser(openid)
     const likedSet = await likedPostIds(user, rows)
-    const list = rows.map(p => ({ ...p, images: p.images || [], video: p.video || '', isLiked: likedSet.has(p.id) ? 1 : 0 }))
+    const list = rows.map(p => ({ ...p, images: p.images || [], video: p.video || '', video_poster: p.video_poster || '', isLiked: likedSet.has(p.id) ? 1 : 0 }))
     return { list, total, page, pageSize }
   },
 

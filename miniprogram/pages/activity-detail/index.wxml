@@ -88,7 +88,7 @@
           </view>
           <text wx:if="{{item.content}}" class="post-content" user-select>{{item.content}}</text>
           <!-- 视频分享：云存储 CDN 链接支持 Range，video 组件即流式边下边播 -->
-          <video wx:if="{{item.video}}" class="post-video" src="{{item.video}}" controls object-fit="contain" show-center-play-btn/>
+          <video wx:if="{{item.video}}" class="post-video" src="{{item.video}}" poster="{{item.video_poster}}" controls object-fit="contain" show-center-play-btn/>
           <view wx:if="{{item.images.length}}" class="post-grid {{item.gridClass}}">
             <image
               wx:for="{{item.images}}"
