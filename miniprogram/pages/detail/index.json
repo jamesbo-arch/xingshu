@@ -5,6 +5,7 @@
   "usingComponents": {
     "poster-sheet": "/components/poster-sheet/index",
     "login-sheet": "/components/login-sheet/index",
-    "privacy-popup": "/components/privacy-popup/index"
+    "privacy-popup": "/components/privacy-popup/index",
+    "splash-cover": "/components/splash-cover/index"
   }
 }

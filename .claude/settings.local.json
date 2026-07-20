@@ -96,7 +96,8 @@
       "Skill(artifact-design)",
       "Skill(artifact-design:*)",
       "WebFetch(domain:lbs.qq.com)",
-      "Bash(node scripts/backup-db.js)"
+      "Bash(node scripts/backup-db.js)",
+      "Bash(cd d:/workspace/xingshu/miniprogram/pages/activity-detail && cat index.json && echo \"---REQ---\" && head -12 index.js && echo \"---ONLOAD---\" && sed -n '/onLoad\\(/,/^  },/p' index.js | head -30 && echo \"---TAIL---\" && tail -6 index.wxml)"
     ],
     "additionalDirectories": [
       "d:\\workspace\\xingshu\\.claude",

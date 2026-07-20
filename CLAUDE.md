@@ -216,6 +216,8 @@
 - **`login-sheet`** — v2.3 微信登录半屏弹窗（协议勾选 + 微信图标登录，仅取 openid/unionid）。由 `utils/auth-guard.js` 的 `ensureLogin(page, action)` 拉起，登录成功自动续做原操作。已接入广场/日记详情/活动详情/会员中心。
 - **`audience-sheet`** — 作者数据视角人员清单弹窗（阅读/点赞/收藏/评论，头像+昵称+时间，评论带内容）。仅「我的故事」页接入：`story-card` 开 `owner-stats` 后统计项点击触发 `viewread/viewlike/viewfav/viewcomment`，由 mine 页打开本弹窗（调 `getStoryAudience`）。**注**：浏览视角（广场/收藏/详情）的卡片与详情底栏已按需求隐藏收藏计数数字（图标与收藏操作保留）。
 
+- **`splash-cover`** — 冷启动品牌蒙布（全屏不透明，标题「醒書知行社」+「修身為本」印章 + 社区简介 + 「我要进入」按钮，视觉规格换算自原型 `doc/醒书日记-原型设计/untitled/project/miniprogram.html` 的 SVG 占位图）。**每日首次冷启动弹一次**（`utils/splash.js` 的 `claim()` 写 `splash:day` 缓存，TTL 到次日 0 点；热启动不弹）。归属由 `app.js._pickSplash` 判定并存 `globalData.splashOwner`：扫码/转发直达详情页（scene 含 `d=`/`a=`，或 launchPath 为详情页）归 `'detail'`、由目标详情页认领，否则归 `'square'`——**不可让广场统一认领**，否则扫码时蒙布会在 `_initUser` 的 `navigateTo` 后被详情页盖住。已接入广场/故事详情/活动详情三个可能的启动页；广场页需在 `onShow` 里 `_tabBar(true)` 让位（tab-bar 独立层会盖住蒙布）。点击按钮播「钤印 → 推开」两拍动效（560ms）后才触发 `enter` 事件并卸载。
+
 所有底部弹层（filter-sheet / poster-sheet / member-guard / login-sheet）均使用 `_mounted` + `_show` 双状态驱动动画：`visible` 为 true 时先挂载 DOM（`_mounted=true`），20ms 后加 `sheet-show` class 触发 slide-up；为 false 时先移除 class，300ms 后卸载 DOM，保证退场动画完整播放。
 
 ### 全局状态（`app.js` / `app.globalData`）

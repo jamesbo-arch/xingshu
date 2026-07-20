@@ -5,6 +5,7 @@ const socialApi = require('../../api/social')
 const mapper = require('../../utils/mapper')
 const { lock, throttle } = require('../../utils/guard')
 const { ensureLogin } = require('../../utils/auth-guard')
+const splash = require('../../utils/splash')
 
 Page({
   data: {
@@ -20,6 +21,7 @@ Page({
     showLoginSheet: false,
     userAvatarColor: '#8B7A4A',
     userAvatarInitial: '?',
+    showSplash: false, // 冷启动品牌蒙布（扫码/转发直达本页时由本页认领）
   },
 
   onLoad(options) {
@@ -30,7 +32,10 @@ Page({
       if (m) id = parseInt(m[1], 10)
     }
     if (id) this._loadStory(id)
+    this.setData({ showSplash: splash.claim('detail') })
   },
+
+  onSplashEnter() { this.setData({ showSplash: false }) },
 
   onShow() {
     if (this.data.story) this._loadStory(this.data.story.id)

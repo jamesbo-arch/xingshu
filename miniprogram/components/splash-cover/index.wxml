@@ -1,0 +1,16 @@
+<view
+  wx:if="{{_mounted}}"
+  class="splash paper-bg {{_show ? 'splash-show' : ''}} {{_opening ? 'splash-opening' : ''}}"
+  catchtouchmove="noop"
+>
+  <text class="splash-title serif">醒書知行社</text>
+
+  <view class="splash-seal">
+    <text class="splash-seal-line serif">修身</text>
+    <text class="splash-seal-line serif">為本</text>
+  </view>
+
+  <text class="splash-sub">一个探索把经典走进生活的社区</text>
+
+  <view class="splash-btn btn-primary" bindtap="onEnter">我要进入</view>
+</view>

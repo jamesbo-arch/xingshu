@@ -6,6 +6,7 @@ const { ensureLogin } = require('../../utils/auth-guard')
 const { lock, throttle } = require('../../utils/guard')
 const { formatTime } = require('../../utils/mapper')
 const { hueToColor, getInitial } = require('../../utils/color')
+const splash = require('../../utils/splash')
 
 // 邀请函六类主题（与管理后台/设计稿同一体系）：背景渐变/文字/点缀色 + 英文小字
 const INV_THEMES = {
@@ -19,6 +20,7 @@ const INV_THEMES = {
 
 Page({
   data: {
+    showSplash: false, // 冷启动品牌蒙布（扫码/转发直达本页时由本页认领）
     activity: null,
     isPast: false,
     isFull: false,
@@ -72,7 +74,10 @@ Page({
     this._id = id
     // 活动页分享瀑布流跳入：加载后定位到現場分享区
     this._scrollToPosts = options.to === 'posts'
+    this.setData({ showSplash: splash.claim('detail') })
   },
+
+  onSplashEnter() { this.setData({ showSplash: false }) },
 
   // v2.3：活动详情需微信登录（轻授权），未登录先拉起登录弹窗。
   // 登录墙放 onReady（首渲染后）而非 onLoad：onLoad 同步置 visible=true 会成为组件初始属性，

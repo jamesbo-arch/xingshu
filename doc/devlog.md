@@ -3789,3 +3789,33 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 运营可在后台重命名活动分类（如「巧克力工坊」已改为「手作工坊「巧克力」」），名称不适合作为断言依据；种子 6 类的 id 1~6 稳定（后台新增的为 27/28）。渠道（online/offline）属结构性约定，仍保留校验。
 
 **验证**：fn-activity-type-test 9/9 通过；`npm test` 全链 22 套件全绿（0 failed）。
+
+---
+
+### 2026-07-20 22:10 — 冷启动品牌蒙布（splash-cover）
+
+**类型**：前端
+**计划关联**：需求新增 — 参照原型 SVG 占位图做开屏品牌页
+
+**修改文件**：
+- `miniprogram/components/splash-cover/index.{js,json,wxml,wxss}` — 新建：全屏不透明品牌蒙布
+- `miniprogram/utils/splash.js` — 新建：`claim(owner)` 认领 + 写当日标记
+- `miniprogram/app.js` — `globalData` 加 `splashPending`/`splashOwner`；新增 `_pickSplash()`，`onLaunch` 内在 `_initUser` 前判定
+- `miniprogram/pages/square/index.{js,json,wxml}` — 认领 `'square'`；`onShow` 内 `_tabBar(true)` 让位；`onSplashEnter`
+- `miniprogram/pages/detail/index.{js,json,wxml}` — 认领 `'detail'`
+- `miniprogram/pages/activity-detail/index.{js,json,wxml}` — 认领 `'detail'`
+- `CLAUDE.md` — 共享组件清单加 `splash-cover`
+- `doc/小程序用户操作指引.md` — 新增 1.4 节 + 截图清单加 `splash-cover.png`
+
+**变更说明**：
+每日首次冷启动展示一屏「醒書知行社」品牌页（「修身為本」印章 + 社区简介 + 「我要进入」按钮），点按钮后播「钤印 → 推开」两拍动效（560ms）再退场。视觉规格（字号/间距/色值）直接换算自原型 `doc/醒书日记-原型设计/untitled/project/miniprogram.html` 第 22–43 行的 SVG 占位图（手机框 340×640，系数 750/340≈2.21）。
+
+三处要点：
+1. **归属判定**：扫小程序码时启动页是广场、`_initUser` 之后才 `navigateTo` 到详情，若统一由广场认领会出现「蒙布一闪即被详情页盖住」。故 `_pickSplash` 按「是否会跳详情页」（scene 含 `d=`/`a=`，或 launchPath 为详情页）产出 `splashOwner`，由目标页认领。注意带推荐人的 `s=` 也是 scene 但落点是广场，仍归 `'square'`。
+2. **当日去重**：`claim()` 内写 `xs_cache:splash:day`，TTL 算到次日 0 点。标记在真正展示时写而非 onLaunch 判定时，避免归属页没挂载就白占名额。热启动（`App.onShow`）不参与判定。
+3. **tab-bar 遮挡**：custom-tab-bar 是独立层会盖住页面级蒙布，广场页须 `_tabBar(true)`；但不能在 `onLoad` 调（`getTabBar()` 未就绪），放 `onShow`。两个详情页是非 tab 页，无需处理。
+
+组件复用 login-sheet 的 `observers.visible` + `lifetimes.attached` 双保险挂载（挂载方在 onLoad 即置 visible=true，observer 不触发）；开 `addGlobalClass` 以使用 `paper-bg`/`serif`/`btn-primary` 全局类。入场逐元素 fade-up 用 `animation-fill-mode: backwards`（非 `both`），避免动画终态压住后续「开启」动效的 transition。
+
+**验证**：
+6 个改动 JS 与 4 个 JSON 语法检查通过；`npm test` 全链 22 套件全绿。真机三身份与四种启动路径走查待用户在体验版确认。

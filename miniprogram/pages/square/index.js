@@ -6,6 +6,7 @@ const cache = require('../../utils/cache')
 const filterUtil = require('../../utils/filter')
 const { ensureLogin, ensureMember, handleLoginSuccess } = require('../../utils/auth-guard')
 const { lock, throttle } = require('../../utils/guard')
+const splash = require('../../utils/splash')
 
 Page({
   data: {
@@ -34,6 +35,7 @@ Page({
     allTags: [],
     statusBarHeight: 0,
     actBannerCount: 0, // 近期活动轮播场次数（act-banner 组件回报，用于列表让位/FAB 上移）
+    showSplash: false, // 冷启动品牌蒙布（每日首次，且本次启动未直达详情页）
   },
 
   onLoad() {
@@ -41,6 +43,7 @@ Page({
     this.setData({
       statusBarHeight: info.statusBarHeight || 0,
       allTags: app.globalData.tags,
+      showSplash: splash.claim('square'),
     })
   },
 
@@ -51,6 +54,13 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().refresh('pages/square/index')
     }
+    // tab-bar 是独立层会盖在页面级蒙布之上，须隐藏；onLoad 时 getTabBar() 尚未就绪，故放这里
+    if (this.data.showSplash) this._tabBar(true)
+  },
+
+  onSplashEnter() {
+    this.setData({ showSplash: false })
+    this._tabBar(false)
   },
 
   // 近期活动轮播由 act-banner 组件自管（数据/缓存/跳转）；此处透传刷新，数量经 change 事件回来做布局让位

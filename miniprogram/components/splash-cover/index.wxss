@@ -1,0 +1,119 @@
+/* 冷启动品牌蒙布 —— 视觉规格换算自原型 doc/醒书日记-原型设计/untitled/project/miniprogram.html
+   （手机框 340×640，换算系数 750/340 ≈ 2.21 rpx/单位） */
+.splash {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+  background-color: #FBF7EE;   /* 完全不透明，覆盖冷启动首屏空白 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20vh 60rpx 0;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.splash-show {
+  opacity: 1;
+}
+
+/* 标题：原型 44px / w700 / 字距 8 */
+.splash-title {
+  font-size: 96rpx;
+  font-weight: 700;
+  letter-spacing: 18rpx;
+  /* 字距会在末字右侧多出一格，左移半格让整体视觉居中 */
+  margin-left: 18rpx;
+  color: #2A2723;
+  animation: splash-up 0.5s ease backwards;
+}
+
+/* 印章：原型 88×88 / 圆角 6 / 描边 3 */
+.splash-seal {
+  margin-top: 5vh;
+  width: 194rpx;
+  height: 194rpx;
+  border: 3px solid #B6452F;
+  border-radius: 13rpx;
+  background: rgba(182, 69, 47, 0.06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: splash-up 0.5s ease 0.09s backwards;
+  transition: transform 0.22s ease-out, background-color 0.22s ease-out, box-shadow 0.22s ease-out;
+}
+
+.splash-seal-line {
+  font-size: 56rpx;
+  font-weight: 700;
+  line-height: 78rpx;
+  letter-spacing: 7rpx;
+  margin-left: 7rpx;
+  color: #B6452F;
+}
+
+.splash-sub {
+  margin-top: 12vh;
+  font-size: 40rpx;
+  letter-spacing: 4rpx;
+  color: #7A746A;
+  text-align: center;
+  animation: splash-up 0.5s ease 0.18s backwards;
+}
+
+.splash-btn {
+  margin-top: 11vh;
+  width: 340rpx;
+  letter-spacing: 4rpx;
+  animation: splash-up 0.5s ease 0.27s backwards;
+}
+
+@keyframes splash-up {
+  from { opacity: 0; transform: translateY(24rpx); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== 「开启」动效：第一拍钤印落定，第二拍整幕推开 ===== */
+/* 第二拍（延后 0.22s 起）——整幕推远淡出 */
+.splash-opening {
+  opacity: 0;
+  transform: scale(1.06);
+  transition: opacity 0.34s cubic-bezier(0.4, 0, 0.2, 1) 0.22s,
+              transform 0.34s cubic-bezier(0.4, 0, 0.2, 1) 0.22s;
+}
+
+/* 第一拍——印章放大、色与投影加深 */
+.splash-opening .splash-seal {
+  transform: scale(1.22);
+  background: rgba(182, 69, 47, 0.14);
+  box-shadow: 0 0 0 10rpx rgba(182, 69, 47, 0.10);
+}
+
+/* 第一拍——其余元素退让，把焦点收束到印章 */
+.splash-opening .splash-title,
+.splash-opening .splash-sub,
+.splash-opening .splash-btn {
+  opacity: 0;
+  transform: translateY(8rpx);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .splash-title,
+  .splash-seal,
+  .splash-sub,
+  .splash-btn {
+    animation: none;
+  }
+  .splash-opening {
+    transform: none;
+    transition: opacity 0.2s ease;
+  }
+  .splash-opening .splash-seal {
+    transform: none;
+  }
+}

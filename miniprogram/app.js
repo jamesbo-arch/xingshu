@@ -6,6 +6,8 @@ App({
   globalData: {
     user: null,
     tags: [],
+    splashPending: false,   // 冷启动蒙布待弹标记，由 _pickSplash 判定、utils/splash.js 认领
+    splashOwner: 'square',  // 蒙布归属页：'square' | 'detail'
     adminContact: {
       name: '运营 · 砚秋',
       wechat: 'xingshu-ops',
@@ -28,7 +30,21 @@ App({
     let scene = q.scene ? decodeURIComponent(q.scene) : ''
     // 微信转发卡片直达：path 直接携带 s=<分享人>，无 scene，也作为推荐人来源（与扫码 s 对齐）
     if (!scene && q.s) scene = 's=' + q.s
-    this._initUser(scene, (options && options.path) || '')
+    const launchPath = (options && options.path) || ''
+    this._pickSplash(scene, launchPath)
+    this._initUser(scene, launchPath)
+  },
+
+  // 冷启动品牌蒙布：当天首次冷启动弹一次（热启动的 App.onShow 不参与判定）。
+  // 必须同时定「谁来弹」——扫小程序码时启动页是广场、_initUser 之后才 navigateTo 到详情，
+  // 若由广场认领会出现蒙布一闪即被详情页盖住，故直达详情的一律归 'detail' 由目标页认领。
+  // 判定依据是「是否会跳详情页」而非「有没有 scene」：带推荐人的 s= 也是 scene，但落点仍是广场。
+  _pickSplash(scene, launchPath) {
+    const toDetail = /(?:^|&)[da]=\d+/.test(scene)
+      || launchPath === 'pages/detail/index'
+      || launchPath === 'pages/activity-detail/index'
+    this.globalData.splashPending = !cache.get('splash:day')
+    this.globalData.splashOwner = toDetail ? 'detail' : 'square'
   },
 
   _watchUpdate() {

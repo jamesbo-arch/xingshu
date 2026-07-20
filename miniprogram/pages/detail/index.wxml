@@ -151,3 +151,6 @@
 
 <!-- 隐私授权弹窗（敏感接口首次调用时触发） -->
 <privacy-popup></privacy-popup>
+
+<!-- 冷启动品牌蒙布（扫码/转发直达本页且当日首次冷启动） -->
+<splash-cover visible="{{showSplash}}" bind:enter="onSplashEnter"></splash-cover>
