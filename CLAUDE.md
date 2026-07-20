@@ -81,7 +81,7 @@
 
 | 功能 | guest 未授权 | authed 已授权非会员 | member 会员 |
 |---|:---:|:---:|:---:|
-| **底部页签数** | **3 个**（广场/活动/会员中心） | **4 个**（+我的收藏） | **5 个**（+我的故事） |
+| **底部页签数** | **3 个**（广场/活动/会员中心） | **3 个**（同游客） | **4 个**（+我的故事） |
 | 浏览广场列表 | ✅ 仅**善选故事**（副本全文） | ✅ 仅**善选故事**（副本全文） | ✅ **全部已发布故事**（原文全文，善选带金星徽章） |
 | 暂存(draft)故事进广场 | ❌（所有人均不进，仅作者「我的故事」可见，他人访问按不存在处理） | ❌ | ❌ |
 | 打开故事详情读全文 | ✅ **善选故事免登录可读**；未善选→**-2 会员专享**（全屏引导墙） | ✅ 善选→副本全文；未善选→-2 | ✅ 原文全文 |
@@ -96,7 +96,7 @@
 **要点**：
 1. `guest → authed` 门槛（v3.0 收窄）：**善选故事对公众完全开放**——未登录也可进详情读全文（内容是运营认可的对外内容，登录墙前置只会挡住传播）。登录只拦**互动**：点赞/收藏/评论/回复/海报分享由 `utils/auth-guard.js` 的 `ensureLogin()` 在点击那刻拉起，登录成功后自动续做。（写故事另由 `ensureMember()` 拦，见下）
 2. `authed → member` 的**实质差异有二**：① 读**全部已发布故事的原文**（非会员只能看善选副本，未善选故事详情 -2；原 30% 会员墙已于 v3.0 下线）；② **写 / 编辑故事**——会员专享，非会员（含 guest）由 `ensureMember()` 弹窗引导至会员中心开通。其余互动（点赞/收藏/评论/分享/报名）authed 与 member **完全一致**。
-2b. **页签按身份增减**（`custom-tab-bar/index.js` 的 `FULL_LIST` + `minRole`）：guest 藏起「我的收藏」「我的故事」（无内容可看），authed 显示收藏，有效会员再显示我的故事。`refresh(pagePath)` 按当前路径在**裁剪后的列表**里算 selected（页签数动态，**禁止再用硬编码索引**）；宿主页 onShow 调 `getTabBar().refresh('pages/xxx/index')`，身份变化（登录/退出/开通会员）时由 `app.setUser/updateUser → refreshTabBar()` 无参调用刷新当前页。
+2b. **页签按身份增减**（`custom-tab-bar/index.js` 的 `FULL_LIST` + `minRole`）：guest/authed 均为 3 个（广场/活动/会员中心），有效会员再加「我的故事」。**「我的收藏」已于 2026-07-20 撤出页签**，入口移到会员中心（个人资料下方入口行 → `navigateTo` 打开 `pages/collections/index`，页面仍在 app.json 的 pages 中注册、但不在 tabBar.list）。`refresh(pagePath)` 按当前路径在**裁剪后的列表**里算 selected（页签数动态，**禁止再用硬编码索引**）；宿主页 onShow 调 `getTabBar().refresh('pages/xxx/index')`，身份变化（登录/退出/开通会员）时由 `app.setUser/updateUser → refreshTabBar()` 无参调用刷新当前页。
 3. **善选机制（v3.0）**：管理员在后台「善选管理」按热度榜（`点赞*w1+收藏*w2+评论*w3`，权重可配默认 1/1/1，可设起止日期，排除已有副本的故事）人工勾选纳入善选——拷贝原文生成 `featured_stories` **副本**（可修订，不影响作者原文），并置 `stories.is_featured=1`。副本可上/下架（联动 is_featured）；作者删除或后台删除原故事时副本联动下架。善选故事的点赞/评论/收藏/计数**共享原故事**（target 均为原 story id）。徽章口径（2026-07-17 对调）：**眼睛（ic-eye）=已发布**，**金星（ic-star-gold）=已入选善选**，折角文档（ic-draft）=暂存稿。
 3b. **分享口径（v3.1）**：**分享海报仅善选故事提供**（story-card 与 detail 底栏的分享按钮按 `isFeatured` 显示；poster-sheet 仅「保存图片」一个按钮）。海报含**善选副本全文**（poster-sheet 经 `getStoryDetail { preferFeatured: true }` 取副本，任何身份都拿副本、不计阅读）、无作者名、底部为**醒书咨询品牌栏**（驼色底 + 书本标 + 简介 + 带参小程序码），画布高度随全文动态计算（>6000px 截断加"扫码阅读全文"提示）。非善选故事只能走**右上角原生转发**；非会员点开转发链接：guest 先拉登录（可能本就是会员），登录后仍非会员 → toast 提示 + `switchTab` 转广场看善选列表（原全屏会员墙已删）。
 3c. **阅读记录（v3.1）**：`story_reads` 表（story_id/user_id/identity/via_featured/created_at，FK：story CASCADE、user SET NULL）。`getStoryDetail` 每次成功阅读落一行——**作者自读与 preferFeatured（海报取副本）不记**；readerId 取实际 users 行（guest 也记）。
@@ -120,7 +120,7 @@
 1. **WXML 绑定禁用方法调用判断选中/包含**：`{{arr.indexOf(x) >= 0}}` / `.includes()` 在 WXML `{{}}` 表达式中**不可靠、静默失效**（等值判断如 `a === b` 才可靠）。多选/选中态一律在 JS 预算**布尔查找表**对象，绑 `{{set[key]}}`（如 filter-sheet 的 `tagSet/yearSet/monthSet`、compose 的 `pickerTagSet`）。
 2. **自定义组件用全局类必须开 `addGlobalClass`**：组件默认样式隔离，`app.wxss` 的全局类（seal-tag/perm-badge/btn-primary 等）穿不进组件——须在 `Component({ options: { addGlobalClass: true } })`。页面（Page）不隔离，无需此项。
 3. **`dataset` 数字值可能变字符串**：`data-x="{{numberVal}}"` 取出常为字符串，与数字比较会不匹配——handler 里 `Number()` 强制转换。
-4. **底部弹层被自定义 tab-bar 遮挡**：custom-tab-bar 是独立层（盖在页面级弹层之上，z-index 不跨层比较）。tab 页上的底部 sheet 打开时应隐藏 tab-bar（`getTabBar().setData({ hidden: true })`，见 square/collections 的 `_tabBar()`），而非靠 padding 避让。
+4. **底部弹层被自定义 tab-bar 遮挡**：custom-tab-bar 是独立层（盖在页面级弹层之上，z-index 不跨层比较）。tab 页上的底部 sheet 打开时应隐藏 tab-bar（`getTabBar().setData({ hidden: true })`，见 square 的 `_tabBar()`），而非靠 padding 避让。非 tab 页（如 collections）无此问题，无需该处理。
 
 ## Git 提交规则
 
@@ -192,12 +192,12 @@
 
 ## 架构
 
-### 页面（共 8 个，5 个 tab 页 + 3 个非 tab 页）
+### 页面（共 8 个，4 个 tab 页 + 4 个非 tab 页）
 
 | 页面 | 路由 | Tab | 用途 |
 |------|-------|-----|---------|
 | square | `pages/square/index` | 是 (0) | 醒书广场——公开+会员日记流，搜索、筛选 |
-| collections | `pages/collections/index` | 是 (1) | 我的收藏——用户收藏的日记，支持搜索+筛选 |
+| collections | `pages/collections/index` | 否 | 我的收藏——用户收藏的故事，支持搜索+筛选（入口在会员中心） |
 | activities | `pages/activities/index` | 是 (2) | 醒书活动——活动列表（近期预告/往期回顾，M1.5 新增） |
 | mine | `pages/mine/index` | 是 (3) | 我的日记——用户自己的日记，支持编辑/删除 |
 | member | `pages/member/index` | 是 (4) | 会员中心——会员信息、购买流程、个人资料编辑、设置（退出登录） |

@@ -146,6 +146,8 @@ Page({
   onCloseSettings() { this.setData({ showSettingsSheet: false }); this._tabBar(false) },
   onOpenAgreement() { wx.navigateTo({ url: '/pages/doc/index?type=agreement' }) },
   onOpenPrivacy() { wx.navigateTo({ url: '/pages/doc/index?type=privacy' }) },
+  // 我的收藏：原底部页签收进会员中心，改普通页跳转
+  onOpenCollections() { wx.navigateTo({ url: '/pages/collections/index' }) },
 
   onShowProfileSheet() {
     const user = this.data.user || {}

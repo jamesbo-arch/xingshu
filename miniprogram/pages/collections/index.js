@@ -39,9 +39,11 @@ Page({
   onShow() {
     this._loadStories(true)
     this.setData({ userIdentity: (app.globalData.user || {}).identity || 'authed' })
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().refresh('pages/collections/index')
-    }
+  },
+
+  // 非 tab 页，自带返回（栈空时兜底回会员中心——本页入口在会员中心）
+  onBack() {
+    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/member/index' }) })
   },
 
   async _loadStories(reset) {
@@ -69,10 +71,9 @@ Page({
   onSearchInput(e) { this.setData({ search: e.detail.value }) },
   onSearchClear() { this.setData({ search: '' }, () => this._loadStories(true)) },
   onSearchConfirm() { this._loadStories(true) },
-  _tabBar(hidden) { const tb = this.getTabBar && this.getTabBar(); if (tb) tb.setData({ hidden }) },
-  onOpenFilter() { this.setData({ showFilterSheet: true, allTags: app.globalData.tags }); this._tabBar(true) },
-  onCloseFilter() { this.setData({ showFilterSheet: false }); this._tabBar(false) },
-  onApplyFilter(e) { this._tabBar(false); this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadStories(true)) },
+  onOpenFilter() { this.setData({ showFilterSheet: true, allTags: app.globalData.tags }) },
+  onCloseFilter() { this.setData({ showFilterSheet: false }) },
+  onApplyFilter(e) { this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadStories(true)) },
 
   // v2.1：会员故事直接进详情（非会员见 30% 渐隐），不再弹窗拦截
   // v2.3：guest（含退出登录的曾会员）点卡片先拉起登录弹窗，与广场页口径一致
@@ -85,7 +86,6 @@ Page({
 
   onLoginClose() {
     this.setData({ showLoginSheet: false })
-    this._tabBar(false)
     this._pendingLoginAction = null
   },
   onLoginSuccess() {
@@ -105,7 +105,11 @@ Page({
       },
     })
   },
-  onGuardJoinMember() { this.setData({ showMemberGuard: false }); wx.switchTab({ url: '/pages/member/index' }) },
+  // 本页由会员中心进入，去开通即返回上一页；栈空兜底 switchTab
+  onGuardJoinMember() {
+    this.setData({ showMemberGuard: false })
+    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/member/index' }) })
+  },
 
   onCardLike(e) {
     if (!ensureLogin(this, () => this.onCardLike(e))) return
@@ -122,9 +126,9 @@ Page({
   onCardShare(e) {
     const { id } = e.detail
     const story = this.data.stories.find(d => d.id === id)
-    if (story) { this.setData({ showPosterSheet: true, posterStory: story }); this._tabBar(true) }
+    if (story) this.setData({ showPosterSheet: true, posterStory: story })
   },
-  onClosePoster() { this.setData({ showPosterSheet: false, posterStory: null }); this._tabBar(false) },
+  onClosePoster() { this.setData({ showPosterSheet: false, posterStory: null }) },
   // 分享成功后列表卡片的分享数即时 +1（保留 share_count 兼容旧字段读取）
   onShared(e) {
     const { id, shares } = e.detail

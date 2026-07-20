@@ -1,13 +1,12 @@
 const { isValidMember } = require('../utils/auth-guard')
 
-// 全量页签；按身份裁剪（v3.0）：
-//   guest 未授权 → 广场 / 活动 / 会员中心（收藏与我的故事无内容可看，藏起来）
-//   authed 已授权非会员 → 再加「我的收藏」
+// 全量页签；按身份裁剪：
+//   guest 未授权 / authed 已授权非会员 → 广场 / 活动 / 会员中心
 //   member 有效会员 → 再加「我的故事」（写故事为会员专享）
+// 「我的收藏」已于 2026-07-20 撤出页签，入口移至会员中心（navigateTo 打开）。
 // ic 为 app.wxss 里线性图标类前缀，激活态自动拼 -on（对齐原型 lucide 导航图标）
 const FULL_LIST = [
   { pagePath: 'pages/square/index', text: '醒书广场', ic: 'nav-square', minRole: 'guest' },
-  { pagePath: 'pages/collections/index', text: '我的收藏', ic: 'nav-collect', minRole: 'authed' },
   { pagePath: 'pages/activities/index', text: '醒书活动', ic: 'nav-act', minRole: 'guest' },
   { pagePath: 'pages/mine/index', text: '我的故事', ic: 'nav-mine', minRole: 'member' },
   { pagePath: 'pages/member/index', text: '会员中心', ic: 'nav-member', minRole: 'guest' },

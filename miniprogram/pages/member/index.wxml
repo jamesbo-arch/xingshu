@@ -121,6 +121,14 @@
         </view>
       </view>
 
+      <!-- 我的收藏入口（原底部页签收进会员中心） -->
+      <view class="section-card">
+        <view class="settings-row no-border" bindtap="onOpenCollections">
+          <text class="settings-row-text">我的收藏</text>
+          <view class="settings-row-arrow ic-chevron"></view>
+        </view>
+      </view>
+
       <view class="section-header-row">
         <text class="section-label serif">互动统计</text>
       </view>
@@ -193,6 +201,14 @@
         <view class="info-row no-border">
           <text class="info-label">手机号</text>
           <text class="info-value muted">{{user.phone}}</text>
+        </view>
+      </view>
+
+      <!-- 我的收藏入口（原底部页签收进会员中心） -->
+      <view class="section-card">
+        <view class="settings-row no-border" bindtap="onOpenCollections">
+          <text class="settings-row-text">我的收藏</text>
+          <view class="settings-row-arrow ic-chevron"></view>
         </view>
       </view>
 
