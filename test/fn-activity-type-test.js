@@ -37,16 +37,13 @@ async function run() {
   }
 
   await test('TYPE-A01 activity_types 表存在且种子 6 条（渠道正确）', async () => {
-    // created_by 已改存用户 id（种子为 NULL），种子 6 类按固定名称集识别
+    // 种子 6 类按 id 1~6 识别（运营可在后台改名，故不按名称断言；渠道属结构性约定，仍校验）
     const [rows] = await conn.query(
-      "SELECT name, channel FROM activity_types WHERE name IN ('月度故事会','醒书咖啡','线下观影会','线下故事会','巧克力工坊','醒书厨房') ORDER BY sort")
+      'SELECT id, name, channel FROM activity_types WHERE id IN (1,2,3,4,5,6) ORDER BY id')
     if (rows.length !== 6) throw new Error(`种子=${rows.length} 条`)
-    const expect = {
-      '月度故事会': 'online', '醒书咖啡': 'online',
-      '线下观影会': 'offline', '线下故事会': 'offline', '巧克力工坊': 'offline', '醒书厨房': 'offline',
-    }
+    const expect = { 1: 'online', 2: 'online', 3: 'offline', 4: 'offline', 5: 'offline', 6: 'offline' }
     for (const r of rows) {
-      if (expect[r.name] !== r.channel) throw new Error(`${r.name} 渠道=${r.channel}`)
+      if (expect[r.id] !== r.channel) throw new Error(`id=${r.id}（${r.name}）渠道=${r.channel}`)
     }
   })
 
