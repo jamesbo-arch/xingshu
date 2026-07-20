@@ -3713,3 +3713,16 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 时序正序下新分享排最末，发完需定位到底部才能看到。发布成功后加载全部分享（每页 10 条循环拉完，条数通常不多）并滚动到底部锚点。仅活动详情页内「分享现场」；FAB（活动列表页）发布仍回瀑布流不受影响。
 
 **验证**：node --check 通过；真机在有多屏分享的活动发一条，验证发完自动滚到底部并看到新分享。
+
+### 2026-07-19 — 新增正式环境一步初始化脚本与 Runbook
+
+**类型**：脚本 | 文档
+**计划关联**：用户定策略——prod 初始化一步到位，只搬表结构+静态字典数据，业务数据单独初始化，云存储暂不迁移
+**修改文件**：
+- `scripts/init-prod.js`（新建）— 同一 MySQL 实例内 xingshu_dev → xingshu_prod：DROP 并按 dev 现行结构重建全部表，仅复制字典表 tags/activity_types 数据，其余表留空；安全护栏（prod.users 非空拒绝，--force 覆盖）、--dry 演示
+- `doc/正式环境初始化.md`（新建）— prod 初始化 Runbook（背景、步骤、收尾、风险）
+
+**变更说明**：
+经盘点：dev 17 表全为现行结构，字典 tags(20)/activity_types(8)，prod.users 为 0 行（可安全初始化）。直接按 dev 结构重建 prod → 一步拿到最终结构，**原 4 个逐条迁移脚本（diary-to-story/activity-price/admin-roles/post-video）对全新 prod 初始化不再需要**。业务数据（会员/故事等）单独初始化；云存储 fileID 仍指向 dev 环境，暂不迁移。
+
+**验证**：node --check 通过；`node scripts/init-prod.js --dry` 正常列出 17 表与 2 张字典表，未改动任何库。真正执行留待发版窗口。
