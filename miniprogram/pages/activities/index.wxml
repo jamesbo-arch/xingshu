@@ -23,8 +23,12 @@
       <view class="feed-col">
         <block wx:for="{{colL}}" wx:key="id">
           <view class="m-card" data-aid="{{item.activityId}}" bindtap="onOpenPost">
-            <!-- 视频卡：catchtap 包裹避免点播放冒泡进详情；CDN 链接流式边下边播 -->
-            <view wx:if="{{item.video}}" class="m-cover m-video-wrap" catchtap="noop">
+            <!-- 视频卡：未授权渲染占位块（点击拉登录），授权后才渲染 video 流式播放 -->
+            <view wx:if="{{item.video && isGuest}}" class="m-cover m-video-wrap m-video-locked">
+              <view class="m-video-play"></view>
+              <text class="m-video-lock-tip">登录后观看视频</text>
+            </view>
+            <view wx:elif="{{item.video}}" class="m-cover m-video-wrap" catchtap="noop">
               <video class="m-video" src="{{item.video}}" controls object-fit="contain" />
             </view>
             <view wx:elif="{{item.image}}" class="m-cover" style="height: {{item.imgH}}rpx;">
@@ -47,7 +51,12 @@
       <view class="feed-col">
         <block wx:for="{{colR}}" wx:key="id">
           <view class="m-card" data-aid="{{item.activityId}}" bindtap="onOpenPost">
-            <view wx:if="{{item.video}}" class="m-cover m-video-wrap" catchtap="noop">
+            <!-- 视频卡：未授权渲染占位块（点击拉登录），授权后才渲染 video 流式播放 -->
+            <view wx:if="{{item.video && isGuest}}" class="m-cover m-video-wrap m-video-locked">
+              <view class="m-video-play"></view>
+              <text class="m-video-lock-tip">登录后观看视频</text>
+            </view>
+            <view wx:elif="{{item.video}}" class="m-cover m-video-wrap" catchtap="noop">
               <video class="m-video" src="{{item.video}}" controls object-fit="contain" />
             </view>
             <view wx:elif="{{item.image}}" class="m-cover" style="height: {{item.imgH}}rpx;">

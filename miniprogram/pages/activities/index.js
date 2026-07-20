@@ -44,16 +44,26 @@ Page({
     postables: [],       // 可分享场次：已报名且已开始，按活动时间倒序
     postableTitles: [],
     postActIndex: 0,
+    isGuest: true,      // 未授权：视频卡渲染占位块，点击先拉登录
   },
 
   onLoad() {
     const info = wx.getWindowInfo()
     this.setData({ statusBarHeight: info.statusBarHeight || 0 })
+    this._syncGuest()
     this._loadTypes()
     this._loadFeed(true)
   },
 
+  // 未授权态：视频卡不渲染 video 组件（原生组件盖不住，无法拦截点击），
+  // 改渲染占位块，点击走 onOpenPost 拉登录；登录后重新同步即可播放
+  _syncGuest() {
+    const identity = (getApp().globalData.user || {}).identity || 'guest'
+    this.setData({ isGuest: identity === 'guest' })
+  },
+
   onShow() {
+    this._syncGuest()
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().refresh('pages/activities/index')
     }
@@ -306,7 +316,7 @@ Page({
     this._tabBar(false)
     this._pendingLoginAction = null
   },
-  onLoginSuccess() { handleLoginSuccess(this) },
+  onLoginSuccess() { this._syncGuest(); handleLoginSuccess(this) },
 
   // FAB：登录 → 取可分享场次（已报名且已开始，list mode:all 已按时间倒序）→ 打开发布弹窗
   onShareFab() {

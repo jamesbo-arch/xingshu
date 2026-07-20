@@ -3726,3 +3726,17 @@ fn-activity-post-test 13/13（含 A13）、fn-activity-feed-test 12/12 通过；
 经盘点：dev 17 表全为现行结构，字典 tags(20)/activity_types(8)，prod.users 为 0 行（可安全初始化）。直接按 dev 结构重建 prod → 一步拿到最终结构，**原 4 个逐条迁移脚本（diary-to-story/activity-price/admin-roles/post-video）对全新 prod 初始化不再需要**。业务数据（会员/故事等）单独初始化；云存储 fileID 仍指向 dev 环境，暂不迁移。
 
 **验证**：node --check 通过；`node scripts/init-prod.js --dry` 正常列出 17 表与 2 张字典表，未改动任何库。真正执行留待发版窗口。
+
+### 2026-07-20 — 活动分享瀑布流：未授权用户视频改登录占位块
+
+**类型**：前端
+**计划关联**：用户反馈（未授权进瀑布流，点图片会拉登录，但点视频可直接播放）
+**修改文件**：
+- `miniprogram/pages/activities/index.js` — data 加 isGuest；新增 _syncGuest()（读 globalData.user.identity），onLoad/onShow/onLoginSuccess 同步
+- `miniprogram/pages/activities/index.wxml` — 两列视频卡加未授权分支：isGuest 时渲染占位块（播放图标 + 「登录后观看视频」），点击冒泡到卡片 onOpenPost 拉登录；授权后才渲染 `<video>`
+- `miniprogram/pages/activities/index.wxss` — 占位块样式（.m-video-locked/.m-video-play/.m-video-lock-tip）
+
+**变更说明**：
+video 是原生组件，覆盖一层 view 未必能拦住点击，故未授权时**根本不渲染 video**，改为占位块统一走登录引导；登录成功后 _syncGuest 刷新，视频即可播放。与图片卡的登录口径一致。
+
+**验证**：node --check 通过；两列均已改（grep 2 处）。真机以未授权身份进瀑布流验证：视频卡显示占位、点击拉登录、登录后可播放。

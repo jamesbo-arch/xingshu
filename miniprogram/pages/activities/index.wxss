@@ -96,6 +96,36 @@ page { height: 100%; overflow: hidden; }
 .m-video-wrap { height: 320rpx; background: #1E1A14; }
 .m-video { width: 100%; height: 100%; }
 
+/* 未授权占位块：点击冒泡到卡片 onOpenPost 拉起登录 */
+.m-video-locked {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14rpx;
+}
+
+.m-video-play {
+  position: relative;
+  width: 84rpx;
+  height: 84rpx;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.m-video-play::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-38%, -50%);
+  border-left: 26rpx solid rgba(255, 255, 255, 0.9);
+  border-top: 16rpx solid transparent;
+  border-bottom: 16rpx solid transparent;
+}
+
+.m-video-lock-tip { font-size: 22rpx; color: rgba(255, 255, 255, 0.72); }
+
 .m-img {
   width: 100%;
   height: 100%;
