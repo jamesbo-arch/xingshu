@@ -46,8 +46,8 @@ Page({
     typeLabel: '全部类型',
     monthLabel: '全部时间',
     filterActive: false,
-    showTypeSheet: false,
-    showMonthSheet: false,
+    showTypeDrop: false,   // 类型下拉展开中
+    showMonthDrop: false,  // 月份下拉展开中
     // FAB 直达发布分享（带场次选择）
     showLoginSheet: false,
     showPostSheet: false,
@@ -357,27 +357,30 @@ Page({
     return `${yCn} · ${CN_MONTH[+m - 1]}月`
   },
 
-  // ── 筛选弹层（类型 / 月份各一个，选中即关闭；tab 页弹层须收起 tab-bar） ──
+  // ── 筛选下拉（类型 / 月份互斥展开，选中即收起）──
+  // 面板贴着筛选栏往下展开、不到底部，故无需像底部弹层那样收起 tab-bar
 
-  onOpenTypeSheet() { this.setData({ showTypeSheet: true }); this._tabBar(true) },
-  onOpenMonthSheet() { this.setData({ showMonthSheet: true }); this._tabBar(true) },
-  onCloseSheet() { this.setData({ showTypeSheet: false, showMonthSheet: false }); this._tabBar(false) },
-  noopSheet() {},   // 阻止点内容区冒泡到蒙层关闭
+  onOpenTypeDrop() {
+    this.setData({ showTypeDrop: !this.data.showTypeDrop, showMonthDrop: false })
+  },
+  onOpenMonthDrop() {
+    this.setData({ showMonthDrop: !this.data.showMonthDrop, showTypeDrop: false })
+  },
+  onCloseDrop() { this.setData({ showTypeDrop: false, showMonthDrop: false }) },
 
   onTypeTap(e) {
     const id = Number(e.currentTarget.dataset.id) || 0
-    this.setData({ activeTypeId: id, showTypeSheet: false }, () => this._applyFilter())
-    this._tabBar(false)
+    this.setData({ activeTypeId: id, showTypeDrop: false }, () => this._applyFilter())
   },
 
   onMonthTap(e) {
-    const key = e.currentTarget.dataset.key || ''
-    this.setData({ activeMonth: key, showMonthSheet: false }, () => this._applyFilter())
-    this._tabBar(false)
+    const key = e.currentTarget.dataset.ym || ''
+    this.setData({ activeMonth: key, showMonthDrop: false }, () => this._applyFilter())
   },
 
   onResetFilter() {
-    this.setData({ activeTypeId: 0, activeMonth: '' }, () => this._applyFilter())
+    this.setData({ activeTypeId: 0, activeMonth: '', showTypeDrop: false, showMonthDrop: false },
+      () => this._applyFilter())
   },
 
   // 未登录点活动行：先在列表页拉起登录弹窗（同广场故事列表），登录成功自动进详情

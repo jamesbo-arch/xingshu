@@ -100,17 +100,42 @@
       </swiper-item>
     </swiper>
 
-    <!-- 筛选栏：两个下拉按钮，点开在弹层里平铺选项（类型多时横滑难选） -->
-    <view class="filter-bar">
-      <view class="filter-pill {{activeTypeId ? 'pill-on' : ''}}" bindtap="onOpenTypeSheet">
-        <text class="filter-pill-text">{{typeLabel}}</text>
-        <text class="filter-caret">▾</text>
+    <!-- 筛选栏 + 下拉面板：点按钮就地展开，选项平铺一屏（类型多时横滑难选） -->
+    <view class="filter-wrap">
+      <view class="filter-bar">
+        <view class="filter-pill {{activeTypeId ? 'pill-on' : ''}} {{showTypeDrop ? 'pill-open' : ''}}" bindtap="onOpenTypeDrop">
+          <text class="filter-pill-text">{{typeLabel}}</text>
+          <text class="filter-caret {{showTypeDrop ? 'caret-up' : ''}}">▾</text>
+        </view>
+        <view class="filter-pill {{activeMonth ? 'pill-on' : ''}} {{showMonthDrop ? 'pill-open' : ''}}" bindtap="onOpenMonthDrop">
+          <text class="filter-pill-text">{{monthLabel}}</text>
+          <text class="filter-caret {{showMonthDrop ? 'caret-up' : ''}}">▾</text>
+        </view>
+        <text wx:if="{{filterActive}}" class="filter-reset" bindtap="onResetFilter">重置</text>
       </view>
-      <view class="filter-pill {{activeMonth ? 'pill-on' : ''}}" bindtap="onOpenMonthSheet">
-        <text class="filter-pill-text">{{monthLabel}}</text>
-        <text class="filter-caret">▾</text>
+
+      <view wx:if="{{showTypeDrop}}" class="dropdown">
+        <scroll-view class="dd-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+          <view class="dd-grid">
+            <view class="dd-opt {{activeTypeId === 0 ? 'opt-on' : ''}}" data-id="0" bindtap="onTypeTap">全部类型</view>
+            <view wx:for="{{types}}" wx:key="id"
+              class="dd-opt {{activeTypeId === item.id ? 'opt-on' : ''}}"
+              data-id="{{item.id}}" bindtap="onTypeTap">{{item.name}}</view>
+          </view>
+        </scroll-view>
       </view>
-      <text wx:if="{{filterActive}}" class="filter-reset" bindtap="onResetFilter">重置</text>
+
+      <view wx:if="{{showMonthDrop}}" class="dropdown">
+        <scroll-view class="dd-scroll" scroll-y enhanced show-scrollbar="{{false}}">
+          <view class="dd-grid">
+            <view class="dd-opt {{activeMonth === '' ? 'opt-on' : ''}}" data-ym="" bindtap="onMonthTap">全部时间</view>
+            <view wx:for="{{months}}" wx:key="key"
+              class="dd-opt {{activeMonth === item.key ? 'opt-on' : ''}}"
+              data-ym="{{item.key}}" bindtap="onMonthTap">{{item.label}}</view>
+          </view>
+          <view wx:if="{{!months.length}}" class="dd-empty">暂无活动</view>
+        </scroll-view>
+      </view>
     </view>
 
     <scroll-view class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}"
@@ -141,36 +166,9 @@
     </scroll-view>
   </block>
 
-  <!-- 类型筛选弹层：一屏平铺全部类型，不必横滑找 -->
-  <view wx:if="{{showTypeSheet}}" class="fsheet-mask" bindtap="onCloseSheet">
-    <view class="fsheet" catchtap="noopSheet">
-      <view class="fsheet-handle"></view>
-      <text class="fsheet-title serif">活动类型</text>
-      <view class="fsheet-grid">
-        <view class="fsheet-opt {{activeTypeId === 0 ? 'opt-on' : ''}}" data-id="0" bindtap="onTypeTap">全部类型</view>
-        <view wx:for="{{types}}" wx:key="id"
-          class="fsheet-opt {{activeTypeId === item.id ? 'opt-on' : ''}}"
-          data-id="{{item.id}}" bindtap="onTypeTap">{{item.name}}</view>
-      </view>
-      <view class="fsheet-pad"></view>
-    </view>
-  </view>
-
-  <!-- 月份筛选弹层：候选由活动实际分布派生 -->
-  <view wx:if="{{showMonthSheet}}" class="fsheet-mask" bindtap="onCloseSheet">
-    <view class="fsheet" catchtap="noopSheet">
-      <view class="fsheet-handle"></view>
-      <text class="fsheet-title serif">活动时间</text>
-      <view class="fsheet-grid">
-        <view class="fsheet-opt {{activeMonth === '' ? 'opt-on' : ''}}" data-key="" bindtap="onMonthTap">全部时间</view>
-        <view wx:for="{{months}}" wx:key="key"
-          class="fsheet-opt {{activeMonth === item.key ? 'opt-on' : ''}}"
-          data-key="{{item.key}}" bindtap="onMonthTap">{{item.label}}</view>
-      </view>
-      <view wx:if="{{!months.length}}" class="fsheet-empty">暂无活动</view>
-      <view class="fsheet-pad"></view>
-    </view>
-  </view>
+  <!-- 下拉展开时的空白遮罩：点任意处收起。z-index 低于 .filter-wrap，
+       故筛选按钮本身仍可点（可直接切到另一个下拉或再点收起） -->
+  <view wx:if="{{showTypeDrop || showMonthDrop}}" class="dd-mask" bindtap="onCloseDrop"></view>
 
   <!-- 分享页签 FAB：直达发布分享（参照广场写故事入口） -->
   <view wx:if="{{showFeed && tab === 'share'}}" class="fab" bindtap="onShareFab">
