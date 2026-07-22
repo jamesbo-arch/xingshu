@@ -328,6 +328,17 @@ npm run dev       # 本地开发服务器
 npm run build     # 构建产物
 ```
 
+**部署（强制，改完即做，无需再问）**：只要改动了 `admin/` 下的任何文件，完成后**自动执行构建 + 部署**，不要停在「build 通过」就交付——运营看到的是线上那份，本地 `dist/` 不算数。
+
+```bash
+cd admin && npm run build
+npx -y -p @cloudbase/cli tcb hosting deploy admin/dist -e cloud1-xingshu-prd-d1cev0fcca864
+```
+
+部署后**必须回查**线上 `index.html` 引用的 `index-*.js` 哈希与本地 `admin/dist/assets/` 一致（`curl` 加时间戳绕缓存），确认发的是新版；并在 devlog 的「验证」里记一笔。访问地址 https://cloud1-xingshu-prd-d1cev0fcca864-1451247102.tcloudbaseapp.com （dev/体验槽位；prod 槽位构建用 `npm run build:prd`、部署 `-e cloud1-d9gbozhfp4a6c50c0`，**prod 部署仍需逐次确认**）。
+
+> 静态托管走 COS，路由已是 hash 模式（见 2026-07-18 devlog），刷新子路由不会 404，部署后无需额外配置错误文档。浏览器可能缓存旧 `index.html`，交付时提示用户强刷。
+
 ### 设计参考
 
 `project/index.html` 是最终原型（主设计文件）。`chats/chat1.md` 中的聊天记录包含设计决策：温暖文艺的视觉风格，衬线字体标题，纸质感，印章风格标签，会员内容采用金色点缀，背景色为 `#FBF7EE` 暖纸色。
