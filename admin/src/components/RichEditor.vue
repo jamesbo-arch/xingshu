@@ -56,12 +56,26 @@
           </g>
         </svg>
       </button>
+
+      <span class="sep"></span>
+
+      <input ref="fileInput" type="file" accept="image/*" style="display:none" @change="onPickImage" />
+      <button type="button" class="tb ico" :disabled="uploading" title="插入图片（5MB 以内）"
+        @click="$refs.fileInput.click()">
+        <svg v-if="!uploading" viewBox="0 0 20 20" width="15" height="15" aria-hidden="true">
+          <rect x="1" y="3.5" width="18" height="13" rx="2" fill="none"
+            stroke="currentColor" stroke-width="1.6" />
+          <circle cx="6.5" cy="8" r="1.6" fill="currentColor" />
+          <path d="M2 14l4.5-4.5 3.5 3.5 3-2.5L18 14" fill="none"
+            stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+        </svg>
+        <span v-else class="dots">…</span>
+      </button>
     </div>
 
     <!-- 手机纸面：宽度、背景、卡片圆角与 pages/banner-detail 完全一致 -->
     <div class="rte-stage">
       <div class="rte-phone">
-        <img v-if="heroSrc" :src="heroSrc" class="rte-hero" alt="" />
         <div ref="ed" class="rte-canvas" contenteditable="true"
           @input="push" @paste="onPaste" @keyup="syncState" @mouseup="syncState" @focus="syncState"></div>
       </div>
@@ -74,10 +88,13 @@
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
 import { toEditorHtml, toStoredHtml, sanitizeFragment, escapeHtml } from '../utils/rich-text.js'
+import { uploadActivityImage, resolveFileUrls } from '../api/index.js'
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
-  heroSrc: { type: String, default: '' },   // 轮播图，摆在正文上方还原详情页真实观感
+  // 正文里 cloud:// fileID → 临时链接。由 Banners.vue 在打开弹窗前一次性换好，
+  // 故这里当常量用，不做 watch（异步到货会在打字时重写 innerHTML、打飞光标）
+  fileMap: { type: Object, default: () => ({}) },
 })
 const emit = defineEmits(['update:modelValue'])
 
@@ -91,6 +108,8 @@ const COLORS = [
 ]
 
 const ed = ref(null)
+const fileInput = ref(null)
+const uploading = ref(false)
 const st = reactive({ bold: false, italic: false, underline: false, ul: false, ol: false, center: false, color: '' })
 
 // 自己刚 emit 出去的值——用它挡住回流，否则每敲一个字都会重写 innerHTML、光标被打回开头
@@ -105,7 +124,7 @@ watch(() => props.modelValue, syncFromProp)
 
 function syncFromProp() {
   if (props.modelValue === lastEmitted) return
-  if (ed.value) ed.value.innerHTML = toEditorHtml(props.modelValue)
+  if (ed.value) ed.value.innerHTML = toEditorHtml(props.modelValue, props.fileMap)
 }
 
 function push() {
@@ -143,6 +162,40 @@ function syncState() {
     const hit = COLORS.find((c) => c.value.toLowerCase() === hex)
     st.color = hit ? hit.value : ''
   } catch { /* 选区不在画布内时会抛，忽略 */ }
+}
+
+function fileToBase64(file) {
+  return new Promise((res, rej) => {
+    const r = new FileReader()
+    r.onload = () => res(r.result)
+    r.onerror = rej
+    r.readAsDataURL(file)
+  })
+}
+
+// 正文配图：走 admin 云函数服务端上传（Web 匿名登录写云存储没权限），
+// 入库存 cloud:// fileID，画布里先用临时链接顶着显示
+async function onPickImage(e) {
+  const file = (e.target.files || [])[0]
+  e.target.value = ''
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) { alert('图片超过 5MB，请压缩后再传'); return }
+  uploading.value = true
+  try {
+    const base64 = await fileToBase64(file)
+    const ext = (file.name.split('.').pop() || 'png').toLowerCase()
+    const { fileID } = await uploadActivityImage(base64, ext)
+    const map = await resolveFileUrls([fileID])
+    ed.value.focus()
+    // 尾随一个空段落，否则光标卡在图片后面无处落笔
+    document.execCommand('insertHTML', false,
+      `<img src="${map[fileID] || ''}" data-fid="${fileID}"><p><br></p>`)
+    push()
+  } catch (err) {
+    alert('图片上传失败：' + err.message)
+  } finally {
+    uploading.value = false
+  }
 }
 
 function onPaste(e) {
@@ -208,6 +261,8 @@ function onPaste(e) {
 }
 .tb:hover { background: var(--paper-card); border-color: var(--tbl-border); }
 .tb.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.tb:disabled { opacity: .45; cursor: wait; }
+.dots { font-size: 16px; letter-spacing: 0; }
 
 /* 色板按钮本身就是色块，选中态只能靠描边表达，不能像其他按钮那样反色 */
 .sw {
@@ -237,13 +292,6 @@ function onPaste(e) {
   padding: 0 12px;                    /* 24rpx */
   background: #FBF7EE;                /* paper-bg */
   box-shadow: 0 2px 14px rgba(58, 44, 22, .12);
-}
-.rte-hero {
-  display: block;
-  width: 100%;
-  border-radius: 14px;
-  margin-bottom: 12px;                /* 24rpx */
-  background: #EFE7D4;
 }
 .rte-canvas {
   min-height: 300px;

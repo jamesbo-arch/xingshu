@@ -38,8 +38,11 @@ const ALLOW_STYLE = new Set([
   'width', 'max-width', 'height', 'display', 'vertical-align', 'white-space',
 ])
 
+// data-fid：正文配图在库里存 cloud:// fileID（临时链接会过期，不能入库），
+// 编辑时 src 换成临时链接展示、fileID 暂存在这个属性上，保存时再换回来。
+// 它只活在编辑器内存里，toStoredHtml 会删掉，不会进库。
 const ALLOW_ATTRS = {
-  img: ['src', 'alt'],
+  img: ['src', 'alt', 'data-fid'],
   td: ['colspan', 'rowspan'],
   th: ['colspan', 'rowspan'],
 }
@@ -115,8 +118,15 @@ function sanitizeNode(parent) {
       else el.removeAttribute('style')
     }
 
-    // 图片只放行 http(s)/协议相对/data 图；cloud:// 在 rich-text 里渲染不出来
-    if (tag === 'img' && !/^(https?:)?\/\/|^data:image\//i.test(el.getAttribute('src') || '')) el.remove()
+    // 图片放行 http(s)/协议相对/data 图/云存储 fileID。
+    // **data-fid 也算数**——临时链接换取失败时 src 会是空串，只看 src 就会把图删掉、
+    // 下次保存直接丢数据；有 fileID 兜底就还能救回来。
+    if (tag === 'img') {
+      const src = el.getAttribute('src') || ''
+      const fid = el.getAttribute('data-fid') || ''
+      const ok = /^(https?:)?\/\/|^data:image\/|^cloud:\/\//i.test(src) || /^cloud:\/\//i.test(fid)
+      if (!ok) el.remove()
+    }
   }
 }
 
@@ -146,11 +156,22 @@ function parse(html) {
   return new DOMParser().parseFromString(`<body>${html || ''}</body>`, 'text/html').body
 }
 
-/** 库存 HTML（rpx）→ 编辑画布 HTML（px） */
-export function toEditorHtml(stored) {
+/** 从 HTML 里抠出所有云存储 fileID（供调 fileUrls 换临时链接） */
+export function extractFileIds(html) {
+  return [...new Set(String(html || '').match(/cloud:\/\/[^"'\s>]+/g) || [])]
+}
+
+/** 库存 HTML（rpx）→ 编辑画布 HTML（px）。urlMap: fileID → 临时链接 */
+export function toEditorHtml(stored, urlMap = {}) {
   const body = parse(stored)
   sanitizeNode(body)
   convertUnit(body, 'rpx', 'px', RPX_TO_PX)
+  body.querySelectorAll('img').forEach((el) => {
+    const src = el.getAttribute('src') || ''
+    if (!/^cloud:\/\//i.test(src)) return
+    el.setAttribute('data-fid', src)
+    el.setAttribute('src', urlMap[src] || '')
+  })
   return body.innerHTML.trim() || '<p><br></p>'
 }
 
@@ -160,6 +181,11 @@ export function toStoredHtml(editorHtml) {
   sanitizeNode(body)
   // 空判定必须在 stamp 之前——补完样式后 `<p><br></p>` 就不是空串了，必填校验会失灵
   if (!body.textContent.trim() && !body.querySelector('img, hr')) return ''
+  // 临时链接换回 fileID：临时链接几小时后失效，入库的必须是 cloud://
+  body.querySelectorAll('img[data-fid]').forEach((el) => {
+    el.setAttribute('src', el.getAttribute('data-fid'))
+    el.removeAttribute('data-fid')
+  })
   stampBlockStyle(body)
   convertUnit(body, 'px', 'rpx', 1 / RPX_TO_PX)
   return body.innerHTML.trim()

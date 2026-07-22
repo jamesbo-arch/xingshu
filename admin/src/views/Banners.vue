@@ -77,7 +77,7 @@
         <div v-if="form.linkType === 'detail'" class="block-label">
           <span>详情页内容<span class="req">*</span>
             <span class="dim">（所见即所得；小程序用 rich-text 渲染）</span></span>
-          <RichEditor v-model="form.contentRich" :hero-src="previewUrl" />
+          <RichEditor v-model="form.contentRich" :file-map="contentFileMap" />
         </div>
 
         <div class="two-col">
@@ -107,9 +107,11 @@ import {
   uploadActivityImage, resolveFileUrls,
 } from '../api/index.js'
 import RichEditor from '../components/RichEditor.vue'
+import { extractFileIds } from '../utils/rich-text.js'
 
 const list = ref([])
-const urls = ref({})           // cloud:// fileID → 临时可展示 URL
+const urls = ref({})           // cloud:// fileID → 临时可展示 URL（轮播图）
+const contentFileMap = ref({}) // 同上，但用于详情正文里的配图
 const showForm = ref(false), form = ref({}), saving = ref(false), uploading = ref(false)
 
 const previewUrl = computed(() => urls.value[form.value.imageUrl] || '')
@@ -125,6 +127,7 @@ async function reload() {
 async function openForm(b) {
   if (!b) {
     form.value = { imageUrl: '', title: '', linkType: 'none', contentRich: '', sort: 0, isActive: 1 }
+    contentFileMap.value = {}
     showForm.value = true
     return
   }
@@ -132,6 +135,10 @@ async function openForm(b) {
     // 列表不带 contentRich（体积大），编辑时单独取详情
     const d = await getBannerDetail(b.id)
     form.value = { ...d, contentRich: d.contentRich || '' }
+    // 正文配图的临时链接必须在挂载编辑器**之前**换好——异步到货会在打字过程中
+    // 重写画布 innerHTML，把光标打飞
+    const ids = extractFileIds(d.contentRich)
+    contentFileMap.value = ids.length ? await resolveFileUrls(ids) : {}
     showForm.value = true
   } catch (e) { alert(e.message) }
 }

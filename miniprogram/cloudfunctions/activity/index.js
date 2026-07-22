@@ -12,6 +12,24 @@ const LIST_SELECT = `
          DATE_FORMAT(a.signup_deadline, '%Y-%m-%d %H:%i') AS signup_deadline
   FROM activities a LEFT JOIN activity_types t ON a.type_id = t.id`
 
+// Banner 富文本正文里的配图存的是 cloud:// fileID（临时链接会过期，不能入库），
+// 而 <rich-text> 的 <img> 渲染不了 cloud:// 协议，故读取时换成临时链接。
+// **放在服务端做**：已发布的小程序端无需改动、不用重新提审。
+async function resolveRichImages(html) {
+  const ids = [...new Set(String(html || '').match(/cloud:\/\/[^"'\s>]+/g) || [])]
+  if (!ids.length) return html
+  try {
+    const res = await cloud.getTempFileURL({ fileList: ids.slice(0, 50) })
+    const map = {}
+    for (const f of res.fileList || []) map[f.fileID] = f.tempFileURL || ''
+    return String(html).replace(/cloud:\/\/[^"'\s>]+/g, (m) => map[m] || m)
+  } catch (e) {
+    // 换链失败只该丢图，不该把整个详情页拖成「内容不存在」——正文才是主体
+    console.error('bannerDetail 配图换链失败', e)
+    return html
+  }
+}
+
 async function findUser(openid) {
   const [rows] = await db.query('SELECT id FROM users WHERE openid = ?', [openid])
   return rows.length ? rows[0] : null
@@ -334,6 +352,7 @@ const handlers = {
       "SELECT id, title, content_rich, image_url FROM banners WHERE id = ? AND is_active = 1 AND link_type = 'detail'",
       [id])
     if (!rows.length) throw new Error('内容不存在')
+    rows[0].content_rich = await resolveRichImages(rows[0].content_rich)
     return rows[0]
   },
 
