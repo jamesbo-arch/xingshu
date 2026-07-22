@@ -44,12 +44,35 @@ async function assertMember(openid) {
   return user
 }
 
-// 匿名脱敏：抹掉昵称、头像与会员徽章。
+// 匿名头像底色：由「问题 id + 用户 id」派生（FNV-1a），落到 0~359 交给 hueToColor 取色。
+// **刻意按问题分域**：同一串问答里同一个人恒定同色、不同人不同色（这正是要区分的场景）；
+// 跨问答则不一致——否则可凭颜色把同一匿名者散落各处的发言串成一条线，反而削弱匿名性。
+function anonHue(scopeId, userId) {
+  let h = 2166136261
+  const s = `${scopeId}:${userId}`
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return (h >>> 0) % 360
+}
+
+// 匿名脱敏：抹掉昵称、头像、会员徽章，并**删除 user_id**——
+// 否则拿匿名帖的 user_id 去比对同一人的实名帖即可反查身份，脱敏形同虚设。
 // **对作者本人同样脱敏**——匿名就该是彻底的，作者看到自己的真名反而会怀疑匿名没生效；
 // 「这条是不是我发的」由 isMine 字段单独承担（删除按钮据它显示），不依赖昵称。
-function maskAuthor(row) {
+function maskAuthor(row, scopeId) {
   if (!row.is_anonymous) return row
-  return { ...row, nickname: ANON_NAME, avatar_url: '', avatar_hue: null, author_identity: 'authed' }
+  const masked = {
+    ...row,
+    nickname: ANON_NAME,
+    avatar_url: '',
+    avatar_hue: null,
+    author_identity: 'authed',
+    anon_hue: anonHue(scopeId, row.user_id),
+  }
+  delete masked.user_id
+  return masked
 }
 
 // 一批问题的点赞/收藏态（未授权返回空集）
@@ -118,7 +141,7 @@ const handlers = {
 
     const { liked, faved } = await interactionSets(userId, rows.map(r => r.id))
     const list = rows.map(r => ({
-      ...maskAuthor(r),
+      ...maskAuthor(r, r.id),   // 列表里每个问题自成一域
       isLiked: liked.has(r.id),
       isFavorited: faved.has(r.id),
     }))
@@ -153,8 +176,9 @@ const handlers = {
 
     const { liked, faved } = await interactionSets(userId, [q.id])
     return {
+      // 提问者与本问题下的回答者同域（q.id），故同一人在问与答里颜色一致
       question: {
-        ...maskAuthor(q),
+        ...maskAuthor(q, q.id),
         isLiked: liked.has(q.id),
         isFavorited: faved.has(q.id),
       },
@@ -177,8 +201,9 @@ const handlers = {
        FROM question_comments c JOIN users u ON c.user_id = u.id
        WHERE c.question_id = ? AND c.is_deleted = 0
        ORDER BY c.id ASC`, [id])
+    // 与问题同域（id）：同一个人在这串问答里的问与答用同一底色
     const masked = rows.map(r => ({
-      ...maskAuthor(r),
+      ...maskAuthor(r, id),
       isMine: !!(userId && Number(r.user_id) === Number(userId)),
     }))
     const tops = masked.filter(r => !r.parent_id)

@@ -10,10 +10,10 @@
     <!-- 问题 -->
     <view class="q-card">
       <view class="q-header">
-        <!-- 匿名：默认「醒」字头像（云函数已把昵称脱敏为「醒书同学」、抹掉头像） -->
-        <view wx:if="{{question.is_anonymous}}" class="q-avatar q-avatar-anon"><text>醒</text></view>
+        <!-- 匿名：默认「醒」字头像，底色按人区分（云函数已脱敏昵称与头像） -->
+        <view wx:if="{{question.is_anonymous}}" class="q-avatar" style="background-color: {{question.avatarColor}};"><text>醒</text></view>
         <image wx:elif="{{question.avatar_url}}" class="q-avatar-img" src="{{question.avatar_url}}" mode="aspectFill" />
-        <view wx:else class="q-avatar" style="background-color: hsl({{question.avatar_hue}},30%,45%);">
+        <view wx:else class="q-avatar" style="background-color: {{question.avatarColor}};">
           <text>{{question.nickname[0]}}</text>
         </view>
         <view class="q-meta">
@@ -39,8 +39,8 @@
       </view>
 
       <view wx:for="{{comments}}" wx:key="id" class="reply-item">
-        <view wx:if="{{item.is_anonymous}}" class="reply-avatar reply-avatar-anon"><text>醒</text></view>
-        <view wx:else class="reply-avatar" style="background-color: hsl({{item.avatar_hue}},30%,45%);">
+        <view wx:if="{{item.is_anonymous}}" class="reply-avatar reply-avatar-anon" style="background-color: {{item.avatarColor}};"><text>醒</text></view>
+        <view wx:else class="reply-avatar" style="background-color: {{item.avatarColor}};">
           <text>{{item.nickname[0]}}</text>
         </view>
         <view class="reply-body">

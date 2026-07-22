@@ -29,7 +29,8 @@ Component({
     _syncAvatar(q) {
       if (!q) return
       this.setData({
-        avatarColor: hueToColor(q.avatar_hue),
+        // 匿名用云函数派生的 anon_hue 取色：同一串问答里同一个人恒定同色、不同人不同色
+        avatarColor: hueToColor(q.is_anonymous ? q.anon_hue : q.avatar_hue),
         avatarInitial: getInitial(q.nickname || '?'),
       })
     },

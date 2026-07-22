@@ -81,11 +81,6 @@ page { height: 100%; overflow: hidden; }
   font-family: 'Songti SC', 'STSong', 'SimSun', serif;
 }
 
-/* 匿名默认头像：驼灰底 + 白「醒」字 */
-.q-avatar-anon {
-  background-color: #7A746A;
-}
-
 .q-meta {
   flex: 1;
   display: flex;
@@ -167,8 +162,8 @@ page { height: 100%; overflow: hidden; }
   font-size: 24rpx;
 }
 
+/* 匿名「醒」字头像用衬线体；底色由 anon_hue 派生（见 index.js 的 avatarColor） */
 .reply-avatar-anon {
-  background-color: #7A746A;
   font-family: 'Songti SC', 'STSong', 'SimSun', serif;
 }
 

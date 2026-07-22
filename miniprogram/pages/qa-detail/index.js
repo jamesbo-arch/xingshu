@@ -6,6 +6,13 @@ const toast = require('../../utils/toast')
 const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
 const { lock } = require('../../utils/guard')
 const splash = require('../../utils/splash')
+const { hueToColor } = require('../../utils/color')
+
+// 头像底色：匿名用云函数派生的 anon_hue（同一串问答里同人同色、异人异色），
+// 实名用本人 avatar_hue。WXML 不能调函数，故在 JS 预算好。
+function avatarColor(row) {
+  return hueToColor(row.is_anonymous ? row.anon_hue : row.avatar_hue)
+}
 
 Page({
   data: {
@@ -58,11 +65,20 @@ Page({
       return
     }
     this.setData({
-      question: res.data.question,
+      question: { ...res.data.question, avatarColor: avatarColor(res.data.question) },
       canReply: !!res.data.canReply,
       viaFeatured: !!res.data.viaFeatured,
-      comments: comments || [],
+      comments: this._decorate(comments),
     })
+  },
+
+  // 给每条回答与其下追评补上头像底色
+  _decorate(comments) {
+    return (comments || []).map(c => ({
+      ...c,
+      avatarColor: avatarColor(c),
+      replies: (c.replies || []).map(r => ({ ...r, avatarColor: avatarColor(r) })),
+    }))
   },
 
   _goBack() {
@@ -102,7 +118,7 @@ Page({
       if (!r) return
       this.onHideReplyInput()
       const comments = await qaApi.getComments(this._id)
-      if (comments) this.setData({ comments })
+      if (comments) this.setData({ comments: this._decorate(comments) })
       toast.success('已回复')
     })
   },
@@ -115,7 +131,7 @@ Page({
       const ok = await qaApi.deleteComment(id)
       if (!ok) return
       const comments = await qaApi.getComments(this._id)
-      if (comments) this.setData({ comments })
+      if (comments) this.setData({ comments: this._decorate(comments) })
     })
   },
 
