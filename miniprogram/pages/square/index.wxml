@@ -27,9 +27,11 @@
         <view class="filter-icon {{filtersActive ? 'ic-filter-w' : 'ic-filter'}}"></view>
         <view wx:if="{{filtersActive}}" class="filter-dot"></view>
       </view>
-      <!-- 精选筛选（仅会员可见：非会员本就只能看精选，无切换意义） -->
-      <view wx:if="{{isMember}}" class="filter-btn {{featuredOnly ? 'filter-active' : ''}}" bindtap="onToggleFeatured">
-        <view class="filter-icon {{featuredOnly ? 'ic-star-on' : 'ic-star'}}"></view>
+      <!-- 精选筛选（仅会员可见：非会员本就只能看精选，无切换意义）
+           选中态只把星星换成墨黑实心 + 文字加深，圆圈底色两态一致 -->
+      <view wx:if="{{isMember}}" class="filter-btn star-btn" bindtap="onToggleFeatured">
+        <view class="star-icon {{featuredOnly ? 'ic-star-on' : 'ic-star'}}"></view>
+        <text class="star-label {{featuredOnly ? 'star-label-on' : ''}}">精选</text>
       </view>
     </view>
   </view>

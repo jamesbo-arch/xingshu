@@ -110,6 +110,32 @@ page { height: 100%; overflow: hidden; }
   border: 2px solid #FBF7EE;
 }
 
+/* 精选筛选：星 + 「精选」竖排塞进同一个 80rpx 圆内，
+   这样圆心与漏斗按钮仍在同一水平线上，不会把搜索行撑高 */
+.star-btn {
+  flex-direction: column;
+  gap: 2rpx;
+}
+
+.star-icon {
+  width: 30rpx;
+  height: 30rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.star-label {
+  font-size: 20rpx;
+  line-height: 1;
+  color: #7A746A;
+}
+
+.star-label-on {
+  color: #2A2723;
+  font-weight: 600;
+}
+
 /* List */
 .story-list {
   flex: 1;
