@@ -146,6 +146,8 @@ button { font-family: inherit; }
   font-size: 11px; color: var(--sidebar-dim);
   position: relative;
 }
+/* 构建时间戳：比版本号更淡，只在需要确认「是否刷到最新」时去看 */
+.build-at { font-size: 10px; opacity: .55; margin-top: 2px; letter-spacing: 0; }
 .logout-link {
   display: block; margin-bottom: 8px;
   color: var(--sidebar-text); cursor: pointer;

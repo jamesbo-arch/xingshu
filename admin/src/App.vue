@@ -18,6 +18,7 @@
         <div class="whoami">{{ profileName }} · <span class="whoami-role">{{ roleLabel }}</span></div>
         <a class="logout-link" @click="onLogout">退出登录</a>
         <div>v{{ appVersion }} · 运营后台</div>
+        <div class="build-at" title="本次构建时间——与部署时间对不上说明浏览器还在用缓存，强刷一次">构建 {{ buildAt }}</div>
       </div>
     </aside>
     <main class="main-content">
@@ -34,6 +35,8 @@ import { logout, getRoles, getProfile, ENV_LABEL, IS_PROD } from './api'
 import rootPkg from '../../package.json'
 
 const appVersion = rootPkg.version
+// 由 vite.config.js 的 define 注入，每次 build 刷新
+const buildAt = __BUILD_AT__
 
 // 侧边栏按角色过滤（与 router meta.roles 保持一致）；依赖 route.path 使登录/退出后重新求值
 const NAV = [
