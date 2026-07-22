@@ -3819,3 +3819,39 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 
 **验证**：
 6 个改动 JS 与 4 个 JSON 语法检查通过；`npm test` 全链 22 套件全绿。真机三身份与四种启动路径走查待用户在体验版确认。
+
+---
+
+### 2026-07-22 11:40 — 数据库每日自动备份（加密上传云存储）
+
+**类型**：云函数 | 部署 | 文档
+**计划关联**：改版前的数据保全 — 此前只有手动 `scripts/backup-db.js`，无异地副本
+
+**修改文件**：
+- `miniprogram/cloudfunctions/backupDb/{index,crypto,dump,package}.js` — 新建备份云函数
+- `cloudbaserc.json` — 注册 backupDb（timeout 300s）+ timer 触发器 `0 0 3 * * * *`
+- `scripts/upload-backup.js` — 新建：本地备份加密上传（补传/临时手动用）
+- `scripts/restore-backup.js` — 新建：列出/下载/解密/`--verify` 导临时库校验
+- `scripts/backup-db.js` — 导出逻辑改为 require 共用的 `backupDb/dump.js`
+- `package.json` — 加 `backup:upload` / `backup:restore`
+- `doc/数据库备份与恢复.md` — 新建 Runbook
+- `CLAUDE.md` — 云函数数 24→25；新增「数据库备份」段落与备份命令
+
+**变更说明**：
+每日 03:00（北京时间）自动：导出全库 → gzip → AES-256-GCM 加密 → 传云存储 `backups/<库名>-YYYYMMDD.sql.gz.enc` → 删 30 天前那份（按日期直接定位，无需遍历列表）。
+
+**为什么必须加密**：云存储桶权限是「所有用户可读」——小程序显示头像/故事配图/活动视频依赖它，不能改私有（一改用户就看不到别人的图）。明文备份放上去等同公网泄露 63 个用户的手机号、openid、订单数据。实测公网 URL 取到的只有 `XSBAK` 魔数 + 随机盐 + 密文。
+
+密钥由 `.env` 的 `ADMIN_PASSWORD` 经 scrypt 派生（每文件独立随机盐），经既有 `npm run sync-db` 机制注入云函数 `secret.js`，不新增要管的秘密。**代价**：轮换 ADMIN_PASSWORD 前须先解出全部历史备份，已在 CLAUDE.md 与 Runbook 中标红。
+
+`crypto.js` / `dump.js` 由云函数与三个本地脚本共用同一份（本地脚本 require 进云函数目录）——加解密实现一旦漂移，备份就会变成解不开的垃圾，故不接受复制粘贴。
+
+**已知缺口**：云函数经 cpolar 隧道回连 NAS，隧道断则静默失败（今天刚因 NAS 的 DHCP 换 IP 断过一次）。Runbook 已建议在控制台配「执行失败」告警；云存储文件（头像/配图/视频）仍无定期备份。
+
+**验证**：
+- 加解密回环：879.1 KB → 356.1 KB，解出与原文 `Buffer.equals` 为 true；错密码/篡改末字节/非本项目文件三条失败路径均正确拒绝
+- 重构后 `backup-db.js --verify` 仍 17 张表 836 行一致
+- 云函数实跑：5.2s / 35.5MB 内存 / 356.4 KB，`tcb fn detail` 确认 `dailyBackup` 触发器已注册
+- **端到端**：云函数产出的文件经 `restore-backup.js --verify` 下载解密并导入临时库，17 张表 836 行一致（证明云函数 secret.js 与本地 .env 密钥一致）
+- 公网 URL 取首 40 字节确认为密文
+- 部署目标为 dev 环境，`db.js` 仍指向 xingshu_dev，无需 sync-db 回滚

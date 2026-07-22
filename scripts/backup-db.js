@@ -13,42 +13,11 @@ const fs = require('fs')
 const path = require('path')
 const mysql = require('mysql2/promise')
 const DB = require('../config/db')
+// 导出逻辑与 backupDb 云函数共用一份，保证手动备份与每日定时备份产出格式一致
+const { dump } = require('../miniprogram/cloudfunctions/backupDb/dump')
 
 const VERIFY = process.argv.includes('--verify')
 const BACKUP_DIR = path.join(__dirname, '..', 'backups')
-
-function sqlValue(conn, v) {
-  if (v === null || v === undefined) return 'NULL'
-  if (typeof v === 'object' && !(v instanceof Date) && !Buffer.isBuffer(v)) return conn.escape(JSON.stringify(v))
-  return conn.escape(v)
-}
-
-async function dump(conn) {
-  const statements = ['SET FOREIGN_KEY_CHECKS=0']
-  const counts = {}
-
-  const [tables] = await conn.query('SHOW TABLES')
-  const names = tables.map(r => Object.values(r)[0])
-
-  for (const t of names) {
-    const [[create]] = await conn.query(`SHOW CREATE TABLE \`${t}\``)
-    statements.push(`DROP TABLE IF EXISTS \`${t}\``)
-    statements.push(create['Create Table'])
-
-    const [rows] = await conn.query(`SELECT * FROM \`${t}\``)
-    counts[t] = rows.length
-    for (let i = 0; i < rows.length; i += 100) {
-      const chunk = rows.slice(i, i + 100)
-      const values = chunk
-        .map(r => '(' + Object.values(r).map(v => sqlValue(conn, v)).join(',') + ')')
-        .join(',\n')
-      statements.push(`INSERT INTO \`${t}\` VALUES\n${values}`)
-    }
-  }
-
-  statements.push('SET FOREIGN_KEY_CHECKS=1')
-  return { statements, counts }
-}
 
 async function verify(statements, counts) {
   const tmpDb = 'xingshu_backup_verify_tmp'

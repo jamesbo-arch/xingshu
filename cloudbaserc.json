@@ -178,6 +178,20 @@
       "installDependency": true,
       "runtime": "Nodejs16.13",
       "handler": "index.main"
+    },
+    {
+      "name": "backupDb",
+      "timeout": 300,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main",
+      "triggers": [
+        {
+          "name": "dailyBackup",
+          "type": "timer",
+          "config": "0 0 3 * * * *"
+        }
+      ]
     }
   ]
 }

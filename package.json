@@ -6,6 +6,8 @@
     "test:e2e": "node test/ping-db.js && node test/e2e-flow-test.js",
     "sync-db": "node scripts/sync-db-config.js",
     "backup": "node scripts/backup-db.js",
+    "backup:upload": "node scripts/upload-backup.js",
+    "backup:restore": "node scripts/restore-backup.js",
     "sync-db:prod": "node scripts/sync-db-config.js .env.prod"
   },
   "dependencies": {
