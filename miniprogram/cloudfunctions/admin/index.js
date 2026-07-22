@@ -121,6 +121,14 @@ const ACL = {
   // 搜会员（选主理人/加工作人员）与活动工作人员白名单
   memberSearch: ['super', 'activity'],
   staffList: ['super', 'activity'], staffAdd: ['super', 'activity'], staffRemove: ['super', 'activity'],
+  // v2.0 活动页 Banner（属活动运营范畴）
+  bannerListAdmin: ['super', 'activity'], bannerDetailAdmin: ['super', 'activity'],
+  bannerSave: ['super', 'activity'], bannerDelete: ['super', 'activity'],
+  // v2.0 醒书问答（属内容运营范畴，与故事/精选同档）
+  questionList: ['super', 'content'], questionDetail: ['super', 'content'],
+  questionDelete: ['super', 'content'], questionCommentDelete: ['super', 'content'],
+  qaFeaturedAdd: ['super', 'content'], qaFeaturedUpdate: ['super', 'content'],
+  qaFeaturedToggle: ['super', 'content'],
 }
 
 async function auditLog(action, targetType, targetId, detail, operator = 'admin-web') {
@@ -1225,6 +1233,164 @@ const handlers = {
     if (!userId) throw new Error('缺少用户 ID')
     await db.query('DELETE FROM activity_staff WHERE activity_id = ? AND user_id = ?', [activityId, userId])
     await auditLog('staffRemove', 'activity', activityId, { userId }, ctx.operator)
+    return true
+  },
+
+  // ── v2.0 活动页 Banner 管理 ──
+  // 小程序端只取 is_active=1；后台看全量（含停用）
+  async bannerListAdmin() {
+    const [rows] = await db.query(
+      `SELECT id, image_url AS imageUrl, title, link_type AS linkType, sort, is_active AS isActive,
+              DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS createdAt
+       FROM banners ORDER BY sort, id DESC`)
+    return rows
+  },
+
+  async bannerDetailAdmin({ id } = {}) {
+    if (!id) throw new Error('缺少 Banner ID')
+    const [rows] = await db.query(
+      `SELECT id, image_url AS imageUrl, title, link_type AS linkType, content_rich AS contentRich,
+              sort, is_active AS isActive FROM banners WHERE id = ?`, [id])
+    if (!rows.length) throw new Error('Banner 不存在')
+    return rows[0]
+  },
+
+  async bannerSave({ id, imageUrl, title = '', linkType = 'none', contentRich = null,
+                     sort = 0, isActive = 1 } = {}, ctx) {
+    if (!imageUrl) throw new Error('请先上传 Banner 图片')
+    if (!['none', 'detail'].includes(linkType)) throw new Error('跳转类型无效')
+    // 选了「跳详情页」就必须有内容，否则用户点进去是空页
+    if (linkType === 'detail' && !String(contentRich || '').trim()) {
+      throw new Error('选择跳转详情页时，详情内容不能为空')
+    }
+    const args = [imageUrl, String(title).trim(), linkType, contentRich || null,
+                  Number(sort) || 0, isActive ? 1 : 0]
+    if (id) {
+      await db.query(
+        `UPDATE banners SET image_url=?, title=?, link_type=?, content_rich=?, sort=?, is_active=?,
+         updated_by=? WHERE id=?`, [...args, ctx.operator, id])
+      await auditLog('bannerUpdate', 'banner', id, { title, linkType, isActive }, ctx.operator)
+      return { id }
+    }
+    const [r] = await db.query(
+      `INSERT INTO banners (image_url, title, link_type, content_rich, sort, is_active, created_by)
+       VALUES (?,?,?,?,?,?,?)`, [...args, ctx.operator])
+    await auditLog('bannerCreate', 'banner', r.insertId, { title, linkType }, ctx.operator)
+    return { id: r.insertId }
+  },
+
+  async bannerDelete({ id } = {}, ctx) {
+    if (!id) throw new Error('缺少 Banner ID')
+    await db.query('DELETE FROM banners WHERE id = ?', [id])
+    await auditLog('bannerDelete', 'banner', id, {}, ctx.operator)
+    return true
+  },
+
+  // ── v2.0 醒书问答管理 ──
+  // 后台始终显示真实作者（匿名仅对小程序端其他用户生效），另标 isAnonymous 供运营知情
+  async questionList({ keyword, publishStatus, featured, page = 1, pageSize = 20 } = {}) {
+    const where = ["q.status = 'active'"], params = []
+    if (keyword) { where.push('q.content LIKE ?'); params.push(`%${keyword}%`) }
+    if (publishStatus) { where.push('q.publish_status = ?'); params.push(publishStatus) }
+    if (featured === 1 || featured === '1') where.push('q.is_featured = 1')
+    const whereSql = 'WHERE ' + where.join(' AND ')
+    const [[{ total }]] = await db.query(
+      `SELECT COUNT(*) AS total FROM questions q ${whereSql}`, params)
+    const [rows] = await db.query(
+      `SELECT q.id, q.content, q.is_anonymous AS isAnonymous, q.publish_status AS publishStatus,
+              q.is_featured AS isFeatured, q.like_count AS likes, q.fav_count AS favorites,
+              q.comment_count AS comments, q.user_id AS userId, u.nickname AS author,
+              DATE_FORMAT(q.created_at, '%Y-%m-%d %H:%i') AS createdAt
+       FROM questions q JOIN users u ON q.user_id = u.id ${whereSql}
+       ORDER BY q.created_at DESC LIMIT ? OFFSET ?`,
+      [...params, pageSize, (page - 1) * pageSize])
+    return { list: rows, total, page, pageSize }
+  },
+
+  async questionDetail({ id } = {}) {
+    if (!id) throw new Error('缺少问题 ID')
+    const [rows] = await db.query(
+      `SELECT q.*, u.nickname AS author,
+              DATE_FORMAT(q.created_at, '%Y-%m-%d %H:%i') AS createdAt
+       FROM questions q JOIN users u ON q.user_id = u.id WHERE q.id = ?`, [id])
+    if (!rows.length) throw new Error('问题不存在')
+    const [comments] = await db.query(
+      `SELECT c.id, c.content, c.parent_id AS parentId, c.is_anonymous AS isAnonymous,
+              c.is_deleted AS isDeleted, u.nickname AS author,
+              DATE_FORMAT(c.created_at, '%Y-%m-%d %H:%i') AS createdAt
+       FROM question_comments c JOIN users u ON c.user_id = u.id
+       WHERE c.question_id = ? ORDER BY c.id ASC`, [id])
+    const [feat] = await db.query(
+      'SELECT id, content, status FROM featured_questions WHERE question_id = ?', [id])
+    return { question: rows[0], comments, featured: feat[0] || null }
+  },
+
+  // 软删问题：精选副本联动下架（与作者自删口径一致）
+  async questionDelete({ id } = {}, ctx) {
+    if (!id) throw new Error('缺少问题 ID')
+    await db.query("UPDATE questions SET status = 'deleted', is_featured = 0 WHERE id = ?", [id])
+    await db.query("UPDATE featured_questions SET status = 'offline' WHERE question_id = ?", [id])
+    await auditLog('questionDelete', 'question', id, {}, ctx.operator)
+    return true
+  },
+
+  async questionCommentDelete({ id } = {}, ctx) {
+    if (!id) throw new Error('缺少回复 ID')
+    const [rows] = await db.query(
+      'SELECT question_id, parent_id FROM question_comments WHERE id = ? AND is_deleted = 0', [id])
+    if (!rows.length) throw new Error('回复不存在或已删除')
+    await db.query('UPDATE question_comments SET is_deleted = 1 WHERE id = ?', [id])
+    if (!rows[0].parent_id) {
+      await db.query('UPDATE questions SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?',
+        [rows[0].question_id])
+    }
+    await auditLog('questionCommentDelete', 'questionComment', id, {}, ctx.operator)
+    return true
+  },
+
+  // 纳入精选：拷贝原文生成可修订副本（同故事精选机制）
+  async qaFeaturedAdd({ questionId } = {}, ctx) {
+    if (!questionId) throw new Error('缺少问题 ID')
+    const [qs] = await db.query(
+      "SELECT content FROM questions WHERE id = ? AND status = 'active' AND publish_status = 'published'",
+      [questionId])
+    if (!qs.length) throw new Error('问题不存在或未发布')
+    const [exist] = await db.query('SELECT id FROM featured_questions WHERE question_id = ?', [questionId])
+    if (exist.length) {
+      // 已有副本（可能此前下架过）→ 重新上架，不覆盖运营修订过的正文
+      await db.query("UPDATE featured_questions SET status = 'online', updated_by = ? WHERE question_id = ?",
+        [ctx.operator, questionId])
+    } else {
+      await db.query(
+        'INSERT INTO featured_questions (question_id, content, created_by) VALUES (?,?,?)',
+        [questionId, qs[0].content, ctx.operator])
+    }
+    await db.query('UPDATE questions SET is_featured = 1 WHERE id = ?', [questionId])
+    await auditLog('qaFeaturedAdd', 'question', questionId, {}, ctx.operator)
+    return true
+  },
+
+  // 修订副本正文（不动作者原文）
+  async qaFeaturedUpdate({ questionId, content } = {}, ctx) {
+    if (!questionId || !String(content || '').trim()) throw new Error('缺少参数')
+    const [r] = await db.query(
+      'UPDATE featured_questions SET content = ?, updated_by = ? WHERE question_id = ?',
+      [String(content).trim(), ctx.operator, questionId])
+    if (!r.affectedRows) throw new Error('该问题尚未纳入精选')
+    await auditLog('qaFeaturedUpdate', 'question', questionId, {}, ctx.operator)
+    return true
+  },
+
+  // 上/下架副本，联动 questions.is_featured
+  async qaFeaturedToggle({ questionId, status } = {}, ctx) {
+    if (!['online', 'offline'].includes(status)) throw new Error('状态参数无效')
+    const [r] = await db.query(
+      'UPDATE featured_questions SET status = ?, updated_by = ? WHERE question_id = ?',
+      [status, ctx.operator, questionId])
+    if (!r.affectedRows) throw new Error('该问题尚未纳入精选')
+    await db.query('UPDATE questions SET is_featured = ? WHERE id = ?',
+      [status === 'online' ? 1 : 0, questionId])
+    await auditLog('qaFeaturedToggle', 'question', questionId, { status }, ctx.operator)
     return true
   },
 }

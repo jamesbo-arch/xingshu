@@ -37,10 +37,6 @@
   color: #2A2723;
 }
 
-.nav-right {
-  width: 72rpx;
-}
-
 .detail-scroll {
   flex: 1;
   overflow-y: auto;
@@ -447,9 +443,20 @@
   background-size: contain;
 }
 
+/* 导航右侧：收藏 + 分享两个图标按钮 */
 .nav-right {
-  width: 72rpx;
-  text-align: center;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.nav-icon-btn {
+  width: 64rpx;
+  height: 64rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ===== 活动邀请函（主题化预览；成图见 inv-canvas 绘制） ===== */

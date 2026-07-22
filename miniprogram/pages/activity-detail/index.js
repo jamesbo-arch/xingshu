@@ -601,6 +601,18 @@ Page({
     wx.previewImage({ current: images[e.currentTarget.dataset.index], urls: images })
   },
 
+  // v2.0 活动收藏：未登录先拉登录窗，登录后自动续做；乐观翻转，失败按后端权威值校准
+  onToggleFav() {
+    if (!ensureLogin(this, () => this.onToggleFav())) return
+    return lock(this, 'actfav', async () => {
+      const before = this.data.activity.isFavorited
+      this.setData({ 'activity.isFavorited': !before })
+      const r = await activityApi.toggleFav(this._id)
+      this.setData({ 'activity.isFavorited': r ? r.active : before })
+      if (r) toast.info(r.active ? '已收藏' : '已取消收藏')
+    })
+  },
+
   // 活动邀请函：带参小程序码（scene 携带活动 ID + 分享人 ID——扫码进来授权的新用户推荐人即分享人）
   async onOpenPoster() {
     this.setData({ showPoster: true })

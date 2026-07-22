@@ -46,6 +46,13 @@ module.exports = {
   likePost(id) {
     return call('activity', { action: 'postLike', payload: { id } })
   },
+  // v2.0 活动页顶部 Banner（免登录可见）
+  getBanners() {
+    return call('activity', { action: 'bannerList', payload: {} }, { retry: 1 })
+  },
+  getBannerDetail(id) {
+    return call('activity', { action: 'bannerDetail', payload: { id } }, { retry: 1 })
+  },
   // v2.0 活动收藏（翻转，返回 {active}）与我收藏的活动
   toggleFav(id) {
     return call('activity', { action: 'favToggle', payload: { id } })

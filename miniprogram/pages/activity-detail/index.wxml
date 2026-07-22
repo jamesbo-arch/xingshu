@@ -3,7 +3,13 @@
   <view class="detail-nav" style="padding-right: {{capsulePad}}px;">
     <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
     <text class="nav-title serif">{{isPast ? '活動回顧' : '活動詳情'}}</text>
-    <view class="nav-right" bindtap="onOpenPoster"><view class="nav-share-icon ic-share"></view></view>
+    <view class="nav-right">
+      <!-- v2.0 活动收藏（未登录点击触发登录，登录后自动续做） -->
+      <view class="nav-icon-btn" catch:tap="onToggleFav">
+        <view class="nav-share-icon {{activity.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
+      </view>
+      <view class="nav-icon-btn" catch:tap="onOpenPoster"><view class="nav-share-icon ic-share"></view></view>
+    </view>
   </view>
 
   <scroll-view class="detail-scroll" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="onPostsMore" lower-threshold="150" scroll-into-view="{{scrollInto}}">
@@ -70,7 +76,7 @@
         />
       </view>
 
-      <!-- 現場分享：已报名者活动开始后可发（canPost），所有登录用户可看 -->
+      <!-- 現場分享：v2.0 起仅主理人/工作人员在活动开始后可发（canPost），所有登录用户可看 -->
       <block wx:if="{{postsTotal > 0 || activity.canPost}}">
         <view id="postsAnchor" class="act-section-title serif" style="margin-top: 40rpx;">現場分享{{postsTotal ? ' · ' + postsTotal : ''}}</view>
         <view wx:for="{{posts}}" wx:key="id" class="post-item">
@@ -113,7 +119,7 @@
     </view>
   </scroll-view>
 
-  <!-- 现场分享相机浮窗：已报名且活动进行中（canPost）时出现，替代底部报名状态行 -->
+  <!-- 现场分享相机浮窗：主理人/工作人员且活动已开始（canPost）时出现，替代底部报名状态行 -->
   <view wx:if="{{activity.canPost}}" class="act-share-fab" bindtap="onOpenPostSheet">
     <view class="act-share-fab-icon ic-camera-w"></view>
   </view>

@@ -320,6 +320,23 @@ const handlers = {
     return { list, total, page, pageSize }
   },
 
+  // v2.0 活动页顶部 Banner：仅启用项，按 sort 升序（免登录可见，纯运营展示内容）
+  async bannerList() {
+    const [rows] = await db.query(
+      'SELECT id, image_url, title, link_type FROM banners WHERE is_active = 1 ORDER BY sort, id DESC')
+    return rows
+  },
+
+  // Banner 详情（link_type='detail' 时可点进来）：富文本图文，免登录可读
+  async bannerDetail({ id } = {}) {
+    if (!id) throw new Error('缺少 Banner ID')
+    const [rows] = await db.query(
+      "SELECT id, title, content_rich, image_url FROM banners WHERE id = ? AND is_active = 1 AND link_type = 'detail'",
+      [id])
+    if (!rows.length) throw new Error('内容不存在')
+    return rows[0]
+  },
+
   // v2.0 活动收藏：翻转式（授权即可，同故事/问答）
   async favToggle({ id } = {}, openid) {
     const user = await findUser(openid)

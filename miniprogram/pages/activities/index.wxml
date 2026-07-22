@@ -4,14 +4,14 @@
     <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書活動</text><kefu-fab /></view>
   </view>
 
-  <!-- 双页签：活动分享（默认）/ 全部活动 -->
-  <view class="act-tabs">
+  <!-- 双页签：活动分享（默认）/ 全部活动。v2.0 暂时隐藏分享子栏目（showFeed=false），代码保留 -->
+  <view wx:if="{{showFeed}}" class="act-tabs">
     <view class="act-tab serif {{tab === 'share' ? 'act-tab-on' : ''}}" data-tab="share" bindtap="onTabTap">活动分享</view>
     <view class="act-tab serif {{tab === 'all' ? 'act-tab-on' : ''}}" data-tab="all" bindtap="onTabTap">全部活动</view>
   </view>
 
   <!-- ── 页签一：活动分享 双列瀑布流 ── -->
-  <scroll-view wx:if="{{tab === 'share'}}" class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}"
+  <scroll-view wx:if="{{showFeed && tab === 'share'}}" class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}"
     bindscrolltolower="onFeedMore" lower-threshold="200"
     refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
     <view wx:if="{{feedLoaded && !colL.length && !colR.length}}" class="act-empty">
@@ -83,12 +83,24 @@
         </block>
       </view>
     </view>
-    <view class="act-bottom-pad {{actBannerCount ? 'pad-banner' : ''}}"></view>
+    <view class="act-bottom-pad"></view>
   </scroll-view>
 
-  <!-- ── 页签二：全部活动 简洁列表（时间倒序） ── -->
+  <!-- ── 页签二：全部活动 简洁列表（时间倒序），v2.0 起为本页唯一内容 ── -->
   <scroll-view wx:else class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}"
     refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
+
+    <!-- 顶部 Banner 轮播（后台管理，可手动左右拨动；仅「跳详情页」类型可点） -->
+    <swiper wx:if="{{banners.length}}" class="hero-swiper" circular indicator-dots
+      indicator-color="rgba(42,39,35,0.2)" indicator-active-color="#B6452F"
+      autoplay="{{false}}" previous-margin="0" next-margin="0">
+      <swiper-item wx:for="{{banners}}" wx:key="id">
+        <image class="hero-img {{item.link_type === 'detail' ? 'hero-tappable' : ''}}"
+          src="{{item.image_url}}" mode="aspectFill"
+          data-id="{{item.id}}" data-link="{{item.link_type}}" bindtap="onBannerTap" />
+      </swiper-item>
+    </swiper>
+
     <scroll-view wx:if="{{types.length}}" class="type-chips" scroll-x enhanced show-scrollbar="{{false}}">
       <view class="type-chip {{activeTypeId === 0 ? 'chip-on' : ''}}" data-id="0" bindtap="onTypeTap">全部</view>
       <view
@@ -125,13 +137,8 @@
     <view class="act-bottom-pad"></view>
   </scroll-view>
 
-  <!-- 近期活动预告轮播（共享组件）：仅分享页签展示，固定于 tab-bar 之上 -->
-  <view class="act-banner-bar" hidden="{{tab !== 'share' || !actBannerCount}}">
-    <act-banner id="actBanner" bind:change="onActBannerChange" bind:open="onActBannerOpen"></act-banner>
-  </view>
-
   <!-- 分享页签 FAB：直达发布分享（参照广场写故事入口） -->
-  <view wx:if="{{tab === 'share'}}" class="fab {{actBannerCount ? 'fab-raised' : ''}}" bindtap="onShareFab">
+  <view wx:if="{{showFeed && tab === 'share'}}" class="fab" bindtap="onShareFab">
     <view class="fab-icon ic-camera-w"></view>
   </view>
 

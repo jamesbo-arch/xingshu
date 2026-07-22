@@ -13,6 +13,7 @@
     "pages/qa-compose/index",
     "pages/activity-detail/index",
     "pages/activity-stats/index",
+    "pages/banner-detail/index",
     "pages/doc/index"
   ],
   "tabBar": {
@@ -51,7 +52,6 @@
   "lazyCodeLoading": "requiredComponents",
   "sitemapLocation": "sitemap.json",
   "usingComponents": {
-    "kefu-fab": "/components/kefu-fab/index",
-    "act-banner": "/components/act-banner/index"
+    "kefu-fab": "/components/kefu-fab/index"
   }
 }

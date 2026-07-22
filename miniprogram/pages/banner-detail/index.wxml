@@ -1,0 +1,16 @@
+<view class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px;"></view>
+
+  <view class="page-header">
+    <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
+    <text class="page-title serif">{{banner.title || '醒書活動'}}</text>
+  </view>
+
+  <scroll-view class="banner-body" scroll-y enhanced show-scrollbar="{{false}}">
+    <image wx:if="{{banner.image_url}}" class="banner-hero" src="{{banner.image_url}}" mode="widthFix" />
+    <view wx:if="{{nodes}}" class="banner-rich">
+      <rich-text nodes="{{nodes}}"></rich-text>
+    </view>
+    <view class="banner-bottom-pad"></view>
+  </scroll-view>
+</view>

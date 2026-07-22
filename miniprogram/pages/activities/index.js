@@ -1,4 +1,7 @@
-// 醒书活动页（重构版）：双页签——「活动分享」跨活动瀑布流（默认）+「全部活动」简洁列表（时间倒序）
+// 醒书活动页（v2.0 单页版，同时是小程序首页）：
+//   顶部可手动拨动的 Banner 轮播（后台管理）+ 下方活动列表（原「全部活动」）
+// 「活动分享」瀑布流子栏目暂时隐藏——SHOW_FEED 置回 true 即可恢复，相关代码全部保留。
+const SHOW_FEED = false
 const activityApi = require('../../api/activity')
 const toast = require('../../utils/toast')
 const { throttle, lock } = require('../../utils/guard')
@@ -6,6 +9,7 @@ const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
 const { hueToColor, getInitial } = require('../../utils/color')
 const { formatTime } = require('../../utils/mapper')
 const splash = require('../../utils/splash')
+const cache = require('../../utils/cache')
 
 const CN_DIGIT = '〇一二三四五六七八九'
 const CN_MONTH = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二']
@@ -21,9 +25,10 @@ function actDateLabel(dateStr) {
 Page({
   data: {
     statusBarHeight: 0,
-    tab: 'share',       // share=活动分享（默认） | all=全部活动
+    showFeed: SHOW_FEED,
+    tab: SHOW_FEED ? 'share' : 'all',  // share=活动分享 | all=全部活动（隐藏分享后恒为 all）
     refreshing: false,
-    actBannerCount: 0,  // 预告轮播场次数（组件回报，控制容器显隐与让位）
+    banners: [],        // v2.0 顶部轮播（后台管理，免登录可见）
     // 活动分享瀑布流（双列 JS 分配）
     colL: [],
     colR: [],
@@ -56,13 +61,37 @@ Page({
       showSplash: splash.claim('home'),
     })
     this._syncGuest()
+    this._loadBanners()
     this._loadTypes()
-    this._loadFeed(true)
+    if (SHOW_FEED) this._loadFeed(true)
+    else this._loadAll()
   },
 
   onSplashEnter() {
     this.setData({ showSplash: false })
     this._tabBar(false)
+  },
+
+  // ── 顶部 Banner 轮播 ──
+
+  async _loadBanners(force) {
+    // 冷启动首屏先用缓存（轮播是首页第一屏内容，等网络会明显空一块）
+    if (!force && !this.data.banners.length) {
+      const cached = cache.get('banners')
+      if (cached) this.setData({ banners: cached })
+    }
+    const list = await activityApi.getBanners()
+    if (list) {
+      this.setData({ banners: list })
+      cache.set('banners', list, 30)
+    }
+  },
+
+  // 仅 link_type='detail' 的 Banner 可点进详情；纯展示不响应
+  onBannerTap(e) {
+    const { id, link } = e.currentTarget.dataset
+    if (link !== 'detail') return
+    throttle(this, 'banner', () => wx.navigateTo({ url: '/pages/banner-detail/index?id=' + id }))
   },
 
   // 未授权态：视频卡不渲染 video 组件（原生组件盖不住，无法拦截点击），
@@ -77,10 +106,7 @@ Page({
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().refresh('pages/activities/index')
     }
-    // 轻量刷新预告轮播：同步手动关闭状态（组件内命中关闭标记即自清；正常路径走缓存）
-    const banner = this.selectComponent('#actBanner')
-    if (banner) banner.load()
-    // 从活动详情返回时同步报名状态（详情内报名/取消报名后，列表「已报名/报名中」需重新派生）
+    // 从活动详情返回时同步报名/收藏状态（详情内报名或收藏后，列表状态需重新派生）
     if (this.data.tab === 'all' && this.data.allLoaded) this._loadAll()
     // tab-bar 是独立层会盖在页面级蒙布之上，须隐藏；onLoad 时 getTabBar() 尚未就绪，故放这里
     if (this.data.showSplash) this._tabBar(true)
@@ -94,26 +120,13 @@ Page({
     if (tab === 'all' && !this.data.allLoaded) this._loadAll()
   },
 
-  onActBannerChange(e) {
-    this.setData({ actBannerCount: e.detail.count })
-  },
-
-  // 轮播点击（组件抛事件，本页守卫）：未登录先弹登录窗，登录成功自动进该活动详情
-  onActBannerOpen(e) {
-    const id = e.detail.id
-    const open = () => throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
-    if (!ensureLogin(this, open)) return
-    open()
-  },
-
   async onRefresh() {
     this.setData({ refreshing: true })
     try {
       if (this.data.tab === 'share') {
-        const banner = this.selectComponent('#actBanner')
-        await Promise.all([this._loadFeed(true), banner ? banner.load(true) : null])
+        await this._loadFeed(true)
       } else {
-        await Promise.all([this._loadAll(), this._loadTypes()])
+        await Promise.all([this._loadAll(), this._loadTypes(), this._loadBanners(true)])
       }
     } finally {
       this.setData({ refreshing: false })
