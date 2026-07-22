@@ -3897,3 +3897,45 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - `admin npm run build` 通过
 
 **待办（prod 上线）**：`XINGSHU_ENV_FILE=.env.prod node scripts/migrate-v2.js` + 全量部署云函数（新增 qa）+ admin 重新构建发布。
+
+---
+
+### 2026-07-22 —— 后台 Banner 详情改为所见即所得富文本编辑器
+
+**类型**：文档 / 前端（管理后台）
+**计划关联**：v2.0 阶段 4 收尾 —— Banner 管理易用性
+**修改文件**：
+- `admin/src/utils/rich-text.js` — 新建：净化 + rpx↔px 换算 + 块级排版基线
+- `admin/src/components/RichEditor.vue` — 新建：固定工具条 + 所见即所得画布
+- `admin/src/views/Banners.vue` — 详情页内容由 textarea 换成 RichEditor
+- `admin/src/theme.css` — `.modal-wide` 上收为全局
+- `admin/src/views/Featured.vue` — 删掉重复的 scoped `.modal-wide`
+
+**变更说明**：
+
+原先「详情页内容」是个裸 textarea，运营要手写 `<p style="…">` 才能排版，几乎不可用。改为编辑区上方固定工具条（正文/大小标题/引用、粗斜下划线、四色文字、有序无序列表、左对齐/居中、分割线、清格式、撤销重做、源码切换）+ 下方所见即所得画布。
+
+**没有引入 Quill / TinyMCE，原因有二**：
+1. 小程序 `<rich-text>` 只认白名单标签 + **内联样式**，`class` 不生效。Quill 输出的是 `class="ql-align-center"` 这类，到手机上排版全丢。
+2. 库里存 **rpx**（与小程序其余样式同口径，现有种子 Banner 即是），浏览器不认 rpx，直接塞进任何编辑器都会掉样式。
+
+故自建轻量编辑器（contenteditable + execCommand）并在出入参两端做净化：
+
+- **单位**：画布宽 **750px，1rpx = 1px**，即手机两倍稿——换算无小数无舍入，排版比例与真机完全一致。载入时 rpx→px，保存时 px→rpx。正则 `(\d*\.?\d+)px\b` 匹配不到 `1rpx`（px 前隔着 r），两个方向都不会误伤。
+- **排版基线**：`BLOCK_STYLE` 定义 p/h2/h3/li/ul/ol/blockquote/hr/img 的 rpx 样式，保存时按「缺什么补什么」合并（**已有声明优先**，运营手调过的字号颜色不会被吃掉；因是 merge 而非拼接，反复保存幂等、不会越存越长）。画布 CSS 用同一套值的 px 版，两边一致才谈得上所见即所得。
+- **净化**：标签/属性/样式属性三层白名单，不支持的标签脱壳留文字，`script/style/iframe` 整棵丢弃，`img` 只放行 http(s)/data。粘贴走同一条净化路径，从 Word/网页粘进来的垃圾标签不会进库。
+- **刻意不支持 `<a>`**：rich-text 屏蔽所有节点事件，链接点不动，留着只会让运营以为能跳转，故脱壳成纯文字。
+
+**三个踩坑点（都在注释里留了记）**：
+1. `.rte` 上**不能加 `overflow:hidden`**——那会让它自己变成滚动容器，工具条的 `sticky` 只相对它生效（而它从不滚动），等于失效。圆角改由工具条与页脚各切两角。
+2. 工具条容器必须 `@mousedown.prevent`，否则按钮一按焦点离开画布、选区丢失，命令作用不到选中的字。
+3. execCommand 生成的节点**没有 Vue scoped 标记**，画布内的 p/h2/li 等样式必须写成 `:deep(...)` 才命中。
+
+另：`.modal-wide` 原先只在 Featured.vue 里 scoped 定义，Banners/Questions 写了 class 却拿不到宽度（弹窗一直是默认 640px）。按 theme.css「唯一样式来源」的约定上收为全局。
+
+**验证**：
+- `admin npm run build` 通过
+- 未跑 `npm test`——改动全在 admin 前端，不触及云函数与数据库
+- 浏览器走查待用户确认：新增 Banner → 点击行为选「进入详情页」→ 工具条排版 → 保存 → 重新打开确认样式回填 → 小程序端点开 Banner 比对
+
+**已知缺口**：工具条**没有插入图片**。Banner 图片存的是 `cloud://` fileID，而 `rich-text` 的 `<img>` 渲染不了 cloud 协议，`getTempFileURL` 拿到的链接又会过期——要支持正文配图，需让 `activity.bannerDetail` 在读取时把正文里的 cloud:// 重写成可访问链接。属于独立一件事，未做。

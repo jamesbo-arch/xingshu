@@ -196,7 +196,6 @@ async function onToggle(f, status) {
 .empty { text-align: center; color: #A8A39B; padding: 24px; }
 .ops { display: flex; gap: 6px; }
 .row-off { opacity: 0.55; }
-.modal-wide { width: 860px; max-width: 94vw; }
 .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .origin-box { background: var(--bg-canvas, #FAF8F2); color: var(--ink-3); }
 </style>

@@ -73,12 +73,12 @@
           </select>
         </label>
 
-        <label v-if="form.linkType === 'detail'" class="block-label">
-          详情页内容<span class="req">*</span>
-          <span class="dim">（支持 HTML；小程序用 rich-text 渲染）</span>
-          <textarea v-model="form.contentRich" class="textarea" rows="12"
-            placeholder="&lt;p&gt;醒书线下活动介绍…&lt;/p&gt;&#10;&lt;img src=&quot;https://…&quot; /&gt;" />
-        </label>
+        <!-- 富文本用 div 而非 label 包裹：label 会把点击焦点抢回去，contenteditable 里选不中文字 -->
+        <div v-if="form.linkType === 'detail'" class="block-label">
+          <span>详情页内容<span class="req">*</span>
+            <span class="dim">（所见即所得；小程序用 rich-text 渲染）</span></span>
+          <RichEditor v-model="form.contentRich" />
+        </div>
 
         <div class="two-col">
           <label class="block-label">排序值 <span class="dim">（越小越靠前）</span>
@@ -106,6 +106,7 @@ import {
   getBanners, getBannerDetail, saveBanner, deleteBanner,
   uploadActivityImage, resolveFileUrls,
 } from '../api/index.js'
+import RichEditor from '../components/RichEditor.vue'
 
 const list = ref([])
 const urls = ref({})           // cloud:// fileID → 临时可展示 URL

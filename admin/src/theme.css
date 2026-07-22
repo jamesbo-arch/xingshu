@@ -390,6 +390,9 @@ button { font-family: inherit; }
   from { opacity: 0; transform: translateY(8px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
+/* 宽弹窗（精选修订、问答详情、Banner 富文本编辑）
+   原先只在 Featured.vue 里 scoped 定义，别的视图写了 class 却拿不到宽度 */
+.modal-wide { width: 860px; max-width: 94vw; }
 .modal-title {
   font-family: var(--font-serif);
   font-size: 16px; font-weight: 600; letter-spacing: 3px;
