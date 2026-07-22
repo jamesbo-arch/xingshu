@@ -3940,3 +3940,34 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - 浏览器走查待用户确认：新增 Banner → 点击行为选「进入详情页」→ 工具条排版 → 保存 → 重新打开确认样式回填 → 小程序端点开 Banner 比对
 
 **已知缺口**：工具条**没有插入图片**。Banner 图片存的是 `cloud://` fileID，而 `rich-text` 的 `<img>` 渲染不了 cloud 协议，`getTempFileURL` 拿到的链接又会过期——要支持正文配图，需让 `activity.bannerDetail` 在读取时把正文里的 cloud:// 重写成可访问链接。属于独立一件事，未做。
+
+---
+
+### 2026-07-22 —— Banner 富文本编辑器对齐小程序：工具条裁到同款、画布改真机宽度
+
+**类型**：前端（管理后台）
+**计划关联**：接上条，按运营反馈收敛
+**修改文件**：
+- `admin/src/components/RichEditor.vue` — 工具条重做、画布改 375px 手机纸面、加轮播图预览
+- `admin/src/utils/rich-text.js` — 单位换算改 1rpx = 0.5px（带缩放系数）
+- `admin/src/views/Banners.vue` — 传 `hero-src` 给编辑器
+- `admin/vite.config.js`、`admin/src/App.vue`、`admin/src/theme.css` — 侧边栏构建时间戳
+
+**变更说明**：
+
+**① 工具条与 `pages/compose` 一一对应**。上一版给多了（正文/大标题/小标题/引用/左对齐/分割线/清格式/撤销重做/源码），运营反馈用不上。现在只剩：5 色（黑 `#2A2723` / 深红 `#B6452F` / 黄 `#C29013` / 蓝 `#3A6B9E` / 绿 `#5B8F6C`，与 compose 的 `formatColors` 逐条对应）、B / I / U、有序列表、无序列表、居中。**多给的功能运营在手机端见不到，排出来的版式也无从预期**——这是删掉它们的真正理由，不只是嫌多。列表与居中改用内联 SVG 图标，与小程序端的图标形态一致。
+
+**② 画布改真机宽度**。原先 750px（两倍稿），改为 **375px = 750rpx 逻辑宽度，1rpx = 0.5px**，正文 15px/26px 行高——与手机上所见完全一致。尺寸全部照 `pages/banner-detail` 的 wxss 折半：外层 `#FBF7EE` 纸底 + 12px 侧距（24rpx），内层 `#FFFCF5` 卡片 + 16px 内距（32rpx）+ 14px 圆角。画布内容区实际 319px，真机 638rpx = 319pt，**逐像素对得上**。
+
+**③ 轮播图进预览**。编辑器新增 `heroSrc` 属性，把 Banner 图摆在正文上方——详情页真实结构就是「图 + 正文卡片」，只预览正文等于半张脸。
+
+**④ 侧边栏加构建时间戳**（`vite.config.js` 的 `define` 注入 `__BUILD_AT__`）。起因：上一版部署后运营看到的仍是旧界面。`hosting deploy` **不删旧文件**，浏览器一旦缓存了旧 `index.html`，就能整套加载旧分块、页面运行正常看不出异常，"到底刷没刷新" 只能翻 Network 比对分块哈希。有了这个戳一眼可判。
+
+**单位换算的两处细节**：
+- `convertUnit` 增加缩放系数，并对结果 `Math.round(v*100)/100` 收掉浮点尾巴（如 `12.500000000000002`）。
+- 正则 `(\d*\.?\d+)px\b` 匹配不到 `1rpx`——`px` 前面是字母 `r` 不是数字，故 px↔rpx 双向都不会误伤。种子数据里的 `border-top:1px` 首次保存会变 `2rpx`（真机等效），此后往返稳定。
+
+**验证**：
+- `admin npm run build` 通过
+- **已部署 dev 静态托管**，回查线上 `index-DtZ_rzeg.js` 与本地构建一致
+- 未跑 `npm test`——改动全在 admin 前端

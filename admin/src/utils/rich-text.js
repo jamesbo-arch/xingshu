@@ -5,9 +5,12 @@
    所以编辑器的出参必须先过这里：去掉不支持的标签、属性与样式声明。
 
    单位：库里存 rpx（与小程序其余样式同一口径，现有种子 Banner 也是 rpx），
-   浏览器不认 rpx，故编辑画布按 1rpx = 1px 换算——画布宽 750px 正好是手机
-   两倍稿，排版比例与真机完全一致，且换算无小数、无舍入。
+   浏览器不认 rpx，故编辑画布按 **1rpx = 0.5px** 换算——画布宽 375px 即真机
+   逻辑宽度（750rpx），字号间距与手机上看到的一模一样。
    =========================================================== */
+
+// 画布 : 真机 = 375px : 750rpx
+export const RPX_TO_PX = 0.5
 
 // rich-text 支持的标签（照微信文档），刻意不含 a：rich-text 屏蔽所有节点事件，
 // 链接点不动，留着只会让运营以为能跳转
@@ -118,13 +121,14 @@ function sanitizeNode(parent) {
 }
 
 // 只改 style 属性里的单位，正文文字不动。
-// `(\d*\.?\d+)px` 匹配不到 `1rpx`（px 前面隔着 r），故两个方向都安全。
-function convertUnit(root, from, to) {
+// `(\d*\.?\d+)px` 匹配不到 `1rpx`（px 前面隔着 r，不是数字），故两个方向都安全。
+function convertUnit(root, from, to, scale) {
+  const re = new RegExp(`(\\d*\\.?\\d+)${from}\\b`, 'g')
   root.querySelectorAll('[style]').forEach((el) => {
-    el.setAttribute(
-      'style',
-      el.getAttribute('style').replace(new RegExp(`(\\d*\\.?\\d+)${from}\\b`, 'g'), `$1${to}`),
-    )
+    el.setAttribute('style', el.getAttribute('style').replace(re, (_, n) => {
+      const v = Math.round(Number(n) * scale * 100) / 100   // 收掉浮点尾巴，如 12.500000000000002
+      return `${v}${to}`
+    }))
   })
 }
 
@@ -146,7 +150,7 @@ function parse(html) {
 export function toEditorHtml(stored) {
   const body = parse(stored)
   sanitizeNode(body)
-  convertUnit(body, 'rpx', 'px')
+  convertUnit(body, 'rpx', 'px', RPX_TO_PX)
   return body.innerHTML.trim() || '<p><br></p>'
 }
 
@@ -157,7 +161,7 @@ export function toStoredHtml(editorHtml) {
   // 空判定必须在 stamp 之前——补完样式后 `<p><br></p>` 就不是空串了，必填校验会失灵
   if (!body.textContent.trim() && !body.querySelector('img, hr')) return ''
   stampBlockStyle(body)
-  convertUnit(body, 'px', 'rpx')
+  convertUnit(body, 'px', 'rpx', 1 / RPX_TO_PX)
   return body.innerHTML.trim()
 }
 
@@ -165,6 +169,6 @@ export function toStoredHtml(editorHtml) {
 export function sanitizeFragment(html) {
   const body = parse(html)
   sanitizeNode(body)
-  convertUnit(body, 'rpx', 'px')
+  convertUnit(body, 'rpx', 'px', RPX_TO_PX)
   return body.innerHTML
 }

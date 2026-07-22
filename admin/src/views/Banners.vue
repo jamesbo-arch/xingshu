@@ -77,7 +77,7 @@
         <div v-if="form.linkType === 'detail'" class="block-label">
           <span>详情页内容<span class="req">*</span>
             <span class="dim">（所见即所得；小程序用 rich-text 渲染）</span></span>
-          <RichEditor v-model="form.contentRich" />
+          <RichEditor v-model="form.contentRich" :hero-src="previewUrl" />
         </div>
 
         <div class="two-col">
