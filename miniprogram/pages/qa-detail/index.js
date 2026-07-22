@@ -21,6 +21,7 @@ Page({
     canReply: false,     // 有效会员才能发回复
     viaFeatured: false,  // 当前读的是精选副本（公众版）
     replyInput: '',
+    maxReply: 1000,      // 与云函数 qa 的 MAX_COMMENT 保持一致
     replyAnonymous: false,
     replyTo: null,       // { id, user } 追评目标
     showReplyInput: false,

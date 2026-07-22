@@ -24,7 +24,7 @@
           <view class="perm-ic ic-star-gold"></view>
         </view>
       </view>
-      <view class="q-content">{{question.content}}</view>
+      <view class="q-content"><text class="q-mark">问：</text>{{question.content}}</view>
     </view>
 
     <!-- 回复区：公众版可读但不可发 -->
@@ -90,14 +90,20 @@
   <!-- 写回答浮层 -->
   <view wx:if="{{showReplyInput}}" class="reply-overlay">
     <view class="reply-overlay-mask" bindtap="onHideReplyInput"></view>
+    <!-- 回答通常较长：多行 textarea + 独立操作行。
+         auto-height 随内容长高，回车即换行，提交只走「发送」按钮 -->
     <view class="reply-input-bar">
-      <input class="reply-real-input"
+      <textarea class="reply-real-input"
         placeholder="{{replyTo ? '回复 ' + replyTo.user : '写下你的回答…'}}"
         placeholder-style="color:#A8A39B;"
         value="{{replyInput}}" bindinput="onReplyInput" focus="{{showReplyInput}}"
-        confirm-type="send" bindconfirm="onSubmitReply" />
-      <view class="reply-anon {{replyAnonymous ? 'reply-anon-on' : ''}}" bindtap="onToggleReplyAnonymous">匿名</view>
-      <view class="reply-send" bindtap="onSubmitReply">发送</view>
+        auto-height="{{true}}" maxlength="{{maxReply}}" show-confirm-bar="{{false}}"
+        cursor-spacing="20" fixed="{{true}}" />
+      <view class="reply-input-actions">
+        <text class="reply-counter {{replyInput.length > maxReply - 50 ? 'reply-counter-near' : ''}}">{{replyInput.length}}/{{maxReply}}</text>
+        <view class="reply-anon {{replyAnonymous ? 'reply-anon-on' : ''}}" bindtap="onToggleReplyAnonymous">匿名</view>
+        <view class="reply-send" bindtap="onSubmitReply">发送</view>
+      </view>
     </view>
   </view>
 

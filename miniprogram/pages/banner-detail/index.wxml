@@ -7,7 +7,6 @@
   </view>
 
   <scroll-view class="banner-body" scroll-y enhanced show-scrollbar="{{false}}">
-    <image wx:if="{{banner.image_url}}" class="banner-hero" src="{{banner.image_url}}" mode="widthFix" />
     <view wx:if="{{nodes}}" class="banner-rich">
       <rich-text nodes="{{nodes}}"></rich-text>
     </view>

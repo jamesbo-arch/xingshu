@@ -4009,3 +4009,29 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - 真机走查待确认：后台插图保存 → 小程序点 Banner → 图片能显示
 
 **待办（prod 上线）**：本次云函数改动（`activity`）需随 v2.0 一并部署 prod。
+
+---
+
+### 2026-07-23 —— 问答详情加「问：」标记、回答改多行输入；Banner 详情去掉顶部图
+
+**类型**：前端（小程序）
+**计划关联**：v2.0 真机走查反馈
+**修改文件**：
+- `miniprogram/pages/qa-detail/index.wxml` / `.wxss` / `.js` — 「问：」标记 + 回答输入改 textarea
+- `miniprogram/pages/banner-detail/index.wxml` / `.wxss` — 移除顶部轮播图
+
+**变更说明**：
+
+**①「问：」标记**（`.q-mark`，印章红加粗）加在问题正文前，与回复区的「回答」标题呼应。详情页里问与答同屏，需要一眼分清；**列表页没加**——那里每张卡片本身就是一个问题，不存在歧义。
+
+**② 回答输入框改多行**。原 `<input>` 是单行的，写长回答时看不见前文。改 `<textarea auto-height>`：从 `min-height:140rpx` 起随内容长高，到 `max-height:400rpx` 后内部滚动（不至于把面板顶满屏）。回车即换行，故去掉 `confirm-type="send"` / `bindconfirm`，**提交只走「发送」按钮**。操作行下移独立成排，左侧加字数计数（余 50 字转印章红），上限 1000 与云函数 `qa` 的 `MAX_COMMENT` 对齐。
+
+`auto-height` / `fixed` 写成显式 `{{true}}`——`fixed` 是因为父容器 `.reply-overlay` 是 `position:fixed`，原生 textarea 需要它才定位正确。
+
+**③ Banner 详情去掉顶部轮播图**。运营反馈：正文里已可插图，顶部再重复一张 Banner 图是冗余。
+
+**验证**：
+- 未跑 `npm test`——改动全在小程序前端，不触及云函数与数据库
+- 真机走查待确认：问答详情「问：」显示、长回答输入与滚动、Banner 详情顶部无图
+
+**注**：`activity.bannerDetail` 的 SQL 仍 SELECT `image_url`，现在小程序端已无消费方。**未删**——删它要重新部署云函数、换不来任何用户可见收益，且转发卡片等场景日后可能用到。
