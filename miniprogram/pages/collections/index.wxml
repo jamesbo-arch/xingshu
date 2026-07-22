@@ -10,12 +10,20 @@
         <text class="page-title serif">我的收藏</text><kefu-fab />
       </view>
     </view>
-    <view class="search-row">
+    <!-- v2.0：收藏分故事 / 问答 / 活动三段 -->
+    <view class="seg-row">
+      <view class="seg {{seg === 'story' ? 'seg-on' : ''}}" data-seg="story" bindtap="onSegTap">故事</view>
+      <view class="seg {{seg === 'qa' ? 'seg-on' : ''}}" data-seg="qa" bindtap="onSegTap">问答</view>
+      <view class="seg {{seg === 'activity' ? 'seg-on' : ''}}" data-seg="activity" bindtap="onSegTap">活动</view>
+    </view>
+
+    <!-- 活动段无搜索/筛选（量小且一次取回） -->
+    <view wx:if="{{seg !== 'activity'}}" class="search-row">
       <view class="search-bar">
         <view class="search-icon ic-search"></view>
         <input
           class="search-input"
-          placeholder="搜索收藏的故事"
+          placeholder="{{seg === 'qa' ? '搜索收藏的问答' : '搜索收藏的故事'}}"
           placeholder-style="color: #A8A39B; font-size: 28rpx;"
           value="{{search}}"
           bindinput="onSearchInput"
@@ -24,30 +32,67 @@
         />
         <view wx:if="{{search}}" class="search-clear ic-close" bindtap="onSearchClear"></view>
       </view>
-      <view class="filter-btn {{filtersActive ? 'filter-active' : ''}}" bindtap="onOpenFilter">
+      <view wx:if="{{seg === 'story'}}" class="filter-btn {{filtersActive ? 'filter-active' : ''}}" bindtap="onOpenFilter">
         <view class="filter-icon {{filtersActive ? 'ic-filter-w' : 'ic-filter'}}"></view>
         <view wx:if="{{filtersActive}}" class="filter-dot"></view>
       </view>
     </view>
   </view>
 
-  <!-- Story list -->
   <scroll-view class="story-list" scroll-y enhanced show-scrollbar="{{false}}" bindscrolltolower="onReachBottom" lower-threshold="150" refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
-    <view wx:if="{{stories.length === 0}}" class="empty-state">
-      <view class="empty-icon ic-bookmark"></view>
-      <text class="empty-text">暂无收藏</text>
-      <text class="empty-hint">在广场中点击书签即可收藏</text>
-    </view>
-    <story-card
-      wx:for="{{stories}}"
-      wx:key="id"
-      story="{{item}}"
-      show-actions="{{false}}"
-      bind:open="onCardOpen"
-      bind:like="onCardLike"
-      bind:fav="onCardFav"
-      bind:share="onCardShare"
-    ></story-card>
+    <!-- 故事段 -->
+    <block wx:if="{{seg === 'story'}}">
+      <view wx:if="{{stories.length === 0}}" class="empty-state">
+        <view class="empty-icon ic-bookmark"></view>
+        <text class="empty-text">暂无收藏的故事</text>
+        <text class="empty-hint">在醒书故事中点击书签即可收藏</text>
+      </view>
+      <story-card
+        wx:for="{{stories}}"
+        wx:key="id"
+        story="{{item}}"
+        show-actions="{{false}}"
+        bind:open="onCardOpen"
+        bind:like="onCardLike"
+        bind:fav="onCardFav"
+        bind:share="onCardShare"
+      ></story-card>
+    </block>
+
+    <!-- 问答段 -->
+    <block wx:elif="{{seg === 'qa'}}">
+      <view wx:if="{{questions.length === 0}}" class="empty-state">
+        <view class="empty-icon ic-bookmark"></view>
+        <text class="empty-text">暂无收藏的问答</text>
+        <text class="empty-hint">在醒书问答中点击书签即可收藏</text>
+      </view>
+      <qa-card
+        wx:for="{{questions}}"
+        wx:key="id"
+        question="{{item}}"
+        bind:open="onQaOpen"
+        bind:like="onQaLike"
+        bind:fav="onQaFav"
+      ></qa-card>
+    </block>
+
+    <!-- 活动段 -->
+    <block wx:else>
+      <view wx:if="{{activities.length === 0}}" class="empty-state">
+        <view class="empty-icon ic-bookmark"></view>
+        <text class="empty-text">暂无收藏的活动</text>
+        <text class="empty-hint">在活动详情中点击书签即可收藏</text>
+      </view>
+      <view wx:for="{{activities}}" wx:key="id" class="fav-act {{item.isPast ? 'fav-act-past' : ''}}"
+        data-id="{{item.id}}" bindtap="onActOpen">
+        <view class="fav-act-main">
+          <text class="fav-act-title">{{item.title}}</text>
+          <text class="fav-act-meta">{{item.timeText}} · {{item.place}}{{item.typeName ? ' · ' + item.typeName : ''}}</text>
+        </view>
+        <view class="fav-act-unfav ic-bookmark-on" data-id="{{item.id}}" catch:tap="onActUnfav"></view>
+      </view>
+    </block>
+
     <view class="list-bottom-pad"></view>
   </scroll-view>
 
@@ -77,10 +122,10 @@
     bind:joinMember="onGuardJoinMember"
   ></member-guard>
 
-  <!-- v2.3 微信登录弹窗：guest 点卡片/点赞/收藏时拉起，登录后自动续做（与广场页一致） -->
+  <!-- v2.3 微信登录弹窗：guest 点卡片/点赞/收藏时拉起，登录后自动续做（与故事页一致） -->
   <login-sheet
     visible="{{showLoginSheet}}"
-    subtitle="登录后即可查看收藏的故事，继续未读完的文字。"
+    subtitle="登录后即可查看收藏的内容，继续未读完的文字。"
     bind:close="onLoginClose"
     bind:success="onLoginSuccess"
   ></login-sheet>

@@ -2,12 +2,13 @@ const cloud = require('wx-server-sdk')
 const db = require('./db')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-// 故事列表（v3.0 善选版）
+// 故事列表（v3.0 精选版）
 // mode=mine：作者旁路，返回自己全部故事（含 draft）
-// mode=square/collections：member → 已发布故事全文；非会员（含未登录 guest）→ 仅善选故事（展示善选副本全文）
+// mode=square/collections：member → 已发布故事全文；非会员（含未登录 guest）→ 仅精选故事（展示精选副本全文）
+// v2.0：会员可传 featuredOnly 主动切到精选视图（前端星标筛选），走同一套副本 SQL
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { mode, keyword, tag, author, page = 1, pageSize = 20 } = event
+  const { mode, keyword, tag, author, featuredOnly, page = 1, pageSize = 20 } = event
 
   let userId = null
   let userIdentity = 'guest'
@@ -27,8 +28,9 @@ exports.main = async (event, context) => {
     userId = (users.length && userIdentity !== 'guest') ? users[0].id : null
   }
 
-  // 非会员（guest/authed）的广场与收藏走善选视图：只见 featured_stories 上架副本
-  const featuredView = mode !== 'mine' && userIdentity !== 'member'
+  // 非会员（guest/authed）的广场与收藏走精选视图：只见 featured_stories 上架副本。
+  // 会员点亮星标筛选（featuredOnly）时同样走这条分支——所见即公众版内容。
+  const featuredView = mode !== 'mine' && (userIdentity !== 'member' || !!featuredOnly)
 
   let where = "WHERE d.status = 'active'"
   const params = []

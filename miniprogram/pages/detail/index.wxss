@@ -313,6 +313,11 @@ rich-text.content-text {
   gap: 10rpx;
 }
 
+/* 公众版无写评论入口：占位撑开同样的 flex:1，保证互动按钮仍靠右 */
+.comment-trigger-placeholder {
+  flex: 1;
+}
+
 .comment-trigger-icon {
   width: 30rpx;
   height: 30rpx;

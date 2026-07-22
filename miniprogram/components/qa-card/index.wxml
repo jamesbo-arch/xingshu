@@ -1,0 +1,57 @@
+<view class="qa-card {{question.publish_status === 'draft' ? 'qa-card-draft' : ''}}" bindtap="onTap">
+  <!-- 作者行：匿名问题由云函数脱敏为「匿名」且无头像色 -->
+  <view class="qa-header">
+    <view class="qa-avatar-wrap">
+      <image wx:if="{{question.avatar_url}}" class="qa-avatar-img" src="{{question.avatar_url}}" mode="aspectFill" />
+      <view wx:else class="qa-avatar" style="background-color: {{question.is_anonymous ? '#A8A39B' : avatarColor}};">
+        <text class="qa-avatar-text">{{question.is_anonymous ? '匿' : avatarInitial}}</text>
+      </view>
+      <view wx:if="{{question.author_identity === 'member' && !question.is_anonymous}}" class="member-badge">
+        <text class="member-badge-text">会</text>
+      </view>
+    </view>
+    <view class="qa-meta">
+      <text class="qa-author">{{question.nickname}}</text>
+      <text class="qa-time">{{question.created_at}}</text>
+    </view>
+    <view wx:if="{{question.publish_status === 'draft'}}" class="perm-badge perm-private">
+      <view class="perm-ic ic-draft"></view>
+    </view>
+    <view wx:elif="{{question.is_featured}}" class="perm-badge perm-member">
+      <view class="perm-ic ic-star-gold"></view>
+    </view>
+  </view>
+
+  <!-- 问题正文（帖子式，无标题） -->
+  <view class="qa-content">{{question.content}}</view>
+
+  <view class="qa-divider"></view>
+
+  <view class="qa-stats">
+    <!-- 作者视角：编辑/删除；浏览视角：点赞/收藏（均只显状态不显数字） -->
+    <view wx:if="{{showActions}}" class="qa-stats-left">
+      <view class="qa-stat">
+        <view class="qa-stat-icon ic-comment"></view>
+        <text class="qa-stat-count">{{question.comment_count}}</text>
+      </view>
+    </view>
+    <view wx:else class="qa-stats-left">
+      <view class="qa-stat qa-like-wrap" catch:tap="onLike">
+        <view class="qa-stat-icon {{question.isLiked ? 'ic-heart-on' : 'ic-heart'}}"></view>
+        <text wx:if="{{showLikeAnim}}" class="qa-like-float">+1</text>
+      </view>
+      <view class="qa-stat" catch:tap="onFav">
+        <view class="qa-stat-icon {{question.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
+      </view>
+      <!-- 回复数保留：答案数是问答的核心信息 -->
+      <view class="qa-stat">
+        <view class="qa-stat-icon ic-comment"></view>
+        <text class="qa-stat-count">{{question.comment_count}}</text>
+      </view>
+    </view>
+    <view wx:if="{{showActions}}" class="qa-actions">
+      <view class="qa-action-btn" catch:tap="onEdit"><text>编辑</text></view>
+      <view class="qa-action-btn qa-action-del" catch:tap="onDelete"><text>删除</text></view>
+    </view>
+  </view>
+</view>

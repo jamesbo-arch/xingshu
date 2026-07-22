@@ -15,7 +15,7 @@ const FEAT_TITLE = 'test_perm_featured_修订版标题'
 const FEAT_CONTENT = '这是管理员修订过的善选副本正文（与原文不同）'
 
 async function run() {
-  console.log('=== 故事权限矩阵测试（PERM-A01~A15 · 善选版）===\n')
+  console.log('=== 故事权限矩阵测试（PERM-A01~A16 · 精选版）===\n')
   let passed = 0, failed = 0
   const created = []
   const conn = await mysql.createConnection(DB)
@@ -181,15 +181,18 @@ async function run() {
     await conn.query('DELETE FROM users WHERE openid = ?', [EXA])
   })
 
-  await test('PERM-A12 authed 可对善选故事点赞/评论（互动落在原故事）', async () => {
+  // v2.0：评论收窄为会员专享（精选/公众版故事无评论区），authed 只保留点赞/收藏
+  await test('PERM-A12 authed 可对精选故事点赞（落原故事），但评论被拒（会员专享）', async () => {
     const like = await callFn('toggleLike', { targetId: featStoryId, targetType: 'story' }, AUTHED)
     if (like.code !== 0 || like.data.liked !== true) throw new Error('点赞失败')
     const [[row]] = await conn.query(
       "SELECT COUNT(*) c FROM interactions WHERE target_type='story' AND target_id=? AND action='like'", [featStoryId])
     if (!row.c) throw new Error('互动未落库到原故事')
-    const cm = await callFn('createComment', { storyId: featStoryId, content: 'test_perm 善选评论' }, AUTHED)
-    if (cm.code !== 0) throw new Error('评论失败')
-    await conn.query('DELETE FROM comments WHERE id = ?', [cm.data.id])
+    const cm = await callFn('createComment', { storyId: featStoryId, content: 'test_perm 精选评论' }, AUTHED)
+    if (cm.code !== -2) throw new Error(`非会员评论应被拒（-2），实际 code=${cm.code}`)
+    const mcm = await callFn('createComment', { storyId: featStoryId, content: 'test_perm 会员评论' }, MEMBER)
+    if (mcm.code !== 0) throw new Error('会员评论应通过：' + mcm.msg)
+    await conn.query('DELETE FROM comments WHERE id = ?', [mcm.data.id])
     await callFn('toggleLike', { targetId: featStoryId, targetType: 'story' }, AUTHED) // 取消点赞还原
     await conn.query('UPDATE stories SET comment_count = GREATEST(comment_count - 1, 0) WHERE id = ?', [featStoryId])
   })
@@ -212,14 +215,32 @@ async function run() {
     if (m.identity !== 'member' || m.via_featured !== 0) throw new Error(`member 记录异常 ${m.identity}/${m.via_featured}`)
   })
 
-  await test('PERM-A15 preferFeatured：member 取善选副本（供分享海报）且不计阅读', async () => {
+  // v2.0：取副本（preferFeatured）与「是否记阅读」拆成两个参数——
+  // 海报生成传 silent 不记（不是真实阅读）；会员星标筛选态阅读只传 preferFeatured，照常记
+  await test('PERM-A15 preferFeatured 取精选副本：silent 不计阅读，不带 silent 则计', async () => {
     const cnt = async () => (await conn.query(
       'SELECT COUNT(*) c FROM story_reads WHERE story_id = ?', [featStoryId]))[0][0].c
     const base = await cnt()
-    const r = await callFn('getStoryDetail', { storyId: featStoryId, preferFeatured: true }, MEMBER)
-    if (r.code !== 0) throw new Error(r.msg)
-    if (r.data.title !== FEAT_TITLE || r.data.content !== FEAT_CONTENT) throw new Error('海报视角应返回善选副本')
-    if (await cnt() !== base) throw new Error('preferFeatured 不应计入阅读记录')
+    const poster = await callFn('getStoryDetail', { storyId: featStoryId, preferFeatured: true, silent: true }, MEMBER)
+    if (poster.code !== 0) throw new Error(poster.msg)
+    if (poster.data.title !== FEAT_TITLE || poster.data.content !== FEAT_CONTENT) throw new Error('海报视角应返回精选副本')
+    if (!poster.data.viaFeatured) throw new Error('取到副本时应回报 viaFeatured')
+    if (await cnt() !== base) throw new Error('silent 不应计入阅读记录')
+
+    const read = await callFn('getStoryDetail', { storyId: featStoryId, preferFeatured: true }, MEMBER)
+    if (read.code !== 0) throw new Error(read.msg)
+    if (read.data.content !== FEAT_CONTENT) throw new Error('星标筛选态应返回精选副本')
+    if (await cnt() !== base + 1) throw new Error('不带 silent 的副本阅读应计入阅读记录')
+  })
+
+  await test('PERM-A16 会员传 featuredOnly → 列表切公众版精选副本视图', async () => {
+    const l = await callFn('getStoryList', { mode: 'square', page: 1, pageSize: 50, featuredOnly: true }, MEMBER)
+    if (l.code !== 0) throw new Error(l.msg)
+    const ids = l.data.list.map(d => d.id)
+    if (!ids.includes(featStoryId)) throw new Error('精选故事缺失')
+    if (ids.includes(pubOnlyId)) throw new Error('未精选故事不应出现在精选筛选结果')
+    const row = l.data.list.find(d => d.id === featStoryId)
+    if (row.title !== FEAT_TITLE || row.content !== FEAT_CONTENT) throw new Error('精选筛选应展示副本内容')
   })
 
   // 清理（featured_stories/story_reads 由 stories 硬删级联删除）

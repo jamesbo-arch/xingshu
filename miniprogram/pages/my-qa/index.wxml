@@ -1,0 +1,33 @@
+<view class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px;"></view>
+
+  <view class="page-header">
+    <!-- 非 tab 页，需自带返回 -->
+    <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
+    <text class="page-title serif">我的问答</text>
+  </view>
+
+  <scroll-view class="qa-list" scroll-y enhanced show-scrollbar="{{false}}"
+    bindscrolltolower="onReachBottom" lower-threshold="150"
+    refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
+    <view wx:if="{{loaded && questions.length === 0}}" class="empty-state">
+      <text class="empty-icon">?</text>
+      <text class="empty-text">还没有提过问题</text>
+      <text class="empty-hint">点右下角问一问</text>
+    </view>
+    <qa-card
+      wx:for="{{questions}}"
+      wx:key="id"
+      question="{{item}}"
+      show-actions="{{true}}"
+      bind:open="onCardOpen"
+      bind:edit="onCardEdit"
+      bind:delete="onCardDelete"
+    ></qa-card>
+    <view class="list-bottom-pad"></view>
+  </scroll-view>
+
+  <view class="fab" bindtap="onFabTap">
+    <view class="fab-icon ic-qa-w"></view>
+  </view>
+</view>

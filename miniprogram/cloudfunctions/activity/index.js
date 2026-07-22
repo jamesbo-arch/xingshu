@@ -26,6 +26,26 @@ async function isStatsViewer(activityId, ownerUserId, userId) {
   return rows.length > 0
 }
 
+// v2.0 活动收藏：与故事/问答同走 interactions（target_type='activity'）
+async function isActivityFaved(userId, activityId) {
+  const [rows] = await db.query(
+    "SELECT id FROM interactions WHERE user_id = ? AND target_type = 'activity' AND target_id = ? AND action = 'favorite'",
+    [userId, activityId])
+  return rows.length > 0
+}
+
+// 一批活动的收藏集合（未登录返回空集）
+async function favedActivityIds(user, rows) {
+  if (!user || !rows.length) return new Set()
+  const ids = rows.map(a => a.id)
+  const [faved] = await db.query(
+    `SELECT target_id FROM interactions
+     WHERE user_id = ? AND target_type = 'activity' AND action = 'favorite'
+       AND target_id IN (${ids.map(() => '?').join(',')})`,
+    [user.id, ...ids])
+  return new Set(faved.map(r => r.target_id))
+}
+
 // 当前用户对一批分享的点赞集合（游客/未注册返回空集）
 async function likedPostIds(user, rows) {
   if (!user || !rows.length) return new Set()
@@ -60,8 +80,10 @@ const handlers = {
       const [signed] = await db.query('SELECT activity_id FROM activity_signups WHERE user_id = ?', [user.id])
       signedSet = new Set(signed.map(s => s.activity_id))
     }
+    const favedSet = await favedActivityIds(user, rows)
     rows.forEach(a => {
       a.isSignedUp = signedSet.has(a.id) ? 1 : 0
+      a.isFavorited = favedSet.has(a.id) ? 1 : 0
       // 线上活动的 location 存腾讯会议号，仅报名用户在详情可见——列表一律不外泄
       if (a.type === 'online') a.location = ''
     })
@@ -94,11 +116,13 @@ const handlers = {
         'SELECT id FROM activity_signups WHERE activity_id = ? AND user_id = ?', [id, user.id])
       a.isSignedUp = s.length > 0
     }
-    // 现场分享发布权：已报名 + 活动已开始（服务端 NOW() 判定，避免设备时钟/时区问题）
-    a.canPost = a.isSignedUp && !!a.started
-    delete a.started
     // 报名数据入口：主理人或工作人员可见（详情页「报名数据」按钮）
     a.is_stats_viewer = user && (await isStatsViewer(a.id, a.owner_user_id, user.id)) ? 1 : 0
+    // v2.0 现场分享发布权收窄为主理人 / 工作人员（普通报名用户不再有入口）
+    a.canPost = !!a.is_stats_viewer && !!a.started
+    delete a.started
+    // v2.0 活动收藏态（登录用户才查）
+    a.isFavorited = user ? await isActivityFaved(user.id, id) : false
     // 线上活动 location 存腾讯会议号：仅报名用户可见，未报名掩码并标记（前端展示「报名后可见」）
     if (a.type === 'online' && !a.isSignedUp) {
       a.location = ''
@@ -205,11 +229,12 @@ const handlers = {
     if (video && images && images.length) throw new Error('照片与视频不能同时发布')
     if (video && !/^cloud:\/\//.test(video)) throw new Error('视频参数无效')
     const [acts] = await db.query(
-      "SELECT id FROM activities WHERE id = ? AND status IN ('online','finished') AND start_time <= NOW()", [id])
+      "SELECT id, owner_user_id FROM activities WHERE id = ? AND status IN ('online','finished') AND start_time <= NOW()", [id])
     if (!acts.length) throw new Error('活动尚未开始，开始后即可分享')
-    const [signed] = await db.query(
-      'SELECT id FROM activity_signups WHERE activity_id = ? AND user_id = ?', [id, user.id])
-    if (!signed.length) throw new Error('报名参加后才能分享现场')
+    // v2.0：现场分享入口收窄为活动主理人与工作人员（普通报名用户不再可发）
+    if (!await isStatsViewer(id, acts[0].owner_user_id, user.id)) {
+      throw new Error('仅活动主理人与工作人员可发布现场分享')
+    }
     const [r] = await db.query(
       'INSERT INTO activity_posts (activity_id, user_id, content, images, video, video_poster, created_by) VALUES (?,?,?,?,?,?,?)',
       [id, user.id, content, images && images.length ? JSON.stringify(images) : null,
@@ -293,6 +318,40 @@ const handlers = {
     const likedSet = await likedPostIds(user, rows)
     const list = rows.map(p => ({ ...p, images: p.images || [], video: p.video || '', video_poster: p.video_poster || '', isLiked: likedSet.has(p.id) ? 1 : 0 }))
     return { list, total, page, pageSize }
+  },
+
+  // v2.0 活动收藏：翻转式（授权即可，同故事/问答）
+  async favToggle({ id } = {}, openid) {
+    const user = await findUser(openid)
+    if (!user) throw new Error('user not found')
+    if (!id) throw new Error('缺少活动ID')
+    const [existing] = await db.query(
+      "SELECT id FROM interactions WHERE user_id = ? AND target_type = 'activity' AND target_id = ? AND action = 'favorite'",
+      [user.id, id])
+    if (existing.length) {
+      await db.query('DELETE FROM interactions WHERE id = ?', [existing[0].id])
+      return { active: false }
+    }
+    await db.query(
+      "INSERT INTO interactions (user_id, target_type, target_id, action, created_by) VALUES (?, 'activity', ?, 'favorite', ?)",
+      [user.id, id, user.id])
+    return { active: true }
+  },
+
+  // 我收藏的活动（醒书会员 → 我的收藏 → 活动段），按收藏时间倒序
+  async favList({} = {}, openid) {
+    const user = await findUser(openid)
+    if (!user) return { list: [] }
+    const [rows] = await db.query(
+      `${LIST_SELECT}
+       JOIN interactions i ON i.target_id = a.id AND i.target_type = 'activity' AND i.action = 'favorite'
+       WHERE i.user_id = ? AND a.status != 'draft'
+       ORDER BY i.created_at DESC`, [user.id])
+    rows.forEach(a => {
+      a.isFavorited = 1
+      if (a.type === 'online') a.location = ''
+    })
+    return { list: rows }
   },
 
   async postDelete({ id } = {}, openid) {

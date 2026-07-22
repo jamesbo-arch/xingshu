@@ -26,12 +26,14 @@ async function run() {
 
   const past = new Date(Date.now() - 3600000).toISOString().slice(0, 19).replace('T', ' ')
   const older = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 19).replace('T', ' ')
+  const [[u]] = await conn.query('SELECT id FROM users WHERE openid = ?', [SIGNED])
+  // v2.0：现场分享仅主理人/工作人员可发，故把 SIGNED 设为测试活动的主理人
   async function makeActivity(patch = {}) {
     const r = await admin('activitySave', {
       title: 'test_feed活动' + Math.random().toString(36).slice(2, 6),
       content: '测试', images: [], start_time: past,
       type: 'offline', city: '广州', location: '测试地点',
-      capacity: 0, status: 'online', ...patch,
+      capacity: 0, status: 'online', ownerUserId: u.id, ...patch,
     })
     if (r.code !== 0) throw new Error('前置建活动失败: ' + r.msg)
     createdActs.push(r.data.id)
@@ -39,12 +41,12 @@ async function run() {
   }
 
   try {
-    // 造数：两个已开始的活动（online / finished），报名后各发分享，共 3 条 active + 1 条已删
+    // 造数：两个已开始的活动（online / finished），主理人各发分享，共 3 条 active + 1 条已删
     const actA = await makeActivity()
     const actB = await makeActivity({ status: 'finished', start_time: older })
+    // 报名记录：FEED-07/08/11 的 isSignedUp / 名单 / 出勤勾选均依赖它（与发分享权限无关）
     await act('signup', { id: actA, name: '砚秋' })
     // finished 活动不可报名，直接落库报名记录（补发场景）
-    const [[u]] = await conn.query('SELECT id FROM users WHERE openid = ?', [SIGNED])
     await conn.query('INSERT INTO activity_signups (activity_id, user_id, name) VALUES (?, ?, ?)', [actB, u.id, '砚秋'])
     const p1 = await act('postCreate', { id: actA, content: 'test_feed 分享一' })
     const p2 = await act('postCreate', { id: actA, content: 'test_feed 分享二' })

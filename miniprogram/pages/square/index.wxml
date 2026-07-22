@@ -27,6 +27,10 @@
         <view class="filter-icon {{filtersActive ? 'ic-filter-w' : 'ic-filter'}}"></view>
         <view wx:if="{{filtersActive}}" class="filter-dot"></view>
       </view>
+      <!-- 精选筛选（仅会员可见：非会员本就只能看精选，无切换意义） -->
+      <view wx:if="{{isMember}}" class="filter-btn {{featuredOnly ? 'filter-active' : ''}}" bindtap="onToggleFeatured">
+        <view class="filter-icon {{featuredOnly ? 'ic-star-on' : 'ic-star'}}"></view>
+      </view>
     </view>
   </view>
 
@@ -36,28 +40,24 @@
     refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
     <view wx:if="{{stories.length === 0}}" class="empty-state">
       <text class="empty-icon">○</text>
-      <text class="empty-text">暂无故事</text>
+      <text class="empty-text">{{featuredOnly ? '暂无精选故事' : '暂无故事'}}</text>
     </view>
     <story-card
       wx:for="{{stories}}"
       wx:key="id"
       story="{{item}}"
       show-actions="{{false}}"
+      featured-view="{{featuredOnly || !isMember}}"
       bind:open="onCardOpen"
       bind:like="onCardLike"
       bind:fav="onCardFav"
       bind:share="onCardShare"
     ></story-card>
-    <view class="list-bottom-pad {{actBannerCount ? 'pad-banner' : ''}}"></view>
+    <view class="list-bottom-pad"></view>
   </scroll-view>
 
-  <!-- 近期活动轮播（共享组件）：固定在 tab-bar 之上，可手动关闭（当次会话）；无未开始活动时容器隐藏 -->
-  <view class="act-banner-bar" hidden="{{!actBannerCount}}">
-    <act-banner id="actBanner" bind:change="onActBannerChange" bind:open="onActBannerOpen"></act-banner>
-  </view>
-
   <!-- FAB -->
-  <view class="fab {{actBannerCount ? 'fab-raised' : ''}}" bindtap="onFabTap">
+  <view class="fab" bindtap="onFabTap">
     <view class="fab-icon ic-pen-w"></view>
   </view>
 
@@ -98,6 +98,3 @@
 
 <!-- 隐私授权弹窗（敏感接口首次调用时触发） -->
 <privacy-popup></privacy-popup>
-
-<!-- 冷启动品牌蒙布（每日首次冷启动，且本次未直达详情页） -->
-<splash-cover visible="{{showSplash}}" bind:enter="onSplashEnter"></splash-cover>

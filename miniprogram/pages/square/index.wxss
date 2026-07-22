@@ -122,11 +122,6 @@ page { height: 100%; overflow: hidden; }
   height: calc(100rpx + env(safe-area-inset-bottom) + 20rpx);
 }
 
-/* 活动轮播可见时，列表底部额外让出轮播高度，末条卡片不被遮挡 */
-.list-bottom-pad.pad-banner {
-  height: calc(100rpx + env(safe-area-inset-bottom) + 180rpx);
-}
-
 /* Empty state */
 .empty-state {
   display: flex;
@@ -164,11 +159,6 @@ page { height: 100%; overflow: hidden; }
   z-index: 30;
 }
 
-/* 活动轮播可见时 FAB 上移让位 */
-.fab.fab-raised {
-  bottom: calc(120rpx + env(safe-area-inset-bottom) + 156rpx);
-}
-
 .fab-icon {
   width: 48rpx;
   height: 48rpx;
@@ -177,11 +167,3 @@ page { height: 100%; overflow: hidden; }
   background-size: contain;
 }
 
-/* 近期活动轮播容器：满宽贴底，固定在自定义 tab-bar（100rpx+安全区）正上方；轮播本体见 components/act-banner */
-.act-banner-bar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: calc(100rpx + env(safe-area-inset-bottom));
-  z-index: 10;
-}

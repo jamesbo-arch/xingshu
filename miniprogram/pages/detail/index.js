@@ -22,6 +22,7 @@ Page({
     userAvatarColor: '#8B7A4A',
     userAvatarInitial: '?',
     showSplash: false, // 冷启动品牌蒙布（扫码/转发直达本页时由本页认领）
+    publicView: false, // 当前展示的是精选副本（公众版）→ 隐藏评论区
   },
 
   onLoad(options) {
@@ -31,6 +32,8 @@ Page({
       const m = decodeURIComponent(options.scene).match(/(?:^|&)d=(\d+)/)
       if (m) id = parseInt(m[1], 10)
     }
+    // featured=1：会员从故事页星标筛选态进来，取公众版副本（onShow 重载时也要保持）
+    this._preferFeatured = options.featured === '1'
     if (id) this._loadStory(id)
     this.setData({ showSplash: splash.claim('detail') })
   },
@@ -65,12 +68,13 @@ Page({
 
   async _loadStory(id) {
     // 详情与评论并行拉取，避免两次云函数往返串行（首屏打开慢的主因）
+    // preferFeatured：会员从星标筛选态进来，看的是公众版副本（同样无评论区）
     const [res, commentsData] = await Promise.all([
-      storyApi.getDetailRaw(id),
+      storyApi.getDetailRaw(id, this._preferFeatured),
       socialApi.getComments(id, 1),
     ])
-    // v3.1：非会员打开未善选的会员故事（右上角转发链接直达）——
-    // 未登录先拉起登录窗（可能本就是会员）；登录后仍非会员 → 提示并转广场看善选列表
+    // v3.1：非会员打开未精选的会员故事（右上角转发链接直达）——
+    // 未登录先拉起登录窗（可能本就是会员）；登录后仍非会员 → 提示并转故事页看精选列表
     if (res.code === -2) {
       const identity = (app.globalData.user || {}).identity || 'guest'
       if (identity === 'guest') {
@@ -78,7 +82,7 @@ Page({
         this.setData({ showLoginSheet: true })
         return
       }
-      wx.showToast({ title: '该故事为会员专享，先看看善选故事吧', icon: 'none', duration: 2000 })
+      wx.showToast({ title: '该故事为会员专享，先看看精选故事吧', icon: 'none', duration: 2000 })
       setTimeout(() => wx.switchTab({ url: '/pages/square/index' }), 1600)
       return
     }
@@ -94,6 +98,8 @@ Page({
 
     this.setData({
       story,
+      // 公众版（精选副本）一律无评论区：非会员看到的、会员星标筛选态看到的都是它
+      publicView: !!raw.viaFeatured,
       comments,
       commentPage: 2,
       avatarColor: hueToColor(story.avatarHue || 60),

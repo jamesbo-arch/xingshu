@@ -1,12 +1,16 @@
 {
   "pages": [
-    "pages/square/index",
     "pages/activities/index",
+    "pages/square/index",
+    "pages/qa/index",
+    "pages/member/index",
     "pages/collections/index",
     "pages/mine/index",
-    "pages/member/index",
+    "pages/my-qa/index",
     "pages/detail/index",
     "pages/compose/index",
+    "pages/qa-detail/index",
+    "pages/qa-compose/index",
     "pages/activity-detail/index",
     "pages/activity-stats/index",
     "pages/doc/index"
@@ -19,20 +23,20 @@
     "borderStyle": "white",
     "list": [
       {
-        "pagePath": "pages/square/index",
-        "text": "醒书广场"
-      },
-      {
         "pagePath": "pages/activities/index",
         "text": "醒书活动"
       },
       {
-        "pagePath": "pages/mine/index",
-        "text": "我的故事"
+        "pagePath": "pages/square/index",
+        "text": "醒书故事"
+      },
+      {
+        "pagePath": "pages/qa/index",
+        "text": "醒书问答"
       },
       {
         "pagePath": "pages/member/index",
-        "text": "会员中心"
+        "text": "醒书会员"
       }
     ]
   },

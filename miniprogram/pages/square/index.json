@@ -7,7 +7,6 @@
     "poster-sheet": "/components/poster-sheet/index",
     "member-guard": "/components/member-guard/index",
     "login-sheet": "/components/login-sheet/index",
-    "privacy-popup": "/components/privacy-popup/index",
-    "splash-cover": "/components/splash-cover/index"
+    "privacy-popup": "/components/privacy-popup/index"
   }
 }

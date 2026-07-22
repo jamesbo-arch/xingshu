@@ -184,3 +184,6 @@
     bind:success="onLoginSuccess"
   ></login-sheet>
 </view>
+
+<!-- 冷启动品牌蒙布（v2.0 起本页为启动首页；扫码/转发直达详情时改由详情页认领） -->
+<splash-cover visible="{{showSplash}}" bind:enter="onSplashEnter"></splash-cover>

@@ -8,8 +8,9 @@ module.exports = {
     return call('getStoryDetail', { storyId }, { retry: 1 })
   },
   // 返回完整 {code, data, msg}，供详情页处理权限引导码（-3 需登录 / -2 会员专享）
-  getDetailRaw(storyId) {
-    return call('getStoryDetail', { storyId }, { raw: true, retry: 1 })
+  // preferFeatured：会员在星标筛选态阅读时取公众版精选副本
+  getDetailRaw(storyId, preferFeatured) {
+    return call('getStoryDetail', { storyId, preferFeatured: preferFeatured || undefined }, { raw: true, retry: 1 })
   },
   create(data) {
     return call('createStory', data)

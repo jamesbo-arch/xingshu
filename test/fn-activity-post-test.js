@@ -1,14 +1,15 @@
-// 活动现场分享测试 — POST-A01 ~ A12（发布鉴权矩阵/分页/软删/admin 审计）
+// 活动现场分享测试 — POST-A01 ~ A13（发布鉴权矩阵/分页/软删/admin 审计）
+// v2.0：发布权由「已报名」收窄为「活动主理人或工作人员」，故测试活动的 owner 设为 OWNER
 // 测试活动 test_ 前缀创建，结束时按 posts → signups → activities 顺序硬删（FK）
 const mysql = require('mysql2/promise')
 const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
-const SIGNED = 'mock_yanqiu'      // 报名并发分享的用户
-const OTHER = 'mock_me'           // 未报名/他人视角用户
+const OWNER = 'mock_yanqiu'       // 活动主理人，发分享的用户
+const OTHER = 'mock_me'           // 非主理人/非工作人员视角
 
 async function run() {
-  console.log('=== 活动现场分享测试（POST-A01~A12）===\n')
+  console.log('=== 活动现场分享测试（POST-A01~A14）===\n')
   let passed = 0, failed = 0, token = null
   const createdActs = []
 
@@ -17,21 +18,25 @@ async function run() {
     catch (e) { console.log(`  FAIL  ${name}: ${e.message}`); failed++ }
   }
 
-  const act = (action, payload, openid = SIGNED) => callFn('activity', { action, payload }, openid)
+  const act = (action, payload, openid = OWNER) => callFn('activity', { action, payload }, openid)
   const admin = (action, payload) => callFn('admin', { action, token, payload })
   const conn = await mysql.createConnection(DB)
 
   const login = await callFn('admin', { action: 'login', payload: { password: DB.adminPassword } })
   token = login.data.token
 
+  const [[ownerRow]] = await conn.query('SELECT id FROM users WHERE openid = ?', [OWNER])
+  const ownerId = ownerRow.id
+
   const past = new Date(Date.now() - 3600000).toISOString().slice(0, 19).replace('T', ' ')     // 1h 前已开始
   const future = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 19).replace('T', ' ')
+  // 默认把 OWNER 设为主理人——v2.0 起只有主理人/工作人员能发现场分享
   async function makeActivity(patch = {}) {
     const r = await admin('activitySave', {
       title: 'test_分享活动' + Math.random().toString(36).slice(2, 6),
       content: '测试', images: [], start_time: past,
       type: 'offline', city: '广州', location: '测试地点',
-      capacity: 0, status: 'online', ...patch,
+      capacity: 0, status: 'online', ownerUserId: ownerId, ...patch,
     })
     if (r.code !== 0) throw new Error('前置建活动失败: ' + r.msg)
     createdActs.push(r.data.id)
@@ -49,17 +54,20 @@ async function run() {
   })
 
   let startedId
-  await test('POST-A02 未报名用户发分享 → 拒绝', async () => {
+  await test('POST-A02 v2.0：仅报名的普通用户发分享 → 拒绝（非主理人/工作人员）', async () => {
     startedId = await makeActivity()
-    const r = await act('postCreate', { id: startedId, content: '未报名越权' }, OTHER)
-    if (r.code === 0) throw new Error('未报名不应能发')
-    if (!r.msg.includes('报名')) throw new Error(`提示不符: ${r.msg}`)
+    // OTHER 即便已报名也不能发——发布权已收窄到主理人与工作人员
+    await act('signup', { id: startedId, name: '路人' }, OTHER)
+    const r = await act('postCreate', { id: startedId, content: '普通报名者越权' }, OTHER)
+    if (r.code === 0) throw new Error('普通报名用户不应能发')
+    if (!r.msg.includes('主理人')) throw new Error(`提示不符: ${r.msg}`)
+    const d = await act('detail', { id: startedId }, OTHER)
+    if (d.data.canPost !== false) throw new Error('普通报名用户 canPost 应为 false')
   })
 
   let notStartedId
-  await test('POST-A03 已报名但活动未开始 → 拒发且 canPost=false', async () => {
+  await test('POST-A03 主理人但活动未开始 → 拒发且 canPost=false', async () => {
     notStartedId = await makeActivity({ start_time: future })
-    await act('signup', { id: notStartedId, name: '砚秋' })
     const r = await act('postCreate', { id: notStartedId, content: '抢跑' })
     if (r.code === 0) throw new Error('未开始不应能发')
     const d = await act('detail', { id: notStartedId })
@@ -67,8 +75,7 @@ async function run() {
   })
 
   let postId
-  await test('POST-A04 已报名 + 已开始 → 发布成功且 canPost=true', async () => {
-    await act('signup', { id: startedId, name: '砚秋' })
+  await test('POST-A04 主理人 + 已开始 → 发布成功且 canPost=true', async () => {
     const d = await act('detail', { id: startedId })
     if (d.data.canPost !== true) throw new Error(`canPost=${d.data.canPost}`)
     const r = await act('postCreate', { id: startedId, content: '现场很棒', images: ['cloud://fake/p1.jpg'] })
@@ -76,6 +83,19 @@ async function run() {
     postId = r.data.id
     const [[row]] = await conn.query('SELECT content, status FROM activity_posts WHERE id=?', [postId])
     if (row.content !== '现场很棒' || row.status !== 'active') throw new Error('落库不符')
+  })
+
+  await test('POST-A14 工作人员（白名单）同样可发', async () => {
+    const staffAct = await makeActivity()
+    const [[otherRow]] = await conn.query('SELECT id FROM users WHERE openid = ?', [OTHER])
+    const before = await act('postCreate', { id: staffAct, content: '加白名单前' }, OTHER)
+    if (before.code === 0) throw new Error('加白名单前不应能发')
+    await conn.query('INSERT INTO activity_staff (activity_id, user_id) VALUES (?, ?)', [staffAct, otherRow.id])
+    const after = await act('postCreate', { id: staffAct, content: '工作人员分享' }, OTHER)
+    if (after.code !== 0) throw new Error('工作人员应能发: ' + after.msg)
+    const d = await act('detail', { id: staffAct }, OTHER)
+    if (d.data.canPost !== true) throw new Error('工作人员 canPost 应为 true')
+    await conn.query('DELETE FROM activity_staff WHERE activity_id = ?', [staffAct])
   })
 
   await test('POST-A05 活动改 finished 后仍可补发', async () => {
@@ -94,7 +114,6 @@ async function run() {
   await test('POST-A13 视频分享：单视频可发、与照片互斥、非 cloud:// 拒', async () => {
     // 独立活动，避免扰动 A08 对 startedId 的计数
     const vid = await makeActivity()
-    await act('signup', { id: vid, name: '砚秋' })
     const r1 = await act('postCreate', { id: vid, content: '现场视频', video: 'cloud://fake/v1.mp4' })
     if (r1.code !== 0) throw new Error('单视频应可发: ' + r1.msg)
     const [[row]] = await conn.query('SELECT video FROM activity_posts WHERE id=?', [r1.data.id])
@@ -111,9 +130,8 @@ async function run() {
     if (r3.code === 0) throw new Error('非 cloud:// 视频不应通过')
   })
 
-  await test('POST-A07 draft 活动拒发', async () => {
+  await test('POST-A07 draft 活动拒发（主理人也不行）', async () => {
     const draftId = await makeActivity({ status: 'draft' })
-    await conn.query('INSERT INTO activity_signups (activity_id, user_id, name) SELECT ?, id, \'预埋\' FROM users WHERE openid=?', [draftId, SIGNED])
     const r = await act('postCreate', { id: draftId, content: 'draft 越权' })
     if (r.code === 0) throw new Error('draft 不应能发')
   })

@@ -70,17 +70,17 @@
         <text class="stat-count">{{story.comments}}</text>
       </view>
     </view>
-    <!-- 浏览视角：点赞/收藏可互动；收藏计数按需求不展示数字 -->
+    <!-- 浏览视角：点赞/收藏可互动。v2.0 起点赞与收藏均只显状态不显数字；
+         精选（公众版）视图无评论区，连评论计数一并隐藏 -->
     <view wx:else class="stats-left">
       <view class="stat-item like-wrap" catch:tap="onLike">
         <view class="stat-icon {{story.isLiked ? 'ic-heart-on' : 'ic-heart'}}"></view>
-        <text class="stat-count {{story.isLiked ? 'liked' : ''}}">{{story.likes}}</text>
         <text wx:if="{{showLikeAnim}}" class="like-float">+1</text>
       </view>
       <view class="stat-item" catch:tap="onFav">
         <view class="stat-icon {{story.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
       </view>
-      <view class="stat-item">
+      <view wx:if="{{!featuredView}}" class="stat-item">
         <view class="stat-icon ic-comment"></view>
         <text class="stat-count">{{story.comments}}</text>
       </view>

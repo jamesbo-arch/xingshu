@@ -4,9 +4,8 @@ const { optimisticLike, optimisticFav } = require('../../utils/optimistic')
 const mapper = require('../../utils/mapper')
 const cache = require('../../utils/cache')
 const filterUtil = require('../../utils/filter')
-const { ensureLogin, ensureMember, handleLoginSuccess } = require('../../utils/auth-guard')
+const { ensureLogin, ensureMember, isValidMember, handleLoginSuccess } = require('../../utils/auth-guard')
 const { lock, throttle } = require('../../utils/guard')
-const splash = require('../../utils/splash')
 
 Page({
   data: {
@@ -34,8 +33,10 @@ Page({
     filtersActive: false,
     allTags: [],
     statusBarHeight: 0,
-    actBannerCount: 0, // 近期活动轮播场次数（act-banner 组件回报，用于列表让位/FAB 上移）
-    showSplash: false, // 冷启动品牌蒙布（每日首次，且本次启动未直达详情页）
+    // v2.0 精选筛选：点亮则只看精选故事（公众版副本、无评论）。
+    // 仅会员可见——非会员本来就只能看精选，给他们切换开关没有意义。
+    isMember: false,
+    featuredOnly: false,
   },
 
   onLoad() {
@@ -43,42 +44,23 @@ Page({
     this.setData({
       statusBarHeight: info.statusBarHeight || 0,
       allTags: app.globalData.tags,
-      showSplash: splash.claim('square'),
     })
   },
 
   onShow() {
     this._loadStories(true)
-    this._loadActBanner()
-    this.setData({ userIdentity: (app.globalData.user || {}).identity || 'guest' })
+    this.setData({
+      userIdentity: (app.globalData.user || {}).identity || 'guest',
+      isMember: isValidMember(app.globalData.user),
+    })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
       this.getTabBar().refresh('pages/square/index')
     }
-    // tab-bar 是独立层会盖在页面级蒙布之上，须隐藏；onLoad 时 getTabBar() 尚未就绪，故放这里
-    if (this.data.showSplash) this._tabBar(true)
   },
 
-  onSplashEnter() {
-    this.setData({ showSplash: false })
-    this._tabBar(false)
-  },
-
-  // 近期活动轮播由 act-banner 组件自管（数据/缓存/跳转）；此处透传刷新，数量经 change 事件回来做布局让位
-  _loadActBanner(force) {
-    const banner = this.selectComponent('#actBanner')
-    if (banner) banner.load(force)
-  },
-
-  onActBannerChange(e) {
-    this.setData({ actBannerCount: e.detail.count })
-  },
-
-  // 轮播点击（组件抛事件，本页守卫）：未登录先弹登录窗，登录成功自动进该活动详情
-  onActBannerOpen(e) {
-    const id = e.detail.id
-    const open = () => throttle(this, 'actbanner', () => wx.navigateTo({ url: `/pages/activity-detail/index?id=${id}` }))
-    if (!ensureLogin(this, open)) return
-    open()
+  // 精选筛选开关：切换后重载列表（后端按 featuredOnly 走善选副本视图）
+  onToggleFeatured() {
+    this.setData({ featuredOnly: !this.data.featuredOnly }, () => this._loadStories(true))
   },
 
   async _loadStories(reset) {
@@ -86,7 +68,8 @@ Page({
     if (this._loading) return
     this._loading = true
     const page = reset ? 1 : this.data.page
-    const plain = !this.data.search && !this._isFiltersActive()
+    // 精选筛选态另算一份"素列表"，避免与常规列表共用同一份首屏缓存
+    const plain = !this.data.search && !this._isFiltersActive() && !this.data.featuredOnly
     // 冷启动首屏：无搜索/筛选时先展示缓存的第一页，网络返回后覆盖
     if (reset && plain && !this.data.stories.length) {
       const cached = cache.get('square:first')
@@ -96,6 +79,7 @@ Page({
       mode: 'square',
       page,
       keyword: this.data.search || undefined,
+      featuredOnly: this.data.featuredOnly || undefined,
       ...filterUtil.listQuery(this.data.filters),
     })
     if (data) {
@@ -130,10 +114,12 @@ Page({
     this.setData({ filters: e.detail.filters, showFilterSheet: false }, () => this._loadStories(true))
   },
 
-  // v3.0：善选故事对公众开放，未登录也可直接进详情读全文（互动在详情页内触发登录）
+  // v3.0：精选故事对公众开放，未登录也可直接进详情读全文（互动在详情页内触发登录）
+  // v2.0：会员在精选筛选态打开详情时带 featured=1，详情页取公众版副本并隐藏评论区
   onCardOpen(e) {
     const { id } = e.detail
-    throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + id }))
+    const suffix = this.data.featuredOnly ? '&featured=1' : ''
+    throttle(this, 'open', () => wx.navigateTo({ url: `/pages/detail/index?id=${id}${suffix}` }))
   },
 
   onLoginClose() {
@@ -188,11 +174,11 @@ Page({
   },
   onReachBottom() { if (this.data.hasMore) this._loadStories(false) },
 
-  // 顶部下拉刷新：重载第一页 + 强刷活动预告（scroll-view 自带 refresher，非页面级 onPullDownRefresh）
+  // 顶部下拉刷新：重载第一页（scroll-view 自带 refresher，非页面级 onPullDownRefresh）
   async onRefresh() {
     this.setData({ refreshing: true })
     try {
-      await Promise.all([this._loadStories(true), this._loadActBanner(true)])
+      await this._loadStories(true)
     } finally {
       this.setData({ refreshing: false })
     }

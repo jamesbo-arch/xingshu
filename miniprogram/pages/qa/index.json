@@ -1,0 +1,9 @@
+{
+  "navigationBarTitleText": "",
+  "navigationStyle": "custom",
+  "usingComponents": {
+    "qa-card": "/components/qa-card/index",
+    "login-sheet": "/components/login-sheet/index",
+    "privacy-popup": "/components/privacy-popup/index"
+  }
+}

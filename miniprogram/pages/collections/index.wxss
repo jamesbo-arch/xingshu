@@ -46,6 +46,83 @@ page { height: 100%; overflow: hidden; }
   background-size: contain;
 }
 
+/* 三段切换：故事 / 问答 / 活动 */
+.seg-row {
+  display: flex;
+  flex-direction: row;
+  background: #F0E9DA;
+  border-radius: 12px;
+  padding: 6rpx;
+  margin-bottom: 20rpx;
+}
+
+.seg {
+  flex: 1;
+  text-align: center;
+  padding: 14rpx 0;
+  font-size: 27rpx;
+  color: #7A746A;
+  border-radius: 9px;
+}
+
+.seg-on {
+  background: #FFFCF5;
+  color: #2A2723;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(58, 44, 22, 0.08);
+}
+
+/* 问答卡片间距（qa-card 组件自身不带外边距） */
+qa-card {
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+/* 收藏的活动行 */
+.fav-act {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20rpx;
+  background: #FFFCF5;
+  border-radius: 14px;
+  border: 0.5px solid rgba(126, 102, 64, 0.14);
+  padding: 28rpx 32rpx;
+  margin-bottom: 20rpx;
+}
+
+.fav-act-past {
+  opacity: 0.62;
+}
+
+.fav-act-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+  min-width: 0;
+}
+
+.fav-act-title {
+  font-size: 30rpx;
+  color: #2A2723;
+  font-weight: 500;
+}
+
+.fav-act-meta {
+  font-size: 23rpx;
+  color: #A8A39B;
+}
+
+.fav-act-unfav {
+  width: 40rpx;
+  height: 40rpx;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
 .search-row {
   display: flex;
   flex-direction: row;

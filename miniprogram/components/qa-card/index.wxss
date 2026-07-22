@@ -1,0 +1,174 @@
+.qa-card {
+  width: 100%;
+  background: #FFFCF5;
+  border-radius: 14px;
+  border: 0.5px solid rgba(126, 102, 64, 0.14);
+  padding: 32rpx 32rpx 20rpx;
+  box-shadow: 0 1px 2px rgba(58, 44, 22, 0.04), 0 2px 8px rgba(58, 44, 22, 0.05);
+}
+
+/* 暂存稿：与故事卡同一视觉语言（灰底虚线框） */
+.qa-card-draft {
+  background: #EFE7D4;
+  border: 1px dashed rgba(126, 102, 64, 0.35);
+}
+
+.qa-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 20rpx;
+  margin-bottom: 20rpx;
+}
+
+.qa-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.qa-avatar,
+.qa-avatar-img {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 50%;
+}
+
+.qa-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qa-avatar-text {
+  font-size: 32rpx;
+  color: #fff;
+  font-weight: 600;
+  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+}
+
+.member-badge {
+  position: absolute;
+  bottom: -4rpx;
+  right: -4rpx;
+  width: 28rpx;
+  height: 28rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #E5C16D, #B89968);
+  border: 2px solid #FFFCF5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.member-badge-text {
+  font-size: 16rpx;
+  color: #fff;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.qa-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4rpx;
+  min-width: 0;
+}
+
+.qa-author {
+  font-size: 28rpx;
+  color: #2A2723;
+  font-weight: 500;
+}
+
+.qa-time {
+  font-size: 22rpx;
+  color: #A8A39B;
+}
+
+/* 正文最多 4 行，超出省略 */
+.qa-content {
+  font-size: 30rpx;
+  line-height: 46rpx;
+  color: #2A2723;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.qa-divider {
+  height: 1px;
+  background: rgba(126, 102, 64, 0.1);
+  margin: 20rpx 0 12rpx;
+}
+
+.qa-stats {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.qa-stats-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 32rpx;
+}
+
+.qa-stat {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8rpx;
+  position: relative;
+  padding: 8rpx 0;
+}
+
+.qa-stat-icon {
+  width: 34rpx;
+  height: 34rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.qa-stat-count {
+  font-size: 24rpx;
+  color: #A8A39B;
+}
+
+/* 点赞 +1 浮起淡出（同 story-card 的 like-float） */
+.qa-like-float {
+  position: absolute;
+  left: 8rpx;
+  top: -4rpx;
+  font-size: 24rpx;
+  color: #B6452F;
+  animation: qa-like-up 0.8s ease-out forwards;
+}
+
+@keyframes qa-like-up {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-40rpx); }
+}
+
+.qa-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 16rpx;
+}
+
+.qa-action-btn {
+  padding: 8rpx 20rpx;
+  border-radius: 8px;
+  border: 1px solid rgba(126, 102, 64, 0.22);
+  font-size: 24rpx;
+  color: #4A453E;
+}
+
+.qa-action-del {
+  color: #B6452F;
+  border-color: rgba(182, 69, 47, 0.3);
+}

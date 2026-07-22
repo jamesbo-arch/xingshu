@@ -5,6 +5,7 @@ const { throttle, lock } = require('../../utils/guard')
 const { ensureLogin, handleLoginSuccess } = require('../../utils/auth-guard')
 const { hueToColor, getInitial } = require('../../utils/color')
 const { formatTime } = require('../../utils/mapper')
+const splash = require('../../utils/splash')
 
 const CN_DIGIT = '〇一二三四五六七八九'
 const CN_MONTH = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十', '十一', '十二']
@@ -45,14 +46,23 @@ Page({
     postableTitles: [],
     postActIndex: 0,
     isGuest: true,      // 未授权：视频卡渲染占位块，点击先拉登录
+    showSplash: false,  // 冷启动品牌蒙布（v2.0 起本页为启动首页，由本页认领）
   },
 
   onLoad() {
     const info = wx.getWindowInfo()
-    this.setData({ statusBarHeight: info.statusBarHeight || 0 })
+    this.setData({
+      statusBarHeight: info.statusBarHeight || 0,
+      showSplash: splash.claim('home'),
+    })
     this._syncGuest()
     this._loadTypes()
     this._loadFeed(true)
+  },
+
+  onSplashEnter() {
+    this.setData({ showSplash: false })
+    this._tabBar(false)
   },
 
   // 未授权态：视频卡不渲染 video 组件（原生组件盖不住，无法拦截点击），
@@ -72,6 +82,8 @@ Page({
     if (banner) banner.load()
     // 从活动详情返回时同步报名状态（详情内报名/取消报名后，列表「已报名/报名中」需重新派生）
     if (this.data.tab === 'all' && this.data.allLoaded) this._loadAll()
+    // tab-bar 是独立层会盖在页面级蒙布之上，须隐藏；onLoad 时 getTabBar() 尚未就绪，故放这里
+    if (this.data.showSplash) this._tabBar(true)
   },
 
   onTabTap(e) {

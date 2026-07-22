@@ -1,0 +1,39 @@
+<view class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px;"></view>
+
+  <view class="page-header">
+    <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
+    <text class="page-title serif">{{id ? '编辑问题' : '提出问题'}}</text>
+  </view>
+
+  <scroll-view class="compose-body" scroll-y enhanced show-scrollbar="{{false}}">
+    <view class="compose-card">
+      <textarea
+        class="compose-textarea"
+        placeholder="你想问什么？把困惑写清楚，更容易得到有帮助的回答。"
+        placeholder-style="color: #A8A39B;"
+        maxlength="{{max}}"
+        value="{{content}}"
+        bindinput="onContentInput"
+        show-confirm-bar="{{false}}"
+        auto-height
+      />
+      <text class="compose-count">{{content.length}} / {{max}}</text>
+    </view>
+
+    <view class="compose-card option-row">
+      <view class="option-main">
+        <text class="option-label">匿名提问</text>
+        <text class="option-desc">开启后，其他人只会看到「匿名」</text>
+      </view>
+      <switch checked="{{isAnonymous}}" bindchange="onToggleAnonymous" color="#B6452F" />
+    </view>
+
+    <view class="compose-bottom-pad"></view>
+  </scroll-view>
+
+  <view class="compose-bar">
+    <view class="btn-ghost compose-btn" bindtap="onSaveDraft">暂存</view>
+    <view class="btn-primary compose-btn" bindtap="onPublish">发布</view>
+  </view>
+</view>

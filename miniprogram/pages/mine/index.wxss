@@ -28,6 +28,24 @@ page { height: 100%; overflow: hidden; }
   letter-spacing: 2px;
 }
 
+/* 非 tab 页的自带返回键。ic-back 是背景图类，必须显式给宽高，否则 0×0 不可见 */
+.nav-back {
+  width: 56rpx;
+  height: 56rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -12rpx;
+}
+
+.nav-back-icon {
+  width: 40rpx;
+  height: 40rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
 .search-row {
   display: flex;
   flex-direction: row;
@@ -115,8 +133,9 @@ page { height: 100%; overflow: hidden; }
   padding: 0 24rpx;
 }
 
+/* 非 tab 页无需为 tab-bar 让位，仅留常规底部留白 */
 .list-bottom-pad {
-  height: calc(100rpx + env(safe-area-inset-bottom) + 20rpx);
+  height: calc(env(safe-area-inset-bottom) + 40rpx);
 }
 
 .empty-state {

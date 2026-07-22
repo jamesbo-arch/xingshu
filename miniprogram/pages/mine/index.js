@@ -36,9 +36,11 @@ Page({
 
   onShow() {
     this._loadStories(true)
-    if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().refresh('pages/mine/index')
-    }
+  },
+
+  // v2.0 起本页不再是页签（入口移入醒书会员），需自带返回
+  onBack() {
+    wx.navigateBack({ fail: () => wx.switchTab({ url: '/pages/member/index' }) })
   },
 
   async _loadStories(reset) {
@@ -75,27 +77,20 @@ Page({
 
   onLoginClose() {
     this.setData({ showLoginSheet: false })
-    const tb = this.getTabBar && this.getTabBar()
-    if (tb) tb.setData({ hidden: false })
     this._pendingLoginAction = null
   },
   onLoginSuccess() { handleLoginSuccess(this) },
 
   // 作者数据视角：点击卡片统计项查看人员清单（不做互动）
+  // 本页已非 tab 页，底部弹层无 custom-tab-bar 遮挡问题，无需再收放 tab-bar
   _openAudience(type, title, id) {
     this.setData({ audienceStoryId: id, audienceType: type, audienceTitle: title, audienceVisible: true })
-    const tb = this.getTabBar && this.getTabBar()
-    if (tb) tb.setData({ hidden: true }) // tab 页底部弹层须隐藏 custom-tab-bar（独立层遮挡）
   },
   onViewRead(e) { this._openAudience('read', '阅读的人', e.detail.id) },
   onViewLike(e) { this._openAudience('like', '点赞的人', e.detail.id) },
   onViewFav(e) { this._openAudience('favorite', '收藏的人', e.detail.id) },
   onViewComment(e) { this._openAudience('comment', '评论', e.detail.id) },
-  onAudienceClose() {
-    this.setData({ audienceVisible: false })
-    const tb = this.getTabBar && this.getTabBar()
-    if (tb) tb.setData({ hidden: false })
-  },
+  onAudienceClose() { this.setData({ audienceVisible: false }) },
 
   onCardEdit(e) { ensureMember(this, () => throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/compose/index?storyId=' + e.detail.id }))) },
   onCardDelete(e) {

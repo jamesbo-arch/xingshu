@@ -4,7 +4,11 @@
   <!-- Header -->
   <view class="page-header">
     <view class="header-top">
-      <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">我的故事</text><kefu-fab /></view>
+      <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;">
+        <!-- 非 tab 页，需自带返回（自定义导航栏无系统返回键） -->
+        <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
+        <text class="page-title serif">我的故事</text><kefu-fab />
+      </view>
     </view>
     <view class="search-row">
       <view class="search-bar">

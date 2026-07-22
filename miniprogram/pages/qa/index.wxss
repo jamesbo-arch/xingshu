@@ -1,0 +1,141 @@
+/* 禁用页面级滚动/回弹：仅内部 scroll-view 滚动，锁定顶部标题栏（同广场页） */
+page { height: 100%; overflow: hidden; }
+
+.page-wrap {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header {
+  padding: 16rpx 32rpx 20rpx;
+  background: #FBF7EE;
+}
+
+.header-top {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+}
+
+.page-title {
+  font-size: 52rpx;
+  font-weight: 700;
+  color: #2A2723;
+  letter-spacing: 2px;
+}
+
+.search-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.search-bar {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  background: #FFFCF5;
+  border: 0.5px solid rgba(126, 102, 64, 0.18);
+  border-radius: 48rpx;
+  padding: 16rpx 28rpx;
+  gap: 10rpx;
+}
+
+.search-icon {
+  width: 32rpx;
+  height: 32rpx;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.search-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: #2A2723;
+}
+
+.search-clear {
+  width: 30rpx;
+  height: 30rpx;
+  flex-shrink: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.qa-list {
+  flex: 1;
+  overflow: hidden;
+  padding: 0 24rpx;
+}
+
+.list-bottom-pad {
+  height: calc(100rpx + env(safe-area-inset-bottom) + 20rpx);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120rpx 0;
+  gap: 16rpx;
+}
+
+.empty-icon {
+  font-size: 80rpx;
+  color: #D6D0C2;
+  font-family: 'Songti SC', 'STSong', 'SimSun', serif;
+}
+
+.empty-text {
+  font-size: 28rpx;
+  color: #A8A39B;
+}
+
+.empty-hint {
+  font-size: 24rpx;
+  color: #C4BFB6;
+}
+
+/* 提问 FAB（同广场页写故事 FAB 的位置与规格） */
+.fab {
+  position: fixed;
+  right: 36rpx;
+  bottom: calc(120rpx + env(safe-area-inset-bottom));
+  width: 108rpx;
+  height: 108rpx;
+  background: #2A2723;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(42, 39, 35, 0.32);
+  z-index: 30;
+}
+
+.fab-icon {
+  width: 48rpx;
+  height: 48rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+/* 卡片之间的间距（qa-card 自身不带外边距） */
+qa-card {
+  display: block;
+  margin-bottom: 24rpx;
+}
+
+qa-card:first-child {
+  margin-top: 8rpx;
+}

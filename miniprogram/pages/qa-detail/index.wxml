@@ -1,0 +1,112 @@
+<view class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px;"></view>
+
+  <view class="page-header">
+    <view class="nav-back" bindtap="onBack"><view class="nav-back-icon ic-back"></view></view>
+    <text class="page-title serif">問答</text>
+  </view>
+
+  <scroll-view wx:if="{{question}}" class="qa-body" scroll-y enhanced show-scrollbar="{{false}}">
+    <!-- 问题 -->
+    <view class="q-card">
+      <view class="q-header">
+        <image wx:if="{{question.avatar_url}}" class="q-avatar-img" src="{{question.avatar_url}}" mode="aspectFill" />
+        <view wx:else class="q-avatar" style="background-color: {{question.is_anonymous ? '#A8A39B' : 'hsl(' + question.avatar_hue + ',30%,45%)'}};">
+          <text>{{question.is_anonymous ? '匿' : question.nickname[0]}}</text>
+        </view>
+        <view class="q-meta">
+          <text class="q-author">{{question.nickname}}</text>
+          <text class="q-time">{{question.created_at}}</text>
+        </view>
+        <view wx:if="{{question.is_featured}}" class="perm-badge perm-member">
+          <view class="perm-ic ic-star-gold"></view>
+        </view>
+      </view>
+      <view class="q-content">{{question.content}}</view>
+    </view>
+
+    <!-- 回复区：公众版可读但不可发 -->
+    <view class="replies-section">
+      <view class="replies-header">
+        <text class="replies-title">回答</text>
+        <text class="replies-count ink-3">· {{question.comment_count}}</text>
+      </view>
+
+      <view wx:if="{{comments.length === 0}}" class="replies-empty">
+        <text class="replies-empty-text">{{canReply ? '还没有回答，来说说你的看法' : '还没有回答'}}</text>
+      </view>
+
+      <view wx:for="{{comments}}" wx:key="id" class="reply-item">
+        <view class="reply-avatar" style="background-color: {{item.is_anonymous ? '#A8A39B' : 'hsl(' + item.avatar_hue + ',30%,45%)'}};">
+          <text>{{item.is_anonymous ? '匿' : item.nickname[0]}}</text>
+        </view>
+        <view class="reply-body">
+          <view class="reply-header-row">
+            <text class="reply-user {{item.isMine ? 'reply-mine' : ''}}">{{item.nickname}}</text>
+            <text class="reply-time">{{item.created_at}}</text>
+            <text wx:if="{{canReply}}" class="reply-btn" data-id="{{item.id}}" data-user="{{item.nickname}}" bindtap="onReplyTo">回复</text>
+            <text wx:if="{{item.isMine}}" class="reply-del" data-id="{{item.id}}" bindtap="onDeleteReply">删除</text>
+          </view>
+          <text class="reply-content">{{item.content}}</text>
+
+          <!-- 追评（一层） -->
+          <view wx:if="{{item.replies.length}}" class="subreplies">
+            <view wx:for="{{item.replies}}" wx:key="id" wx:for-item="sub" class="subreply">
+              <text class="subreply-user">{{sub.nickname}}</text>
+              <text class="subreply-content">{{sub.content}}</text>
+              <view class="subreply-foot">
+                <text class="subreply-time">{{sub.created_at}}</text>
+                <text wx:if="{{sub.isMine}}" class="reply-del" data-id="{{sub.id}}" bindtap="onDeleteReply">删除</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="qa-bottom-pad"></view>
+  </scroll-view>
+
+  <!-- 底栏：会员可写回答；公众版只留互动 -->
+  <view wx:if="{{question}}" class="bottom-bar">
+    <view wx:if="{{canReply}}" class="reply-trigger" bindtap="onShowReplyInput">
+      <view class="reply-trigger-icon ic-pen"></view>
+      <text class="reply-trigger-text">写回答…</text>
+    </view>
+    <view wx:else class="reply-trigger-placeholder"></view>
+    <view class="bar-actions">
+      <view class="bar-action" bindtap="onLike">
+        <view class="bar-action-icon {{question.isLiked ? 'ic-heart-on' : 'ic-heart'}}"></view>
+      </view>
+      <view class="bar-action" bindtap="onFav">
+        <view class="bar-action-icon {{question.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
+      </view>
+    </view>
+  </view>
+
+  <!-- 写回答浮层 -->
+  <view wx:if="{{showReplyInput}}" class="reply-overlay">
+    <view class="reply-overlay-mask" bindtap="onHideReplyInput"></view>
+    <view class="reply-input-bar">
+      <input class="reply-real-input"
+        placeholder="{{replyTo ? '回复 ' + replyTo.user : '写下你的回答…'}}"
+        placeholder-style="color:#A8A39B;"
+        value="{{replyInput}}" bindinput="onReplyInput" focus="{{showReplyInput}}"
+        confirm-type="send" bindconfirm="onSubmitReply" />
+      <view class="reply-anon {{replyAnonymous ? 'reply-anon-on' : ''}}" bindtap="onToggleReplyAnonymous">匿名</view>
+      <view class="reply-send" bindtap="onSubmitReply">发送</view>
+    </view>
+  </view>
+
+  <login-sheet
+    visible="{{showLoginSheet}}"
+    subtitle="登录后即可查看并参与醒书问答。"
+    bind:close="onLoginClose"
+    bind:success="onLoginSuccess"
+  ></login-sheet>
+</view>
+
+<privacy-popup></privacy-popup>
+
+<!-- 冷启动品牌蒙布（扫码/转发直达本页且当日首次冷启动） -->
+<splash-cover visible="{{showSplash}}" bind:enter="onSplashEnter"></splash-cover>

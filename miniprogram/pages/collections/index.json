@@ -3,6 +3,7 @@
   "navigationStyle": "custom",
   "usingComponents": {
     "story-card": "/components/story-card/index",
+    "qa-card": "/components/qa-card/index",
     "filter-sheet": "/components/filter-sheet/index",
     "member-guard": "/components/member-guard/index",
     "poster-sheet": "/components/poster-sheet/index",

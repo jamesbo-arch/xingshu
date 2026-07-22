@@ -1,0 +1,58 @@
+<view class="page-wrap paper-bg">
+  <view style="height: {{statusBarHeight}}px;"></view>
+
+  <view class="page-header">
+    <view class="header-top">
+      <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書問答</text><kefu-fab /></view>
+    </view>
+
+    <view class="search-row">
+      <view class="search-bar">
+        <view class="search-icon ic-search"></view>
+        <input
+          class="search-input"
+          placeholder="搜索问题"
+          placeholder-style="color: #A8A39B; font-size: 28rpx;"
+          value="{{search}}"
+          bindinput="onSearchInput"
+          bindconfirm="onSearchConfirm"
+          confirm-type="search"
+        />
+        <view wx:if="{{search}}" class="search-clear ic-close" bindtap="onSearchClear"></view>
+      </view>
+    </view>
+  </view>
+
+  <scroll-view class="qa-list" scroll-y enhanced show-scrollbar="{{false}}"
+    bindscrolltolower="onReachBottom" lower-threshold="150"
+    refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
+    <view wx:if="{{loaded && questions.length === 0}}" class="empty-state">
+      <text class="empty-icon">?</text>
+      <text class="empty-text">还没有问答</text>
+      <text class="empty-hint">会员可以在这里提出你的问题</text>
+    </view>
+    <qa-card
+      wx:for="{{questions}}"
+      wx:key="id"
+      question="{{item}}"
+      bind:open="onCardOpen"
+      bind:like="onCardLike"
+      bind:fav="onCardFav"
+    ></qa-card>
+    <view class="list-bottom-pad"></view>
+  </scroll-view>
+
+  <!-- 提问 FAB（会员专享，非会员由 ensureMember 弹窗引导） -->
+  <view class="fab" bindtap="onFabTap">
+    <view class="fab-icon ic-qa-w"></view>
+  </view>
+
+  <login-sheet
+    visible="{{showLoginSheet}}"
+    subtitle="登录后即可为问答点赞、收藏，和大家一起把经典读进生活。"
+    bind:close="onLoginClose"
+    bind:success="onLoginSuccess"
+  ></login-sheet>
+</view>
+
+<privacy-popup></privacy-popup>

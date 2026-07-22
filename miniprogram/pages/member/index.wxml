@@ -2,7 +2,7 @@
   <view style="height: {{statusBarHeight}}px;"></view>
 
   <view class="page-header">
-    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">会员中心</text><kefu-fab /></view>
+    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書會員</text><kefu-fab /></view>
   </view>
 
   <!-- 固定顶部：身份卡（会员额外含有效期卡；guest 不显示卡片，仅居中登录引导） -->
@@ -121,10 +121,13 @@
         </view>
       </view>
 
-      <!-- 我的收藏入口（原底部页签收进会员中心） -->
+      <!-- 我的收藏入口（非会员无故事/问答可写，故只给收藏一行） -->
       <view class="section-card">
         <view class="settings-row no-border" bindtap="onOpenCollections">
-          <text class="settings-row-text">我的收藏</text>
+          <view class="entry-main">
+            <view class="entry-icon ic-bookmark"></view>
+            <text class="settings-row-text">我的收藏</text>
+          </view>
           <view class="settings-row-arrow ic-chevron"></view>
         </view>
       </view>
@@ -204,10 +207,27 @@
         </view>
       </view>
 
-      <!-- 我的收藏入口（原底部页签收进会员中心） -->
+      <!-- 我的内容入口（v2.0：我的故事、我的问答由底部页签收进醒书会员） -->
       <view class="section-card">
+        <view class="settings-row" bindtap="onOpenMine">
+          <view class="entry-main">
+            <view class="entry-icon ic-pen"></view>
+            <text class="settings-row-text">我的故事</text>
+          </view>
+          <view class="settings-row-arrow ic-chevron"></view>
+        </view>
+        <view class="settings-row" bindtap="onOpenMyQa">
+          <view class="entry-main">
+            <view class="entry-icon ic-qa"></view>
+            <text class="settings-row-text">我的问答</text>
+          </view>
+          <view class="settings-row-arrow ic-chevron"></view>
+        </view>
         <view class="settings-row no-border" bindtap="onOpenCollections">
-          <text class="settings-row-text">我的收藏</text>
+          <view class="entry-main">
+            <view class="entry-icon ic-bookmark"></view>
+            <text class="settings-row-text">我的收藏</text>
+          </view>
           <view class="settings-row-arrow ic-chevron"></view>
         </view>
       </view>

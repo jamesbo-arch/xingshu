@@ -2,13 +2,15 @@ const cloud = require('wx-server-sdk')
 const db = require('./db')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-// 故事详情（v3.0 善选版）
-// 作者/member → 原文全文；非会员（含未登录 guest）→ 已善选（副本上架）用副本内容覆盖返回
-// （计数/评论/互动仍挂原故事，读全文无需授权），未善选 → -2 会员专享；暂存稿非作者 → -1
-// preferFeatured=true：会员/作者也取善选副本内容（分享海报用——海报面向公众，须用运营修订的副本全文），不计阅读
+// 故事详情（v3.0 精选版）
+// 作者/member → 原文全文；非会员（含未登录 guest）→ 已精选（副本上架）用副本内容覆盖返回
+// （计数/互动仍挂原故事，读全文无需授权），未精选 → -2 会员专享；暂存稿非作者 → -1
+// preferFeatured=true：会员/作者也取精选副本内容（分享海报、会员星标筛选态阅读）
+// silent=true：不落阅读记录（海报生成用——那不是一次真实阅读）
+// 返回体带 viaFeatured，前端据此判定是否为公众版视图（公众版一律无评论区）
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()
-  const { storyId, preferFeatured } = event
+  const { storyId, preferFeatured, silent } = event
   if (!storyId) return { code: -1, msg: '缺少故事ID' }
 
   // 用户与故事两条查询互相独立，并行执行
@@ -41,8 +43,8 @@ exports.main = async (event, context) => {
   if (story.publish_status === 'draft' && !isAuthor) {
     return { code: -1, msg: '故事不存在' }
   }
-  // 非会员（含未登录 guest）只可读善选故事：命中上架副本则用副本内容覆盖（互动/计数仍挂原故事）；
-  // preferFeatured 时会员/作者同样取副本（海报面向公众，用运营修订版），无副本则回落原文
+  // 非会员（含未登录 guest）只可读精选故事：命中上架副本则用副本内容覆盖（互动/计数仍挂原故事）；
+  // preferFeatured 时会员/作者同样取副本（海报与星标筛选态用运营修订版），无副本则回落原文
   const publicView = !isAuthor && userIdentity !== 'member'
   let viaFeatured = false
   if (publicView || preferFeatured) {
@@ -80,8 +82,8 @@ exports.main = async (event, context) => {
     story.isFavorited = faved.length > 0
   }
 
-  // 阅读记录：每次成功阅读落一行（作者自读、海报取副本 preferFeatured 不计），失败不影响正常返回
-  if (!isAuthor && !preferFeatured) {
+  // 阅读记录：每次成功阅读落一行（作者自读、silent 的海报取副本不计），失败不影响正常返回
+  if (!isAuthor && !silent) {
     try {
       await db.query(
         'INSERT INTO story_reads (story_id, user_id, identity, via_featured) VALUES (?, ?, ?, ?)',
@@ -89,5 +91,7 @@ exports.main = async (event, context) => {
     } catch (e) { console.warn('story_reads insert failed:', e.message) }
   }
 
+  // 前端据此隐藏评论区：公众版（精选副本）一律不提供评论
+  story.viaFeatured = viaFeatured
   return { code: 0, data: story }
 }

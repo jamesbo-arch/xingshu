@@ -1,15 +1,15 @@
 const { isValidMember } = require('../utils/auth-guard')
 
-// 全量页签；按身份裁剪：
-//   guest 未授权 / authed 已授权非会员 → 广场 / 活动 / 会员中心
-//   member 有效会员 → 再加「我的故事」（写故事为会员专享）
-// 「我的收藏」已于 2026-07-20 撤出页签，入口移至会员中心（navigateTo 打开）。
+// v2.0 起四个页签对所有身份固定：醒书活动（首页）/ 醒书故事 / 醒书问答 / 醒书会员。
+// 「我的收藏」（2026-07-20）、「我的故事」「我的问答」（v2.0）均已收进醒书会员页，
+// 由入口行 navigateTo 打开。minRole 与 RANK 的按身份裁剪机制保留（当前全为 guest，
+// 未来若再引入身份专属页签可直接复用，无需重写 refresh 逻辑）。
 // ic 为 app.wxss 里线性图标类前缀，激活态自动拼 -on（对齐原型 lucide 导航图标）
 const FULL_LIST = [
-  { pagePath: 'pages/square/index', text: '醒书广场', ic: 'nav-square', minRole: 'guest' },
   { pagePath: 'pages/activities/index', text: '醒书活动', ic: 'nav-act', minRole: 'guest' },
-  { pagePath: 'pages/mine/index', text: '我的故事', ic: 'nav-mine', minRole: 'member' },
-  { pagePath: 'pages/member/index', text: '会员中心', ic: 'nav-member', minRole: 'guest' },
+  { pagePath: 'pages/square/index', text: '醒书故事', ic: 'nav-square', minRole: 'guest' },
+  { pagePath: 'pages/qa/index', text: '醒书问答', ic: 'nav-qa', minRole: 'guest' },
+  { pagePath: 'pages/member/index', text: '醒书会员', ic: 'nav-member', minRole: 'guest' },
 ]
 
 const RANK = { guest: 0, authed: 1, member: 2 }

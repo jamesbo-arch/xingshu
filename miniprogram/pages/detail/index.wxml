@@ -59,7 +59,8 @@
       </view>
     </view>
 
-    <view class="comments-section">
+    <!-- 精选（公众版）视图不提供评论：连既有评论一并不展示 -->
+    <view wx:if="{{!publicView}}" class="comments-section">
       <view class="comments-header">
         <text class="comments-title">评论</text>
         <text class="comments-count ink-3">· {{story.comments}}</text>
@@ -106,19 +107,21 @@
   </scroll-view>
 
   <view class="bottom-bar">
-    <view class="comment-trigger" bindtap="onShowCommentInput">
+    <!-- 公众版无评论：写评论入口一并撤下，底栏只留互动 -->
+    <view wx:if="{{!publicView}}" class="comment-trigger" bindtap="onShowCommentInput">
       <view class="comment-trigger-icon ic-pen"></view>
       <text class="comment-trigger-text">写评论…</text>
     </view>
+    <view wx:else class="comment-trigger-placeholder"></view>
     <view class="bar-actions">
+      <!-- v2.0：点赞只显状态不显数字 -->
       <view class="bar-action" bindtap="onLike">
         <view class="bar-action-icon {{story.isLiked ? 'ic-heart-on' : 'ic-heart'}}"></view>
-        <text class="bar-action-count {{story.isLiked ? 'liked' : ''}}">{{story.likes}}</text>
       </view>
       <view class="bar-action" bindtap="onFav">
         <view class="bar-action-icon {{story.isFavorited ? 'ic-bookmark-on' : 'ic-bookmark'}}"></view>
       </view>
-      <!-- 分享海报仅善选故事提供；非善选只能走右上角原生转发 -->
+      <!-- 分享海报仅精选故事提供；非精选只能走右上角原生转发 -->
       <view wx:if="{{story.isFeatured}}" class="bar-action" bindtap="onShare">
         <view class="bar-action-icon ic-share"></view>
       </view>

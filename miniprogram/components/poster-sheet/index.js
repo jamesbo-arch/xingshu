@@ -52,7 +52,7 @@ Component({
   methods: {
     // 分享内容 = 善选副本全文 + 副本配图（preferFeatured：任何身份都取副本，不计阅读记录）
     async _loadShareContent(storyId) {
-      const res = await call('getStoryDetail', { storyId, preferFeatured: true }, { raw: true })
+      const res = await call('getStoryDetail', { storyId, preferFeatured: true, silent: true }, { raw: true })
       if (res && res.code === 0 && res.data) {
         this.setData({
           shareTitle: res.data.title || '',

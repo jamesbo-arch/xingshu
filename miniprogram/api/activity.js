@@ -46,4 +46,11 @@ module.exports = {
   likePost(id) {
     return call('activity', { action: 'postLike', payload: { id } })
   },
+  // v2.0 活动收藏（翻转，返回 {active}）与我收藏的活动
+  toggleFav(id) {
+    return call('activity', { action: 'favToggle', payload: { id } })
+  },
+  getFavList() {
+    return call('activity', { action: 'favList', payload: {} }, { retry: 1 })
+  },
 }

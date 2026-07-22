@@ -17,6 +17,11 @@ Component({
       type: Boolean,
       value: false,
     },
+    // v2.0 精选（公众版）视图：不展示评论计数——精选故事一律无评论区
+    featuredView: {
+      type: Boolean,
+      value: false,
+    },
   },
 
   computed: {},

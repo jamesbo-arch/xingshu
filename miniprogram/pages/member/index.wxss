@@ -243,6 +243,20 @@ page { height: 100%; overflow: hidden; }
 }
 .settings-row.no-border { border-bottom: none; }
 .settings-row-text { font-size: 30rpx; color: #2A2723; }
+/* 我的内容入口行：左侧图标 + 文字 */
+.entry-main {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 18rpx;
+}
+.entry-icon {
+  width: 36rpx;
+  height: 36rpx;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
 .settings-row-arrow {
   width: 28rpx;
   height: 28rpx;
