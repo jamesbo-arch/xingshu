@@ -1,10 +1,13 @@
 <view class="qa-card {{question.publish_status === 'draft' ? 'qa-card-draft' : ''}}" bindtap="onTap">
-  <!-- 作者行：匿名问题由云函数脱敏为「匿名」且无头像色 -->
+  <!-- 作者行：匿名内容由云函数脱敏为「醒书同学」，头像用默认「醒」字（无真实头像与会员徽章） -->
   <view class="qa-header">
     <view class="qa-avatar-wrap">
-      <image wx:if="{{question.avatar_url}}" class="qa-avatar-img" src="{{question.avatar_url}}" mode="aspectFill" />
-      <view wx:else class="qa-avatar" style="background-color: {{question.is_anonymous ? '#A8A39B' : avatarColor}};">
-        <text class="qa-avatar-text">{{question.is_anonymous ? '匿' : avatarInitial}}</text>
+      <view wx:if="{{question.is_anonymous}}" class="qa-avatar qa-avatar-anon">
+        <text class="qa-avatar-text serif">醒</text>
+      </view>
+      <image wx:elif="{{question.avatar_url}}" class="qa-avatar-img" src="{{question.avatar_url}}" mode="aspectFill" />
+      <view wx:else class="qa-avatar" style="background-color: {{avatarColor}};">
+        <text class="qa-avatar-text">{{avatarInitial}}</text>
       </view>
       <view wx:if="{{question.author_identity === 'member' && !question.is_anonymous}}" class="member-badge">
         <text class="member-badge-text">会</text>

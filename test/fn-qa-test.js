@@ -10,6 +10,7 @@ const MEMBER2 = 'mock_yanqiu'     // 另一位会员，用于回复
 const AUTHED = 'mock_me'          // 已授权非会员
 const GUEST = 'test_qa_guest'     // 未授权
 
+const ANON_NAME = '醒书同学'   // 匿名对外统一署名（与 qa 云函数保持一致）
 const CONTENT = 'test_qa 读经典时如何避免只停留在摘抄，而真正带进日常生活？'
 const FEAT_CONTENT = 'test_qa 这是运营修订过的精选副本正文（与原文不同）'
 const ANON_CONTENT = 'test_qa 一个不愿具名的提问'
@@ -52,15 +53,23 @@ async function run() {
     if (g.code === 0) { created.push(g.data.id); throw new Error('guest 不应能发问题') }
   })
 
-  await test('QA-A03 匿名问题：他人看到「匿名」且无头像，作者本人看到真名', async () => {
+  // v2.0 口径：匿名一律脱敏为「醒书同学」+ 默认「醒」字头像，**对作者本人也不例外**
+  await test('QA-A03 匿名问题：所有人（含作者本人）都看到「醒书同学」且无头像/会员徽章', async () => {
     const r = await qa('create', { content: ANON_CONTENT, isAnonymous: true, publishStatus: 'published' })
     if (r.code !== 0) throw new Error(r.msg)
     anonId = r.data.id; created.push(anonId)
-    const mine = await qa('detail', { id: anonId }, AUTHOR)
-    if (mine.data.question.nickname === '匿名') throw new Error('作者本人应看到真名')
-    const other = await qa('detail', { id: anonId }, MEMBER2)
-    if (other.data.question.nickname !== '匿名') throw new Error(`他人应看到匿名，实际 ${other.data.question.nickname}`)
-    if (other.data.question.avatar_url) throw new Error('匿名不应带头像')
+    for (const who of [AUTHOR, MEMBER2]) {
+      const d = await qa('detail', { id: anonId }, who)
+      const q = d.data.question
+      if (q.nickname !== ANON_NAME) throw new Error(`${who} 应看到「${ANON_NAME}」，实际 ${q.nickname}`)
+      if (q.avatar_url) throw new Error(`${who} 处匿名不应带头像`)
+      if (q.avatar_hue !== null) throw new Error(`${who} 处匿名不应带头像色`)
+      if (q.author_identity === 'member') throw new Error(`${who} 处匿名不应带会员徽章`)
+      if (!q.is_anonymous) throw new Error('缺 is_anonymous 标记（前端据此渲染「醒」字头像）')
+    }
+    // 脱敏不影响「这条是不是我的」判定——列表仍带原始 user_id 供前端/后端各自使用
+    const mine = await qa('list', { mode: 'mine', pageSize: 50 }, AUTHOR)
+    if (!mine.data.list.some(q => q.id === anonId)) throw new Error('作者应能在我的问答里找到自己的匿名问题')
   })
 
   await test('QA-A04 暂存问题仅作者可见（详情+列表）', async () => {
@@ -141,16 +150,19 @@ async function run() {
     if (row.comment_count !== 1) throw new Error(`回复计数应为 1，实际 ${row.comment_count}`)
   })
 
-  await test('QA-A12 匿名回复：他人看到「匿名」', async () => {
+  await test('QA-A12 匿名回复：所有人（含回复者本人）都看到「醒书同学」，isMine 仍标本人', async () => {
     const r = await qa('commentCreate', { id: featId, content: 'test_qa 匿名回答', isAnonymous: true }, MEMBER2)
     if (r.code !== 0) throw new Error(r.msg)
-    const list = await qa('commentList', { id: featId }, AUTHOR)
-    const anon = list.data.find(c => c.id === r.data.id)
-    if (!anon || anon.nickname !== '匿名') throw new Error('匿名回复未脱敏')
+    const other = await qa('commentList', { id: featId }, AUTHOR)
+    const seen = other.data.find(c => c.id === r.data.id)
+    if (!seen || seen.nickname !== ANON_NAME) throw new Error('匿名回复未脱敏')
+    if (seen.avatar_url) throw new Error('匿名回复不应带头像')
     const own = await qa('commentList', { id: featId }, MEMBER2)
     const mine = own.data.find(c => c.id === r.data.id)
-    if (!mine) throw new Error('回复作者应能看到自己的匿名回复')
-    if (mine.nickname === '匿名') throw new Error('回复作者本人应看到真名')
+    if (!mine) throw new Error('回复者应能看到自己的匿名回复')
+    if (mine.nickname !== ANON_NAME) throw new Error('回复者本人也应脱敏为「醒书同学」')
+    // 删除按钮靠 isMine 而非昵称——脱敏后仍须能认出是自己的
+    if (!mine.isMine) throw new Error('脱敏后 isMine 仍应为 true（删除按钮据此显示）')
   })
 
   await test('QA-A13 公众（非会员/游客）可读全部回复（只读）', async () => {

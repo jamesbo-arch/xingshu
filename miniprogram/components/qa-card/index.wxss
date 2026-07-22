@@ -46,6 +46,11 @@
   font-family: 'Songti SC', 'STSong', 'SimSun', serif;
 }
 
+/* 匿名默认头像：驼灰底 + 白「醒」字，与真实头像明显区分 */
+.qa-avatar-anon {
+  background-color: #7A746A;
+}
+
 .member-badge {
   position: absolute;
   bottom: -4rpx;

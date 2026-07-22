@@ -6,12 +6,14 @@
 //   · 非会员（含未登录 guest）→ 仅精选问题（featured_questions 上架副本），
 //     可读问题与全部回复，但不提供发回复入口（只读）
 //   · 发问题 / 发回复均为有效会员专享；点赞 / 收藏只需授权
-//   · 匿名：is_anonymous=1 时对非作者隐去昵称与头像（admin 后台始终看真名）
+//   · 匿名：is_anonymous=1 时一律隐去昵称与头像，对外显示「醒书同学」+ 默认「醒」字头像
+//     （连作者本人也脱敏；admin 后台走独立查询，始终看真名）
 const cloud = require('wx-server-sdk')
 const db = require('./db')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const ANON_NAME = '匿名'
+// 匿名对外统一显示为「醒书同学」，头像用默认「醒」字（前端按 is_anonymous 渲染）
+const ANON_NAME = '醒书同学'
 const MAX_CONTENT = 2000
 const MAX_COMMENT = 1000
 
@@ -42,13 +44,12 @@ async function assertMember(openid) {
   return user
 }
 
-// 匿名脱敏：非作者看匿名内容时抹掉昵称与头像
-function maskAuthor(row, viewerId) {
-  const isMine = viewerId && Number(row.user_id) === Number(viewerId)
-  if (row.is_anonymous && !isMine) {
-    return { ...row, nickname: ANON_NAME, avatar_url: '', avatar_hue: null, author_identity: 'authed' }
-  }
-  return row
+// 匿名脱敏：抹掉昵称、头像与会员徽章。
+// **对作者本人同样脱敏**——匿名就该是彻底的，作者看到自己的真名反而会怀疑匿名没生效；
+// 「这条是不是我发的」由 isMine 字段单独承担（删除按钮据它显示），不依赖昵称。
+function maskAuthor(row) {
+  if (!row.is_anonymous) return row
+  return { ...row, nickname: ANON_NAME, avatar_url: '', avatar_hue: null, author_identity: 'authed' }
 }
 
 // 一批问题的点赞/收藏态（未授权返回空集）
@@ -117,7 +118,7 @@ const handlers = {
 
     const { liked, faved } = await interactionSets(userId, rows.map(r => r.id))
     const list = rows.map(r => ({
-      ...maskAuthor(r, userId),
+      ...maskAuthor(r),
       isLiked: liked.has(r.id),
       isFavorited: faved.has(r.id),
     }))
@@ -153,7 +154,7 @@ const handlers = {
     const { liked, faved } = await interactionSets(userId, [q.id])
     return {
       question: {
-        ...maskAuthor(q, userId),
+        ...maskAuthor(q),
         isLiked: liked.has(q.id),
         isFavorited: faved.has(q.id),
       },
@@ -177,7 +178,7 @@ const handlers = {
        WHERE c.question_id = ? AND c.is_deleted = 0
        ORDER BY c.id ASC`, [id])
     const masked = rows.map(r => ({
-      ...maskAuthor(r, userId),
+      ...maskAuthor(r),
       isMine: !!(userId && Number(r.user_id) === Number(userId)),
     }))
     const tops = masked.filter(r => !r.parent_id)

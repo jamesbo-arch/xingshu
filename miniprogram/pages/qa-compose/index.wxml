@@ -24,7 +24,7 @@
     <view class="compose-card option-row">
       <view class="option-main">
         <text class="option-label">匿名提问</text>
-        <text class="option-desc">开启后，其他人只会看到「匿名」</text>
+        <text class="option-desc">开启后不显示你的头像和昵称，署名为「醒书同学」</text>
       </view>
       <switch checked="{{isAnonymous}}" bindchange="onToggleAnonymous" color="#B6452F" />
     </view>
