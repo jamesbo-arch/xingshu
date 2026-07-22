@@ -356,10 +356,14 @@ Page({
   },
 
   // 副信息行：主理人 · 线上/线下（线下补活动地点）。
+  // 主理人取 owner_name（云函数按 owner_user_id 关联 users 得来）；
+  // **不能用 a.organizer**——那是遗留文本列，全库都是默认值「醒书运营组」。
+  // 未指派主理人的老活动才退回 organizer 兜底。
   // 线上活动的 location 存的是会议号，云函数在列表里已抹掉，这里也只对线下取。
   _rowSub(a) {
     const parts = []
-    if (a.organizer) parts.push(a.organizer)
+    const owner = a.owner_name || a.organizer
+    if (owner) parts.push(owner)
     if (a.type === 'online') {
       parts.push('线上')
     } else {

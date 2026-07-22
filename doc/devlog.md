@@ -4068,3 +4068,31 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - `node --check` 通过；两个格式化函数用同天/跨天/无结束/线下有址/线下无址/线上/无主理人七种输入验证输出正确
 - 未跑 `npm test`——改动全在小程序前端
 - 真机走查待确认：三行布局在窄屏不折行、长地址截断正常
+
+---
+
+### 2026-07-23 —— 修正：活动列表主理人取 owner_user_id 而非 organizer
+
+**类型**：云函数 / 前端（小程序）
+**计划关联**：接上条，字段取错的修正
+**修改文件**：
+- `miniprogram/cloudfunctions/activity/index.js` — `LIST_SELECT` 加 `LEFT JOIN users ow ON a.owner_user_id = ow.id`，返回 `owner_name`
+- `miniprogram/pages/activities/index.js` — `_rowSub` 改取 `owner_name`
+
+**变更说明**：
+
+上一条把主理人取成了 `a.organizer`——**取错了**。`activities` 表里有两个容易混淆的字段：
+
+| 字段 | 类型 | 实际情况 |
+|---|---|---|
+| `organizer` | varchar(64) | **遗留列**，默认值「醒书运营组」，后台表单早已不暴露，全库 100% 是这个默认值 |
+| `owner_user_id` | int unsigned | **真正的主理人**，后台「主理人」选择器写入，关联 users |
+
+按 `organizer` 渲染的结果是每一行都显示「醒书运营组」，信息量为零。改为云函数 JOIN users 带出 `owner_name`（**只带昵称、不外泄用户 id**），前端优先用它、未指派主理人的老活动才退回 `organizer` 兜底。
+
+**验证**：
+- 直连库跑 JOIN，确认 1154→钟声、488→陈建波James，老活动为 null（走兜底）
+- `npm test` 25 套件全绿（exit=0）
+- `activity` 云函数已部署 dev
+
+**顺带印证的一点**：查询结果显示线上活动的 `location` 确实存着腾讯会议号（如 `921 5066 1259`）。`_rowSub` 对线上不取 location，云函数 `list` 也已对 online 抹空，两道都在。

@@ -4,13 +4,19 @@ const cloud = require('wx-server-sdk')
 const db = require('./db')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
+// owner_name = 主理人昵称（activities.owner_user_id → users）。
+// 注意别跟 a.organizer 搞混：那是遗留文本列，全库都是默认值「醒书运营组」，
+// 真正的主理人是后台「主理人」选择器写的 owner_user_id。列表只带昵称、不外泄用户 id。
 const LIST_SELECT = `
   SELECT a.id, a.title, a.cover_url, a.type, a.city, a.location, a.organizer,
          a.capacity, a.signup_count, a.status, a.type_id, t.name AS type_name,
+         ow.nickname AS owner_name,
          DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') AS start_time,
          DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') AS end_time,
          DATE_FORMAT(a.signup_deadline, '%Y-%m-%d %H:%i') AS signup_deadline
-  FROM activities a LEFT JOIN activity_types t ON a.type_id = t.id`
+  FROM activities a
+  LEFT JOIN activity_types t ON a.type_id = t.id
+  LEFT JOIN users ow ON a.owner_user_id = ow.id`
 
 // Banner 富文本正文里的配图存的是 cloud:// fileID（临时链接会过期，不能入库），
 // 而 <rich-text> 的 <img> 渲染不了 cloud:// 协议，故读取时换成临时链接。
