@@ -41,9 +41,11 @@ const NAV = [
   { to: '/orders', label: '会员订单', roles: ['super', 'member'] },
   { to: '/users', label: '用户管理', roles: ['super', 'member'] },
   { to: '/stories', label: '故事管理', roles: ['super', 'content'] },
-  { to: '/featured', label: '善选管理', roles: ['super', 'content'] },
+  { to: '/questions', label: '问答管理', roles: ['super', 'content'] },
+  { to: '/featured', label: '精选管理', roles: ['super', 'content'] },
   { to: '/interactions', label: '互动数据', roles: ['super', 'content'] },
   { to: '/activities', label: '活动管理', roles: ['super', 'activity'] },
+  { to: '/banners', label: '活动Banner', roles: ['super', 'activity'] },
   { to: '/accounts', label: '账号管理', roles: ['super'] },
 ]
 const route = useRoute()

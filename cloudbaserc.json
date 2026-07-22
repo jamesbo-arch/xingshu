@@ -180,6 +180,13 @@
       "handler": "index.main"
     },
     {
+      "name": "qa",
+      "timeout": 10,
+      "installDependency": true,
+      "runtime": "Nodejs16.13",
+      "handler": "index.main"
+    },
+    {
       "name": "backupDb",
       "timeout": 300,
       "installDependency": true,

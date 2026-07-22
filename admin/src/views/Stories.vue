@@ -7,7 +7,7 @@
         <option value="">全部状态</option><option value="published">已发布</option><option value="draft">暂存</option>
       </select>
       <select v-model="featured" class="select" @change="onFilter">
-        <option value="">是否善选</option><option value="1">已善选</option><option value="0">未善选</option>
+        <option value="">是否精选</option><option value="1">已精选</option><option value="0">未精选</option>
       </select>
       <select v-model="tag" class="select" @change="onFilter">
         <option value="">全部标签</option>
@@ -22,7 +22,7 @@
     <table class="data-table">
       <thead><tr>
         <th style="width:36px"><input type="checkbox" :checked="allChecked" @change="toggleAll" /></th>
-        <th>ID</th><th>标题</th><th>作者</th><th>标签</th><th>时间</th><th>状态</th><th>善选</th>
+        <th>ID</th><th>标题</th><th>作者</th><th>标签</th><th>时间</th><th>状态</th><th>精选</th>
         <th>赞</th><th>藏</th><th>评</th><th>转</th><th>操作</th>
       </tr></thead>
       <tbody>
@@ -41,7 +41,7 @@
           </td>
           <td class="dim">{{ d.createdAt }}</td>
           <td><span class="badge" :class="'badge-'+d.publishStatus">{{ statusLabel(d.publishStatus) }}</span></td>
-          <td><span v-if="d.isFeatured" class="featured-tag">善选</span><span v-else class="dim">—</span></td>
+          <td><span v-if="d.isFeatured" class="featured-tag">精选</span><span v-else class="dim">—</span></td>
           <td>{{ d.likes }}</td><td>{{ d.favorites }}</td><td>{{ d.comments }}</td><td>{{ d.shares }}</td>
           <td class="ops">
             <button class="btn btn-ghost" @click="openEdit(d)">编辑</button>
@@ -150,7 +150,7 @@ function toggleAll(e) {
 }
 function interTotal(d) { return (d.likes||0) + (d.favorites||0) + (d.comments||0) + (d.shares||0) }
 async function onDelete(d) {
-  if (!confirm(`确定删除《${d.title}》（作者 ${d.author}）？\n该故事及其 ${interTotal(d)} 条互动数据将同步从小程序移除（善选副本一并下架），无法恢复。`)) return
+  if (!confirm(`确定删除《${d.title}》（作者 ${d.author}）？\n该故事及其 ${interTotal(d)} 条互动数据将同步从小程序移除（精选副本一并下架），无法恢复。`)) return
   await deleteStory(d.id)
   await reload()
 }
@@ -159,7 +159,7 @@ async function onBatchDelete() {
     const d = list.value.find(x => x.id === id)
     return s + (d ? interTotal(d) : 0)
   }, 0)
-  if (!confirm(`确定删除选中的 ${selected.value.length} 篇故事？\n连同约 ${total0} 条互动数据一并永久删除（善选副本下架），无法恢复。`)) return
+  if (!confirm(`确定删除选中的 ${selected.value.length} 篇故事？\n连同约 ${total0} 条互动数据一并永久删除（精选副本下架），无法恢复。`)) return
   const r = await deleteStories(selected.value)
   if (r.failed.length) alert(`${r.failed.length} 篇删除失败：${r.failed.map(f => f.id).join(', ')}`)
   selected.value = []
@@ -169,7 +169,7 @@ async function onExport() {
   const r = await getStories({ ...filters(), page: 1, pageSize: 100000 })
   exportCsv(
     `醒书故事列表-${new Date().toISOString().slice(0, 10)}.csv`,
-    ['故事ID', '标题', '作者', '发布时间', '状态', '善选', '标签', '点赞', '收藏', '评论', '转发', '已编辑'],
+    ['故事ID', '标题', '作者', '发布时间', '状态', '精选', '标签', '点赞', '收藏', '评论', '转发', '已编辑'],
     r.list.map(d => [d.id, d.title, d.author, d.createdAt, statusLabel(d.publishStatus), d.isFeatured ? '是' : '',
       (d.tags || []).join('、'), d.likes, d.favorites, d.comments, d.shares, d.editedAt ? '是' : ''])
   )

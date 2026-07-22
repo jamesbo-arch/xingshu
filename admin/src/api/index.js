@@ -128,7 +128,7 @@ export async function updateStory(data) { return call('updateStory', data) }
 export async function createStory(data) { return call('createStory', data) }
 export async function getTagList() { return call('tagList') }
 
-// 善选故事：热度榜（可配权重）→ 人工纳入 → 副本修订/上下架（副本独立于原文，互动共享原故事）
+// 精选故事：热度榜（可配权重）→ 人工纳入 → 副本修订/上下架（副本独立于原文，互动共享原故事）
 export async function getFeaturedRank(params = {}) { return call('featuredRank', params) }
 export async function addFeatured(storyId) { return call('featuredAdd', { storyId }) }
 export async function updateFeatured(data) { return call('featuredUpdate', data) }
@@ -179,6 +179,22 @@ export async function searchMembers(keyword, params = {}) { return call('memberS
 export async function getStaffList(activityId) { return call('staffList', { activityId }) }
 export async function addStaff(activityId, userId) { return call('staffAdd', { activityId, userId }) }
 export async function removeStaff(activityId, userId) { return call('staffRemove', { activityId, userId }) }
+
+// v2.0 活动页 Banner 管理（图片复用活动的 activityUpload 通道）
+export async function getBanners() { return call('bannerListAdmin') }
+export async function getBannerDetail(id) { return call('bannerDetailAdmin', { id }) }
+export async function saveBanner(data) { return call('bannerSave', data) }
+export async function deleteBanner(id) { return call('bannerDelete', { id }) }
+
+// v2.0 醒书问答管理（后台始终显示真实作者，匿名仅对小程序端其他用户生效）
+export async function getQuestions(params = {}) { return call('questionList', params) }
+export async function getQuestionDetail(id) { return call('questionDetail', { id }) }
+export async function deleteQuestion(id) { return call('questionDelete', { id }) }
+export async function deleteQuestionComment(id) { return call('questionCommentDelete', { id }) }
+// 精选问答：纳入生成可修订副本 → 修订 → 上/下架（联动 questions.is_featured）
+export async function addQaFeatured(questionId) { return call('qaFeaturedAdd', { questionId }) }
+export async function updateQaFeatured(questionId, content) { return call('qaFeaturedUpdate', { questionId, content }) }
+export async function toggleQaFeatured(questionId, status) { return call('qaFeaturedToggle', { questionId, status }) }
 
 // 支付凭证：客户端等比缩放到 ≤1280px 并转 JPEG dataURL，随建单经鉴权云函数写入 DB。
 // 不走云存储（匿名登录无写权限，且会绕过密码鉴权），dataURL 直接可 <img src> 展示。

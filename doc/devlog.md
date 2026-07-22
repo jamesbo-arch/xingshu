@@ -3855,3 +3855,45 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - **端到端**：云函数产出的文件经 `restore-backup.js --verify` 下载解密并导入临时库，17 张表 836 行一致（证明云函数 secret.js 与本地 .env 密钥一致）
 - 公网 URL 取首 40 字节确认为密文
 - 部署目标为 dev 环境，`db.js` 仍指向 xingshu_dev，无需 sync-db 回滚
+
+---
+
+### 2026-07-22 16:30 — v2.0 大改版：四页签重构 + 醒书问答 + 活动 Banner + 精选口径统一
+
+**类型**：数据库 | 云函数 | 前端 | 后台 | 测试 | 文档
+**计划关联**：用户提出的整体改版需求（5 条）
+
+**修改文件**（按模块）：
+- `scripts/migrate-v2.js` — 新建：banners / questions / question_comments / featured_questions 四表 + interactions.target_type 扩枚举（幂等）
+- `miniprogram/app.json` `custom-tab-bar/index.js` `app.wxss` `app.js` — 四页签重构、nav-qa/ic-qa/ic-star 图标、splash 归属 square→home
+- `miniprogram/cloudfunctions/qa/*` — 新建问答云函数（action 路由）
+- `miniprogram/pages/{qa,qa-detail,qa-compose,my-qa,banner-detail}/*` — 新建 5 个页面
+- `miniprogram/components/qa-card/*` — 新建问答卡片
+- `miniprogram/pages/{square,detail,mine,member,collections,activities,activity-detail}/*` — 改造
+- `miniprogram/cloudfunctions/{getStoryList,getStoryDetail,createComment,activity,admin}/index.js` — 后端口径调整
+- `admin/src/views/{Banners,Questions}.vue` — 新建两个后台页；`App.vue` `router/index.js` `api/index.js` — 菜单/路由/API
+- `test/fn-{qa,qa-admin,banner,activity-fav}-test.js` — 新建 4 个测试文件（40 条）
+
+**变更说明**：
+
+**① 四页签重构**：醒书活动（首页）/ 醒书故事 / 醒书问答 / 醒书会员，**对所有身份固定 4 个**。我的故事、我的问答、我的收藏三个入口收进醒书会员页（authed 只给收藏一行——非会员无内容可写）。`minRole`/`RANK` 裁剪机制保留备用。mine 页照 collections 做非页签化（返回键 + 去 tab-bar 依赖）。
+
+**② 活动页（新首页）**：`SHOW_FEED = false` 隐藏活动分享子栏目，瀑布流与发布弹层代码全部保留；顶部新增可手动拨动的 Banner 轮播（banners 表 + 后台管理，支持跳富文本详情页）；移除原底部「近期活动预告」浮层（顶部 Banner 取代其角色），act-banner 组件文件保留但撤下 app.json 全局注册。活动详情页加收藏按钮。
+
+**③ 故事页**：星标精选筛选（仅会员可见——非会员本就只能看精选，给开关无意义）；点赞数不再展示；精选视图无评论区；评论收窄为会员专享（服务端 createComment 返回 -2 兜底）；移除活动轮播。
+
+**④ 醒书问答（新模块）**：仅正文帖子式、可匿名、暂存/发布两态、精选副本机制。**匿名脱敏在服务端做**（`maskAuthor()`），admin 后台始终返回真实作者。**精选问答展示全部回复但只读**——回复即答案，藏起来这个页面就没有阅读价值（与故事「精选无评论」的口径有意不同）。
+
+**⑤ 后台**：新增 Banner 管理与问答管理（含精选副本纳入/修订/上下架）；「善选」全面改称「精选」（代码标识符与表名不动）。
+
+**几处值得记的判断**：
+- `getStoryDetail` 原本用 `preferFeatured` 同时表达「取副本」和「不记阅读」。会员用星标筛选阅读时那是**真实阅读**，不该因为取了副本就不计数——拆成 `preferFeatured` + `silent` 两个参数，海报传 silent，星标阅读不传。
+- 现场分享发布权收窄复用了既有的 `isStatsViewer()`（报名数据鉴权用），没有新造判定。
+- Banner「选跳详情页」时强制要求详情内容非空——否则用户点进去是一张白页。
+
+**验证**：
+- `npm test` **25 套件 257 条全绿**
+- 既有用例按新口径改写：PERM-A12（非会员评论被拒）、PERM-A15（silent 拆分）+ 新增 A16（featuredOnly）；POST 测试改用主理人身份并新增 A14 工作人员用例；FEED 测试补主理人设置
+- `admin npm run build` 通过
+
+**待办（prod 上线）**：`XINGSHU_ENV_FILE=.env.prod node scripts/migrate-v2.js` + 全量部署云函数（新增 qa）+ admin 重新构建发布。

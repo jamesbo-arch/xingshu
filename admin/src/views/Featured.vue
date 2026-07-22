@@ -1,10 +1,10 @@
 <template>
   <div>
-    <h1 class="page-title">善选管理</h1>
+    <h1 class="page-title">精选管理</h1>
 
-    <!-- ── 热度排行榜：未善选的已发布故事，按加权计数排序，人工纳入 ── -->
+    <!-- ── 热度排行榜：未精选的已发布故事，按加权计数排序，人工纳入 ── -->
     <div class="section-card">
-      <h2 class="section-title">热度排行榜 <span class="dim">（未善选的已发布故事）</span></h2>
+      <h2 class="section-title">热度排行榜 <span class="dim">（未精选的已发布故事）</span></h2>
       <div class="filter-bar">
         <label class="inline-label">发布起<input v-model="dateFrom" type="date" class="input" /></label>
         <label class="inline-label">止<input v-model="dateTo" type="date" class="input" /></label>
@@ -30,7 +30,7 @@
             <td class="dim">{{ d.createdAt }}</td>
             <td>{{ d.likes }}</td><td>{{ d.favorites }}</td><td>{{ d.comments }}</td>
             <td><b>{{ d.score }}</b></td>
-            <td><button class="btn btn-primary" :disabled="adding === d.id" @click="onAdd(d)">{{ adding === d.id ? '纳入中…' : '纳入善选' }}</button></td>
+            <td><button class="btn btn-primary" :disabled="adding === d.id" @click="onAdd(d)">{{ adding === d.id ? '纳入中…' : '纳入精选' }}</button></td>
           </tr>
           <tr v-if="!rank.length"><td colspan="10" class="empty">暂无候选故事</td></tr>
         </tbody>
@@ -38,9 +38,9 @@
       <Paginate :page="rankPage" :pageSize="rankPageSize" :total="rankTotal" @change="onRankPage" />
     </div>
 
-    <!-- ── 已善选列表：副本修订 / 上下架 ── -->
+    <!-- ── 已精选列表：副本修订 / 上下架 ── -->
     <div class="section-card">
-      <h2 class="section-title">已善选故事 <span class="dim">（公众可见的修订副本，互动共享原故事）</span></h2>
+      <h2 class="section-title">已精选故事 <span class="dim">（公众可见的修订副本，互动共享原故事）</span></h2>
       <div class="filter-bar">
         <input v-model="fKeyword" placeholder="搜索副本标题/内容/作者" class="input" @input="onListFilter" />
         <select v-model="fStatus" class="select" @change="onListFilter">
@@ -69,7 +69,7 @@
               <button v-else class="btn btn-primary" :disabled="f.storyStatus !== 'active'" :title="f.storyStatus !== 'active' ? '原故事已删除，不可重新上架' : ''" @click="onToggle(f, 'online')">上架</button>
             </td>
           </tr>
-          <tr v-if="!featured.length"><td colspan="9" class="empty">暂无善选故事</td></tr>
+          <tr v-if="!featured.length"><td colspan="9" class="empty">暂无精选故事</td></tr>
         </tbody>
       </table>
       <Paginate :page="fPage" :pageSize="fPageSize" :total="fTotal" @change="onFeaturedPage" />
@@ -78,7 +78,7 @@
     <!-- 副本修订弹窗（含原文对照；只改副本，不影响作者原文） -->
     <div v-if="showEdit" class="modal-mask" @click.self="showEdit = false">
       <div class="modal modal-wide">
-        <h2 class="modal-title">修订善选副本 <span class="dim">（作者 {{ editForm.author }} · 原文不受影响）</span></h2>
+        <h2 class="modal-title">修订精选副本 <span class="dim">（作者 {{ editForm.author }} · 原文不受影响）</span></h2>
         <div class="edit-grid">
           <div>
             <label class="block-label">副本标题（{{ (editForm.title||'').length }}/30）
@@ -117,7 +117,7 @@ const dateFrom = ref(''), dateTo = ref('')
 const wLike = ref(1), wFav = ref(1), wComment = ref(1)
 const adding = ref(null)
 
-// 已善选列表
+// 已精选列表
 const featured = ref([]), fPage = ref(1), fPageSize = ref(20), fTotal = ref(0)
 const fKeyword = ref(''), fStatus = ref('')
 let fTimer = null
@@ -149,7 +149,7 @@ function onListFilter() { clearTimeout(fTimer); fTimer = setTimeout(() => { fPag
 function onFeaturedPage({ page: p, pageSize: ps }) { fPage.value = p; fPageSize.value = ps; reloadFeatured() }
 
 async function onAdd(d) {
-  if (!confirm(`将《${d.title}》纳入善选？\n将拷贝原文生成公众可见副本（可再修订），原文不受影响。`)) return
+  if (!confirm(`将《${d.title}》纳入精选？\n将拷贝原文生成公众可见副本（可再修订），原文不受影响。`)) return
   adding.value = d.id
   try {
     await addFeatured(d.id)

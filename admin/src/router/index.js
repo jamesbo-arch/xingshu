@@ -21,6 +21,8 @@ const routes = [
   { path: '/stories', name: 'Stories', component: () => import('../views/Stories.vue'), meta: { roles: ['super', 'content'] } },
   { path: '/stories/:id', name: 'StoryDetail', component: () => import('../views/StoryDetail.vue'), meta: { roles: ['super', 'content'] } },
   { path: '/featured', name: 'Featured', component: () => import('../views/Featured.vue'), meta: { roles: ['super', 'content'] } },
+  { path: '/questions', name: 'Questions', component: () => import('../views/Questions.vue'), meta: { roles: ['super', 'content'] } },
+  { path: '/banners', name: 'Banners', component: () => import('../views/Banners.vue'), meta: { roles: ['super', 'activity'] } },
   // 旧路径兼容（书签/历史链接）
   { path: '/diaries', redirect: '/stories' },
   { path: '/diaries/:id', redirect: to => `/stories/${to.params.id}` },

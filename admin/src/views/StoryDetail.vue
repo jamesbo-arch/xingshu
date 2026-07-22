@@ -8,7 +8,7 @@
         <div><label>作者</label><span>{{ story.author }}</span></div>
         <div><label>发布时间</label><span>{{ story.createdAt }}</span></div>
         <div><label>状态</label><span class="badge" :class="'badge-'+story.publishStatus">{{ statusLabel(story.publishStatus) }}</span></div>
-        <div><label>善选</label><span>{{ story.isFeatured ? '已纳入善选' : '未善选' }}</span></div>
+        <div><label>精选</label><span>{{ story.isFeatured ? '已纳入精选' : '未精选' }}</span></div>
         <div><label>点赞</label><span>{{ story.likes }}</span></div>
         <div><label>收藏</label><span>{{ story.favorites }}</span></div>
         <div><label>评论</label><span>{{ story.comments }}</span></div>

@@ -110,7 +110,7 @@ function onFilter() { clearTimeout(timer); timer = setTimeout(reload, 250) }
 
 function roleLabel(r) { return { super: '超级管理员', content: '内容运营', activity: '活动运营', member: '会员运营' }[r] || r }
 const ROLE_OPTIONS = [
-  { value: 'content', label: '内容运营（故事/善选/互动）' },
+  { value: 'content', label: '内容运营（故事/精选/互动）' },
   { value: 'activity', label: '活动运营（仅自己主理的活动）' },
   { value: 'member', label: '会员运营（用户/订单，不含退费）' },
   { value: 'super', label: '超级管理员（全部功能）' },

@@ -89,6 +89,9 @@ async function run() {
         [tokens.content, 'orderList'], [tokens.content, 'accountList'],
         [tokens.member, 'refundOrder'], [tokens.member, 'deleteStory'],
         [tokens.activity, 'typeSave'], [tokens.activity, 'users'],
+        // v2.0：问答属内容运营、Banner 属活动运营，互相越界须拒
+        [tokens.activity, 'questionList'], [tokens.activity, 'qaFeaturedAdd'],
+        [tokens.content, 'bannerListAdmin'], [tokens.member, 'questionList'],
       ]
       for (const [tk, action] of cases) {
         const r = await admin(tk, action, {})
@@ -100,6 +103,8 @@ async function run() {
       for (const [tk, action] of [
         [tokens.content, 'stories'], [tokens.content, 'featuredList'],
         [tokens.member, 'orderList'], [tokens.activity, 'typeList'],
+        // v2.0 新增：问答归内容运营、Banner 归活动运营
+        [tokens.content, 'questionList'], [tokens.activity, 'bannerListAdmin'],
       ]) {
         const r = await admin(tk, action, {})
         if (r.code !== 0) throw new Error(`${action}: ${r.msg}`)
