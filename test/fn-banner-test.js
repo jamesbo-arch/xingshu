@@ -1,11 +1,11 @@
-// 活动页 Banner 测试 — BAN-01 ~ 08（v2.0 新增）
+// 活动页 Banner 测试 — BAN-01 ~ 09（v2.0 新增）
 // 覆盖：admin CRUD + 审计、小程序端只见启用项且按 sort 排序、详情页跳转约束、ACL
 const mysql = require('mysql2/promise')
 const DB = require('../config/db')
 const { callFn } = require('./fn-harness')
 
 async function run() {
-  console.log('=== 活动页 Banner 测试（BAN-01~08）===\n')
+  console.log('=== 活动页 Banner 测试（BAN-01~09）===\n')
   let passed = 0, failed = 0, token = null
   const created = []
 
@@ -109,6 +109,24 @@ async function run() {
     const [[{ a }]] = await conn.query(
       "SELECT COUNT(*) a FROM admin_logs WHERE action='bannerDelete' AND target_id=?", [String(offId)])
     if (!a) throw new Error('缺审计')
+  })
+
+  await test('BAN-09 详情正文里的 cloud:// 配图换成可访问链接', async () => {
+    // rich-text 的 <img> 渲染不了 cloud://，正文入库存 fileID、读取时服务端换链
+    const fid = 'cloud://fake-env/banner-body-1.jpg'
+    const r = await admin('bannerSave', {
+      imageUrl: 'cloud://fake/banner9.jpg', title: 'test_ban 配图', linkType: 'detail',
+      contentRich: `<p style="margin:0 0 24rpx;">图文</p><img src="${fid}" style="width:100%">`,
+      sort: 9, isActive: 1,
+    })
+    if (r.code !== 0) throw new Error(r.msg)
+    created.push(r.data.id)
+    const d = await act('bannerDetail', { id: r.data.id })
+    if (d.code !== 0) throw new Error(d.msg)
+    const html = d.data.content_rich || ''
+    if (html.includes('cloud://')) throw new Error('正文仍残留 cloud://，未换链')
+    if (!html.includes('https://fake.cdn/')) throw new Error('未换成可访问链接')
+    if (!html.includes('24rpx')) throw new Error('换链不应动其余样式')
   })
 
   // 清理

@@ -274,7 +274,7 @@
 统一入口为根目录 `npm test`（Loop Engineering 的验证闭环，任一失败即退出码非 0）：
 
 ```bash
-npm test          # 全量：连通性检查 → 单测 + API + 冒烟/回环 + admin/活动/权限/问答/Banner/推荐人/授权/评论/标签，25 套件 257 条
+npm test          # 全量：连通性检查 → 单测 + API + 冒烟/回环 + admin/活动/权限/问答/Banner/推荐人/授权/评论/标签，25 套件 260 条
 npm run test:unit # 仅 utils 纯函数单测（node:test，不依赖数据库）
 npm run test:e2e  # 20 条端到端流程测试（含写库与清理）
 node test/seed.js       # 向 MySQL 插入种子数据
@@ -294,7 +294,7 @@ npm run backup:restore  # 不带参列出云端备份；带 <cloudPath> [--verif
 - `test/fn-admin-test.js` — admin 云函数测试（鉴权、数据形状、删除联动清理）
 - `test/fn-qa-test.js` — 醒书问答小程序端（18 条：两态/会员门槛/精选副本/匿名脱敏/回复只读/赞藏）
 - `test/fn-qa-admin-test.js` — 问答后台管理（8 条：真实作者/精选纳入修订上下架/删除联动）
-- `test/fn-banner-test.js` — 活动页 Banner（8 条：CRUD/停用隔离/sort 排序/详情跳转约束）
+- `test/fn-banner-test.js` — 活动页 Banner（9 条：CRUD/停用隔离/sort 排序/详情跳转约束/正文配图换链）
 - `test/fn-activity-fav-test.js` — 活动收藏（6 条：翻转/列表标记/favList 排序/草稿隔离）
 
 测试依赖根目录的 `mysql2`（根 `package.json` 唯一依赖），首次运行前需在仓库根目录 `npm install`。

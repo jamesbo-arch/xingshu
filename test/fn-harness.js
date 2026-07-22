@@ -9,6 +9,11 @@ const fakeCloud = {
   DYNAMIC_CURRENT_ENV: 'local-test-env',
   init() {},
   getWXContext: () => ({ ...ctx }),
+  // 云存储换链桩：回可预期的假链接，让「rich-text 正文里的 cloud:// 换成 http」
+  // 这条路径能被断言。缺了它，云函数侧的 try/catch 会把失败吞成静默降级，测试照样绿。
+  getTempFileURL: async ({ fileList = [] } = {}) => ({
+    fileList: fileList.map((fileID) => ({ fileID, tempFileURL: `https://fake.cdn/${encodeURIComponent(fileID)}` })),
+  }),
 }
 
 const origLoad = Module._load

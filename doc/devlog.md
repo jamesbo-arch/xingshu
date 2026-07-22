@@ -3971,3 +3971,41 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - `admin npm run build` 通过
 - **已部署 dev 静态托管**，回查线上 `index-DtZ_rzeg.js` 与本地构建一致
 - 未跑 `npm test`——改动全在 admin 前端
+
+---
+
+### 2026-07-23 —— Banner 富文本插入图片；去掉轮播图预览
+
+**类型**：前端（管理后台）/ 云函数 / 测试
+**计划关联**：接上条，按运营反馈补功能
+**修改文件**：
+- `admin/src/components/RichEditor.vue` — 插入图片按钮；移除 `heroSrc` 预览
+- `admin/src/utils/rich-text.js` — `extractFileIds`、`data-fid` 暂存机制、img 存活判定放宽
+- `admin/src/views/Banners.vue` — 打开弹窗前预换正文配图链接
+- `miniprogram/cloudfunctions/activity/index.js` — `resolveRichImages()` + `bannerDetail` 换链
+- `test/fn-harness.js` — `fakeCloud` 补 `getTempFileURL` 桩
+- `test/fn-banner-test.js` — 新增 BAN-09
+- `CLAUDE.md` — 测试数字 257→260、Banner 用例 8→9
+
+**变更说明**：
+
+**① 去掉编辑器里的轮播图预览**（上一条刚加的）。运营反馈详情页上方不需要再出现 Banner 图。
+
+**② 插入图片**。难点是 **`rich-text` 的 `<img>` 渲染不了 `cloud://` 协议**，而 `getTempFileURL` 的临时链接几小时就过期、不能入库。方案是**正文里存 `cloud://` fileID，两端各自在读取时换链**：
+
+- **admin 侧**：`toEditorHtml(stored, urlMap)` 把 `src` 换成临时链接、fileID 暂存到 `data-fid`；`toStoredHtml` 反向换回并删掉 `data-fid`（它只活在编辑器内存里，不进库）。临时链接的换取放在 `openForm` 里、**挂载编辑器之前**完成——异步到货会在打字过程中重写画布 innerHTML，把光标打飞。
+- **小程序侧**：换链放在 `activity.bannerDetail` **服务端**做。这样**已发布的客户端一行不用改、不用重新提审**，只需部署这一个云函数。
+
+**③ 堵了一个数据丢失口子**。净化层原本判「img 的 src 不合法就删」。加 `data-fid` 后，若临时链接换取失败、`src` 是空串，这条规则会把图删掉，**下次保存就真的丢了**。改成 src 与 data-fid 任一有效即保留。
+
+**④ 换链失败降级为丢图，不拖垮整页**。`resolveRichImages` 包了 try/catch——`getTempFileURL` 挂掉（配额/权限）不该让详情页变成「内容不存在」，正文才是主体。
+
+**一个被测试盲区盖住的问题**：`test/fn-harness.js` 的 `fakeCloud` 里**没有 `getTempFileURL`**，所以换链在测试中必然抛异常、被上面那个 try/catch 吞成静默降级，**测试照样全绿、这条路径从没被验证过**。给 harness 补了返回 `https://fake.cdn/<fileID>` 的桩，并加 BAN-09 断言正文里 `cloud://` 已消失、其余样式（`24rpx`）未被误伤。
+
+**验证**：
+- `npm test` **25 套件 260 条全绿**（exit=0），含新增 BAN-09
+- `activity` 云函数已部署 dev。**注**：`wxcloud` CLI 登录态失效（报「环境不存在」），改用 tcb CLI `tcb fn deploy activity -e cloud1-xingshu-prd-d1cev0fcca864 --force` 成功
+- admin 已部署 dev 静态托管，线上 `index-DPYfo9Av.js` 与本地构建一致
+- 真机走查待确认：后台插图保存 → 小程序点 Banner → 图片能显示
+
+**待办（prod 上线）**：本次云函数改动（`activity`）需随 v2.0 一并部署 prod。
