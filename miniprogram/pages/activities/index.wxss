@@ -506,6 +506,16 @@ page { height: 100%; overflow: hidden; }
   white-space: nowrap;
 }
 
+/* 主理人 / 线上线下 / 地点：地点可能很长，单行截断不换行撑高卡片 */
+.act-rsub {
+  font-size: 22rpx;
+  color: #A8A39B;
+  margin-top: 6rpx;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .act-rtype {
   flex-shrink: 0;
   font-size: 20rpx;

@@ -321,8 +321,8 @@ Page({
       id: a.id,
       title: a.title,
       st, stLabel, full,
-      timeText: this._rowTime(a.start_time),
-      place: a.type === 'online' ? '线上' : (a.city || '线下'),
+      timeText: this._rowTime(a.start_time, a.end_time),
+      subText: this._rowSub(a),
       typeName: a.type_name || (a.type === 'online' ? '线上活动' : '线下活动'),
       tico: type.ico,
       tcls: type.cls,
@@ -342,12 +342,32 @@ Page({
     return channel === 'online' ? { ico: 'moon', cls: 'tc-blue' } : { ico: 'fire', cls: 'tc-red' }
   },
 
-  // "2026-07-15 08:30" → "07-15 周三 08:30"
-  _rowTime(t) {
+  // "2026-07-15 08:30" + "2026-07-15 12:00" → "07-15 周三 08:30-12:00"
+  // 跨天则结束端补上日期："07-15 周三 08:30 → 07-16 10:00"；无结束时间只显开始
+  _rowTime(t, endT) {
     const s = String(t)
     const d = new Date(s.replace(/-/g, '/'))
     const week = isNaN(d.getTime()) ? '' : ' 周' + '日一二三四五六'[d.getDay()]
-    return s.slice(5, 10) + week + ' ' + s.slice(11, 16)
+    const head = s.slice(5, 10) + week + ' ' + s.slice(11, 16)
+    if (!endT) return head
+    const e = String(endT)
+    if (e.slice(0, 10) === s.slice(0, 10)) return head + '-' + e.slice(11, 16)
+    return head + ' → ' + e.slice(5, 10) + ' ' + e.slice(11, 16)
+  },
+
+  // 副信息行：主理人 · 线上/线下（线下补活动地点）。
+  // 线上活动的 location 存的是会议号，云函数在列表里已抹掉，这里也只对线下取。
+  _rowSub(a) {
+    const parts = []
+    if (a.organizer) parts.push(a.organizer)
+    if (a.type === 'online') {
+      parts.push('线上')
+    } else {
+      parts.push('线下')
+      const spot = a.location || a.city
+      if (spot) parts.push(spot)
+    }
+    return parts.join(' · ')
   },
 
   // "2026-07" → "二〇二六 · 七月"
