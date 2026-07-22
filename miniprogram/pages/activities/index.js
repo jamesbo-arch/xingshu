@@ -355,22 +355,22 @@ Page({
     return head + ' → ' + e.slice(5, 10) + ' ' + e.slice(11, 16)
   },
 
-  // 副信息行：主理人 · 线上/线下（线下补活动地点）。
-  // 主理人取 owner_name（云函数按 owner_user_id 关联 users 得来）；
-  // **不能用 a.organizer**——那是遗留文本列，全库都是默认值「醒书运营组」。
-  // 未指派主理人的老活动才退回 organizer 兜底。
-  // 线上活动的 location 存的是会议号，云函数在列表里已抹掉，这里也只对线下取。
+  // 副信息行：地点/会议号 · 共创者。
+  // 线上的 location 是腾讯会议号，云函数**只对已报名者下发**，未报名时拿到的是空串，
+  // 故这里不需要（也无法）自己判断报名态——有值即可显示。
+  // 共创者取 owner_name（云函数按 owner_user_id 关联 users 得来）；
+  // **不能用 a.organizer**——那是遗留文本列，全库都是默认值「醒书运营组」，
+  // 只有未指派主理人的老活动才退回它兜底。
   _rowSub(a) {
     const parts = []
-    const owner = a.owner_name || a.organizer
-    if (owner) parts.push(owner)
     if (a.type === 'online') {
-      parts.push('线上')
+      parts.push(a.location ? '会议号：' + a.location : '线上')
     } else {
-      parts.push('线下')
       const spot = a.location || a.city
-      if (spot) parts.push(spot)
+      parts.push(spot ? '活动地点：' + spot : '线下')
     }
+    const owner = a.owner_name || a.organizer
+    if (owner) parts.push('共创者：' + owner)
     return parts.join(' · ')
   },
 

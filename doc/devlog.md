@@ -4096,3 +4096,36 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - `activity` 云函数已部署 dev
 
 **顺带印证的一点**：查询结果显示线上活动的 `location` 确实存着腾讯会议号（如 `921 5066 1259`）。`_rowSub` 对线上不取 location，云函数 `list` 也已对 online 抹空，两道都在。
+
+---
+
+### 2026-07-23 —— 活动列表副信息行重排 + 类型标签移右上 + 详情显示共创者
+
+**类型**：云函数 / 前端（小程序）/ 测试
+**计划关联**：v2.0 真机走查反馈
+**修改文件**：
+- `miniprogram/cloudfunctions/activity/index.js` — `list` 的会议号改按报名态下发；`detail` JOIN 出 `owner_name`
+- `miniprogram/pages/activities/index.js` / `.wxml` / `.wxss` — 副信息行文案、类型标签移入右栏
+- `miniprogram/pages/activity-detail/index.js` / `.wxml` — 共创者行
+- `test/fn-activity-feed-test.js` — FEED-09 补正向断言；新增 FEED-13
+
+**变更说明**：
+
+**① 副信息行改为「地点/会议号 · 共创者」**：
+- 线上已报名 → `会议号：921 5066 1259 · 共创者：钟声`
+- 线上未报名 → `线上 · 共创者：钟声`
+- 线下 → `活动地点：南浦时代 · 共创者：陈建波James`
+
+**这里动了一处权限口径，是本次唯一有风险的改动**：`list` 原先对所有线上活动无条件 `a.location = ''`（注释写着「列表一律不外泄」）。要在列表显示会议号，就得放开——但**放开的是「谁能看」而不是「看不看得到」**：改为 `if (a.type === 'online' && !a.isSignedUp) a.location = ''`，与 `detail` 完全同一口径。`isSignedUp` 在同一个 forEach 里先算，顺序有保证。
+
+**② 类型标签移到右栏**（`.act-rright` 竖排：类型在上、状态胶囊在下），第二行只剩时间。
+
+**③ 详情页加共创者行**（`ic-users` 图标，摆在地点与价格之间）。`detail` 原来 `SELECT a.*` 没有主理人昵称，补 `LEFT JOIN users ow ON a.owner_user_id = ow.id`。
+
+**测试**：FEED-09 原本只断言「列表不外泄会议号」，用的是未报名的 ghost 用户——**新规则下这条依然通过，但新增的正向行为无人守**。补了「已报名者的列表应见会议号」断言；另加 FEED-13 守 `owner_name` 字段在 list 与 detail 都存在。
+
+**验证**：
+- `node --check` 三个文件通过；副信息行文案用线上已报名/未报名/线下/老活动兜底四种输入验证
+- `fn-activity-feed-test` **13/13 通过**（含改写的 FEED-09 与新增 FEED-13）
+- `activity` 云函数已部署 dev
+- ⚠️ **全量 `npm test` 未跑完**：跑到 `fn-comment-reply-test` 时 cpolar 隧道断开（`connect ETIMEDOUT`），`ping-db` 确认不可达。按项目规矩停下未重试。**隧道恢复后需补跑一次全量**——本次改动本身已由 FEED 套件覆盖，补跑是为确认没有间接影响。

@@ -108,8 +108,9 @@ const handlers = {
     rows.forEach(a => {
       a.isSignedUp = signedSet.has(a.id) ? 1 : 0
       a.isFavorited = favedSet.has(a.id) ? 1 : 0
-      // 线上活动的 location 存腾讯会议号，仅报名用户在详情可见——列表一律不外泄
-      if (a.type === 'online') a.location = ''
+      // 线上活动的 location 存腾讯会议号：**仅已报名者可见**，其余一律抹掉。
+      // 与 detail 同一口径——列表也要显示会议号，但门槛不能因此放宽
+      if (a.type === 'online' && !a.isSignedUp) a.location = ''
     })
     if (mode === 'all') {
       return { list: rows.sort((a, b) => b.start_time.localeCompare(a.start_time)) }
@@ -124,12 +125,14 @@ const handlers = {
 
   async detail({ id } = {}, openid) {
     const [rows] = await db.query(
-      `SELECT a.*, t.name AS type_name, t.schedule_hint,
+      `SELECT a.*, t.name AS type_name, t.schedule_hint, ow.nickname AS owner_name,
               DATE_FORMAT(a.start_time, '%Y-%m-%d %H:%i') AS start_time,
               DATE_FORMAT(a.end_time, '%Y-%m-%d %H:%i') AS end_time,
               DATE_FORMAT(a.signup_deadline, '%Y-%m-%d %H:%i') AS signup_deadline,
               (a.start_time <= NOW()) AS started
-       FROM activities a LEFT JOIN activity_types t ON a.type_id = t.id
+       FROM activities a
+       LEFT JOIN activity_types t ON a.type_id = t.id
+       LEFT JOIN users ow ON a.owner_user_id = ow.id
        WHERE a.id = ? AND a.status != 'draft'`, [id])
     if (!rows.length) throw new Error('活动不存在')
     const a = rows[0]

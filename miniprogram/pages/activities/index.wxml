@@ -156,12 +156,15 @@
             <text class="act-rtitle">{{item.title}}</text>
             <view class="act-rmeta">
               <text>{{item.timeText}}{{item.full ? ' · 名额已满' : ''}}</text>
-              <text class="act-rtype {{item.tcls}}">{{item.typeName}}</text>
             </view>
-            <!-- 主理人 · 线上/线下 · 地点 -->
+            <!-- 会议号/活动地点 · 共创者 -->
             <view wx:if="{{item.subText}}" class="act-rsub">{{item.subText}}</view>
           </view>
-          <text class="act-st act-st-{{item.st}}">{{item.stLabel}}</text>
+          <!-- 右栏竖排：类型标签在上、状态胶囊在下 -->
+          <view class="act-rright">
+            <text class="act-rtype {{item.tcls}}">{{item.typeName}}</text>
+            <text class="act-st act-st-{{item.st}}">{{item.stLabel}}</text>
+          </view>
         </view>
       </block>
       <view class="act-bottom-pad"></view>

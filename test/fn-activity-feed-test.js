@@ -123,7 +123,7 @@ async function run() {
       if (other.code === 0) throw new Error('未报名不应可看名单')
     })
 
-    await test('FEED-09 线上会议号仅报名可见：detail 未报名掩码/已报名返回，list 不外泄', async () => {
+    await test('FEED-09 线上会议号仅报名可见：detail 与 list 均按报名态下发', async () => {
       const actOnline = await makeActivity({ type: 'online', city: '', location: '123-456-789' })
       const other = await act('detail', { id: actOnline }, 'mock_me')
       if (other.code !== 0) throw new Error(other.msg)
@@ -135,7 +135,19 @@ async function run() {
       if (mine.data.locationLocked) throw new Error('已报名不应带锁标记')
       const l = await act('list', { mode: 'all' }, 'test_ghost_' + Date.now())
       const row = l.data.list.find(a => a.id === actOnline)
-      if (row.location) throw new Error('列表不应外泄会议号')
+      if (row.location) throw new Error('未报名者的列表不应外泄会议号')
+      // v2.0：列表也显示会议号，但门槛与 detail 一致——只对已报名者下发
+      const mineList = await act('list', { mode: 'all' })
+      const myRow = mineList.data.list.find(a => a.id === actOnline)
+      if (myRow.location !== '123-456-789') throw new Error('已报名者的列表应见会议号')
+    })
+
+    await test('FEED-13 列表返回共创者昵称（owner_user_id 关联，非 organizer 遗留列）', async () => {
+      const l = await act('list', { mode: 'all' })
+      const row = l.data.list.find(a => a.id === actA)
+      if (!('owner_name' in row)) throw new Error('列表缺 owner_name 字段')
+      const d = await act('detail', { id: actA })
+      if (!('owner_name' in d.data)) throw new Error('详情缺 owner_name 字段')
     })
 
     await test('FEED-10 线下活动 detail 返回经纬度字段（地图导航用）', async () => {
