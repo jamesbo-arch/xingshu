@@ -3936,6 +3936,7 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 **验证**：
 - `admin npm run build` 通过
 - 未跑 `npm test`——改动全在 admin 前端，不触及云函数与数据库
+- **已部署 dev 静态托管**：`npx -y -p @cloudbase/cli tcb hosting deploy admin/dist -e cloud1-xingshu-prd-d1cev0fcca864`；回查线上 `index-BqYNsDyq.js` 与本地构建哈希一致、Banners 分块含 `rte-bar`
 - 浏览器走查待用户确认：新增 Banner → 点击行为选「进入详情页」→ 工具条排版 → 保存 → 重新打开确认样式回填 → 小程序端点开 Banner 比对
 
 **已知缺口**：工具条**没有插入图片**。Banner 图片存的是 `cloud://` fileID，而 `rich-text` 的 `<img>` 渲染不了 cloud 协议，`getTempFileURL` 拿到的链接又会过期——要支持正文配图，需让 `activity.bannerDetail` 在读取时把正文里的 cloud:// 重写成可访问链接。属于独立一件事，未做。
