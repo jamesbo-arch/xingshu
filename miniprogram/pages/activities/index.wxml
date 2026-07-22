@@ -86,10 +86,9 @@
     <view class="act-bottom-pad"></view>
   </scroll-view>
 
-  <!-- ── 页签二：全部活动 简洁列表（时间倒序），v2.0 起为本页唯一内容 ── -->
-  <scroll-view wx:else class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}"
-    refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
-
+  <!-- ── 页签二：全部活动，v2.0 起为本页唯一内容 ──
+       Banner 与筛选栏固定不滚动，只有活动列表在下方滚动 -->
+  <block wx:else>
     <!-- 顶部 Banner 轮播（后台管理，可手动左右拨动；仅「跳详情页」类型可点） -->
     <swiper wx:if="{{banners.length}}" class="hero-swiper" circular indicator-dots
       indicator-color="rgba(42,39,35,0.2)" indicator-active-color="#B6452F"
@@ -101,41 +100,77 @@
       </swiper-item>
     </swiper>
 
-    <scroll-view wx:if="{{types.length}}" class="type-chips" scroll-x enhanced show-scrollbar="{{false}}">
-      <view class="type-chip {{activeTypeId === 0 ? 'chip-on' : ''}}" data-id="0" bindtap="onTypeTap">全部</view>
-      <view
-        wx:for="{{types}}"
-        wx:key="id"
-        class="type-chip {{activeTypeId === item.id ? 'chip-on' : ''}}"
-        data-id="{{item.id}}"
-        bindtap="onTypeTap"
-      >{{item.name}}</view>
-    </scroll-view>
-
-    <view wx:if="{{allLoaded && !actItems.length}}" class="act-empty">
-      <text class="act-empty-icon serif">期</text>
-      <text class="act-empty-title">活动筹备中</text>
-      <text class="act-empty-hint">敬请期待</text>
+    <!-- 筛选栏：两个下拉按钮，点开在弹层里平铺选项（类型多时横滑难选） -->
+    <view class="filter-bar">
+      <view class="filter-pill {{activeTypeId ? 'pill-on' : ''}}" bindtap="onOpenTypeSheet">
+        <text class="filter-pill-text">{{typeLabel}}</text>
+        <text class="filter-caret">▾</text>
+      </view>
+      <view class="filter-pill {{activeMonth ? 'pill-on' : ''}}" bindtap="onOpenMonthSheet">
+        <text class="filter-pill-text">{{monthLabel}}</text>
+        <text class="filter-caret">▾</text>
+      </view>
+      <text wx:if="{{filterActive}}" class="filter-reset" bindtap="onResetFilter">重置</text>
     </view>
 
-    <block wx:for="{{actItems}}" wx:key="key">
-      <view wx:if="{{item.kind === 'month'}}" class="act-month serif">{{item.label}}</view>
-      <view wx:else class="act-row {{item.st === 'done' ? 'act-row-past' : ''}}" data-id="{{item.id}}" bindtap="onOpen">
-        <view class="act-tico {{item.tcls}}">
-          <view class="tico tico-{{item.tico}}"></view>
-        </view>
-        <view class="act-rmain">
-          <text class="act-rtitle">{{item.title}}</text>
-          <view class="act-rmeta">
-            <text>{{item.timeText}} · {{item.place}}{{item.full ? ' · 名额已满' : ''}}</text>
-            <text class="act-rtype {{item.tcls}}">{{item.typeName}}</text>
-          </view>
-        </view>
-        <text class="act-st act-st-{{item.st}}">{{item.stLabel}}</text>
+    <scroll-view class="act-scroll" scroll-y enhanced show-scrollbar="{{false}}"
+      refresher-enabled refresher-background="#FBF7EE" refresher-triggered="{{refreshing}}" bindrefresherrefresh="onRefresh">
+      <view wx:if="{{allLoaded && !actItems.length}}" class="act-empty">
+        <text class="act-empty-icon serif">期</text>
+        <text class="act-empty-title">{{filterActive ? '没有符合条件的活动' : '活动筹备中'}}</text>
+        <text class="act-empty-hint">{{filterActive ? '换个类型或月份看看' : '敬请期待'}}</text>
       </view>
-    </block>
-    <view class="act-bottom-pad"></view>
-  </scroll-view>
+
+      <block wx:for="{{actItems}}" wx:key="key">
+        <view wx:if="{{item.kind === 'month'}}" class="act-month serif">{{item.label}}</view>
+        <view wx:else class="act-row {{item.st === 'done' ? 'act-row-past' : ''}}" data-id="{{item.id}}" bindtap="onOpen">
+          <view class="act-tico {{item.tcls}}">
+            <view class="tico tico-{{item.tico}}"></view>
+          </view>
+          <view class="act-rmain">
+            <text class="act-rtitle">{{item.title}}</text>
+            <view class="act-rmeta">
+              <text>{{item.timeText}} · {{item.place}}{{item.full ? ' · 名额已满' : ''}}</text>
+              <text class="act-rtype {{item.tcls}}">{{item.typeName}}</text>
+            </view>
+          </view>
+          <text class="act-st act-st-{{item.st}}">{{item.stLabel}}</text>
+        </view>
+      </block>
+      <view class="act-bottom-pad"></view>
+    </scroll-view>
+  </block>
+
+  <!-- 类型筛选弹层：一屏平铺全部类型，不必横滑找 -->
+  <view wx:if="{{showTypeSheet}}" class="fsheet-mask" bindtap="onCloseSheet">
+    <view class="fsheet" catchtap="noopSheet">
+      <view class="fsheet-handle"></view>
+      <text class="fsheet-title serif">活动类型</text>
+      <view class="fsheet-grid">
+        <view class="fsheet-opt {{activeTypeId === 0 ? 'opt-on' : ''}}" data-id="0" bindtap="onTypeTap">全部类型</view>
+        <view wx:for="{{types}}" wx:key="id"
+          class="fsheet-opt {{activeTypeId === item.id ? 'opt-on' : ''}}"
+          data-id="{{item.id}}" bindtap="onTypeTap">{{item.name}}</view>
+      </view>
+      <view class="fsheet-pad"></view>
+    </view>
+  </view>
+
+  <!-- 月份筛选弹层：候选由活动实际分布派生 -->
+  <view wx:if="{{showMonthSheet}}" class="fsheet-mask" bindtap="onCloseSheet">
+    <view class="fsheet" catchtap="noopSheet">
+      <view class="fsheet-handle"></view>
+      <text class="fsheet-title serif">活动时间</text>
+      <view class="fsheet-grid">
+        <view class="fsheet-opt {{activeMonth === '' ? 'opt-on' : ''}}" data-key="" bindtap="onMonthTap">全部时间</view>
+        <view wx:for="{{months}}" wx:key="key"
+          class="fsheet-opt {{activeMonth === item.key ? 'opt-on' : ''}}"
+          data-key="{{item.key}}" bindtap="onMonthTap">{{item.label}}</view>
+      </view>
+      <view wx:if="{{!months.length}}" class="fsheet-empty">暂无活动</view>
+      <view class="fsheet-pad"></view>
+    </view>
+  </view>
 
   <!-- 分享页签 FAB：直达发布分享（参照广场写故事入口） -->
   <view wx:if="{{showFeed && tab === 'share'}}" class="fab" bindtap="onShareFab">

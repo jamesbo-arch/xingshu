@@ -36,10 +36,18 @@ Page({
     feedHasMore: false,
     feedLoaded: false,
     // 全部活动
-    actItems: [],       // 平铺行 + 月份分隔（kind: 'month' | 'act'）
+    allActs: [],        // 一次取回的全量（含 month/typeId），筛选在本地做
+    actItems: [],       // 平铺行 + 月份分隔（kind: 'month' | 'act'），供渲染
     allLoaded: false,
     types: [],
-    activeTypeId: 0,    // 0 = 全部
+    months: [],         // 由活动实际分布派生的月份候选
+    activeTypeId: 0,    // 0 = 全部类型
+    activeMonth: '',    // '' = 全部时间
+    typeLabel: '全部类型',
+    monthLabel: '全部时间',
+    filterActive: false,
+    showTypeSheet: false,
+    showMonthSheet: false,
     // FAB 直达发布分享（带场次选择）
     showLoginSheet: false,
     showPostSheet: false,
@@ -243,24 +251,54 @@ Page({
 
   async _loadTypes() {
     const types = await activityApi.getTypes()
-    if (types) this.setData({ types })
+    // types 到位后重算标签（首屏 _applyFilter 可能先于本请求返回）
+    if (types) this.setData({ types }, () => { if (this.data.allLoaded) this._applyFilter() })
   },
 
+  // 一次取回全部活动（后端 mode:'all' 本就不分页），类型与月份筛选都在本地做——
+  // 切筛选条件即时生效、无网络往返，月份候选也能直接从真实数据里派生
   async _loadAll() {
-    const data = await activityApi.getList(this.data.activeTypeId || undefined, 'all')
+    const data = await activityApi.getList(undefined, 'all')
     if (!data) return
     const now = Date.now()
+    const all = data.list.map(a => ({
+      ...this._decorateAct(a, now),
+      month: String(a.start_time).slice(0, 7),
+      typeId: a.type_id || 0,
+    }))
+    // 月份候选按活动实际分布派生（已按开始时间倒序，去重即为倒序月份）
+    const months = []
+    for (const a of all) {
+      if (!months.some(m => m.key === a.month)) {
+        // 跨年时只写「七月」会有歧义，故带上年份
+        months.push({ key: a.month, label: `${a.month.slice(0, 4)}年${+a.month.slice(5)}月` })
+      }
+    }
+    this.setData({ allActs: all, months, allLoaded: true }, () => this._applyFilter())
+  },
+
+  // 按当前类型/月份筛选并插入月份分隔行
+  _applyFilter() {
+    const { allActs, activeTypeId, activeMonth } = this.data
     const items = []
     let lastMonth = ''
-    for (const a of data.list) {
-      const month = String(a.start_time).slice(0, 7)
-      if (month !== lastMonth) {
-        items.push({ kind: 'month', key: 'm' + month, label: this._cnMonth(month) })
-        lastMonth = month
+    for (const a of allActs) {
+      if (activeTypeId && a.typeId !== activeTypeId) continue
+      if (activeMonth && a.month !== activeMonth) continue
+      if (a.month !== lastMonth) {
+        items.push({ kind: 'month', key: 'm' + a.month, label: this._cnMonth(a.month) })
+        lastMonth = a.month
       }
-      items.push({ kind: 'act', key: 'a' + a.id, ...this._decorateAct(a, now) })
+      items.push({ kind: 'act', key: 'a' + a.id, ...a })
     }
-    this.setData({ actItems: items, allLoaded: true })
+    const type = this.data.types.find(t => t.id === activeTypeId)
+    const month = this.data.months.find(m => m.key === activeMonth)
+    this.setData({
+      actItems: items,
+      typeLabel: type ? type.name : '全部类型',
+      monthLabel: month ? month.label : '全部时间',
+      filterActive: !!(activeTypeId || activeMonth),
+    })
   },
 
   // 状态：已报名（未开始且本人已报）> 报名中（未开始）/ 进行中（已开始未结束，无 end_time 按开始后 24h 内）/ 已结束
@@ -319,10 +357,27 @@ Page({
     return `${yCn} · ${CN_MONTH[+m - 1]}月`
   },
 
+  // ── 筛选弹层（类型 / 月份各一个，选中即关闭；tab 页弹层须收起 tab-bar） ──
+
+  onOpenTypeSheet() { this.setData({ showTypeSheet: true }); this._tabBar(true) },
+  onOpenMonthSheet() { this.setData({ showMonthSheet: true }); this._tabBar(true) },
+  onCloseSheet() { this.setData({ showTypeSheet: false, showMonthSheet: false }); this._tabBar(false) },
+  noopSheet() {},   // 阻止点内容区冒泡到蒙层关闭
+
   onTypeTap(e) {
     const id = Number(e.currentTarget.dataset.id) || 0
-    if (id === this.data.activeTypeId) return
-    this.setData({ activeTypeId: id }, () => this._loadAll())
+    this.setData({ activeTypeId: id, showTypeSheet: false }, () => this._applyFilter())
+    this._tabBar(false)
+  },
+
+  onMonthTap(e) {
+    const key = e.currentTarget.dataset.key || ''
+    this.setData({ activeMonth: key, showMonthSheet: false }, () => this._applyFilter())
+    this._tabBar(false)
+  },
+
+  onResetFilter() {
+    this.setData({ activeTypeId: 0, activeMonth: '' }, () => this._applyFilter())
   },
 
   // 未登录点活动行：先在列表页拉起登录弹窗（同广场故事列表），登录成功自动进详情
