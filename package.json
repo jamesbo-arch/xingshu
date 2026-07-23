@@ -1,5 +1,5 @@
 {
-  "version": "1.5.7",
+  "version": "1.6.0",
   "scripts": {
     "test": "node test/ping-db.js && node --test \"test/unit/*.test.js\" && node test/api-test.js && node test/fn-smoke-test.js && node test/fn-roundtrip-test.js && node test/fn-admin-test.js && node test/fn-activity-test.js && node test/fn-activity-type-test.js && node test/fn-activity-post-test.js && node test/fn-activity-feed-test.js && node test/fn-permission-test.js && node test/fn-featured-test.js && node test/fn-referral-test.js && node test/fn-auth-test.js && node test/fn-comment-test.js && node test/fn-tag-test.js && node test/fn-order-test.js && node test/fn-refund-test.js && node test/fn-admin-edit-test.js && node test/fn-filter-test.js && node test/fn-share-test.js && node test/fn-admin-roles-test.js && node test/fn-activity-stats-test.js && node test/fn-qa-test.js && node test/fn-activity-fav-test.js && node test/fn-banner-test.js && node test/fn-qa-admin-test.js",
     "test:unit": "node --test \"test/unit/*.test.js\"",
