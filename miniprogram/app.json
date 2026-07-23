@@ -1,7 +1,7 @@
 {
   "pages": [
     "pages/activities/index",
-    "pages/square/index",
+    "pages/stories/index",
     "pages/qa/index",
     "pages/member/index",
     "pages/collections/index",
@@ -28,7 +28,7 @@
         "text": "醒书广场"
       },
       {
-        "pagePath": "pages/square/index",
+        "pagePath": "pages/stories/index",
         "text": "醒书故事"
       },
       {

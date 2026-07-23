@@ -211,7 +211,7 @@
 | 页面 | 路由 | Tab | 用途 |
 |------|-------|-----|---------|
 | activities | `pages/activities/index` | **是 (0)** | 醒书广场——**小程序首页**（页签文案「醒书广场」，路由名仍为 activities）：顶部 Banner 轮播 + 活动列表（分享子栏目已隐藏） |
-| square | `pages/square/index` | 是 (1) | 醒书故事——故事流，搜索、筛选、星标精选筛选 |
+| stories | `pages/stories/index` | 是 (1) | 醒书故事——故事流，搜索、筛选、星标精选筛选（原路由 square，2026-07-24 改名 stories 以匹配内容） |
 | qa | `pages/qa/index` | 是 (2) | 醒书问答——问答流，会员可发问 |
 | member | `pages/member/index` | 是 (3) | 醒书会员——会员信息、购买流程、个人资料、我的故事/问答/收藏入口、设置 |
 | collections | `pages/collections/index` | 否 | 我的收藏——故事 / 问答 / 活动三段（入口在醒书会员） |

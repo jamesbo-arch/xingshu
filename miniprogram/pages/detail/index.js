@@ -83,7 +83,7 @@ Page({
         return
       }
       wx.showToast({ title: '该故事为会员专享，先看看精选故事吧', icon: 'none', duration: 2000 })
-      setTimeout(() => wx.switchTab({ url: '/pages/square/index' }), 1600)
+      setTimeout(() => wx.switchTab({ url: '/pages/stories/index' }), 1600)
       return
     }
     if (res.code !== 0 || !res.data) {
@@ -242,7 +242,7 @@ Page({
   // 若本页是启动页（转发/扫码直达，栈内仅本页），navigateBack 无上一页会报错 → 改回首页
   _goBack() {
     if (getCurrentPages().length > 1) wx.navigateBack()
-    else wx.switchTab({ url: '/pages/square/index' })
+    else wx.switchTab({ url: '/pages/stories/index' })
   },
 
   // 登录弹窗关闭：有内容则继续浏览；-2 流程拉起的（无内容可看）转广场看善选列表
@@ -251,7 +251,7 @@ Page({
     this._pendingLoginAction = null
     if (!this.data.story) {
       this._pendingId = null
-      wx.switchTab({ url: '/pages/square/index' })
+      wx.switchTab({ url: '/pages/stories/index' })
     }
   },
   // 先重载拿到本人互动态（isLiked/isFavorited），再续做被拦下的操作，避免续做基于陈旧状态；

@@ -54,7 +54,7 @@ Page({
       isMember: isValidMember(app.globalData.user),
     })
     if (typeof this.getTabBar === 'function' && this.getTabBar()) {
-      this.getTabBar().refresh('pages/square/index')
+      this.getTabBar().refresh('pages/stories/index')
     }
   },
 
@@ -189,7 +189,7 @@ Page({
     const sharerId = (app.globalData.user || {}).id
     return {
       title: '醒书日记 · 认真生活的人都在这里记录',
-      path: `/pages/square/index${sharerId ? '?s=' + sharerId : ''}`,
+      path: `/pages/stories/index${sharerId ? '?s=' + sharerId : ''}`,
     }
   },
   onShareTimeline() {

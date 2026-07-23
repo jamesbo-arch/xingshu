@@ -4197,3 +4197,36 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 **未改的「醒书活动」**：banner 详情兜底标题、活动详情转发卡片标题、`member` 页「报名醒书活动」等——这些指的是**活动这个业务/内容概念**，页面内容仍是活动列表，描述依然准确，不属于页签名。
 
 **验证**：`node --check` 三个 js 通过、`app.json` JSON 合法。纯前端+文档，未部署云函数、未跑 npm test。真机走查：底部第一格显示「醒书广场」、页头「醒書廣場」、冷启动默认落此页。
+
+---
+
+### 2026-07-24 —— 故事页路由 square→stories，命名匹配内容
+
+**类型**：前端（小程序）/ 文档
+**修改文件**：
+- `miniprogram/pages/square/` → `pages/stories/`（git mv 整目录，4 文件）
+- `miniprogram/app.json` — pages 数组 + tabBar list pagePath
+- `miniprogram/custom-tab-bar/index.js` — FULL_LIST pagePath
+- `miniprogram/pages/stories/index.js` — 自身 refresh 路径 + 转发 path
+- `miniprogram/pages/detail/index.js` — 3 处 switchTab 回故事列表的路径
+- `CLAUDE.md` — 页面表
+
+**变更说明**：
+
+`square` 是 v1.x 遗留路由名——那时「广场」装的是故事，v2.0 显示名改「醒书故事」但目录名没跟着改，成了「路由 square / 内容故事」的错位。改名 `stories` 消除它。
+
+**为什么只改这一个页**：排查后发现 `activities` 路由本就匹配它的内容（活动），不是错位；真正名不副实的只有故事页。首页显示名「醒书广场」与路由 `activities` 不一致是**有意的**——广场是展示名/未来扩展位，等首页真做成多板块聚合容器时再考虑 `activities→square`，现在提前改是 YAGNI。
+
+**刻意不改的内部标识**（改它们牵连云函数或零收益，且都不是「页面命名/路由」）：
+- `mode: 'square'`——`getStoryList` 的 API 枚举参数（相对 mine/collections），改它要同步改云函数
+- `square:first`——本地缓存键
+- `nav-square`——app.wxss 里的图标 CSS 类名（视觉资源标识）
+- `devlog.md`/`plan.md`/原型盘点等历史文档里的 `pages/square`——当时的路径记录，保留
+
+**兼容代价与时机**：故事页有推荐人转发 `pages/square/index?s=<推荐码>`，改名后旧链接失效。**趁 prod 未上线、无对外流通分享码的窗口做**，零成本；故事/活动详情分享走 `pages/detail`/`pages/activity-detail`，不在重命名范围、不受影响。
+
+**验证**：
+- `node --check` 三个 js 通过、`app.json` JSON 合法
+- grep 确认 `miniprogram/`、`admin/` 无 `pages/square` 残留
+- 未跑 `npm test`（改动全在前端路由，不触云函数）、未部署
+- 真机/开发者工具走查待确认：底部第二格「醒书故事」正常进入、故事详情「会员专享」回退落到故事列表、转发链接指向新路径
