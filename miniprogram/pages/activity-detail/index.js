@@ -152,8 +152,9 @@ Page({
       pct: a.capacity > 0 ? Math.min(100, Math.round(a.signup_count / a.capacity * 100)) : 0,
       signupClosed,
       feeText: price > 0 ? price + ' 元' : '免费',
-      // 共创者 = 主理人昵称（owner_user_id 关联 users）；未指派的老活动退回遗留的 organizer 列
-      ownerName: a.owner_name || a.organizer || '',
+      // 共创组织者 = 主理人昵称（owner_user_id 关联 users）；未指派则空，前端不显示该行。
+      // 不兜底 a.organizer——那是遗留列全库默认「醒书运营组」，兜底会让未指派活动也显示
+      ownerName: a.owner_name || '',
       invite: this._buildInvite(a),
     })
     this._invPath = '' // 活动数据变化后邀请函图需重绘

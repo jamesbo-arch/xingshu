@@ -4162,3 +4162,16 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - grep 确认无 `act-rmeta`/`act-rsub`/`subText` 遗留引用
 - 未跑 `npm test`、未部署云函数——改动全在小程序前端，字段名 `owner_name` 上一条已由云函数返回
 - 真机走查待确认：三行不折行、类型标签与标题顶对齐、长会议号/地点截断正常
+
+---
+
+### 2026-07-23 —— 共创组织→共创组织者；未指派主理人则不显示该行
+
+**类型**：前端（小程序）
+**修改文件**：
+- `miniprogram/pages/activities/index.js` — `_rowOwner` 去掉 organizer 兜底
+- `miniprogram/pages/activity-detail/index.js` / `.wxml` — 同步
+
+**变更说明**：称呼改「共创组织者」。并去掉此前 `owner_name || organizer` 的兜底——`organizer` 是遗留列全库默认「醒书运营组」，兜底会让未指派主理人的活动也显示这行，与「没填就不显示」冲突。改为只取 `owner_name`，未指派返回空串，`wx:if` 跳过整行。
+
+**验证**：`node --check` 通过；有主理人/无主理人/空串三种输入验证输出（后两者均为空）。纯前端，未部署云函数、未跑 npm test。

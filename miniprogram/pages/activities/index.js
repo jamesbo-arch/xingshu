@@ -367,12 +367,11 @@ Page({
     return spot ? '活动地点：' + spot : '线下'
   },
 
-  // 共创组织行：取 owner_name（云函数按 owner_user_id 关联 users 得来）；
-  // **不能用 a.organizer**——那是遗留文本列，全库都是默认值「醒书运营组」，
-  // 只有未指派主理人的老活动才退回它兜底。
+  // 共创组织者行：只取 owner_name（云函数按 owner_user_id 关联 users 得来）。
+  // **不兜底 a.organizer**——那是遗留文本列，全库都是默认值「醒书运营组」，
+  // 拿它兜底会让未指派主理人的活动也显示这行；未填就整行不显示。
   _rowOwner(a) {
-    const owner = a.owner_name || a.organizer
-    return owner ? '共创组织：' + owner : ''
+    return a.owner_name ? '共创组织者：' + a.owner_name : ''
   },
 
   // "2026-07" → "二〇二六 · 七月"
