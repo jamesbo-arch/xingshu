@@ -1,7 +1,7 @@
 <view class="page-wrap paper-bg">
   <view style="height: {{statusBarHeight}}px; background: #FBF7EE;"></view>
   <view class="page-header">
-    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書活動</text><kefu-fab /></view>
+    <view style="display:flex;flex-direction:row;align-items:center;gap:14rpx;"><text class="page-title serif">醒書廣場</text><kefu-fab /></view>
   </view>
 
   <!-- 双页签：活动分享（默认）/ 全部活动。v2.0 暂时隐藏分享子栏目（showFeed=false），代码保留 -->

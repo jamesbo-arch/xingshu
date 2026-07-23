@@ -4175,3 +4175,25 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 **变更说明**：称呼改「共创组织者」。并去掉此前 `owner_name || organizer` 的兜底——`organizer` 是遗留列全库默认「醒书运营组」，兜底会让未指派主理人的活动也显示这行，与「没填就不显示」冲突。改为只取 `owner_name`，未指派返回空串，`wx:if` 跳过整行。
 
 **验证**：`node --check` 通过；有主理人/无主理人/空串三种输入验证输出（后两者均为空）。纯前端，未部署云函数、未跑 npm test。
+
+---
+
+### 2026-07-23 —— 首页页签「醒书活动」改名「醒书广场」
+
+**类型**：前端（小程序）/ 文档
+**修改文件**：
+- `miniprogram/app.json` — tabBar 第一项 text
+- `miniprogram/custom-tab-bar/index.js` — FULL_LIST 首项 text + 注释
+- `miniprogram/pages/activities/index.wxml` — 页头标题「醒書廣場」
+- `miniprogram/app.js`、`pages/activities/index.js`/`.wxss` — 描述页签名的注释同步
+- `CLAUDE.md` — 页签矩阵、页面表、页签清单
+
+**变更说明**：
+
+底部第一个页签由「醒书活动」改为「醒书广场」，页头标题同步「醒書廣場」。**首页设置无需改动**——`app.json` 的 `pages[0]` 与 `tabBar.list[0]` 本就是 `pages/activities/index`，打开小程序默认就落这页。
+
+**只改文案，不改路由/标识符**：页面路由仍是 `pages/activities`、数据字段/云函数不动。历史上「醒书广场」是故事页(square)的旧名，v2.0 已改叫「醒书故事」，现在把这个名让给活动页——页签名与路由标识符不再字面对应，但那只是显示层，代码可读性靠注释里补一句「路由仍为 activities」维持。
+
+**未改的「醒书活动」**：banner 详情兜底标题、活动详情转发卡片标题、`member` 页「报名醒书活动」等——这些指的是**活动这个业务/内容概念**，页面内容仍是活动列表，描述依然准确，不属于页签名。
+
+**验证**：`node --check` 三个 js 通过、`app.json` JSON 合法。纯前端+文档，未部署云函数、未跑 npm test。真机走查：底部第一格显示「醒书广场」、页头「醒書廣場」、冷启动默认落此页。
