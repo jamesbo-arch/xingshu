@@ -444,12 +444,12 @@ page { height: 100%; overflow: hidden; }
 
 .act-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;   /* 三行信息使卡片变高，各栏顶对齐——类型标签与标题齐平 */
   gap: 22rpx;
   background: #FFFCF5;
   border: 1rpx solid rgba(126, 102, 64, 0.16);
   border-radius: 24rpx;
-  padding: 22rpx 24rpx;
+  padding: 24rpx;
   margin-bottom: 16rpx;
 }
 
@@ -483,27 +483,29 @@ page { height: 100%; overflow: hidden; }
 
 .act-rtitle {
   display: block;
-  font-size: 29rpx;
+  font-size: 30rpx;
   font-weight: 600;
+  line-height: 40rpx;
   color: #2A2723;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.act-rmeta {
-  display: flex;
-  align-items: center;
-  gap: 12rpx;
-  font-size: 22rpx;
+/* 时间 / 形式 / 共创组织，每项独占一行；地点会议号可能很长，单行截断不换行 */
+.act-rline {
+  font-size: 23rpx;
+  line-height: 34rpx;
   color: #A8A39B;
   margin-top: 8rpx;
-}
-
-.act-rmeta text:first-child {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 第一行（时间）紧跟标题，间距略大以分组 */
+.act-rline:first-of-type {
+  margin-top: 12rpx;
 }
 
 /* 右栏：类型标签在上、状态胶囊在下，右对齐 */
@@ -512,24 +514,16 @@ page { height: 100%; overflow: hidden; }
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 12rpx;
+  gap: 14rpx;
 }
 
-/* 会议号 / 活动地点 / 共创者：地点可能很长，单行截断不换行撑高卡片 */
-.act-rsub {
-  font-size: 22rpx;
-  color: #A8A39B;
-  margin-top: 6rpx;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
+/* 类型标签行高与标题对齐（同为 40rpx），使二者顶线齐平 */
 .act-rtype {
   flex-shrink: 0;
-  font-size: 20rpx;
-  padding: 2rpx 10rpx;
-  border-radius: 6rpx;
+  font-size: 21rpx;
+  line-height: 40rpx;
+  padding: 0 14rpx;
+  border-radius: 8rpx;
 }
 
 /* 状态胶囊：报名中（印章红）/ 进行中（青绿）/ 已结束（灰描边） */

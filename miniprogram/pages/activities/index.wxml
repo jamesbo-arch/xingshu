@@ -154,13 +154,12 @@
           </view>
           <view class="act-rmain">
             <text class="act-rtitle">{{item.title}}</text>
-            <view class="act-rmeta">
-              <text>{{item.timeText}}{{item.full ? ' · 名额已满' : ''}}</text>
-            </view>
-            <!-- 会议号/活动地点 · 共创者 -->
-            <view wx:if="{{item.subText}}" class="act-rsub">{{item.subText}}</view>
+            <!-- 三行：时间 / 形式（地点·会议号）/ 共创组织 -->
+            <view class="act-rline">{{item.timeText}}{{item.full ? ' · 名额已满' : ''}}</view>
+            <view class="act-rline">{{item.formText}}</view>
+            <view wx:if="{{item.ownerText}}" class="act-rline">{{item.ownerText}}</view>
           </view>
-          <!-- 右栏竖排：类型标签在上、状态胶囊在下 -->
+          <!-- 右栏竖排：类型标签在上（与标题顶对齐）、状态胶囊在下 -->
           <view class="act-rright">
             <text class="act-rtype {{item.tcls}}">{{item.typeName}}</text>
             <text class="act-st act-st-{{item.st}}">{{item.stLabel}}</text>

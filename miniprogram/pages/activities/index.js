@@ -322,7 +322,8 @@ Page({
       title: a.title,
       st, stLabel, full,
       timeText: this._rowTime(a.start_time, a.end_time),
-      subText: this._rowSub(a),
+      formText: this._rowForm(a),
+      ownerText: this._rowOwner(a),
       typeName: a.type_name || (a.type === 'online' ? '线上活动' : '线下活动'),
       tico: type.ico,
       tcls: type.cls,
@@ -355,23 +356,23 @@ Page({
     return head + ' → ' + e.slice(5, 10) + ' ' + e.slice(11, 16)
   },
 
-  // 副信息行：地点/会议号 · 共创者。
+  // 形式行：线下→活动地点，线上→会议号。
   // 线上的 location 是腾讯会议号，云函数**只对已报名者下发**，未报名时拿到的是空串，
-  // 故这里不需要（也无法）自己判断报名态——有值即可显示。
-  // 共创者取 owner_name（云函数按 owner_user_id 关联 users 得来）；
+  // 故这里不需要（也无法）自己判断报名态——有值即显示会议号，无值只写「线上」。
+  _rowForm(a) {
+    if (a.type === 'online') {
+      return a.location ? '会议号：' + a.location : '线上'
+    }
+    const spot = a.location || a.city
+    return spot ? '活动地点：' + spot : '线下'
+  },
+
+  // 共创组织行：取 owner_name（云函数按 owner_user_id 关联 users 得来）；
   // **不能用 a.organizer**——那是遗留文本列，全库都是默认值「醒书运营组」，
   // 只有未指派主理人的老活动才退回它兜底。
-  _rowSub(a) {
-    const parts = []
-    if (a.type === 'online') {
-      parts.push(a.location ? '会议号：' + a.location : '线上')
-    } else {
-      const spot = a.location || a.city
-      parts.push(spot ? '活动地点：' + spot : '线下')
-    }
+  _rowOwner(a) {
     const owner = a.owner_name || a.organizer
-    if (owner) parts.push('共创者：' + owner)
-    return parts.join(' · ')
+    return owner ? '共创组织：' + owner : ''
   },
 
   // "2026-07" → "二〇二六 · 七月"

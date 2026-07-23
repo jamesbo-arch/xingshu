@@ -4129,3 +4129,36 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - `fn-activity-feed-test` **13/13 通过**（含改写的 FEED-09 与新增 FEED-13）
 - `activity` 云函数已部署 dev
 - ⚠️ **全量 `npm test` 未跑完**：跑到 `fn-comment-reply-test` 时 cpolar 隧道断开（`connect ETIMEDOUT`），`ping-db` 确认不可达。按项目规矩停下未重试。**隧道恢复后需补跑一次全量**——本次改动本身已由 FEED 套件覆盖，补跑是为确认没有间接影响。
+
+---
+
+### 2026-07-23 —— 活动列表三行重排 + 类型标签顶对齐；共创者→共创组织
+
+**类型**：前端（小程序）
+**计划关联**：v2.0 真机走查反馈（排版拥挤）
+**修改文件**：
+- `miniprogram/pages/activities/index.js` — `_rowSub` 拆成 `_rowForm` + `_rowOwner`
+- `miniprogram/pages/activities/index.wxml` / `.wxss` — 副信息拆三行、类型标签顶对齐
+- `miniprogram/pages/activity-detail/index.wxml` — 共创者→共创组织
+
+**变更说明**：
+
+原来时间挤一行、「地点·共创者」拼一行，两行都偏挤。改为标题下**三行各占一行**：
+
+```
+[图标]  本与末（08-01）              [醒书咖啡]  ← 类型标签与标题顶对齐
+        08-01 周六 08:30-12:00       [已报名]
+        会议号：921 5066 1259
+        共创组织：钟声
+```
+
+- **拆行**：`_rowSub`（拼接串）拆成 `_rowForm`（地点/会议号）与 `_rowOwner`（共创组织），wxml 三个独立 `.act-rline`。会议号的报名态门槛不变（云函数只对已报名者下发，前端有值即显）。
+- **类型标签顶对齐**：`.act-row` 由 `align-items:center` 改 `flex-start`，三栏顶对齐；`.act-rtype` 的 `line-height` 设为与标题相同的 40rpx，二者顶线齐平。
+- **称呼**：列表与详情页「共创者」统一改「共创组织」。
+- 行距整体放松：标题 line-height 40rpx，meta 行 34rpx、间距 8rpx，时间行与标题间距 12rpx 做视觉分组。
+
+**验证**：
+- `node --check` 通过；`_rowForm`/`_rowOwner` 用线上已报名/未报名/线下/老活动兜底四种输入验证
+- grep 确认无 `act-rmeta`/`act-rsub`/`subText` 遗留引用
+- 未跑 `npm test`、未部署云函数——改动全在小程序前端，字段名 `owner_name` 上一条已由云函数返回
+- 真机走查待确认：三行不折行、类型标签与标题顶对齐、长会议号/地点截断正常
