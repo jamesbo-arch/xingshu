@@ -113,13 +113,6 @@ rich-text.content-text {
   text-align: center;
 }
 
-/* Seal stamp */
-.seal-stamp-text {
-  font-size: 26rpx;
-  color: rgba(182, 69, 47, 0.7);
-  letter-spacing: 3px;
-}
-
 /* Comments section */
 .comments-section {
   border-top: 1px solid rgba(126, 102, 64, 0.1);
