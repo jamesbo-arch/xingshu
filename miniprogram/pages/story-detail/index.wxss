@@ -82,6 +82,12 @@
   margin-bottom: 32rpx;
 }
 
+/* 移到文末的标签：与图片/正文拉开间距 */
+.detail-tags-foot {
+  margin-top: 40rpx;
+  margin-bottom: 48rpx;
+}
+
 /* Content */
 .detail-content {
   margin-bottom: 48rpx;
@@ -108,29 +114,6 @@ rich-text.content-text {
 }
 
 /* Seal stamp */
-.seal-stamp-wrap {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 18rpx;
-  margin-bottom: 48rpx;
-}
-
-.seal-stamp {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid rgba(182, 69, 47, 0.6);
-  padding: 10rpx 20rpx;
-  border-radius: 4px;
-  transform: rotate(-2deg);
-}
-
-/* 多枚印章交替倾斜，落款更自然（避免整齐排成一行显得呆板） */
-.seal-stamp:nth-child(even) {
-  transform: rotate(2deg);
-}
-
 .seal-stamp-text {
   font-size: 26rpx;
   color: rgba(182, 69, 47, 0.7);

@@ -31,10 +31,6 @@
       </block>
     </view>
 
-    <view class="detail-tags" wx:if="{{story.tags && story.tags.length}}">
-      <text wx:for="{{story.tags}}" wx:key="*this" class="seal-tag lg">{{item}}</text>
-    </view>
-
     <view class="detail-content">
       <!-- 有样式版（富文本）用 rich-text 渲染；旧纯文本故事回退 text。不加 user-select：禁止框选复制 -->
       <rich-text wx:if="{{story.contentRich}}" class="content-text" nodes="{{story.contentRich}}"></rich-text>
@@ -53,11 +49,9 @@
       />
     </view>
 
-    <!-- 文末钤印：由作者名改为标签印章（每个标签一枚红印，落款处呼应正文标签） -->
-    <view class="seal-stamp-wrap" wx:if="{{story.tags && story.tags.length}}">
-      <view wx:for="{{story.tags}}" wx:key="*this" class="seal-stamp">
-        <text class="seal-stamp-text serif">{{item}}</text>
-      </view>
+    <!-- 故事标签移到文末（图片下方），沿用正文标签样式 -->
+    <view class="detail-tags detail-tags-foot" wx:if="{{story.tags && story.tags.length}}">
+      <text wx:for="{{story.tags}}" wx:key="*this" class="seal-tag lg">{{item}}</text>
     </view>
 
     <!-- 精选（公众版）视图不提供评论：连既有评论一并不展示 -->
