@@ -8,13 +8,13 @@ module.exports = {
     return call('toggleFavorite', { storyId })
   },
   createComment(storyId, content, parentId) {
-    return call('createComment', { storyId, content, parentId })
+    return call('createStoryComment', { storyId, content, parentId })
   },
   getComments(storyId, page = 1) {
-    return call('getComments', { storyId, page }, { retry: 1 })
+    return call('getStoryComments', { storyId, page }, { retry: 1 })
   },
   deleteComment(commentId) {
-    return call('deleteComment', { commentId })
+    return call('deleteStoryComment', { commentId })
   },
   recordShare(storyId) {
     return call('recordShare', { storyId }, { showError: false })

@@ -11,7 +11,7 @@ exports.main = async (event, context) => {
   const isStory = !!storyId
   const targetId = isStory ? storyId : activityId
   const scene = `${isStory ? 'd' : 'a'}=${targetId}${sharerId ? `&s=${sharerId}` : ''}`
-  const page = isStory ? 'pages/detail/index' : 'pages/activity-detail/index'
+  const page = isStory ? 'pages/story-detail/index' : 'pages/activity-detail/index'
 
   try {
     const result = await cloud.openapi.wxacode.getUnlimited({

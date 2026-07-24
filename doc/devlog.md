@@ -4230,3 +4230,40 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - grep 确认 `miniprogram/`、`admin/` 无 `pages/square` 残留
 - 未跑 `npm test`（改动全在前端路由，不触云函数）、未部署
 - 真机/开发者工具走查待确认：底部第二格「醒书故事」正常进入、故事详情「会员专享」回退落到故事列表、转发链接指向新路径
+
+---
+
+### 2026-07-24 —— 命名全面对齐：路由/云函数/图标/mode 一次改彻底
+
+**类型**：前端（小程序）/ 云函数 / 文档 / 测试
+**修改文件**：
+- 页面目录：`pages/detail`→`story-detail`、`compose`→`story-compose`、`mine`→`my-stories`（git mv）
+- 云函数目录：`createComment`→`createStoryComment`、`getComments`→`getStoryComments`、`deleteComment`→`deleteStoryComment`（git mv + package.json name + cloudbaserc）
+- `app.json`/`app.js`/`generateMiniCode`/`collections`/`member`/`stories` — 路由引用
+- `api/social.js` — call 目标云函数名（方法名保留）
+- `app.wxss`/`custom-tab-bar` — `nav-square`→`nav-stories`
+- `pages/stories`/`utils/filter.js` — mode `'square'`→`'stories'`、缓存键 `square:first`→`stories:first`
+- `utils/splash.js` — 过时注释 `'square'`→`'home'`
+- `CLAUDE.md`、测试三文件、`unit/filter.test.js`
+
+**变更说明**：延续上一步 square→stories，把所有名不副实的命名一次对齐到实际内容（用户「一次改彻底」）。
+
+**① 页面路由对称**：detail/compose/mine 对齐 activity-detail/qa-detail/qa-compose/my-qa → story-detail/story-compose/my-stories。
+
+**② 故事评论云函数加 story 前缀**：createComment/getComments/deleteComment → createStoryComment/getStoryComments/deleteStoryComment，与 getStoryList/createStory 同风格。**api/social.js 方法名保留**（createComment 等仍是前端方法名），只改内部 `call()` 的云函数目标——方法名是前端 API 层标识，改它无收益还波及调用方。
+
+**③ 图标/mode/缓存键**：nav-square→nav-stories（app.wxss 定义 + tab-bar ic）；getStoryList 的 mode 枚举 'square'→'stories'（**云函数不显式判该值，纯前端+测试改，无需改云函数逻辑**）；缓存键 square:first→stories:first。
+
+**刻意不动的三处同名**（独立命名空间，非本次范围）：
+- `admin` 云函数的 `deleteComment` action（后台删评论，走自己 SQL）
+- `qa` 模块 api 方法 getComments/createComment（调 qa 云函数的 commentXxx action）
+- scene 单字母前缀 `d=`/`a=`（紧凑编码约定，s= 已被分享人占用，保留兼容——用户确认）
+
+**兼容**：故事分享落地页由 pages/detail 改 pages/story-detail，generateMiniCode 的海报小程序码 page 参数同步。趁 prod 未上线、无流通海报码窗口做，零成本。scene `d=` 前缀不变，旧扫码逻辑不受影响。
+
+**验证**：
+- 15 个 js `node --check` 通过、app.json + cloudbaserc.json JSON 合法
+- grep 确认 miniprogram 内零残留旧路由/旧云函数名/nav-square/mode square（仅 admin action deleteComment 保留，符合预期）
+- `npm run sync-db` 给改名云函数新目录生成 db.js
+- **`npm test` 全绿（exit=0）** —— harness 按新云函数目录名加载、fn-comment/fn-admin/fn-permission 全过，证明改名一致
+- **已部署 dev**：generateMiniCode + createStoryComment/getStoryComments/deleteStoryComment（tcb fn deploy）；旧云函数 createComment/getComments/deleteComment 孤儿已 `tcb fn delete` 清除，fn list 确认云端仅存新名

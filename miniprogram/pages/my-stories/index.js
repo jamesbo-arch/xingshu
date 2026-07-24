@@ -70,7 +70,7 @@ Page({
 
   // v2.3：guest（含退出登录的曾会员）点卡片/互动先拉起登录弹窗，与广场页口径一致
   onCardOpen(e) {
-    const open = () => throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + e.detail.id }))
+    const open = () => throttle(this, 'open', () => wx.navigateTo({ url: '/pages/story-detail/index?id=' + e.detail.id }))
     if (!ensureLogin(this, open)) return
     open()
   },
@@ -92,7 +92,7 @@ Page({
   onViewComment(e) { this._openAudience('comment', '评论', e.detail.id) },
   onAudienceClose() { this.setData({ audienceVisible: false }) },
 
-  onCardEdit(e) { ensureMember(this, () => throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/compose/index?storyId=' + e.detail.id }))) },
+  onCardEdit(e) { ensureMember(this, () => throttle(this, 'edit', () => wx.navigateTo({ url: '/pages/story-compose/index?storyId=' + e.detail.id }))) },
   onCardDelete(e) {
     if (!ensureLogin(this, () => this.onCardDelete(e))) return
     const { id } = e.detail
@@ -106,7 +106,7 @@ Page({
     })
   },
 
-  onFabTap() { ensureMember(this, () => throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/compose/index' }))) },
+  onFabTap() { ensureMember(this, () => throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/story-compose/index' }))) },
   onReachBottom() { if (this.data.hasMore) this._loadStories(false) },
 
   async onRefresh() {

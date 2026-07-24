@@ -108,7 +108,7 @@ async function run() {
     }, 'mock_yanqiu')
     storyId = created.data.id
     await callFn('toggleLike', { storyId }, 'mock_me')
-    await callFn('createComment', { storyId, content: '测试评论' }, 'mock_me')
+    await callFn('createStoryComment', { storyId, content: '测试评论' }, 'mock_me')
 
     const r = await admin('deleteStory', { id: storyId })
     if (r.code !== 0) throw new Error(r.msg)

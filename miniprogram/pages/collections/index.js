@@ -171,7 +171,7 @@ Page({
   // v2.3：guest（含退出登录的曾会员）点卡片先拉起登录弹窗，与广场页口径一致
   onCardOpen(e) {
     const { id } = e.detail
-    const open = () => throttle(this, 'open', () => wx.navigateTo({ url: '/pages/detail/index?id=' + id }))
+    const open = () => throttle(this, 'open', () => wx.navigateTo({ url: '/pages/story-detail/index?id=' + id }))
     if (!ensureLogin(this, open)) return
     open()
   },

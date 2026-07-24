@@ -19,7 +19,7 @@ async function run() {
 
   await test('getStoryList square 模式（游客）仅见善选故事、无暂存、无样式版泄露', async () => {
     // v3.0 善选：guest 广场只见上架善选副本（对公众开放故不截断），暂存不可见
-    const r = await callFn('getStoryList', { mode: 'square', page: 1, pageSize: 10 }, '')
+    const r = await callFn('getStoryList', { mode: 'stories', page: 1, pageSize: 10 }, '')
     if (r.code !== 0) throw new Error(`code=${r.code}`)
     if (!Array.isArray(r.data.list)) throw new Error('data.list 不是数组')
     const leak = r.data.list.find(d => d.publish_status === 'draft')

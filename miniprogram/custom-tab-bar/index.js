@@ -7,7 +7,7 @@ const { isValidMember } = require('../utils/auth-guard')
 // ic 为 app.wxss 里线性图标类前缀，激活态自动拼 -on（对齐原型 lucide 导航图标）
 const FULL_LIST = [
   { pagePath: 'pages/activities/index', text: '醒书广场', ic: 'nav-act', minRole: 'guest' },
-  { pagePath: 'pages/stories/index', text: '醒书故事', ic: 'nav-square', minRole: 'guest' },
+  { pagePath: 'pages/stories/index', text: '醒书故事', ic: 'nav-stories', minRole: 'guest' },
   { pagePath: 'pages/qa/index', text: '醒书问答', ic: 'nav-qa', minRole: 'guest' },
   { pagePath: 'pages/member/index', text: '醒书会员', ic: 'nav-member', minRole: 'guest' },
 ]

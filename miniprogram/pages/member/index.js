@@ -148,7 +148,7 @@ Page({
   onOpenPrivacy() { wx.navigateTo({ url: '/pages/doc/index?type=privacy' }) },
   // 我的内容入口：三者原为底部页签，v2.0 收进醒书会员，改普通页跳转
   onOpenCollections() { wx.navigateTo({ url: '/pages/collections/index' }) },
-  onOpenMine() { wx.navigateTo({ url: '/pages/mine/index' }) },
+  onOpenMine() { wx.navigateTo({ url: '/pages/my-stories/index' }) },
   onOpenMyQa() { wx.navigateTo({ url: '/pages/my-qa/index' }) },
 
   onShowProfileSheet() {

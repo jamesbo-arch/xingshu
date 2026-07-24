@@ -72,11 +72,11 @@ Page({
     const plain = !this.data.search && !this._isFiltersActive() && !this.data.featuredOnly
     // 冷启动首屏：无搜索/筛选时先展示缓存的第一页，网络返回后覆盖
     if (reset && plain && !this.data.stories.length) {
-      const cached = cache.get('square:first')
+      const cached = cache.get('stories:first')
       if (cached) this.setData({ stories: cached })
     }
     const data = await storyApi.getList({
-      mode: 'square',
+      mode: 'stories',
       page,
       keyword: this.data.search || undefined,
       featuredOnly: this.data.featuredOnly || undefined,
@@ -85,7 +85,7 @@ Page({
     if (data) {
       const active = this._isFiltersActive()
       const mapped = data.list.map(mapper.story)
-      if (reset && plain) cache.set('square:first', mapped, 10)
+      if (reset && plain) cache.set('stories:first', mapped, 10)
       this.setData({
         stories: reset ? mapped : [...this.data.stories, ...mapped],
         page: page + 1,
@@ -119,7 +119,7 @@ Page({
   onCardOpen(e) {
     const { id } = e.detail
     const suffix = this.data.featuredOnly ? '&featured=1' : ''
-    throttle(this, 'open', () => wx.navigateTo({ url: `/pages/detail/index?id=${id}${suffix}` }))
+    throttle(this, 'open', () => wx.navigateTo({ url: `/pages/story-detail/index?id=${id}${suffix}` }))
   },
 
   onLoginClose() {
@@ -170,7 +170,7 @@ Page({
 
   onFabTap() {
     // 写故事为会员专享：非有效会员弹窗引导开通
-    ensureMember(this, () => throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/compose/index' })))
+    ensureMember(this, () => throttle(this, 'fab', () => wx.navigateTo({ url: '/pages/story-compose/index' })))
   },
   onReachBottom() { if (this.data.hasMore) this._loadStories(false) },
 

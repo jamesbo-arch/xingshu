@@ -75,21 +75,21 @@
       "handler": "index.main"
     },
     {
-      "name": "createComment",
+      "name": "createStoryComment",
       "timeout": 10,
       "installDependency": true,
       "runtime": "Nodejs16.13",
       "handler": "index.main"
     },
     {
-      "name": "deleteComment",
+      "name": "deleteStoryComment",
       "timeout": 10,
       "installDependency": true,
       "runtime": "Nodejs16.13",
       "handler": "index.main"
     },
     {
-      "name": "getComments",
+      "name": "getStoryComments",
       "timeout": 10,
       "installDependency": true,
       "runtime": "Nodejs16.13",

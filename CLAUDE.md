@@ -103,20 +103,20 @@
 
 **要点**：
 1. `guest → authed` 门槛（v3.0 收窄）：**精选故事对公众完全开放**——未登录也可进详情读全文（内容是运营认可的对外内容，登录墙前置只会挡住传播）。登录只拦**互动**：点赞/收藏/海报分享由 `utils/auth-guard.js` 的 `ensureLogin()` 在点击那刻拉起，登录成功后自动续做。（写故事/发问/评论另由 `ensureMember()` 与服务端会员校验拦，见下）
-2. `authed → member` 的**实质差异**（v2.0 扩为四条）：① 读**全部已发布故事/问答的原文**（非会员只能看精选副本，未精选详情 -2）；② **写 / 编辑故事**；③ **发问 / 回答问答**；④ **评论故事**（v2.0 由 authed 收窄至会员，服务端 `createComment` 返回 -2 兜底）。其余互动（点赞/收藏/分享/报名/收藏活动）authed 与 member **完全一致**。
+2. `authed → member` 的**实质差异**（v2.0 扩为四条）：① 读**全部已发布故事/问答的原文**（非会员只能看精选副本，未精选详情 -2）；② **写 / 编辑故事**；③ **发问 / 回答问答**；④ **评论故事**（v2.0 由 authed 收窄至会员，服务端 `createStoryComment` 返回 -2 兜底）。其余互动（点赞/收藏/分享/报名/收藏活动）authed 与 member **完全一致**。
 2b. **页签（v2.0 起固定 4 个）**：醒书广场（首页，路由 `pages/activities`，内容为活动列表）/ 醒书故事 / 醒书问答 / 醒书会员，`custom-tab-bar/index.js` 的 `FULL_LIST` 全部 `minRole: 'guest'`。**「我的收藏」「我的故事」「我的问答」均不占页签**，入口收在醒书会员页的入口行（`navigateTo` 打开，页面仍在 app.json 的 pages 中注册、不在 tabBar.list）；authed 只给「我的收藏」一行（非会员无故事/问答可写）。`minRole` + `RANK` 的按身份裁剪机制**保留不删**（未来若再引入身份专属页签可直接复用）；`refresh(pagePath)` 按当前路径在裁剪后的列表里算 selected，**禁止用硬编码索引**。
 3. **精选机制（v3.0 起，v2.0 由故事扩展到问答；「善选」已于 v2.0 全面改称「精选」，代码标识符与表名仍为 featured）**：管理员在后台「精选管理」按热度榜（`点赞*w1+收藏*w2+评论*w3`，权重可配默认 1/1/1）人工勾选纳入——拷贝原文生成 `featured_stories` / `featured_questions` **副本**（可修订，不影响作者原文），并置 `is_featured=1`。副本可上/下架（联动 is_featured）；作者删除或后台删除原内容时副本联动下架。精选内容的点赞/评论/收藏/计数**共享原内容**（target 均为原 id）。徽章口径（2026-07-17 对调）：**眼睛（ic-eye）=已发布**，**金星（ic-star-gold）=已入选精选**，折角文档（ic-draft）=暂存稿。
 3a. **精选视图无评论（v2.0）**：精选副本是面向公众的对外版本，**一律不提供评论区**——非会员看到的、会员点星标筛选后看到的都是它。story-card 的 `featuredView` 属性隐藏评论计数；detail 页按后端回报的 `viaFeatured` 隐藏整个评论区与写评论入口。**问答例外**：精选问答**展示全部回复但只读**（回复即答案，藏起来就没有阅读价值），由 `qa.detail` 的 `canReply` 控制发送入口。
 3b. **分享口径（v3.1）**：**分享海报仅精选故事提供**（story-card 与 detail 底栏的分享按钮按 `isFeatured` 显示；poster-sheet 仅「保存图片」一个按钮）。海报含**精选副本全文**（poster-sheet 经 `getStoryDetail { preferFeatured: true, silent: true }` 取副本）、无作者名、底部为**醒书咨询品牌栏**（驼色底 + 书本标 + 简介 + 带参小程序码），画布高度随全文动态计算（>6000px 截断加"扫码阅读全文"提示）。非精选故事只能走**右上角原生转发**；非会员点开转发链接：guest 先拉登录（可能本就是会员），登录后仍非会员 → toast 提示 + `switchTab` 转故事页看精选列表。
 3c. **阅读记录（v3.1，v2.0 调整）**：`story_reads` 表（story_id/user_id/identity/via_featured/created_at，FK：story CASCADE、user SET NULL）。`getStoryDetail` 每次成功阅读落一行——**作者自读与 `silent` 不记**。v2.0 把「取精选副本」与「是否记阅读」拆成两个参数：`preferFeatured` 只管取副本，`silent` 才跳过记录。海报生成传 `silent`（那不是一次真实阅读），会员在星标筛选态阅读只传 `preferFeatured`、**照常计入**。readerId 取实际 users 行（guest 也记）。
 4. 卡片「金色底 / 会徽章」按**作者身份**渲染（非会员作者金色卡、会员作者「会」徽章），与**浏览者**身份无关。
-5. 鉴权判定的代码来源：详情级 `getStoryDetail` / `qa.detail`（不存在/draft 非作者 `-1` → 作者/member 原文 → **非会员含 guest**：命中上架副本则副本覆盖内容、未命中 `-2`）、列表级 `getStoryList` / `qa.list`（member/作者查原表；非会员含 guest JOIN 精选副本表返回副本全文）、前端动作级 `ensureLogin()`（**仅拦互动**：点赞/收藏/海报分享）与 `ensureMember()`（写/编辑故事、发问，拦所有非有效会员），服务端 `createComment` / `qa.commentCreate` 再做会员兜底。**退出登录即回游客视角**：各云函数均把 `userId` 收窄为「授权态才取」（`userIdentity !== 'guest'`），故退出态用户不认作者特权（读不到自己的 draft）、不带出历史点赞/收藏态。
+5. 鉴权判定的代码来源：详情级 `getStoryDetail` / `qa.detail`（不存在/draft 非作者 `-1` → 作者/member 原文 → **非会员含 guest**：命中上架副本则副本覆盖内容、未命中 `-2`）、列表级 `getStoryList` / `qa.list`（member/作者查原表；非会员含 guest JOIN 精选副本表返回副本全文）、前端动作级 `ensureLogin()`（**仅拦互动**：点赞/收藏/海报分享）与 `ensureMember()`（写/编辑故事、发问，拦所有非有效会员），服务端 `createStoryComment` / `qa.commentCreate` 再做会员兜底。**退出登录即回游客视角**：各云函数均把 `userId` 收窄为「授权态才取」（`userIdentity !== 'guest'`），故退出态用户不认作者特权（读不到自己的 draft）、不带出历史点赞/收藏态。
 5b. **醒书问答（v2.0 新模块）**：`questions`（仅正文帖子式无标题、`is_anonymous`、`publish_status` draft/published、`is_featured`）+ `question_comments`（一层 `parent_id`，可匿名）+ `featured_questions`（精选副本）。云函数 `qa`（action 路由）：`list`/`detail`/`create`/`update`/`remove`/`commentList`/`commentCreate`/`commentDelete`/`like`/`favToggle`。**匿名脱敏**在服务端 `maskAuthor(row, scopeId)` 做——`is_anonymous=1` 即把昵称换成「**醒书同学**」、抹掉 `avatar_url`/`avatar_hue` 与会员徽章，**并删除 `user_id`**（否则拿匿名帖的 user_id 比对同一人的实名帖即可反查身份，脱敏形同虚设）。**对作者本人也不例外**（匿名要彻底；作者看到自己真名反而会怀疑匿名没生效）。「这条是不是我发的」由独立的 `isMine` 字段承担，删除按钮据它显示，不依赖昵称。
 **匿名头像底色** `anon_hue`：由 `anonHue(scopeId, userId)`（FNV-1a）派生成 0~359 交给 `hueToColor()` 取色，前端渲染默认「醒」字 + 该底色。**scopeId 取问题 id，刻意按问题分域**——同一串问答里同一个人恒定同色、不同人不同色（正是要区分的场景），跨问答则不一致，避免凭颜色把同一匿名者散落各处的发言串成一条线。
 **admin 后台走独立查询，始终返回真实作者**（另带 `isAnonymous` 标记供运营知情）。页面：`pages/qa`（页签）/`qa-detail`/`qa-compose`/`my-qa`，卡片组件 `components/qa-card`。
 5c. **活动页 Banner 与收藏（v2.0）**：`banners` 表（image_url / title / `link_type` none|detail / content_rich / sort / is_active），小程序 `activity.bannerList` 只返回启用项按 sort 升序、**不外泄 content_rich**；`link_type='detail'` 才可点进 `pages/banner-detail`（rich-text 渲染，免登录）。后台强制「选跳详情页则详情内容非空」——否则用户点进去是白页。活动收藏走 `interactions` 的 `target_type='activity'`（`activity.favToggle` / `favList`）。**活动页布局**：Banner 与筛选栏 `flex-shrink:0` 固定，只有列表 `.act-scroll` 可滚（`flex:1` + **`min-height:0`**——缺了它 flex 子项会被内容撑开、把列表顶出屏幕）。**筛选全在本地做**：`_loadAll()` 一次取回全量（后端 mode:'all' 本就不分页），`_applyFilter()` 按 `activeTypeId`/`activeMonth` 过滤并插月份分隔行；月份候选由活动实际分布派生，故不会出现空月份。类型/月份各用一个**下拉面板**（`.filter-wrap` 相对定位 + `.dropdown` 绝对定位 `top:100%`），点按钮就地展开、选项换行平铺（原横滑 chip 在类型变多后难选）；`.dd-mask` 铺满屏接住外部点击收起，其 `z-index:10` **低于** `.filter-wrap` 的 `20`，故筛选按钮本身始终可点（可直接切另一个下拉）。面板贴顶展开不到底部，无需像底部弹层那样收 tab-bar。**现场分享发布权 v2.0 收窄为主理人/工作人员**（`postCreate` 与 `detail.canPost` 均走既有的 `isStatsViewer()`，普通报名用户不再有入口）；活动分享子栏目由 `pages/activities/index.js` 顶部的 `SHOW_FEED = false` 隐藏，**瀑布流与发布弹层代码全部保留**，置回 true 即恢复。
 6. **身份两字段语义（2026-07-15 起）**：`users.identity` 只存**授权态**（`guest`=未登录/已退出，`authed`=已授权），**不再落库 `member`**；会员资格的唯一真相源是 `member_until`（`member_until >= 今天` 即有效会员，到期当天仍算）。对外 `identity` 一律为**派生值**，前端/admin 判断口径不变：小程序侧（权限口径）= 已授权且会员期有效 → `member`，guest 优先（退出登录的会员按 guest 拦截，重新登录即恢复 member）；admin 侧（资格口径）= 会员期有效即显示 `member`（含退出态，退费入口据此可用）。故事卡片的作者徽章（金卡/「会」徽章）按**作者 `member_until`** 派生，与作者登录态无关。建单/退费/后台设会员只写 `member_from`/`member_until`，**不动授权态**。有效会员判定 SQL 统一为 `identity <> 'guest' AND member_until >= CURDATE()`（内容闸/发文守卫），**写/编辑故事本身即要求有效会员**。因此**每个会员都必须有 `member_until`**（管理后台建单/设会员时强制填写）。历史库存的 `identity='member'` 已迁移为 `authed`（prod 上线需执行 `UPDATE users SET identity='authed' WHERE identity='member'`）。
-6b. **v2.0 改版迁移（2026-07-22）**：`scripts/migrate-v2.js`（幂等）新建 `banners` / `questions` / `question_comments` / `featured_questions` 四表，并把 `interactions.target_type` 枚举扩为 `('comment','activity_post','story','activity','question')`。dev 库已执行；**prod 上线需执行 `XINGSHU_ENV_FILE=.env.prod node scripts/migrate-v2.js`**（先 backup-db），或走 `scripts/init-prod.js` 全新初始化（按 dev 现行结构复制，自动带上新表）。同时须全量部署云函数（新增 `qa`，改动 `activity`/`admin`/`getStoryList`/`getStoryDetail`/`createComment`）并重新构建发布 admin。
+6b. **v2.0 改版迁移（2026-07-22）**：`scripts/migrate-v2.js`（幂等）新建 `banners` / `questions` / `question_comments` / `featured_questions` 四表，并把 `interactions.target_type` 枚举扩为 `('comment','activity_post','story','activity','question')`。dev 库已执行；**prod 上线需执行 `XINGSHU_ENV_FILE=.env.prod node scripts/migrate-v2.js`**（先 backup-db），或走 `scripts/init-prod.js` 全新初始化（按 dev 现行结构复制，自动带上新表）。同时须全量部署云函数（新增 `qa`，改动 `activity`/`admin`/`getStoryList`/`getStoryDetail`/`createStoryComment`）并重新构建发布 admin。
 7. **日记→故事迁移（2026-07-17，破坏性发版）**：表 `diaries→stories`、`diary_tags→story_tags`，列 `comments.diary_id→story_id`、`users.diary_count→story_count`，`interactions.target_type` 枚举 `diary→story`；`permission` 三态列已删除（private→draft，其余→published，存量公众日记批量转会员可读）；新增 `featured_stories` 表与 `stories.publish_status/is_featured`。云函数改名：`createDiary/updateDiary/deleteDiary/getDiaryDetail/getDiaryList → createStory/updateStory/deleteStory/getStoryDetail/getStoryList`（入参 `diaryId→storyId`、`permission→publishStatus`）。**页面路由与 scene `d=` 前缀保留不改**（旧分享码/路径兼容）。dev 库已迁移；**prod 上线需执行 `XINGSHU_ENV_FILE=.env.prod node scripts/migrate-diary-to-story.js`（先 backup-db），且须在新版过审后、点发布前的窗口内完成迁移+全量部署云函数**，旧版小程序在窗口后不可用（app.js 已加 UpdateManager 强制更新）。
 
 ## 开发方式
@@ -215,10 +215,10 @@
 | qa | `pages/qa/index` | 是 (2) | 醒书问答——问答流，会员可发问 |
 | member | `pages/member/index` | 是 (3) | 醒书会员——会员信息、购买流程、个人资料、我的故事/问答/收藏入口、设置 |
 | collections | `pages/collections/index` | 否 | 我的收藏——故事 / 问答 / 活动三段（入口在醒书会员） |
-| mine | `pages/mine/index` | 否 | 我的故事——自己的故事（含暂存），编辑/删除、作者数据视角（入口在醒书会员） |
+| my-stories | `pages/my-stories/index` | 否 | 我的故事——自己的故事（含暂存），编辑/删除、作者数据视角（入口在醒书会员）（2026-07-24 由 mine 改名） |
 | my-qa | `pages/my-qa/index` | 否 | 我的问答——自己的问答（含暂存），编辑/删除（入口在醒书会员） |
-| detail | `pages/detail/index` | 否 | 故事详情——全文及评论，点赞/收藏/分享（精选视图无评论区） |
-| compose | `pages/compose/index` | 否 | 写故事——新建/编辑，含标签与暂存/发布 |
+| story-detail | `pages/story-detail/index` | 否 | 故事详情——全文及评论，点赞/收藏/分享（精选视图无评论区）（2026-07-24 由 detail 改名；scene 前缀仍 `d=` 保兼容） |
+| story-compose | `pages/story-compose/index` | 否 | 写故事——新建/编辑，含标签与暂存/发布（2026-07-24 由 compose 改名） |
 | qa-detail | `pages/qa-detail/index` | 否 | 问答详情——问题正文 + 回答区（公众版只读） |
 | qa-compose | `pages/qa-compose/index` | 否 | 提问——仅正文 + 匿名开关 + 暂存/发布 |
 | activity-detail | `pages/activity-detail/index` | 否 | 活动详情——图文、报名/取消、收藏、邀请函、现场分享 |
@@ -257,14 +257,14 @@
 | `request.js` | 核心封装——`call(name, data, options?)`，统一处理 `{code, data, msg}` 响应格式，code≠0 时自动 toast 错误 |
 | `user.js` | `login` / `getUserInfo` / `updateProfile` / `checkMember` |
 | `diary.js` | `getList` / `getDetail` / `create` / `update` / `remove` |
-| `social.js` | `toggleLike` / `toggleFav` / `createComment` / `getComments` / `deleteComment` |
+| `social.js` | `toggleLike` / `toggleFav` / `createComment` / `getComments` / `deleteComment`（api 方法名保留；内部分别调云函数 `createStoryComment`/`getStoryComments`/`deleteStoryComment`） |
 | `tag.js` | `getAll` / `add` |
 
 所有 API 文件均通过 `mapper.js` 将 MySQL 行转为前端 camelCase 格式后再返回。
 
 ### 工具模块
 
-- **`utils/filter.js`** — `applyFilters(diaries, mode, search, filters)`。mode（`square`/`collections`/`mine`）先按收藏/归属/可见性进行预筛选，再应用搜索关键词、标签、作者和时间筛选（快捷范围、日期范围或年月）。
+- **`utils/filter.js`** — `applyFilters(stories, mode, search, filters)`。mode（`stories`/`collections`/`mine`）先按收藏/归属/可见性进行预筛选，再应用搜索关键词、标签、作者和时间筛选（快捷范围、日期范围或年月）。
 - **`utils/mapper.js`** — MySQL `snake_case` ↔ 前端 `camelCase` 字段映射。`toDiary(dbRow)`、`toComment(dbRow)`、`toUser(dbRow)` 等函数将数据库行转为前端格式；反向映射 `fromDiary(data)` 用于写入。所有 API 层（`api/`）均先通过 mapper 再做返回。
 - **`utils/color.js`** — `hueToColor(hue)` 根据色相值映射到暖土色系头像颜色。`getInitial(name)` 返回名字首字符作为头像兜底展示。
 - **`utils/toast.js`** — 统一封装 `wx.showToast`：`success(title)`、`info(title, duration?)`、`error(title)`。

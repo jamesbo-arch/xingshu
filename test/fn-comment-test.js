@@ -30,13 +30,13 @@ async function run() {
     tags: [], publishStatus: 'draft',
   }, OPENID)
   const storyId = story.data.id
-  const parent = await callFn('createComment', { storyId, content: '一级评论' }, OPENID)
+  const parent = await callFn('createStoryComment', { storyId, content: '一级评论' }, OPENID)
   const parentId = parent.data.id
 
   let replyId
   await test('CMT-A01 发布二级回复 → 落库且不增加故事评论计数', async () => {
     const before = await commentCount(storyId)
-    const r = await callFn('createComment', { storyId, parentId, content: '二级回复1' }, OPENID)
+    const r = await callFn('createStoryComment', { storyId, parentId, content: '二级回复1' }, OPENID)
     if (r.code !== 0) throw new Error(r.msg)
     replyId = r.data.id
     const [[row]] = await conn.query('SELECT parent_id FROM comments WHERE id = ?', [replyId])
@@ -46,8 +46,8 @@ async function run() {
   })
 
   await test('CMT-A02 回复随父评论返回且按时间正序', async () => {
-    await callFn('createComment', { storyId, parentId, content: '二级回复2' }, OPENID)
-    const r = await callFn('getComments', { storyId }, OPENID)
+    await callFn('createStoryComment', { storyId, parentId, content: '二级回复2' }, OPENID)
+    const r = await callFn('getStoryComments', { storyId }, OPENID)
     if (r.code !== 0) throw new Error(r.msg)
     const p = r.data.list.find(c => c.id === parentId)
     if (!p || !Array.isArray(p.replies)) throw new Error('父评论无 replies 数组')
@@ -59,12 +59,12 @@ async function run() {
 
   await test('CMT-A03 删除自己的回复 → 软删且父评论计数不变', async () => {
     const before = await commentCount(storyId)
-    const r = await callFn('deleteComment', { commentId: replyId }, OPENID)
+    const r = await callFn('deleteStoryComment', { commentId: replyId }, OPENID)
     if (r.code !== 0) throw new Error(r.msg)
     const [[row]] = await conn.query('SELECT is_deleted FROM comments WHERE id = ?', [replyId])
     if (row.is_deleted !== 1) throw new Error('未软删')
     if (await commentCount(storyId) !== before) throw new Error('回复删除不应改变故事计数')
-    const g = await callFn('getComments', { storyId }, OPENID)
+    const g = await callFn('getStoryComments', { storyId }, OPENID)
     if (g.data.list.find(c => c.id === parentId).replies.some(x => x.id === replyId)) {
       throw new Error('已删回复仍返回')
     }
@@ -72,22 +72,22 @@ async function run() {
 
   await test('CMT-A04 删除父评论 → 故事计数 -1 且整串不再返回', async () => {
     const before = await commentCount(storyId)
-    const r = await callFn('deleteComment', { commentId: parentId }, OPENID)
+    const r = await callFn('deleteStoryComment', { commentId: parentId }, OPENID)
     if (r.code !== 0) throw new Error(r.msg)
     if (await commentCount(storyId) !== before - 1) throw new Error('计数未 -1')
-    const g = await callFn('getComments', { storyId }, OPENID)
+    const g = await callFn('getStoryComments', { storyId }, OPENID)
     if (g.data.list.some(c => c.id === parentId)) throw new Error('已删父评论仍返回')
   })
 
   await test('CMT-A05 参数校验：缺 content/storyId 拒绝；parentId 不存在拒绝', async () => {
-    const r1 = await callFn('createComment', { storyId }, OPENID)
+    const r1 = await callFn('createStoryComment', { storyId }, OPENID)
     if (r1.code === 0) throw new Error('缺 content 不应通过')
-    const r2 = await callFn('createComment', { content: 'x' }, OPENID)
+    const r2 = await callFn('createStoryComment', { content: 'x' }, OPENID)
     if (r2.code === 0) throw new Error('缺 storyId 不应通过')
     // parent_id 有外键约束，不存在的父评论应导致调用失败（抛错）或非 0 code
     let rejected = false
     try {
-      const r3 = await callFn('createComment', { storyId, parentId: 999999999, content: 'x' }, OPENID)
+      const r3 = await callFn('createStoryComment', { storyId, parentId: 999999999, content: 'x' }, OPENID)
       rejected = r3.code !== 0
     } catch { rejected = true }
     if (!rejected) throw new Error('无效 parentId 不应通过')

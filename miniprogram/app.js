@@ -42,7 +42,7 @@ App({
   // 启动首页为醒书广场（活动列表页），故归属名用中性的 'home'。
   _pickSplash(scene, launchPath) {
     const toDetail = /(?:^|&)[da]=\d+/.test(scene)
-      || launchPath === 'pages/detail/index'
+      || launchPath === 'pages/story-detail/index'
       || launchPath === 'pages/activity-detail/index'
     this.globalData.splashPending = !cache.get('splash:day')
     this.globalData.splashOwner = toDetail ? 'detail' : 'home'
@@ -94,7 +94,7 @@ App({
     if (scene) {
       const story = scene.match(/(?:^|&)d=(\d+)/)
       const act = scene.match(/(?:^|&)a=(\d+)/)
-      if (story && launchPath !== 'pages/detail/index') wx.navigateTo({ url: `/pages/detail/index?id=${story[1]}` })
+      if (story && launchPath !== 'pages/story-detail/index') wx.navigateTo({ url: `/pages/story-detail/index?id=${story[1]}` })
       else if (act && launchPath !== 'pages/activity-detail/index') wx.navigateTo({ url: `/pages/activity-detail/index?id=${act[1]}` })
     }
   },

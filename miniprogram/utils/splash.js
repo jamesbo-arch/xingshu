@@ -1,5 +1,5 @@
 // 冷启动蒙布的认领逻辑 —— 广场 / 故事详情 / 活动详情三个可能的启动页共用
-// 归属（splashOwner）由 app.js 的 onLaunch 判定：扫码或转发直达详情时归 'detail'，否则归 'square'
+// 归属（splashOwner）由 app.js 的 onLaunch 判定：扫码或转发直达详情时归 'detail'，否则归 'home'
 const cache = require('./cache')
 
 // 认领当日蒙布：仅归属页且今日未弹时返回 true，并即刻写下当日标记

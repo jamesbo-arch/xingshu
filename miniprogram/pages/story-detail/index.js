@@ -51,7 +51,7 @@ Page({
     // 转发卡片标题统一为品牌词「醒书故事」；imageUrl 显式指定，避免自动截屏发白
     return {
       title: '醒书故事',
-      path: `/pages/detail/index?id=${d.id}${sharerId ? '&s=' + sharerId : ''}`,
+      path: `/pages/story-detail/index?id=${d.id}${sharerId ? '&s=' + sharerId : ''}`,
       imageUrl: this._shareImg || '/images/consulting-banner.png',
     }
   },

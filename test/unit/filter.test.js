@@ -21,7 +21,7 @@ const STORIES = [
 const NO_FILTERS = {}
 
 test('square 模式排除他人暂存故事，保留自己的暂存故事', () => {
-  const r = applyFilters(STORIES, 'square', '', NO_FILTERS)
+  const r = applyFilters(STORIES, 'stories', '', NO_FILTERS)
   const ids = r.map(d => d.id)
   assert.ok(!ids.includes(4), '他人暂存故事不应出现')
   assert.ok(ids.includes(2), '自己的暂存故事应保留')
@@ -38,44 +38,44 @@ test('mine 模式只保留自己的故事', () => {
 })
 
 test('搜索关键词匹配标题或正文', () => {
-  assert.strictEqual(applyFilters(STORIES, 'square', '晨跑', NO_FILTERS).length, 1)
-  assert.strictEqual(applyFilters(STORIES, 'square', '海边', NO_FILTERS)[0].id, 3)
-  assert.strictEqual(applyFilters(STORIES, 'square', '不存在的词', NO_FILTERS).length, 0)
+  assert.strictEqual(applyFilters(STORIES, 'stories', '晨跑', NO_FILTERS).length, 1)
+  assert.strictEqual(applyFilters(STORIES, 'stories', '海边', NO_FILTERS)[0].id, 3)
+  assert.strictEqual(applyFilters(STORIES, 'stories', '不存在的词', NO_FILTERS).length, 0)
 })
 
 test('标签筛选：任一标签命中即保留', () => {
-  const r = applyFilters(STORIES, 'square', '', { tags: ['摄影', '读书'] })
+  const r = applyFilters(STORIES, 'stories', '', { tags: ['摄影', '读书'] })
   assert.deepStrictEqual(r.map(d => d.id).sort(), [2, 3])
 })
 
 test('作者筛选：子串匹配', () => {
-  const r = applyFilters(STORIES, 'square', '', { author: '明远' })
+  const r = applyFilters(STORIES, 'stories', '', { author: '明远' })
   assert.deepStrictEqual(r.map(d => d.id), [3])
 })
 
 test('quick 时间筛选：today 只保留今天', () => {
-  const r = applyFilters(STORIES, 'square', '', { timeMode: 'quick', quickRange: 'today' })
+  const r = applyFilters(STORIES, 'stories', '', { timeMode: 'quick', quickRange: 'today' })
   assert.deepStrictEqual(r.map(d => d.id), [1])
 })
 
 test('quick 时间筛选：week 保留最近 7 天', () => {
-  const r = applyFilters(STORIES, 'square', '', { timeMode: 'quick', quickRange: 'week' })
+  const r = applyFilters(STORIES, 'stories', '', { timeMode: 'quick', quickRange: 'week' })
   assert.deepStrictEqual(r.map(d => d.id).sort(), [1, 2])
 })
 
 test('range 时间筛选：起止日期闭区间', () => {
-  const r = applyFilters(STORIES, 'square', '', { timeMode: 'range', dateFrom: '2025-01-01', dateTo: '2025-01-31' })
+  const r = applyFilters(STORIES, 'stories', '', { timeMode: 'range', dateFrom: '2025-01-01', dateTo: '2025-01-31' })
   assert.deepStrictEqual(r.map(d => d.id), [3])
 })
 
 test('ym 时间筛选：按年月匹配', () => {
-  const r = applyFilters(STORIES, 'square', '', { timeMode: 'ym', years: [2025], months: [1] })
+  const r = applyFilters(STORIES, 'stories', '', { timeMode: 'ym', years: [2025], months: [1] })
   assert.deepStrictEqual(r.map(d => d.id), [3])
-  const none = applyFilters(STORIES, 'square', '', { timeMode: 'ym', years: [2020], months: [] })
+  const none = applyFilters(STORIES, 'stories', '', { timeMode: 'ym', years: [2020], months: [] })
   assert.strictEqual(none.length, 0)
 })
 
 test('无 timestamp 的故事在时间筛选下被排除', () => {
-  const r = applyFilters([{ ...STORIES[0], timestamp: undefined }], 'square', '', { timeMode: 'quick', quickRange: 'today' })
+  const r = applyFilters([{ ...STORIES[0], timestamp: undefined }], 'stories', '', { timeMode: 'quick', quickRange: 'today' })
   assert.strictEqual(r.length, 0)
 })

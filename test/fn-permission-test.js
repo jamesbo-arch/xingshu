@@ -47,7 +47,7 @@ async function run() {
   await conn.query('UPDATE stories SET is_featured = 1 WHERE id = ?', [featStoryId])
 
   const detail = (id, openid) => callFn('getStoryDetail', { storyId: id }, openid)
-  const list = (openid) => callFn('getStoryList', { mode: 'square', page: 1, pageSize: 50 }, openid)
+  const list = (openid) => callFn('getStoryList', { mode: 'stories', page: 1, pageSize: 50 }, openid)
 
   await test('PERM-A01 guest 看善选故事详情 → 免登录读副本全文（无互动态字段）', async () => {
     const r = await detail(featStoryId, GUEST)
@@ -188,9 +188,9 @@ async function run() {
     const [[row]] = await conn.query(
       "SELECT COUNT(*) c FROM interactions WHERE target_type='story' AND target_id=? AND action='like'", [featStoryId])
     if (!row.c) throw new Error('互动未落库到原故事')
-    const cm = await callFn('createComment', { storyId: featStoryId, content: 'test_perm 精选评论' }, AUTHED)
+    const cm = await callFn('createStoryComment', { storyId: featStoryId, content: 'test_perm 精选评论' }, AUTHED)
     if (cm.code !== -2) throw new Error(`非会员评论应被拒（-2），实际 code=${cm.code}`)
-    const mcm = await callFn('createComment', { storyId: featStoryId, content: 'test_perm 会员评论' }, MEMBER)
+    const mcm = await callFn('createStoryComment', { storyId: featStoryId, content: 'test_perm 会员评论' }, MEMBER)
     if (mcm.code !== 0) throw new Error('会员评论应通过：' + mcm.msg)
     await conn.query('DELETE FROM comments WHERE id = ?', [mcm.data.id])
     await callFn('toggleLike', { targetId: featStoryId, targetType: 'story' }, AUTHED) // 取消点赞还原
@@ -234,7 +234,7 @@ async function run() {
   })
 
   await test('PERM-A16 会员传 featuredOnly → 列表切公众版精选副本视图', async () => {
-    const l = await callFn('getStoryList', { mode: 'square', page: 1, pageSize: 50, featuredOnly: true }, MEMBER)
+    const l = await callFn('getStoryList', { mode: 'stories', page: 1, pageSize: 50, featuredOnly: true }, MEMBER)
     if (l.code !== 0) throw new Error(l.msg)
     const ids = l.data.list.map(d => d.id)
     if (!ids.includes(featStoryId)) throw new Error('精选故事缺失')

@@ -4,7 +4,8 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 // 故事列表（v3.0 精选版）
 // mode=mine：作者旁路，返回自己全部故事（含 draft）
-// mode=square/collections：member → 已发布故事全文；非会员（含未登录 guest）→ 仅精选故事（展示精选副本全文）
+// mode=stories/collections：member → 已发布故事全文；非会员（含未登录 guest）→ 仅精选故事（展示精选副本全文）
+// （注：本函数只显式判 mine/collections，其余值[stories]走默认精选分支，故 mode 具体字面量与云函数逻辑无关）
 // v2.0：会员可传 featuredOnly 主动切到精选视图（前端星标筛选），走同一套副本 SQL
 exports.main = async (event, context) => {
   const { OPENID } = cloud.getWXContext()

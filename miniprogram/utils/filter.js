@@ -3,7 +3,7 @@ function applyFilters(stories, mode, search, filters) {
 
   if (mode === 'collections') arr = arr.filter(d => d.isFavorited)
   if (mode === 'mine') arr = arr.filter(d => d.isMine || d.author === '我')
-  if (mode === 'square') arr = arr.filter(d => d.publishStatus !== 'draft' || d.isMine)
+  if (mode === 'stories') arr = arr.filter(d => d.publishStatus !== 'draft' || d.isMine)
 
   if (search && search.trim()) {
     const s = search.trim()
