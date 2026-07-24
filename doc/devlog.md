@@ -4267,3 +4267,16 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 - `npm run sync-db` 给改名云函数新目录生成 db.js
 - **`npm test` 全绿（exit=0）** —— harness 按新云函数目录名加载、fn-comment/fn-admin/fn-permission 全过，证明改名一致
 - **已部署 dev**：generateMiniCode + createStoryComment/getStoryComments/deleteStoryComment（tcb fn deploy）；旧云函数 createComment/getComments/deleteComment 孤儿已 `tcb fn delete` 清除，fn list 确认云端仅存新名
+
+---
+
+### 2026-07-24 —— app.onPageNotFound 兜底：路由改名后旧路径不再白屏
+
+**类型**：前端（小程序）
+**修改文件**：`miniprogram/app.js`
+
+**变更说明**：真机冷启动报 `page "pages/square/index" is not found`（openType: autoReLaunch）。根因：微信记住「上次停留页」，冷启动自动 reLaunch 回去，而 square 已改名 stories → 页面找不到、白屏报错。
+
+这不止是开发者工具缓存问题，更是**上线隐患**：旧版用户停在 square/detail/mine 等页、更新到新版冷启动 autoReLaunch，或旧分享/扫码链接指向已重命名页面，都会白屏。加全局 `onPageNotFound` 兜底——统一 `wx.reLaunch` 到首页广场（activities 恒存在，无死循环；reLaunch 清栈适配 tab 页）。
+
+**验证**：`node --check` 通过。真机需清开发者工具缓存 + 重新编译清掉当前的 square「上次页面」记忆；此后即便命中旧路径也自动落到广场而非报错。

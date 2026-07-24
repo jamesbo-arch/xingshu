@@ -35,6 +35,13 @@ App({
     this._initUser(scene, launchPath)
   },
 
+  // 路由找不到时兜底回首页（广场）。触发场景：微信 autoReLaunch 到「上次停留页」而该页
+  // 已被重命名（如 square→stories、detail→story-detail）、旧分享/扫码链接指向老路径。
+  // 用 reLaunch 清栈到 tab 页，避免白屏与 onPageNotFound 报错。activities 恒存在，无死循环。
+  onPageNotFound() {
+    wx.reLaunch({ url: '/pages/activities/index' })
+  },
+
   // 冷启动品牌蒙布：当天首次冷启动弹一次（热启动的 App.onShow 不参与判定）。
   // 必须同时定「谁来弹」——扫小程序码时启动页是首页、_initUser 之后才 navigateTo 到详情，
   // 若由首页认领会出现蒙布一闪即被详情页盖住，故直达详情的一律归 'detail' 由目标页认领。
