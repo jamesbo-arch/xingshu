@@ -53,9 +53,10 @@
       />
     </view>
 
-    <view class="seal-stamp-wrap">
-      <view class="seal-stamp">
-        <text class="seal-stamp-text serif">{{story.author}}</text>
+    <!-- 文末钤印：由作者名改为标签印章（每个标签一枚红印，落款处呼应正文标签） -->
+    <view class="seal-stamp-wrap" wx:if="{{story.tags && story.tags.length}}">
+      <view wx:for="{{story.tags}}" wx:key="*this" class="seal-stamp">
+        <text class="seal-stamp-text serif">{{item}}</text>
       </view>
     </view>
 

@@ -4280,3 +4280,25 @@ node --check 全过；app.json tabBar 剩 4 项且 pages 仍含 collections；`_
 这不止是开发者工具缓存问题，更是**上线隐患**：旧版用户停在 square/detail/mine 等页、更新到新版冷启动 autoReLaunch，或旧分享/扫码链接指向已重命名页面，都会白屏。加全局 `onPageNotFound` 兜底——统一 `wx.reLaunch` 到首页广场（activities 恒存在，无死循环；reLaunch 清栈适配 tab 页）。
 
 **验证**：`node --check` 通过。真机需清开发者工具缓存 + 重新编译清掉当前的 square「上次页面」记忆；此后即便命中旧路径也自动落到广场而非报错。
+
+---
+
+### 2026-07-24 —— 分享缩略图加作者头像+名称；详情页落款印章改标签
+
+**类型**：前端（小程序）
+**修改文件**：
+- `miniprogram/components/poster-sheet/index.js` — genShareThumb 右上角作者
+- `miniprogram/pages/story-detail/index.wxml` / `.wxss` — 落款印章改标签
+
+**变更说明**：
+
+**① 转发缩略图加作者**（需求图对应的是转发到微信的 5:4 缩略卡，`genShareThumb` 绘制）。右上角（「醒書故事」标签框对侧空白）画色块圆头像（`hueToColor(avatarHue)` + 首字母）+ 名称。名称在头像左侧右对齐，超 230px 截断加省略号防长昵称压到左侧标签框。头像走色块+首字母（故事作者本就无真实图片头像，与卡片/详情一致），无需下载图、不增加异步负担。
+
+**② 详情页文末落款印章**：图片下方原来是单枚显示作者名的红钤印，改为**每个标签一枚印章**（`story.tags` 循环）。多枚 `nth-child(even)` 交替 ±2° 倾斜，落款更自然；无标签则整块不显示。顶部已有的 detail-tags 标签展示不动，这是文末落款位置的呼应。
+
+**未改**：保存到相册的长海报（`_render`）顶部仍无作者——需求图是转发缩略图，长海报按原「不展示作者名」设计保留。如需长海报也加，可比照 genShareThumb 补。
+
+**验证**：
+- `node --check` 通过；story 对象含 author/avatarHue/tags（mapper 与详情页现用字段）
+- 纯前端，无云函数/数据库、未跑 npm test
+- 真机/开发者工具走查：转发故事看缩略图右上作者、详情页文末看标签印章

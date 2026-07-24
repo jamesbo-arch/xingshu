@@ -1,6 +1,7 @@
 const toast = require('../../utils/toast')
 const { call } = require('../../api/request')
 const { throttle } = require('../../utils/guard')
+const { hueToColor, getInitial } = require('../../utils/color')
 
 // v3.2 分享海报（仅善选故事可分享）：善选副本全文 + 配图，不展示作者名；
 // 视觉与活动邀请函统一——标签框 + 衬线标题 + 分段正文 + 虚线 CTA 框 + 手绘醒书咨询页尾
@@ -121,6 +122,8 @@ Component({
     genShareThumb(cb) {
       const title = this.data.shareTitle || ''
       const content = (this.data.shareContent || '').replace(/\s+/g, ' ').trim()
+      const author = ((this.data.story || {}).author || '').trim()
+      const authorHue = (this.data.story || {}).avatarHue || 60
       const query = wx.createSelectorQuery().in(this)
       query.select('#poster-canvas').fields({ node: true }).exec((res) => {
         if (!res || !res[0] || !res[0].node) { cb && cb(null); return }
@@ -146,6 +149,21 @@ Component({
         // 英文小字
         ctx.globalAlpha = 0.6; ctx.font = '20px sans-serif'
         ctx.fillText('X I N G S H U   S T O R Y', PADX, 156); ctx.globalAlpha = 1
+
+        // 右上角作者：色块圆头像 + 名称（呼应卡片作者身份，与标签框同一水平带）
+        if (author) {
+          const avR = 30, avCx = W - PADX - avR, avCy = 93
+          ctx.fillStyle = hueToColor(authorHue)
+          ctx.beginPath(); ctx.arc(avCx, avCy, avR, 0, Math.PI * 2); ctx.fill()
+          ctx.fillStyle = '#FFFCF5'; ctx.textAlign = 'center'; ctx.font = 'bold 30px serif'
+          ctx.fillText(getInitial(author), avCx, avCy + 11)
+          // 名称在头像左侧右对齐，超宽截断加省略号（防长昵称压到左侧标签框）
+          ctx.fillStyle = '#8A6E4B'; ctx.textAlign = 'right'; ctx.font = '26px sans-serif'
+          let an = author
+          const nameMax = 230
+          while (an.length > 1 && ctx.measureText(an + '…').width > nameMax) an = an.slice(0, -1)
+          ctx.fillText(an.length < author.length ? an + '…' : an, avCx - avR - 16, avCy + 9)
+        }
 
         // 标题（居中衬线，自适应字号，最多 2 行）
         let ts = 52

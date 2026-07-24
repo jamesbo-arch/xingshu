@@ -110,7 +110,9 @@ rich-text.content-text {
 /* Seal stamp */
 .seal-stamp-wrap {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  gap: 18rpx;
   margin-bottom: 48rpx;
 }
 
@@ -122,6 +124,11 @@ rich-text.content-text {
   padding: 10rpx 20rpx;
   border-radius: 4px;
   transform: rotate(-2deg);
+}
+
+/* 多枚印章交替倾斜，落款更自然（避免整齐排成一行显得呆板） */
+.seal-stamp:nth-child(even) {
+  transform: rotate(2deg);
 }
 
 .seal-stamp-text {
